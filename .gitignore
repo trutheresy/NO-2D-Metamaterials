@@ -11,3 +11,4 @@ OUTPUT/output 01-Mar-2024 15-36-15/generate_dispersion_dataset.m
 *.mp4
 OUTPUT/preliminary_datasets/DATA N_pix32x32 N_ele1x1 N_wv25x13 N_disp100 N_eig6 offset0 01-Mar-2024 19-13-23.mat
 /OUTPUT
+/generate_dispersion_dataset_Han/OUTPUT
