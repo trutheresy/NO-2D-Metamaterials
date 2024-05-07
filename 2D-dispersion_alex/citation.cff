@@ -1,0 +1,12 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+authors:
+  - family-names: Ogren
+    given-names: Alexander
+    orcid: https://orcid.org/0000-0002-7277-0069
+title: "2D-dispersion"
+version: 0.0
+identifiers:
+  - type: doi
+    value: 10.2139/ssrn.4546650
+date-released: 2021-03-30
