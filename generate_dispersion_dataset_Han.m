@@ -1,6 +1,6 @@
 clear; close all;
 
-dispersion_library_path = 'E:\Research\Projects\NO 2D Metamaterials\2D-dispersion_alex';
+dispersion_library_path = 'A:\Research\Projects\NO 2D Metamaterials\2D-dispersion_alex';
 addpath(dispersion_library_path)
 
 datetime_var = datetime;
@@ -25,9 +25,9 @@ const.isUseParallel = true; % Flag for parallelization in dispersion loop, not s
 const.isSaveEigenvectors = isSaveEigenvectors;
 
 % Define design parameters, including design_params, which controls how random designs will be generated
-N_struct = 100; % Determines how many designs will be generated
+N_struct = 400; % Determines how many designs will be generated
 %rng_seed_offset = 0; % Determines rng seed at which random designs will start to be generated. The rng seed used for each design is rng_seed_offset + struct_idx.
-rng_seed_offset = 400;
+rng_seed_offset = 0;
 const.a = 1; % [m], the side length of the square unit cell
 
 design_params = design_parameters;
