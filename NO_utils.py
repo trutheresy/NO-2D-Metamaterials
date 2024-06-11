@@ -4,6 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 import time
+import random
 
 def load_mat_data(folder_path):
     start_time = time.time()
@@ -85,6 +86,7 @@ def extract_data(data_path):
     n_designs = designs.shape[0]
     n_panes = designs.shape[1]
     design_res = designs.shape[2]
+    const = {key: np.array(data['const'][key]) for key in data['const']}
 
     WAVEVECTOR_DATA = data['WAVEVECTOR_DATA']
     n_dim = WAVEVECTOR_DATA.shape[1]
@@ -92,13 +94,13 @@ def extract_data(data_path):
     n_wavevectors = WAVEVECTOR_DATA.shape[1]
     if np.any(np.iscomplex(WAVEVECTOR_DATA)):
         print("WAVEVECTOR_DATA array contains complex-valued elements.")
+    WAVEFORM_DATA = wavevectors_to_spatial(WAVEVECTOR_DATA, design_res, length_scale=const['a'], plot_sample=False)
 
     EIGENVALUE_DATA = np.array(data['EIGENVALUE_DATA']).transpose(0,2,1)
     n_bands = EIGENVALUE_DATA.shape[2]
     EIGENVECTOR_DATA = np.array(data['EIGENVECTOR_DATA']).transpose(0,2,1,3)
     EIGENVECTOR_DATA_x, EIGENVECTOR_DATA_y = split_array(EIGENVECTOR_DATA, i_dim)
 
-    const = {key: np.array(data['const'][key]) for key in data['const']}
     N_struct = data['N_struct']
     imag_tol = data['imag_tol']
     rng_seed_offset = data['rng_seed_offset']
@@ -113,11 +115,12 @@ def extract_data(data_path):
     print('EIGENVECTOR_DATA_x shape:', EIGENVECTOR_DATA_x.shape)
     print('EIGENVECTOR_DATA_y shape:', EIGENVECTOR_DATA_y.shape)
     print('WAVEVECTOR_DATA shape:', WAVEVECTOR_DATA.shape)
+    print('WAVEFORM_DATA shape:', WAVEFORM_DATA.shape)
     print('designs shape:', designs.shape)
     print('design_params shape:', design_params.shape)
     print('const shape:', {key: const[key].shape for key in const})
 
-    return designs, design_params, n_designs, n_panes, design_res, WAVEVECTOR_DATA, n_dim, n_wavevectors, EIGENVALUE_DATA, n_bands, EIGENVECTOR_DATA_x, EIGENVECTOR_DATA_y, const, N_struct, imag_tol, rng_seed_offset
+    return designs, design_params, n_designs, n_panes, design_res, WAVEVECTOR_DATA, WAVEFORM_DATA, n_dim, n_wavevectors, EIGENVALUE_DATA, n_bands, EIGENVECTOR_DATA_x, EIGENVECTOR_DATA_y, const, N_struct, imag_tol, rng_seed_offset
 
 def plot_geometry(sample_geometry, sample_index):
     fig, ax = plt.subplots()
@@ -165,3 +168,54 @@ def plot_eigenvectors(sample_eigenvector_x, sample_eigenvector_y, unify_scales=T
 
     plt.tight_layout()
     plt.show()
+
+def wavevectors_to_spatial(wavevectors, design_res, length_scale, amplitude=1.0, phase=0.0, plot_sample=False):
+    """
+    Convert a 3D array of wavevectors into their spatial representations.
+
+    Parameters:
+        wavevectors (np.ndarray): 3D array of wavevectors with shape (N, 325, 2),
+                                  where N is the number of samples,
+                                  the first index indicates which of the 325 wavevectors it is,
+                                  and the second index is the vector component in x and y.
+        design_res (int): Resolution of the output grid.
+        length_scale (float): Total length scale of the grid (meters).
+        amplitude (float, optional): Amplitude of the wave. Default is 1.0.
+        phase (float, optional): Phase shift of the wave. Default is 0.0.
+        plot_sample (bool, optional): If True, plot a random sample of the output spatial waves.
+
+    Returns:
+        np.ndarray: 3D array of shape (N, design_res, design_res) with the wave values.
+    """
+    N = wavevectors.shape[0]
+    W = wavevectors.shape[1]
+
+    # Define the spatial grid
+    x = np.linspace(-length_scale/2, length_scale/2, design_res)
+    y = np.linspace(-length_scale/2, length_scale/2, design_res)
+    X, Y = np.meshgrid(x, y)
+
+    # Initialize the output array
+    spatial_waves = np.zeros((N, W, design_res, design_res))
+
+    # Generate the spatial representations
+    for i in range(N):
+        for j in range(W):
+            k_x = wavevectors[i, j, 0]
+            k_y = wavevectors[i, j, 1]
+            spatial_waves[i, j] = amplitude * np.cos(k_x * X + k_y * Y + phase)
+
+    # Plot a random sample if requested
+    if plot_sample:
+        sample_n = random.randint(0, N - 1)
+        sample_w = random.randint(0, W - 1)
+        plt.figure(figsize=(6, 6))
+        plt.contourf(spatial_waves[sample_n], cmap='viridis')
+        plt.colorbar(label='Wave Amplitude')
+        plt.xlabel('x (m)')
+        plt.ylabel('y (m)')
+        plt.title(f'Spatial Wave: Sample {sample_n}, Wavevector {sample_w} with $k_x$={wavevectors[sample_n, sample_w, 0]} $m^{{-1}}$, $k_y$={wavevectors[sample_n, sample_w, 1]} $m^{{-1}}$')
+        plt.show()
+
+    print('Spatial waves shape:', spatial_waves.shape)
+    return spatial_waves
