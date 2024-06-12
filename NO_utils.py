@@ -219,3 +219,34 @@ def wavevectors_to_spatial(wavevectors, design_res, length_scale, amplitude=1.0,
 
     print('Spatial waves shape:', spatial_waves.shape)
     return spatial_waves
+
+def const_to_spatial(test_band, design_res, plot_result=True, scaling_factor=1.0):
+    x = np.linspace(-1/2, 1/2, design_res)
+    y = np.linspace(-1/2, 1/2, design_res)
+    X, Y = np.meshgrid(x, y)
+    constant_array = scaling_factor * np.sin(test_band * np.pi * X) * np.sin(test_band * np.pi * Y)
+    fft_result = np.fft.fft2(constant_array)
+    fft_result_shifted = np.fft.fftshift(fft_result)
+    magnitude_spectrum = np.abs(fft_result_shifted)
+
+    if plot_result:
+        plt.figure(figsize=(12, 6))
+
+        plt.subplot(1, 2, 1)
+        plt.imshow(constant_array, cmap='viridis')
+        plt.colorbar(label='Magnitude')
+        plt.title(f'Spatial Representation of {test_band}')
+        plt.xlabel('x')
+        plt.ylabel('y')
+
+        plt.subplot(1, 2, 2)
+        plt.imshow(magnitude_spectrum, cmap='viridis')
+        plt.colorbar(label='Magnitude')
+        plt.title(f'2D FFT Magnitude Spectrum of {test_band}')
+        plt.xlabel('Frequency X')
+        plt.ylabel('Frequency Y')
+
+        plt.tight_layout()
+        plt.show()
+
+    return constant_array, magnitude_spectrum
