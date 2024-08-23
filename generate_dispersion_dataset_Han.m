@@ -25,7 +25,7 @@ const.isUseParallel = true; % Flag for parallelization in dispersion loop, not s
 const.isSaveEigenvectors = isSaveEigenvectors;
 
 % Define design parameters, including design_params, which controls how random designs will be generated
-N_struct = 800; % Determines how many designs will be generated
+N_struct = 600; % Determines how many designs will be generated
 %rng_seed_offset = 0; % Determines rng seed at which random designs will start to be generated. The rng seed used for each design is rng_seed_offset + struct_idx.
 rng_seed_offset = 1200;
 const.a = 1; % [m], the side length of the square unit cell
@@ -34,6 +34,8 @@ design_params = design_parameters;
 design_params.design_number = []; % leave empty
 design_params.design_style = 'kernel';
 design_params.design_options = struct('kernel','periodic','sigma_f',1,'sigma_l',1,'symmetry_type','p4mm','N_value',inf);
+% N_Value is the number of intervals between 0-1 it will round to. N_value
+% = 11 will give 0, 0.1, ... 1
 design_params.N_pix = [const.N_pix const.N_pix];
 design_params = design_params.prepare();
 
@@ -93,7 +95,7 @@ for struct_idx = 1:N_struct % THIS MUST NOT BE PARFOR
     const.design = convert_design(const.design,'linear',const.design_scale,const.E_min,const.E_max,const.rho_min,const.rho_max);
 
     designs(:,:,:,struct_idx) = const.design;
-    designs = round(designs); % Disallow/allow gradient materials
+    %designs = round(designs); % Disallow/allow gradient materials
     %disp(designs(:,:,1,1))
 
     % Solve the dispersion problem
