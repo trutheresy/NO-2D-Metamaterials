@@ -5,62 +5,14 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="a1f2ac41-5429-41a3-a05d-90bd1c59128b" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/NO_model_analytics.ipynb" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/NO_trainer_optimizer_trials.ipynb" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../2D-dispersion/.idea/2D-dispersion.iml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../2D-dispersion/.idea/modules.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/NO_trainer_3.ipynb" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/NO 2D Metamaterials.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/NO 2D Metamaterials.iml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/modules.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/modules.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/vcs.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/NO_trainer_2.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/NO_trainer_2.ipynb" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/figures/hc128/input_sample10_hc128_lr1e-02_wd1e-02_ss10_gamma1e-01.png" beforeDir="false" afterPath="$PROJECT_DIR$/figures/hc128/input_sample10_hc128_lr1e-02_wd1e-02_ss10_gamma1e-01.png" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/figures/hc128/input_sample11_hc128_lr1e-02_wd1e-02_ss10_gamma1e-01.png" beforeDir="false" afterPath="$PROJECT_DIR$/figures/hc128/input_sample11_hc128_lr1e-02_wd1e-02_ss10_gamma1e-01.png" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/figures/hc128/input_sample12_hc128_lr1e-02_wd1e-02_ss10_gamma1e-01.png" beforeDir="false" afterPath="$PROJECT_DIR$/figures/hc128/input_sample12_hc128_lr1e-02_wd1e-02_ss10_gamma1e-01.png" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/figures/hc128/input_sample13_hc128_lr1e-02_wd1e-02_ss10_gamma1e-01.png" beforeDir="false" afterPath="$PROJECT_DIR$/figures/hc128/input_sample13_hc128_lr1e-02_wd1e-02_ss10_gamma1e-01.png" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/figures/hc128/input_sample14_hc128_lr1e-02_wd1e-02_ss10_gamma1e-01.png" beforeDir="false" afterPath="$PROJECT_DIR$/figures/hc128/input_sample14_hc128_lr1e-02_wd1e-02_ss10_gamma1e-01.png" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/figures/hc128/input_sample15_hc128_lr1e-02_wd1e-02_ss10_gamma1e-01.png" beforeDir="false" afterPath="$PROJECT_DIR$/figures/hc128/input_sample15_hc128_lr1e-02_wd1e-02_ss10_gamma1e-01.png" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/figures/hc128/input_sample16_hc128_lr1e-02_wd1e-02_ss10_gamma1e-01.png" beforeDir="false" afterPath="$PROJECT_DIR$/figures/hc128/input_sample16_hc128_lr1e-02_wd1e-02_ss10_gamma1e-01.png" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/figures/hc128/input_sample1_hc128_lr1e-02_wd1e-02_ss10_gamma1e-01.png" beforeDir="false" afterPath="$PROJECT_DIR$/figures/hc128/input_sample1_hc128_lr1e-02_wd1e-02_ss10_gamma1e-01.png" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/figures/hc128/input_sample2_hc128_lr1e-02_wd1e-02_ss10_gamma1e-01.png" beforeDir="false" afterPath="$PROJECT_DIR$/figures/hc128/input_sample2_hc128_lr1e-02_wd1e-02_ss10_gamma1e-01.png" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/figures/hc128/input_sample3_hc128_lr1e-02_wd1e-02_ss10_gamma1e-01.png" beforeDir="false" afterPath="$PROJECT_DIR$/figures/hc128/input_sample3_hc128_lr1e-02_wd1e-02_ss10_gamma1e-01.png" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/figures/hc128/input_sample4_hc128_lr1e-02_wd1e-02_ss10_gamma1e-01.png" beforeDir="false" afterPath="$PROJECT_DIR$/figures/hc128/input_sample4_hc128_lr1e-02_wd1e-02_ss10_gamma1e-01.png" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/figures/hc128/input_sample5_hc128_lr1e-02_wd1e-02_ss10_gamma1e-01.png" beforeDir="false" afterPath="$PROJECT_DIR$/figures/hc128/input_sample5_hc128_lr1e-02_wd1e-02_ss10_gamma1e-01.png" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/figures/hc128/input_sample6_hc128_lr1e-02_wd1e-02_ss10_gamma1e-01.png" beforeDir="false" afterPath="$PROJECT_DIR$/figures/hc128/input_sample6_hc128_lr1e-02_wd1e-02_ss10_gamma1e-01.png" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/figures/hc128/input_sample7_hc128_lr1e-02_wd1e-02_ss10_gamma1e-01.png" beforeDir="false" afterPath="$PROJECT_DIR$/figures/hc128/input_sample7_hc128_lr1e-02_wd1e-02_ss10_gamma1e-01.png" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/figures/hc128/input_sample8_hc128_lr1e-02_wd1e-02_ss10_gamma1e-01.png" beforeDir="false" afterPath="$PROJECT_DIR$/figures/hc128/input_sample8_hc128_lr1e-02_wd1e-02_ss10_gamma1e-01.png" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/figures/hc128/input_sample9_hc128_lr1e-02_wd1e-02_ss10_gamma1e-01.png" beforeDir="false" afterPath="$PROJECT_DIR$/figures/hc128/input_sample9_hc128_lr1e-02_wd1e-02_ss10_gamma1e-01.png" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/figures/hc128/output_sample10_hc128_lr1e-02_wd1e-02_ss10_gamma1e-01.png" beforeDir="false" afterPath="$PROJECT_DIR$/figures/hc128/output_sample10_hc128_lr1e-02_wd1e-02_ss10_gamma1e-01.png" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/figures/hc128/output_sample11_hc128_lr1e-02_wd1e-02_ss10_gamma1e-01.png" beforeDir="false" afterPath="$PROJECT_DIR$/figures/hc128/output_sample11_hc128_lr1e-02_wd1e-02_ss10_gamma1e-01.png" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/figures/hc128/output_sample12_hc128_lr1e-02_wd1e-02_ss10_gamma1e-01.png" beforeDir="false" afterPath="$PROJECT_DIR$/figures/hc128/output_sample12_hc128_lr1e-02_wd1e-02_ss10_gamma1e-01.png" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/figures/hc128/output_sample13_hc128_lr1e-02_wd1e-02_ss10_gamma1e-01.png" beforeDir="false" afterPath="$PROJECT_DIR$/figures/hc128/output_sample13_hc128_lr1e-02_wd1e-02_ss10_gamma1e-01.png" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/figures/hc128/output_sample14_hc128_lr1e-02_wd1e-02_ss10_gamma1e-01.png" beforeDir="false" afterPath="$PROJECT_DIR$/figures/hc128/output_sample14_hc128_lr1e-02_wd1e-02_ss10_gamma1e-01.png" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/figures/hc128/output_sample15_hc128_lr1e-02_wd1e-02_ss10_gamma1e-01.png" beforeDir="false" afterPath="$PROJECT_DIR$/figures/hc128/output_sample15_hc128_lr1e-02_wd1e-02_ss10_gamma1e-01.png" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/figures/hc128/output_sample16_hc128_lr1e-02_wd1e-02_ss10_gamma1e-01.png" beforeDir="false" afterPath="$PROJECT_DIR$/figures/hc128/output_sample16_hc128_lr1e-02_wd1e-02_ss10_gamma1e-01.png" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/figures/hc128/output_sample1_hc128_lr1e-02_wd1e-02_ss10_gamma1e-01.png" beforeDir="false" afterPath="$PROJECT_DIR$/figures/hc128/output_sample1_hc128_lr1e-02_wd1e-02_ss10_gamma1e-01.png" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/figures/hc128/output_sample2_hc128_lr1e-02_wd1e-02_ss10_gamma1e-01.png" beforeDir="false" afterPath="$PROJECT_DIR$/figures/hc128/output_sample2_hc128_lr1e-02_wd1e-02_ss10_gamma1e-01.png" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/figures/hc128/output_sample3_hc128_lr1e-02_wd1e-02_ss10_gamma1e-01.png" beforeDir="false" afterPath="$PROJECT_DIR$/figures/hc128/output_sample3_hc128_lr1e-02_wd1e-02_ss10_gamma1e-01.png" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/figures/hc128/output_sample4_hc128_lr1e-02_wd1e-02_ss10_gamma1e-01.png" beforeDir="false" afterPath="$PROJECT_DIR$/figures/hc128/output_sample4_hc128_lr1e-02_wd1e-02_ss10_gamma1e-01.png" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/figures/hc128/output_sample5_hc128_lr1e-02_wd1e-02_ss10_gamma1e-01.png" beforeDir="false" afterPath="$PROJECT_DIR$/figures/hc128/output_sample5_hc128_lr1e-02_wd1e-02_ss10_gamma1e-01.png" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/figures/hc128/output_sample6_hc128_lr1e-02_wd1e-02_ss10_gamma1e-01.png" beforeDir="false" afterPath="$PROJECT_DIR$/figures/hc128/output_sample6_hc128_lr1e-02_wd1e-02_ss10_gamma1e-01.png" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/figures/hc128/output_sample7_hc128_lr1e-02_wd1e-02_ss10_gamma1e-01.png" beforeDir="false" afterPath="$PROJECT_DIR$/figures/hc128/output_sample7_hc128_lr1e-02_wd1e-02_ss10_gamma1e-01.png" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/figures/hc128/output_sample8_hc128_lr1e-02_wd1e-02_ss10_gamma1e-01.png" beforeDir="false" afterPath="$PROJECT_DIR$/figures/hc128/output_sample8_hc128_lr1e-02_wd1e-02_ss10_gamma1e-01.png" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/figures/hc128/output_sample9_hc128_lr1e-02_wd1e-02_ss10_gamma1e-01.png" beforeDir="false" afterPath="$PROJECT_DIR$/figures/hc128/output_sample9_hc128_lr1e-02_wd1e-02_ss10_gamma1e-01.png" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/figures/hc128/target_sample10_hc128_lr1e-02_wd1e-02_ss10_gamma1e-01.png" beforeDir="false" afterPath="$PROJECT_DIR$/figures/hc128/target_sample10_hc128_lr1e-02_wd1e-02_ss10_gamma1e-01.png" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/figures/hc128/target_sample11_hc128_lr1e-02_wd1e-02_ss10_gamma1e-01.png" beforeDir="false" afterPath="$PROJECT_DIR$/figures/hc128/target_sample11_hc128_lr1e-02_wd1e-02_ss10_gamma1e-01.png" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/figures/hc128/target_sample12_hc128_lr1e-02_wd1e-02_ss10_gamma1e-01.png" beforeDir="false" afterPath="$PROJECT_DIR$/figures/hc128/target_sample12_hc128_lr1e-02_wd1e-02_ss10_gamma1e-01.png" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/figures/hc128/target_sample13_hc128_lr1e-02_wd1e-02_ss10_gamma1e-01.png" beforeDir="false" afterPath="$PROJECT_DIR$/figures/hc128/target_sample13_hc128_lr1e-02_wd1e-02_ss10_gamma1e-01.png" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/figures/hc128/target_sample14_hc128_lr1e-02_wd1e-02_ss10_gamma1e-01.png" beforeDir="false" afterPath="$PROJECT_DIR$/figures/hc128/target_sample14_hc128_lr1e-02_wd1e-02_ss10_gamma1e-01.png" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/figures/hc128/target_sample15_hc128_lr1e-02_wd1e-02_ss10_gamma1e-01.png" beforeDir="false" afterPath="$PROJECT_DIR$/figures/hc128/target_sample15_hc128_lr1e-02_wd1e-02_ss10_gamma1e-01.png" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/figures/hc128/target_sample16_hc128_lr1e-02_wd1e-02_ss10_gamma1e-01.png" beforeDir="false" afterPath="$PROJECT_DIR$/figures/hc128/target_sample16_hc128_lr1e-02_wd1e-02_ss10_gamma1e-01.png" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/figures/hc128/target_sample1_hc128_lr1e-02_wd1e-02_ss10_gamma1e-01.png" beforeDir="false" afterPath="$PROJECT_DIR$/figures/hc128/target_sample1_hc128_lr1e-02_wd1e-02_ss10_gamma1e-01.png" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/figures/hc128/target_sample2_hc128_lr1e-02_wd1e-02_ss10_gamma1e-01.png" beforeDir="false" afterPath="$PROJECT_DIR$/figures/hc128/target_sample2_hc128_lr1e-02_wd1e-02_ss10_gamma1e-01.png" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/figures/hc128/target_sample3_hc128_lr1e-02_wd1e-02_ss10_gamma1e-01.png" beforeDir="false" afterPath="$PROJECT_DIR$/figures/hc128/target_sample3_hc128_lr1e-02_wd1e-02_ss10_gamma1e-01.png" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/figures/hc128/target_sample4_hc128_lr1e-02_wd1e-02_ss10_gamma1e-01.png" beforeDir="false" afterPath="$PROJECT_DIR$/figures/hc128/target_sample4_hc128_lr1e-02_wd1e-02_ss10_gamma1e-01.png" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/figures/hc128/target_sample5_hc128_lr1e-02_wd1e-02_ss10_gamma1e-01.png" beforeDir="false" afterPath="$PROJECT_DIR$/figures/hc128/target_sample5_hc128_lr1e-02_wd1e-02_ss10_gamma1e-01.png" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/figures/hc128/target_sample6_hc128_lr1e-02_wd1e-02_ss10_gamma1e-01.png" beforeDir="false" afterPath="$PROJECT_DIR$/figures/hc128/target_sample6_hc128_lr1e-02_wd1e-02_ss10_gamma1e-01.png" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/figures/hc128/target_sample7_hc128_lr1e-02_wd1e-02_ss10_gamma1e-01.png" beforeDir="false" afterPath="$PROJECT_DIR$/figures/hc128/target_sample7_hc128_lr1e-02_wd1e-02_ss10_gamma1e-01.png" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/figures/hc128/target_sample8_hc128_lr1e-02_wd1e-02_ss10_gamma1e-01.png" beforeDir="false" afterPath="$PROJECT_DIR$/figures/hc128/target_sample8_hc128_lr1e-02_wd1e-02_ss10_gamma1e-01.png" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/figures/hc128/target_sample9_hc128_lr1e-02_wd1e-02_ss10_gamma1e-01.png" beforeDir="false" afterPath="$PROJECT_DIR$/figures/hc128/target_sample9_hc128_lr1e-02_wd1e-02_ss10_gamma1e-01.png" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/model_weights.pth" beforeDir="false" afterPath="$PROJECT_DIR$/model_weights.pth" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/model_weights_e100.pth" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/model_weights_e110.pth" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/model_weights_e111.pth" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/model_weights/AdamW_20241113_000550/AdamW_losses_20241113_000550.csv" beforeDir="false" afterPath="$PROJECT_DIR$/model_weights/AdamW_20241113_000550/AdamW_losses_20241113_000550.csv" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -81,7 +33,7 @@
   &quot;associatedIndex&quot;: 4
 }</component>
   <component name="ProjectId" id="2gs4yW63ErvrSBi9VI42FREgMMQ" />
-  <component name="ProjectLevelVcsManager">
+  <component name="ProjectLevelVcsManager" settingsEditedManually="true">
     <ConfirmationsSetting value="2" id="Add" />
   </component>
   <component name="ProjectViewState">
@@ -92,6 +44,7 @@
   "keyToString": {
     "RunOnceActivity.OpenProjectViewOnStart": "true",
     "RunOnceActivity.ShowReadmeOnStart": "true",
+    "SHARE_PROJECT_CONFIGURATION_FILES": "true",
     "git-widget-placeholder": "main",
     "ignore.virus.scanning.warn.message": "true",
     "last_opened_file_path": "C:/Users/hz283/Documents/Duke/Research/NO-2D-Metamaterials",
@@ -101,6 +54,7 @@
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
       <recent name="C:\Users\hz283\Documents\Duke\Research\NO-2D-Metamaterials" />
+      <recent name="C:\Users\hz283\Documents\Duke\Research\Diffusion-Model-2D-Metamaterials" />
     </key>
   </component>
   <component name="SharedIndexes">
