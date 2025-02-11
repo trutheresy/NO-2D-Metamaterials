@@ -7,12 +7,8 @@
     <list default="true" id="a1f2ac41-5429-41a3-a05d-90bd1c59128b" name="Changes" comment="">
       <change afterPath="$PROJECT_DIR$/../2D-dispersion/.idea/2D-dispersion.iml" afterDir="false" />
       <change afterPath="$PROJECT_DIR$/../2D-dispersion/.idea/modules.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/NO_trainer_3.ipynb" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/NO 2D Metamaterials.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/NO 2D Metamaterials.iml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/modules.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/modules.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/vcs.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/model_weights/AdamW_20241113_000550/AdamW_losses_20241113_000550.csv" beforeDir="false" afterPath="$PROJECT_DIR$/model_weights/AdamW_20241113_000550/AdamW_losses_20241113_000550.csv" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/NO_trainer_3.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/NO_trainer_3.ipynb" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -47,8 +43,8 @@
     "SHARE_PROJECT_CONFIGURATION_FILES": "true",
     "git-widget-placeholder": "main",
     "ignore.virus.scanning.warn.message": "true",
-    "last_opened_file_path": "C:/Users/hz283/Documents/Duke/Research/NO-2D-Metamaterials",
-    "settings.editor.selected.configurable": "com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable"
+    "last_opened_file_path": "C:/Users/hz283/Documents/Duke/Research/Diffusion-Model-2D-Metamaterials/diffusion_model_playground.ipynb",
+    "settings.editor.selected.configurable": "preferences.keymap"
   }
 }]]></component>
   <component name="RecentsManager">
@@ -60,7 +56,7 @@
   <component name="SharedIndexes">
     <attachedChunks>
       <set>
-        <option value="bundled-python-sdk-f1e2692396bc-1e58bffe31b7-com.jetbrains.pycharm.ds.sharedIndexes.bundled-DS-242.21829.112" />
+        <option value="bundled-python-sdk-a8e928d85084-fab4200a9dfa-com.jetbrains.pycharm.ds.sharedIndexes.bundled-DS-243.22562.236" />
       </set>
     </attachedChunks>
   </component>
