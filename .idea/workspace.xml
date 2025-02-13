@@ -7,8 +7,11 @@
     <list default="true" id="a1f2ac41-5429-41a3-a05d-90bd1c59128b" name="Changes" comment="">
       <change afterPath="$PROJECT_DIR$/../2D-dispersion/.idea/2D-dispersion.iml" afterDir="false" />
       <change afterPath="$PROJECT_DIR$/../2D-dispersion/.idea/modules.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/NO_trainer_3.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/NO_trainer_3.ipynb" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/loss_plot_241111-232240.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/loss_plot_241112-010433.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/loss_plot_241112-142805.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/loss_plot_241112-171208.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/prediction.png" beforeDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -43,7 +46,7 @@
     "SHARE_PROJECT_CONFIGURATION_FILES": "true",
     "git-widget-placeholder": "main",
     "ignore.virus.scanning.warn.message": "true",
-    "last_opened_file_path": "C:/Users/hz283/Documents/Duke/Research/Diffusion-Model-2D-Metamaterials/diffusion_model_playground.ipynb",
+    "last_opened_file_path": "C:/Users/hz283/Documents/Duke/Research/NO-2D-Metamaterials/NO_trainer_FNO_example.ipynb",
     "settings.editor.selected.configurable": "preferences.keymap"
   }
 }]]></component>
