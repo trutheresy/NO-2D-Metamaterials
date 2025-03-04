@@ -20,3 +20,5 @@ epoch6_FNO_3in_4out_32x32x256.pth
 *.pt
 *.pth
 *.npy
+*.zip
+*.npz
