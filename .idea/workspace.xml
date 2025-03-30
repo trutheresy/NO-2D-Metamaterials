@@ -7,10 +7,22 @@
     <list default="true" id="a1f2ac41-5429-41a3-a05d-90bd1c59128b" name="Changes" comment="">
       <change afterPath="$PROJECT_DIR$/../2D-dispersion/.idea/2D-dispersion.iml" afterDir="false" />
       <change afterPath="$PROJECT_DIR$/../2D-dispersion/.idea/modules.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/NO 2D Metamaterials.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/NO 2D Metamaterials.iml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/NO_trainer_L4.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/NO_trainer_L4.ipynb" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/NO_trainer_2.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/NO_trainer_2.ipynb" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/NO_trainer_3.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/NO_trainer_3.ipynb" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/NO_trainer_SSI_embedding.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/NO_trainer_SSI_embedding.ipynb" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/NO_utils.py" beforeDir="false" afterPath="$PROJECT_DIR$/NO_utils.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/NO_utils_multiple.py" beforeDir="false" afterPath="$PROJECT_DIR$/NO_utils_multiple.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/encoding_sandbox.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/encoding_sandbox.ipynb" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/model_weights.pth" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/model_weights_e10.pth" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/model_weights_e101.pth" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/model_weights_e200.pth" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/model_weights_e50.pth" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/model_weights_e90.pth" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/trained models/cont/model_weights_e100.pth" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/trained models/cont/model_weights_e18.pth" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/trained models/cont/model_weights_e180.pth" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/trained models/cont/model_weights_e300.pth" beforeDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -39,17 +51,17 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">{
-  &quot;keyToString&quot;: {
-    &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;main&quot;,
-    &quot;ignore.virus.scanning.warn.message&quot;: &quot;true&quot;,
-    &quot;last_opened_file_path&quot;: &quot;C:/Users/hz283/Documents/Duke/Research/NO-2D-Metamaterials&quot;,
-    &quot;settings.editor.selected.configurable&quot;: &quot;com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable&quot;
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "RunOnceActivity.OpenProjectViewOnStart": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "SHARE_PROJECT_CONFIGURATION_FILES": "true",
+    "git-widget-placeholder": "main",
+    "ignore.virus.scanning.warn.message": "true",
+    "last_opened_file_path": "C:/Users/hz283/Documents/Duke/Research/Diffusion-Model-2D-Metamaterials",
+    "settings.editor.selected.configurable": "com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable"
   }
-}</component>
+}]]></component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
       <recent name="C:\Users\hz283\Documents\Duke\Research\NO-2D-Metamaterials" />

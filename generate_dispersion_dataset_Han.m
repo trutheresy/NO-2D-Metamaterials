@@ -1,6 +1,6 @@
 clear; close all;
 
-dispersion_library_path = 'A:\Research\Projects\NO 2D Metamaterials\2D-dispersion_alex';
+dispersion_library_path = 'C:\Users\hz283\Documents\Duke\Research\NO-2D-Metamaterials\2D-dispersion_alex';
 addpath(dispersion_library_path)
 
 datetime_var = datetime;
@@ -27,7 +27,7 @@ const.isSaveEigenvectors = isSaveEigenvectors;
 % Define design parameters, including design_params, which controls how random designs will be generated
 N_struct = 600; % Determines how many designs will be generated
 %rng_seed_offset = 0; % Determines rng seed at which random designs will start to be generated. The rng seed used for each design is rng_seed_offset + struct_idx.
-rng_seed_offset = 1200;
+rng_seed_offset = 1800;
 const.a = 1; % [m], the side length of the square unit cell
 
 design_params = design_parameters;
@@ -87,7 +87,7 @@ DENSITY_DATA = zeros(const.N_pix,const.N_pix,N_struct);
 POISSON_DATA = zeros(const.N_pix,const.N_pix,N_struct);
 
 %% Generate dataset
-pfwb = parfor_wait(N_struct,'Waitbar', true);
+%pfwb = parfor_wait(N_struct,'Waitbar', true);
 for struct_idx = 1:N_struct % THIS MUST NOT BE PARFOR
     design_params.design_number = struct_idx + rng_seed_offset;
     design_params = design_params.prepare();
@@ -114,9 +114,9 @@ for struct_idx = 1:N_struct % THIS MUST NOT BE PARFOR
     ELASTIC_MODULUS_DATA(:,:,struct_idx) = const.E_min + (const.E_max - const.E_min)*const.design(:,:,1);
     DENSITY_DATA(:,:,struct_idx) = const.rho_min + (const.rho_max - const.rho_min)*const.design(:,:,2);
     POISSON_DATA(:,:,struct_idx) = const.poisson_min + (const.poisson_max - const.poisson_min)*const.design(:,:,3);
-    pfwb.Send;
+    %pfwb.Send;
 end
-pfwb.Destroy;
+%pfwb.Destroy;
 
 % Collect constitutive data in a container
 CONSTITUTIVE_DATA = containers.Map({'modulus','density','poisson'},...
@@ -155,7 +155,3 @@ if isSaveOutput
     save(output_file_path,vars_to_save{:},'-v7.3');
     disp(['Outputs saved successfully to: ' output_file_path]);
 end
-
-
-
-

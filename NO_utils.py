@@ -90,7 +90,7 @@ def extract_data(data_path):
 
     WAVEVECTOR_DATA = data['WAVEVECTOR_DATA']
     n_dim = WAVEVECTOR_DATA.shape[1]
-    WAVEVECTOR_DATA = WAVEVECTOR_DATA.transpose(0,2,1)
+    WAVEVECTOR_DATA = WAVEVECTOR_DATA.transpose(0,2,1) # 3D array of wavevectors with shape (N, 325, 2), where N is the number of samples, and the second index is the vector component in x and y.
     n_wavevectors = WAVEVECTOR_DATA.shape[1]
     if np.any(np.iscomplex(WAVEVECTOR_DATA)):
         print("WAVEVECTOR_DATA array contains complex-valued elements.")
@@ -187,23 +187,28 @@ def wavevectors_to_spatial(wavevectors, design_res, length_scale, amplitude=1.0,
     Returns:
         np.ndarray: 3D array of shape (N, design_res, design_res) with the wave values.
     """
-    N = wavevectors.shape[0]
-    W = wavevectors.shape[1]
+    N = wavevectors.shape[0]  # Number of samples
+    W = wavevectors.shape[1]  # Number of wavevectors per sample
 
-    # Define the spatial grid
+    # Create spatial grid coordinates from -length_scale/2 to length_scale/2
     x = np.linspace(-length_scale/2, length_scale/2, design_res)
     y = np.linspace(-length_scale/2, length_scale/2, design_res)
     X, Y = np.meshgrid(x, y)
 
-    # Initialize the output array
-    spatial_waves = np.zeros((N, W, design_res, design_res))
+    # Extract x and y components of wavevectors
+    # Shape: (N, W)
+    k_x = wavevectors[..., 0]  
+    k_y = wavevectors[..., 1]
 
-    # Generate the spatial representations
-    for i in range(N):
-        for j in range(W):
-            k_x = wavevectors[i, j, 0]
-            k_y = wavevectors[i, j, 1]
-            spatial_waves[i, j] = amplitude * np.cos(k_x * X + k_y * Y + phase)
+    # Expand dimensions to match output shape (N, W, design_res, design_res)
+    # by adding two axes at the end
+    k_x = k_x[..., None, None]  
+    k_y = k_y[..., None, None]
+
+    # Compute wave pattern using broadcasting
+    # X and Y will broadcast from (design_res, design_res) to (N, W, design_res, design_res)
+    # Final shape: (N, W, design_res, design_res)
+    spatial_waves = amplitude * np.cos(k_x * X + k_y * Y + phase)
 
     # Plot a random sample if requested
     if plot_sample:
@@ -250,3 +255,95 @@ def const_to_spatial(test_band, design_res, plot_result=True, scaling_factor=1.0
         plt.show()
 
     return constant_array, magnitude_spectrum
+
+def embed_integer_wavelet(c, size=32, freq_range=2.0):
+    """
+    Embed an array of integers into 2D patterns using Gabor wavelets.
+    
+    Args:
+        c: Array of integers to embed
+        size: Size of the square output array
+        freq_range: Factor to control the frequency range (higher values = broader frequency range)
+    
+    Returns:
+        3D numpy array with the Gabor wavelet embeddings, shape (N, size, size) where N is length of c
+    """
+    # Create coordinate grid (shared across all patterns)
+    x = np.linspace(-1, 1, size)
+    y = np.linspace(-1, 1, size)
+    X, Y = np.meshgrid(x, y)
+    
+    # Convert c to numpy array if not already
+    c = np.asarray(c)
+    
+    # Calculate parameters for all values in c at once
+    base_frequency = (1.0 + np.abs(c))[:, None, None] * (size/8)
+    theta = (c % 8)[:, None, None] * (size/16)
+    
+    # Broadcasting the coordinates for rotation
+    cos_theta = np.cos(theta)
+    sin_theta = np.sin(theta)
+    
+    # Rotate coordinates for all patterns at once
+    X_theta = X[None, :, :] * cos_theta + Y[None, :, :] * sin_theta
+    Y_theta = -X[None, :, :] * sin_theta + Y[None, :, :] * cos_theta
+    
+    # Gaussian envelope parameters
+    sigma_x = 0.3 / freq_range
+    sigma_y = 0.3 / freq_range
+    
+    # Gaussian envelope (shared across all patterns)
+    gaussian = np.exp(-(X_theta**2 / (2 * sigma_x**2) + Y_theta**2 / (2 * sigma_y**2)))
+    
+    # Gabor wavelets for all patterns at once
+    gabor = gaussian * np.cos(base_frequency * X_theta)
+    
+    return gabor
+
+def embed_2const_wavelet(c1, c2, size=32, freq_range=1.0):
+    """
+    Embed two arrays of integers into 2D patterns using Gabor wavelets with different frequencies in x and y.
+    
+    Args:
+        c1: First array of integers to embed (controls x frequency and rotation)
+        c2: Second array of integers to embed (controls y frequency and rotation)
+        size: Size of the square output array
+        freq_range: Factor to control the frequency range (higher values = broader frequency spectrum)
+    
+    Returns:
+        3D numpy array with the 2D Gabor wavelet embeddings, shape (N, size, size) where N is length of c1/c2
+    """
+    # Convert inputs to numpy arrays if not already
+    c1 = np.asarray(c1)
+    c2 = np.asarray(c2)
+    
+    # Create coordinate grid (shared across all patterns)
+    x = np.linspace(-1, 1, size)
+    y = np.linspace(-1, 1, size)
+    X, Y = np.meshgrid(x, y)
+    
+    # Set base frequencies based on input constants
+    freq_x = (1.0 + c1)[:, None, None] * (size/2)
+    freq_y = (1.0 + c2)[:, None, None] * (size/2)
+    
+    # Calculate rotation angles based on c1 and c2
+    c1_cycles = 5  # Number of cycles in c1
+    c2_cycles = 7  # Number of cycles in c2
+    theta1 = (c1 % c1_cycles)[:, None, None] * (np.pi/c1_cycles)
+    theta2 = (c2 % c2_cycles)[:, None, None] * (np.pi/c2_cycles)
+    
+    # Rotate coordinates for all patterns at once
+    X_rot = X[None, :, :] * np.cos(theta1) + Y[None, :, :] * np.sin(theta2)
+    Y_rot = -X[None, :, :] * np.sin(theta1) + Y[None, :, :] * np.cos(theta2)
+    
+    # Gaussian envelope parameters
+    sigma_x = 0.4 / freq_range
+    sigma_y = 0.4 / freq_range
+    
+    # Gaussian envelope with rotated coordinates
+    gaussian = np.exp(-(X_rot**2 / (2 * sigma_x**2) + Y_rot**2 / (2 * sigma_y**2)))
+    
+    # 2D Gabor wavelet with separate x and y frequencies on rotated coordinates
+    gabor = gaussian * np.sin(freq_x * X_rot) * np.sin(freq_y * Y_rot)
+    
+    return gabor

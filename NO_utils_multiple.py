@@ -301,3 +301,96 @@ def const_to_spatial(test_band, design_res, plot_result=True, scaling_factor=1.0
         plt.show()
 
     return constant_array, magnitude_spectrum
+
+def embed_integer_wavelet(c, size=32, freq_range=2.0):
+    """
+    Embed an array of integers into 2D patterns using Gabor wavelets.
+    
+    Args:
+        c: Array of integers to embed
+        size: Size of the square output array
+        freq_range: Factor to control the frequency range (higher values = broader frequency range)
+    
+    Returns:
+        3D numpy array with the Gabor wavelet embeddings, shape (N, size, size) where N is length of c
+    """
+    # Create coordinate grid (shared across all patterns)
+    x = np.linspace(-1, 1, size)
+    y = np.linspace(-1, 1, size)
+    X, Y = np.meshgrid(x, y)
+    
+    # Convert c to numpy array if not already
+    c = np.asarray(c)
+    
+    # Calculate parameters for all values in c at once
+    base_frequency = (1.0 + np.abs(c))[:, None, None] * (size/8)
+    theta = (c % 8)[:, None, None] * (size/16)
+    
+    # Broadcasting the coordinates for rotation
+    cos_theta = np.cos(theta)
+    sin_theta = np.sin(theta)
+    
+    # Rotate coordinates for all patterns at once
+    X_theta = X[None, :, :] * cos_theta + Y[None, :, :] * sin_theta
+    Y_theta = -X[None, :, :] * sin_theta + Y[None, :, :] * cos_theta
+    
+    # Gaussian envelope parameters
+    sigma_x = 0.3 / freq_range
+    sigma_y = 0.3 / freq_range
+    
+    # Gaussian envelope (shared across all patterns)
+    gaussian = np.exp(-(X_theta**2 / (2 * sigma_x**2) + Y_theta**2 / (2 * sigma_y**2)))
+    
+    # Gabor wavelets for all patterns at once
+    gabor = gaussian * np.cos(base_frequency * X_theta)
+    
+    return gabor
+
+def embed_2const_wavelet(c1, c2, size=32, freq_range=1.0):
+    """
+    Embed two arrays of integers into 2D patterns using Gabor wavelets with different frequencies in x and y.
+    
+    Args:
+        c1: First array of integers to embed (controls x frequency and rotation)
+        c2: Second array of integers to embed (controls y frequency and rotation)
+        size: Size of the square output array
+        freq_range: Factor to control the frequency range (higher values = broader frequency spectrum)
+    
+    Returns:
+        3D numpy array with the 2D Gabor wavelet embeddings, shape (N, size, size) where N is length of c1/c2
+    """
+    # Convert inputs to numpy arrays if not already
+    c1 = np.asarray(c1)
+    c2 = np.asarray(c2)
+    print('c1 shape:', c1.shape, 'c2 shape:', c2.shape)
+    
+    # Create coordinate grid (shared across all patterns)
+    x = np.linspace(-1, 1, size)
+    y = np.linspace(-1, 1, size)
+    X, Y = np.meshgrid(x, y)
+    
+    # Set base frequencies based on input constants
+    freq_x = (1.01 + c1)[:, None, None] * (size/2)
+    freq_y = (1.01 + c2)[:, None, None] * (size/2)
+    
+    # Calculate rotation angles based on c1 and c2
+    c1_cycles = 5  # Number of cycles in c1
+    c2_cycles = 7  # Number of cycles in c2
+    theta1 = (c1 % c1_cycles)[:, None, None] * (np.pi/c1_cycles)
+    theta2 = (c2 % c2_cycles)[:, None, None] * (np.pi/c2_cycles)
+    
+    # Rotate coordinates for all patterns at once
+    X_rot = X[None, :, :] * np.cos(theta1) + Y[None, :, :] * np.sin(theta2)
+    Y_rot = -X[None, :, :] * np.sin(theta1) + Y[None, :, :] * np.cos(theta2)
+    
+    # Gaussian envelope parameters
+    sigma_x = 0.4 / freq_range
+    sigma_y = 0.4 / freq_range
+    
+    # Gaussian envelope with rotated coordinates
+    gaussian = np.exp(-(X_rot**2 / (2 * sigma_x**2) + Y_rot**2 / (2 * sigma_y**2)))
+    
+    # 2D Gabor wavelet with separate x and y frequencies on rotated coordinates
+    gabor = gaussian * np.sin(freq_x * X_rot) * np.sin(freq_y * Y_rot)
+    
+    return gabor
