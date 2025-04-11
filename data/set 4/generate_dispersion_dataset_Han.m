@@ -27,7 +27,7 @@ const.isSaveEigenvectors = isSaveEigenvectors;
 % Define design parameters, including design_params, which controls how random designs will be generated
 N_struct = 600; % Determines how many designs will be generated
 %rng_seed_offset = 0; % Determines rng seed at which random designs will start to be generated. The rng seed used for each design is rng_seed_offset + struct_idx.
-rng_seed_offset = 4200;
+rng_seed_offset = 1800;
 const.a = 1; % [m], the side length of the square unit cell
 
 design_params = design_parameters;
