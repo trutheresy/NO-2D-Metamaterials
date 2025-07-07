@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 import time
 import random
+from scipy.optimize import minimize
 
 def load_mat_data(folder_path, multiple_datafiles=False):
     start_time = time.time()
@@ -394,3 +395,51 @@ def embed_2const_wavelet(c1, c2, size=32, freq_range=1.0):
     gabor = gaussian * np.sin(freq_x * X_rot) * np.sin(freq_y * Y_rot)
     
     return gabor
+
+def extract_2const_from_wavelet(pattern, size=32, freq_range=1.0):
+    """
+    Extract the c1 and c2 values from a Gabor wavelet pattern by analyzing its frequency components.
+    
+    Args:
+        pattern: 2D numpy array containing the Gabor wavelet pattern
+        size: Size of the input pattern (must match the size used in embed_2const_wavelet)
+        freq_range: Factor controlling the frequency range (must match embed_2const_wavelet)
+    
+    Returns:
+        tuple: (c1, c2) integers that generated the input pattern
+    """
+    # Create coordinate grid
+    x = np.linspace(-1, 1, size)
+    y = np.linspace(-1, 1, size)
+    X, Y = np.meshgrid(x, y)
+    
+    # Take 2D FFT of the pattern
+    fft_pattern = np.fft.fft2(pattern)
+    fft_shifted = np.fft.fftshift(fft_pattern)
+    
+    # Find the dominant frequencies in x and y directions
+    # Sum along each axis to get frequency profiles
+    freq_profile_x = np.sum(np.abs(fft_shifted), axis=0)
+    freq_profile_y = np.sum(np.abs(fft_shifted), axis=1)
+    
+    # Find the peak frequencies
+    peak_freq_x = np.argmax(freq_profile_x)
+    peak_freq_y = np.argmax(freq_profile_y)
+    
+    # Convert peak frequencies to normalized coordinates (-1 to 1)
+    norm_freq_x = (peak_freq_x - size//2) / (size//2)
+    norm_freq_y = (peak_freq_y - size//2) / (size//2)
+    
+    # Extract c1 and c2 from frequencies
+    # From the forward function: freq_x = (1.01 + c1) * (size/2)
+    c1 = int(round((norm_freq_x * (size/2) - 1.01)))
+    c2 = int(round((norm_freq_y * (size/2) - 1.01)))
+    
+    # Ensure values are within valid ranges
+    c1_cycles = 5
+    c2_cycles = 7
+    c1 = c1 % c1_cycles
+    c2 = c2 % c2_cycles
+    print('c1:', c1, 'c2:', c2)
+    
+    return c1, c2
