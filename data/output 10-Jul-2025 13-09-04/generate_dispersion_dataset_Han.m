@@ -27,9 +27,8 @@ const.isSaveEigenvectors = isSaveEigenvectors;
 % Define design parameters, including design_params, which controls how random designs will be generated
 N_struct = 600; % Determines how many designs will be generated
 %rng_seed_offset = 0; % Determines rng seed at which random designs will start to be generated. The rng seed used for each design is rng_seed_offset + struct_idx.
-rng_seed_offset = 12000;
+rng_seed_offset = 12600;
 const.a = 1; % [m], the side length of the square unit cell
-binarize = true; % Set to false for continuous designs
 
 design_params = design_parameters;
 design_params.design_number = []; % leave empty
@@ -68,6 +67,7 @@ if ~strcmp(const.symmetry_type,'none')
 end
 
 % plot_wavevectors(const.wavevectors)
+
 if isProfile
     mpiprofile on %#ok<UNRCH>
 end
@@ -93,9 +93,6 @@ for struct_idx = 1:N_struct % THIS MUST NOT BE PARFOR
     design_params = design_params.prepare();
     const.design = get_design2(design_params);
     const.design = convert_design(const.design,'linear',const.design_scale,const.E_min,const.E_max,const.rho_min,const.rho_max);
-    if binarize
-        const.design = round(const.design); % Binarize to 0 or 1
-    end
 
     designs(:,:,:,struct_idx) = const.design;
     %designs = round(designs); % Disallow/allow gradient materials
@@ -145,11 +142,6 @@ if isSaveEigenvectors
     vars_to_save{end+1} = 'EIGENVECTOR_DATA';
 end
 if isSaveOutput
-    if binarize
-        design_type_label = 'binarized';
-    else
-        design_type_label = 'continuous';
-    end
     % Set up path for output file
     output_file_path = [output_folder '/DATA' ...
         ' N_pix' num2str(const.N_pix) 'x' num2str(const.N_pix)...
@@ -157,8 +149,7 @@ if isSaveOutput
         ' N_wv' num2str(const.N_wv(1)) 'x' num2str(const.N_wv(2))...
         ' N_disp' num2str(N_struct)...
         ' N_eig' num2str(const.N_eig)...
-        ' offset' num2str(rng_seed_offset) ' ' design_type_label ...
-        ' ' script_start_time '.mat'];
+        ' offset' num2str(rng_seed_offset) ' ' script_start_time '.mat'];
 
     % Save output
     save(output_file_path,vars_to_save{:},'-v7.3');
