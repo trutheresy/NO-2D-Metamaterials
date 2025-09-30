@@ -1,6 +1,7 @@
 clear; close all;
+tic;  % start timer
 
-dispersion_library_path = 'A:\Research\Projects\NO 2D Metamaterials\2D-dispersion_alex';
+dispersion_library_path = 'D:\Research\NO-2D-Metamaterials\2D-dispersion_alex';
 addpath(dispersion_library_path)
 
 datetime_var = datetime;
@@ -25,10 +26,11 @@ const.isUseParallel = true; % Flag for parallelization in dispersion loop, not s
 const.isSaveEigenvectors = isSaveEigenvectors;
 
 % Define design parameters, including design_params, which controls how random designs will be generated
-N_struct = 600; % Determines how many designs will be generated
+N_struct = 1200; % Determines how many designs will be generated
 %rng_seed_offset = 0; % Determines rng seed at which random designs will start to be generated. The rng seed used for each design is rng_seed_offset + struct_idx.
-rng_seed_offset = 0;
+rng_seed_offset = 24000; 
 const.a = 1; % [m], the side length of the square unit cell
+binarize = false; % Set to false for continuous designs
 
 design_params = design_parameters;
 design_params.design_number = []; % leave empty
@@ -43,12 +45,12 @@ const.design_scale = 'linear';
 const.design = nan(const.N_pix,const.N_pix,3); % Initialize
 
 % Set material parameters
-const.E_min = 200e6; % 2e9
-const.E_max = 200e9; % 200e9
-const.rho_min = 8e2; % 1e3
-const.rho_max = 8e3; % 8e3
-const.poisson_min = 0; % 0
-const.poisson_max = .5; % .5
+const.E_min = 20e6; % 200e6; 
+const.E_max = 200e9; % 200e9; 
+const.rho_min = 400; % 8e2; 
+const.rho_max = 8000; % 8e3; 
+const.poisson_min = 0.05; % 0; 
+const.poisson_max = 0.3; % .5; 
 const.t = 1;
 
 % Set eigenvalue solution parameters
@@ -67,7 +69,6 @@ if ~strcmp(const.symmetry_type,'none')
 end
 
 % plot_wavevectors(const.wavevectors)
-
 if isProfile
     mpiprofile on %#ok<UNRCH>
 end
@@ -87,12 +88,15 @@ DENSITY_DATA = zeros(const.N_pix,const.N_pix,N_struct);
 POISSON_DATA = zeros(const.N_pix,const.N_pix,N_struct);
 
 %% Generate dataset
-pfwb = parfor_wait(N_struct,'Waitbar', true);
+%pfwb = parfor_wait(N_struct,'Waitbar', true);
 for struct_idx = 1:N_struct % THIS MUST NOT BE PARFOR
     design_params.design_number = struct_idx + rng_seed_offset;
     design_params = design_params.prepare();
     const.design = get_design2(design_params);
     const.design = convert_design(const.design,'linear',const.design_scale,const.E_min,const.E_max,const.rho_min,const.rho_max);
+    if binarize
+        const.design = round(const.design); % Binarize to 0 or 1
+    end
 
     designs(:,:,:,struct_idx) = const.design;
     %designs = round(designs); % Disallow/allow gradient materials
@@ -114,9 +118,9 @@ for struct_idx = 1:N_struct % THIS MUST NOT BE PARFOR
     ELASTIC_MODULUS_DATA(:,:,struct_idx) = const.E_min + (const.E_max - const.E_min)*const.design(:,:,1);
     DENSITY_DATA(:,:,struct_idx) = const.rho_min + (const.rho_max - const.rho_min)*const.design(:,:,2);
     POISSON_DATA(:,:,struct_idx) = const.poisson_min + (const.poisson_max - const.poisson_min)*const.design(:,:,3);
-    pfwb.Send;
+    %pfwb.Send;
 end
-pfwb.Destroy;
+%pfwb.Destroy;
 
 % Collect constitutive data in a container
 CONSTITUTIVE_DATA = containers.Map({'modulus','density','poisson'},...
@@ -142,6 +146,11 @@ if isSaveEigenvectors
     vars_to_save{end+1} = 'EIGENVECTOR_DATA';
 end
 if isSaveOutput
+    if binarize
+        design_type_label = 'binarized';
+    else
+        design_type_label = 'continuous';
+    end
     % Set up path for output file
     output_file_path = [output_folder '/DATA' ...
         ' N_pix' num2str(const.N_pix) 'x' num2str(const.N_pix)...
@@ -149,13 +158,14 @@ if isSaveOutput
         ' N_wv' num2str(const.N_wv(1)) 'x' num2str(const.N_wv(2))...
         ' N_disp' num2str(N_struct)...
         ' N_eig' num2str(const.N_eig)...
-        ' offset' num2str(rng_seed_offset) ' ' script_start_time '.mat'];
+        ' offset' num2str(rng_seed_offset) ' ' design_type_label ...
+        ' ' script_start_time '.mat'];
 
     % Save output
     save(output_file_path,vars_to_save{:},'-v7.3');
     disp(['Outputs saved successfully to: ' output_file_path]);
 end
 
-
-
-
+elapsedTime = toc; % stop timer
+fprintf('Completed in %.2f minutes (%.2f seconds).\n', ...
+        elapsedTime/60, elapsedTime);

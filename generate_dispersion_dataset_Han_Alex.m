@@ -1,7 +1,7 @@
 clear; close all;
-tic;  % start timer
 
-dispersion_library_path = 'D:\Research\NO-2D-Metamaterials\2D-dispersion_alex';
+% dispersion_library_path = 'D:\Research\NO-2D-Metamaterials\2D-dispersion_alex';
+dispersion_library_path = 'C:\Users\alex\OneDrive - California Institute of Technology\Documents\Graduate\Research\2D-dispersion';
 addpath(dispersion_library_path)
 
 datetime_var = datetime;
@@ -12,6 +12,8 @@ mfilename_var = mfilename;
 isSaveOutput = true;
 isSaveEigenvectors = true; % Flag for whether to save eigenvector information
 isProfile = false; % Flag for whether to use MPI parallel profiler
+const.isSaveMesh = false; % NEW: Unrelated to what we're doing, but set this for compatibility reasons.
+const.isSaveKandM = true; % NEW: Flag for whether to save stiffness and mass matrices
 
 % Discretization parameters
 const.N_ele = 1; % Number of elements along one pixel side length. This is a FEM discretization parameter.
@@ -26,11 +28,11 @@ const.isUseParallel = true; % Flag for parallelization in dispersion loop, not s
 const.isSaveEigenvectors = isSaveEigenvectors;
 
 % Define design parameters, including design_params, which controls how random designs will be generated
-N_struct = 1; % Determines how many designs will be generated
+N_struct = 5; % Determines how many designs will be generated
 %rng_seed_offset = 0; % Determines rng seed at which random designs will start to be generated. The rng seed used for each design is rng_seed_offset + struct_idx.
-rng_seed_offset = 0; %24000; 
+rng_seed_offset = 0; %24000;
 const.a = 1; % [m], the side length of the square unit cell
-binarize = true; % Set to false for continuous designs
+binarize = false; % Set to false for continuous designs
 
 design_params = design_parameters;
 design_params.design_number = []; % leave empty
@@ -45,15 +47,13 @@ const.design_scale = 'linear';
 const.design = nan(const.N_pix,const.N_pix,3); % Initialize
 
 % Set material parameters
-const.E_min =  2e6; %20e6; % 200e6; 
-const.E_max =  200e9; %200e9; % 200e9; 
-const.rho_min = 1200; %400; % 8e2; 
-const.rho_max = 8000; %8000; % 8e3; 
-const.poisson_min = 0.9; %0.1; % 0; Do not assign 0 as this value.
-const.poisson_max = 0.6; %0.5; % .5; Do not assign 1 as this value.
+const.E_min = 200e6; % 2e9
+const.E_max = 200e9; % 200e9
+const.rho_min = 8e2; % 1e3
+const.rho_max = 8e3; % 8e3
+const.poisson_min = 0; % 0
+const.poisson_max = 0.5; % .5
 const.t = 1;
-
-%Steel: E=200e9, nu=0.3, Rubbery polymer: E=2e6, nu=~0.5
 
 % Set eigenvalue solution parameters
 const.N_eig = 6; % Number of eigenvalue bands to compute
@@ -88,6 +88,10 @@ EIGENVECTOR_DATA = zeros(N_dof,prod(const.N_wv),const.N_eig,N_struct);
 ELASTIC_MODULUS_DATA = zeros(const.N_pix,const.N_pix,N_struct);
 DENSITY_DATA = zeros(const.N_pix,const.N_pix,N_struct);
 POISSON_DATA = zeros(const.N_pix,const.N_pix,N_struct);
+% NEW: Initialize storage for stiffness, mass, and transformation matrices
+K_DATA = cell(N_struct,1);
+M_DATA = cell(N_struct,1);
+T_DATA = []; % Optimize by using same wavevector grid for all designs
 
 %% Generate dataset
 %pfwb = parfor_wait(N_struct,'Waitbar', true);
@@ -104,8 +108,22 @@ for struct_idx = 1:N_struct % THIS MUST NOT BE PARFOR
     %designs = round(designs); % Disallow/allow gradient materials
     %disp(designs(:,:,1,1))
 
-    % Solve the dispersion problem
-    [wv,fr,ev] = dispersion(const,const.wavevectors);
+    % NEW: Solve the dispersion problem, with the option of saving the matrices
+    % Transformation matrix T is output here as a cell array
+    % Each entry of T is a sparse matrix
+    % length(T) = size(const.wavevectors,1)
+    % K and M are output as sparse matrices.
+    [wv,fr,ev,~,K,M,T] = dispersion_with_matrix_save_opt(const,const.wavevectors); % NEW: dispersion_with_matrix_save_opt()
+
+    % NEW: Store mass and stiffness matrices to global variables
+    % Now these are *nested* cell arrays. Outer loop over struct_idx, inner
+    % loop over wavevector_idx
+    K_DATA{struct_idx} = K;
+    M_DATA{struct_idx} = M;
+    if struct_idx == 1
+        T_DATA = T;
+    end
+
     WAVEVECTOR_DATA(:,:,struct_idx) = wv;
     EIGENVALUE_DATA(:,:,struct_idx) = real(fr);
     if isSaveEigenvectors
@@ -143,7 +161,7 @@ if isSaveOutput
 end
 
 %% Save the results
-vars_to_save = {'WAVEVECTOR_DATA','EIGENVALUE_DATA','CONSTITUTIVE_DATA','const','design_params','designs','N_struct','imag_tol','rng_seed_offset'};
+vars_to_save = {'WAVEVECTOR_DATA','EIGENVALUE_DATA','CONSTITUTIVE_DATA','K_DATA','M_DATA','T_DATA','const','design_params','designs','N_struct','imag_tol','rng_seed_offset'};
 if isSaveEigenvectors
     vars_to_save{end+1} = 'EIGENVECTOR_DATA';
 end
@@ -154,20 +172,22 @@ if isSaveOutput
         design_type_label = 'continuous';
     end
     % Set up path for output file
-    output_file_path = [output_folder '/DATA' ...
-        ' N_pix' num2str(const.N_pix) 'x' num2str(const.N_pix)...
-        ' N_ele' num2str(const.N_ele) 'x' num2str(const.N_ele)...
-        ' N_wv' num2str(const.N_wv(1)) 'x' num2str(const.N_wv(2))...
-        ' N_disp' num2str(N_struct)...
-        ' N_eig' num2str(const.N_eig)...
-        ' offset' num2str(rng_seed_offset) ' ' design_type_label ...
+    % output_file_path = [output_folder '/DATA' ...
+    %     ' N_pix' num2str(const.N_pix) 'x' num2str(const.N_pix)...
+    %     ' N_ele' num2str(const.N_ele) 'x' num2str(const.N_ele)...
+    %     ' N_wv' num2str(const.N_wv(1)) 'x' num2str(const.N_wv(2))...
+    %     ' N_disp' num2str(N_struct)...
+    %     ' N_eig' num2str(const.N_eig)...
+    %     ' offset' num2str(rng_seed_offset) ' ' design_type_label ...
+    %     ' ' script_start_time '.mat'];
+    
+    % NEW: I had to make this path shorter on my machine, it was getting
+    % way too long. Feel free to change it back for yourself.
+    output_file_path = [output_folder filesep ...
+        design_type_label ...
         ' ' script_start_time '.mat'];
 
     % Save output
     save(output_file_path,vars_to_save{:},'-v7.3');
     disp(['Outputs saved successfully to: ' output_file_path]);
 end
-
-elapsedTime = toc; % stop timer
-fprintf('Completed in %.2f minutes (%.2f seconds).\n', ...
-        elapsedTime/60, elapsedTime);

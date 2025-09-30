@@ -26,9 +26,9 @@ const.isUseParallel = true; % Flag for parallelization in dispersion loop, not s
 const.isSaveEigenvectors = isSaveEigenvectors;
 
 % Define design parameters, including design_params, which controls how random designs will be generated
-N_struct = 1; % Determines how many designs will be generated
+N_struct = 1200; % Determines how many designs will be generated
 %rng_seed_offset = 0; % Determines rng seed at which random designs will start to be generated. The rng seed used for each design is rng_seed_offset + struct_idx.
-rng_seed_offset = 0; %24000; 
+rng_seed_offset = 6000; %24000; 
 const.a = 1; % [m], the side length of the square unit cell
 binarize = true; % Set to false for continuous designs
 
@@ -45,15 +45,13 @@ const.design_scale = 'linear';
 const.design = nan(const.N_pix,const.N_pix,3); % Initialize
 
 % Set material parameters
-const.E_min =  2e6; %20e6; % 200e6; 
-const.E_max =  200e9; %200e9; % 200e9; 
-const.rho_min = 1200; %400; % 8e2; 
-const.rho_max = 8000; %8000; % 8e3; 
-const.poisson_min = 0.9; %0.1; % 0; Do not assign 0 as this value.
-const.poisson_max = 0.6; %0.5; % .5; Do not assign 1 as this value.
+const.E_min = 20e6; % 200e6; 
+const.E_max = 200e9; % 200e9; 
+const.rho_min = 400; % 8e2; 
+const.rho_max = 8000; % 8e3; 
+const.poisson_min = 0.05; % 0; 
+const.poisson_max = 0.3; % .5; 
 const.t = 1;
-
-%Steel: E=200e9, nu=0.3, Rubbery polymer: E=2e6, nu=~0.5
 
 % Set eigenvalue solution parameters
 const.N_eig = 6; % Number of eigenvalue bands to compute
