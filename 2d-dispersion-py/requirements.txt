@@ -1,0 +1,10 @@
+numpy>=1.20.0
+scipy>=1.7.0
+matplotlib>=3.3.0
+scikit-learn>=0.24.0
+h5py>=3.0.0  # Required for loading MATLAB v7.3 files
+
+# Optional: For PyTorch conversion and ML workflows
+# Uncomment if using convert_mat_to_pytorch.py or example_pytorch_dataset.py
+# torch>=1.9.0
+

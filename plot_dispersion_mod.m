@@ -1,12 +1,9 @@
 clear; close all;
 
 dispersion_library_path = 'D:\Research\NO-2D-Metamaterials\2D-dispersion_alex';
-% dispersion_library_path = 'C:\Users\alex\OneDrive - California Institute of Technology\Documents\Graduate\Research\2D-dispersion';
 addpath(dispersion_library_path)
 
-data_fn = "generate_dispersion_dataset_Han\OUTPUT\output 13-Oct-2025 23-22-59\continuous 13-Oct-2025 23-22-59.mat";
-% data_fn = "generate_dispersion_dataset_Han\OUTPUT\output 15-Sep-2025 15-33-28\binarized 15-Sep-2025 15-33-28.mat";
-% data_fn = "generate_dispersion_dataset_Han\OUTPUT\output 15-Sep-2025 15-36-03\continuous 15-Sep-2025 15-36-03.mat";
+data_fn = "C:\Users\alex\OneDrive - California Institute of Technology\Documents\Graduate\Research\2D-dispersion\LOCAL\han\generate_dispersion_dataset_Han\OUTPUT\output 23-Sep-2025 13-38-31\continuous 23-Sep-2025 13-38-31.mat";
 [~,fn,~] = fileparts(data_fn);
 fn = char(fn);
 
@@ -19,19 +16,49 @@ png_resolution = 150;
 % Make plots for one unit cell or multiple
 struct_idxs = 1:5;
 
-for struct_idx = struct_idxs
+E_all = data.CONSTITUTIVE_DATA('modulus');
+rho_all = data.CONSTITUTIVE_DATA('density');
+nu_all = data.CONSTITUTIVE_DATA('poisson');
 
-    %% Plot the design
-    [fig,ax] = plot_design(data.designs(:,:,:,struct_idx));
+for struct_idx = struct_idxs
+    %% Plot the material property fields (actual values, not design variables)
+    fig = figure();
+    tlo = tiledlayout(1,3,'Parent',fig);
+
+    E = E_all(:,:,struct_idx);
+    rho = rho_all(:,:,struct_idx);
+    nu = nu_all(:,:,struct_idx);
+
+    ax = nexttile;
+    imagesc(ax,E)
+    daspect(ax,[1 1 1])
+    colormap(ax,'gray')
+    colorbar(ax)
+    title('E [Pa]')
+
+    ax = nexttile;
+    imagesc(ax,rho)
+    daspect(ax,[1 1 1])
+    colormap(ax,'gray')
+    colorbar(ax)
+    title('rho [kg/m^3]')
+
+    ax = nexttile;
+    imagesc(ax,nu)
+    daspect(ax,[1 1 1])
+    colormap(ax,'gray')
+    colorbar(ax)
+    title('nu [-]')
+
     if isExportPng
-        png_path = ['png' filesep fn filesep 'design' filesep num2str(struct_idx) '.png'];
+        png_path = ['png' filesep fn filesep 'constitutive_fields' filesep num2str(struct_idx) '.png'];
         if ~isfolder(fileparts(png_path))
             mkdir(fileparts(png_path))
         end
         exportgraphics(fig,png_path,'Resolution',png_resolution);
     end
 
-    %% Set up for dispersion plot
+    %% Get relevant dispersion data
 
     disp('size(data.WAVEVECTOR_DATA)')
     disp(size(data.WAVEVECTOR_DATA))
@@ -41,32 +68,32 @@ for struct_idx = struct_idxs
     disp(size(data.EIGENVALUE_DATA))
     frequencies = data.EIGENVALUE_DATA(:,:,struct_idx);
 
-    % Reshape to grid
-    wavevectors_grid = {sort(unique(wavevectors(:,1))),sort(unique(wavevectors(:,2)))};
-    frequencies_grid = reshape(frequencies,[flip(data.const.N_wv) data.const.N_eig]);
-
-    frequencies_recon = zeros(prod(data.const.N_wv), data.const.N_eig);
+    %% Reconstruct frequencies from eigenvectors
+    frequencies_recon = zeros(size(data.const.wavevectors,1), data.const.N_eig);
     K = data.K_DATA{struct_idx};
     M = data.M_DATA{struct_idx};
-    for wv_idx = 1:size(data.EIGENVECTOR_DATA,2)
+    for wv_idx = 1:size(data.const.wavevectors,1)
         T = data.T_DATA{wv_idx};
         Kr = T'*K*T;
         Mr = T'*M*T;
-        for band_idx = 1:size(data.EIGENVECTOR_DATA,3)
+        for band_idx = 1:data.const.N_eig
             eigvec = data.EIGENVECTOR_DATA(:,wv_idx,band_idx,struct_idx);
+            eigvec = double(eigvec); % NEW: Cast to double so that the following multiplication doesn't complain
             eigval = norm(Kr*eigvec)/norm(Mr*eigvec); % eigval = eigs(Kr,Mr) solves Kr*eigvec = Mr*eigvec*eigval ==> eigval = norm(Kr*eigvec)/norm(Mr*eigvec)
             frequencies_recon(wv_idx,band_idx) = sqrt(eigval)/(2*pi);
         end
     end
 
     disp(['max(abs(frequencies_recon-frequencies))/max(abs(frequencies)) = ' num2str(max(abs(frequencies_recon-frequencies),[],'all')/max(abs(frequencies),[],'all'))])
-    frequencies_grid_recon = reshape(frequencies_recon,[flip(data.const.N_wv) data.const.N_eig]);
 
     % Create an interpolant for each eigenvalue band
-    gridInterp = cell(size(frequencies,2),1);
-    for eig_idx = 1:size(frequencies,2)
-        gridInterp{eig_idx} = griddedInterpolant(flip(wavevectors_grid),frequencies_grid(:,:,eig_idx));
-        gridInterp_recon{eig_idx} = griddedInterpolant(flip(wavevectors_grid),frequencies_grid_recon(:,:,eig_idx));
+    interp_method = 'linear';
+    extrap_method = 'linear';
+    interp_true = cell(data.const.N_eig,1);
+    interp_recon = cell(data.const.N_eig,1);
+    for eig_idx = 1:data.const.N_eig
+        interp_true{eig_idx} = scatteredInterpolant(wavevectors,frequencies(:,eig_idx),interp_method,extrap_method);
+        interp_recon{eig_idx} = scatteredInterpolant(wavevectors,frequencies_recon(:,eig_idx),interp_method,extrap_method);
     end
 
     % Get the IBZ contour wave vectors. NOTE: These only exist for some symmetry
@@ -78,16 +105,11 @@ for struct_idx = struct_idxs
     if struct_idx == struct_idxs(1)
         fig = figure();
         ax = axes(fig);
-        plot(ax,wavevectors_contour(:,1),wavevectors_contour(:,2),'ko','MarkerSize',8,'MarkerFaceColor','r')
-        hold(ax,'on')
-        % Highlight the vertices
-        plot(ax,contour_info.vertices(:,1),contour_info.vertices(:,2),'bs','MarkerSize',12,'MarkerFaceColor','b')
+        plot(ax,wavevectors_contour(:,1),wavevectors_contour(:,2),'k.')
         axis(ax,'padded')
         daspect(ax,[1 1 1])
         xlabel(ax,'wavevector x component [1/m]')
         ylabel(ax,'wavevector y component [1/m]')
-        title(ax,'IBZ Contour Wavevectors')
-        grid(ax,'on')
         if isExportPng
             png_path = ['png' filesep fn filesep 'contour' filesep num2str(struct_idx) '.png'];
             if ~isfolder(fileparts(png_path))
@@ -100,8 +122,8 @@ for struct_idx = struct_idxs
     % Evaluate frequencies on the desired wavevectors using the interpolant
     frequencies_contour = zeros(size(wavevectors_contour,1),size(frequencies,2));
     for eig_idx = 1:size(frequencies,2)
-        frequencies_contour(:,eig_idx) = gridInterp{eig_idx}(wavevectors_contour(:,1),wavevectors_contour(:,2));
-        frequencies_recon_contour(:,eig_idx) = gridInterp_recon{eig_idx}(wavevectors_contour(:,1),wavevectors_contour(:,2));
+        frequencies_contour(:,eig_idx) = interp_true{eig_idx}(wavevectors_contour(:,1),wavevectors_contour(:,2));
+        frequencies_recon_contour(:,eig_idx) = interp_recon{eig_idx}(wavevectors_contour(:,1),wavevectors_contour(:,2));
     end
 
     %% Plot the dispersion relation (as originally computed) on the IBZ contour
@@ -129,42 +151,26 @@ for struct_idx = struct_idxs
 
     fig = figure();
     ax = axes(fig);
-    plot(ax,contour_info.wavevector_parameter,frequencies_recon_contour)
+    p_ = plot(ax,contour_info.wavevector_parameter,frequencies_contour,'LineStyle','-','Marker','o','Color',uint8([150 150 250]),'LineWidth',3); % first the original
+    p(1) = p_(1);
+    hold(ax,'on')
+    p_ = plot(ax,contour_info.wavevector_parameter,frequencies_recon_contour,'LineStyle','-','Marker','.','Color',uint8([180 80 80]),'LineWidth',1); % first the original % then the reconstructed overlaying it
+    p(2) = p_(1);
     xlabel(ax,'wavevector contour parameter [-]')
     ylabel(ax, 'frequency [Hz]')
     title('reconstructed from eigenvectors')
 
+    p(1).DisplayName = 'true';
+    p(2).DisplayName = 'reconstructed';
+
     for i = 0:contour_info.N_segment
         xline(ax,i)
     end
+
+    legend(ax,p)
 
     if isExportPng
         png_path = ['png' filesep fn filesep 'dispersion' filesep num2str(struct_idx) '_recon.png'];
-        if ~isfolder(fileparts(png_path))
-            mkdir(fileparts(png_path))
-        end
-        exportgraphics(fig,png_path,'Resolution',png_resolution)
-    end
-
-    %% Plot the difference between original and reconstructed dispersion
-
-    fig = figure();
-    ax = axes(fig);
-    difference = frequencies_contour - frequencies_recon_contour;
-    plot(ax,contour_info.wavevector_parameter,difference)
-    xlabel(ax,'wavevector contour parameter [-]')
-    ylabel(ax, 'frequency difference [Hz]')
-    title(sprintf('Difference (Original - Reconstructed)\nMax abs diff = %.3e Hz (%.3f%%)', ...
-        max(abs(difference),[],'all'), ...
-        100*max(abs(difference),[],'all')/max(abs(frequencies_contour),[],'all')))
-
-    for i = 0:contour_info.N_segment
-        xline(ax,i)
-    end
-    yline(ax,0,'r--','LineWidth',1.5) % Add zero reference line
-
-    if isExportPng
-        png_path = ['png' filesep fn filesep 'dispersion' filesep num2str(struct_idx) '_diff.png'];
         if ~isfolder(fileparts(png_path))
             mkdir(fileparts(png_path))
         end
