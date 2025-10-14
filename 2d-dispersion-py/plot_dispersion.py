@@ -14,6 +14,7 @@ import numpy as np
 import scipy.io as sio
 import scipy.sparse as sp
 import matplotlib.pyplot as plt
+import argparse
 from pathlib import Path
 from scipy.interpolate import RegularGridInterpolator
 import warnings
@@ -448,7 +449,7 @@ def plot_dispersion_on_contour(ax, contour_info, frequencies_contour, contour_pa
     ax.grid(True, alpha=0.3)
 
 
-def main():
+def main(cli_data_fn=None):
     """
     Main script execution.
     """
@@ -457,20 +458,22 @@ def main():
     print("=" * 70)
     
     # Configuration
-    # Update this path to point to your dataset
-    data_fn_options = [
-        "../generate_dispersion_dataset_Han/OUTPUT/output 13-Oct-2025 23-22-59/continuous 13-Oct-2025 23-22-59.mat",
-    ]
+    # Prefer CLI-provided dataset path if given; otherwise find default
+    if cli_data_fn is not None:
+        data_fn = Path(cli_data_fn)
+    else:
+        data_fn_options = [
+            "../generate_dispersion_dataset_Han/OUTPUT/output 13-Oct-2025 23-22-59/continuous 13-Oct-2025 23-22-59.mat",
+        ]
+        # Try to find dataset
+        data_fn = None
+        for option in data_fn_options:
+            test_path = Path("../2D-dispersion_alex") / option
+            if test_path.exists():
+                data_fn = test_path
+                break
     
-    # Try to find dataset
-    data_fn = None
-    for option in data_fn_options:
-        test_path = Path("../2D-dispersion_alex") / option
-        if test_path.exists():
-            data_fn = test_path
-            break
-    
-    if data_fn is None:
+    if data_fn is None or not Path(data_fn).exists():
         print("\nERROR: Could not find dataset file.")
         print("Please update the data_fn path in this script.")
         return
@@ -503,9 +506,8 @@ def main():
                 print(f"  {key}: type={type(item)}")
     print(f"{'='*70}\n")
     
-    # Get filename for output directory
-    fn = Path(data_fn).stem
-    output_dir = Path('png') / fn
+    # Save PNGs directly inside the dataset folder
+    output_dir = Path(data_fn).parent
     
     # Make plots for one or multiple unit cells
     # designs shape: (N_struct, 3, N_pix, N_pix)
@@ -781,5 +783,8 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser(description="Plot dispersion from a MATLAB dataset")
+    parser.add_argument("mat_path", nargs="?", help="Path to the .mat dataset file")
+    args = parser.parse_args()
+    main(args.mat_path)
 

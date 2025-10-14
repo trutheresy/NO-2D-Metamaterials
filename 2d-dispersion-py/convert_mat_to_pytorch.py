@@ -41,6 +41,7 @@ import scipy.io as sio
 import scipy.sparse as sp
 from pathlib import Path
 import sys
+import argparse
 from typing import Dict, Any, Tuple, Optional
 
 # Import local modules
@@ -324,7 +325,7 @@ def reshape_eigenvectors_to_spatial(eigenvector_data: np.ndarray, N_pix: int) ->
     return eigvec_x, eigvec_y
 
 
-def main(mat_path: str):
+def main(mat_path: str, complex_precision: str = 'complex128'):
     """
     Main conversion function following dataset_conversion_reduction.ipynb format.
     
@@ -342,11 +343,28 @@ def main(mat_path: str):
     print("=" * 80)
     print("MATLAB to NumPy/PyTorch Conversion (dataset_conversion_reduction format)")
     print("=" * 80)
-    
-    # Create output directory as a fixed subfolder named 'python'
-    output_dir = mat_path.parent / 'python'
+
+    # Determine complex dtype and output folder name
+    precision_norm = str(complex_precision).lower()
+    if precision_norm in ('128', 'complex128'): 
+        eigen_complex_dtype = np.complex128
+        out_folder_name = 'py_complex128'
+        precision_label = 'complex128'
+    elif precision_norm in ('64', 'complex64'):
+        eigen_complex_dtype = np.complex64
+        out_folder_name = 'py_complex64'
+        precision_label = 'complex64'
+    else:
+        print(f"WARNING: Unknown precision '{complex_precision}', defaulting to complex128")
+        eigen_complex_dtype = np.complex128
+        out_folder_name = 'py_complex128'
+        precision_label = 'complex128'
+
+    # Create output directory under dataset folder
+    output_dir = mat_path.parent / out_folder_name
     output_dir.mkdir(exist_ok=True, parents=True)
     print(f"\nOutput directory: {output_dir}")
+    print(f"Complex eigenvector dtype: {precision_label}")
     
     # Load dataset
     data = load_dataset(mat_path)
@@ -495,9 +513,9 @@ def main(mat_path: str):
         print(f"  Eigenvector X shape: {eigvec_x.shape}")
         print(f"  Eigenvector Y shape: {eigvec_y.shape}")
         
-        # Save eigenvector components as complex64
-        np.save(output_dir / 'eigenvector_data_x.npy', eigvec_x.astype(np.complex64))
-        np.save(output_dir / 'eigenvector_data_y.npy', eigvec_y.astype(np.complex64))
+        # Save eigenvector components with selected precision
+        np.save(output_dir / 'eigenvector_data_x.npy', eigvec_x.astype(eigen_complex_dtype))
+        np.save(output_dir / 'eigenvector_data_y.npy', eigvec_y.astype(eigen_complex_dtype))
         print(f"  Saved: eigenvector_data_x.npy")
         print(f"  Saved: eigenvector_data_y.npy")
     
@@ -510,6 +528,7 @@ def main(mat_path: str):
         'N_wv': N_wv if 'WAVEVECTOR_DATA' in data else 'N/A',
         'files_created': sorted([f.name for f in output_dir.iterdir()]),
         'format': 'dataset_conversion_reduction.ipynb compatible',
+        'complex_precision': precision_label,
     }
     
     with open(output_dir / 'conversion_summary.txt', 'w') as f:
@@ -557,15 +576,18 @@ def main(mat_path: str):
 
 
 if __name__ == "__main__":
-    if len(sys.argv) < 2:
-        # Default dataset path (modify as needed)
-        # Absolute path provided by user
-        default_mat_path = Path(r"D:\Research\NO-2D-Metamaterials\generate_dispersion_dataset_Han\OUTPUT\output 13-Oct-2025 23-22-59\continuous 13-Oct-2025 23-22-59.mat")
+    parser = argparse.ArgumentParser(description='Convert MATLAB dataset to NumPy/PyTorch format')
+    parser.add_argument('mat_path', nargs='?', help='Path to input .mat file')
+    parser.add_argument('--precision', '-c', default='complex128',
+                        choices=['complex64', 'complex128', '64', '128'],
+                        help='Complex dtype for eigenvectors (default: complex128)')
+    args = parser.parse_args()
 
+    if not args.mat_path:
+        default_mat_path = Path(r"D:\Research\NO-2D-Metamaterials\generate_dispersion_dataset_Han\OUTPUT\output 13-Oct-2025 23-22-59\continuous 13-Oct-2025 23-22-59.mat")
         print("No path provided. Using default dataset path:")
         print(f"  {default_mat_path}")
-        main(str(default_mat_path))
+        main(str(default_mat_path), complex_precision=args.precision)
     else:
-        mat_path = sys.argv[1]
-        main(mat_path)
+        main(args.mat_path, complex_precision=args.precision)
 
