@@ -55,10 +55,12 @@ def get_IBZ_wavevectors(N_wv, a, symmetry_type='none', N_tesselations=1):
         
     elif symmetry_type == 'p4mm':
         # P4mm symmetry (triangular IBZ)
-        X, Y = np.meshgrid(np.linspace(0, np.pi/a, N_wv[0]),
+        # MATLAB uses: linspace(-pi/a,pi/a,N_wv(1)) for X and linspace(0,pi/a,N_wv(2)) for Y
+        # with mask: X >= 0-tol & Y >= 0-tol & (Y - X) <= tol
+        X, Y = np.meshgrid(np.linspace(-np.pi/a, np.pi/a, N_wv[0]),
                           np.linspace(0, np.pi/a, N_wv[1]))
-        # Use upper triangular mask
-        mask = np.triu(np.ones_like(X, dtype=bool))
+        tol = 1e-6
+        mask = (X >= 0 - tol) & (Y >= 0 - tol) & ((Y - X) <= tol)
         gamma_x = X[mask]
         gamma_y = Y[mask]
         

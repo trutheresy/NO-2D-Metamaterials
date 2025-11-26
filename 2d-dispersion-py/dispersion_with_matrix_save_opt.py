@@ -61,11 +61,17 @@ def dispersion_with_matrix_save_opt(const, wavevectors):
     
     # Initialize frequency array
     n_wavevectors = wavevectors.shape[0]
-    fr = np.zeros((n_wavevectors, const['N_eig']))
+    fr = np.zeros((n_wavevectors, const['N_eig']), dtype=np.float32)
     
-    # Initialize eigenvector array if requested
+    # Initialize eigenvector array if requested (matching Han's eigenvector_dtype support)
     if const.get('isSaveEigenvectors', False):
-        ev = np.zeros((N_dof, n_wavevectors, const['N_eig']), dtype=complex)
+        eigenvector_dtype = const.get('eigenvector_dtype', 'double')
+        if eigenvector_dtype == 'single':
+            ev = np.zeros((N_dof, n_wavevectors, const['N_eig']), dtype=np.complex64)
+        elif eigenvector_dtype == 'double':
+            ev = np.zeros((N_dof, n_wavevectors, const['N_eig']), dtype=np.complex128)
+        else:
+            raise ValueError(f"eigenvector_dtype must be 'single' or 'double', got '{eigenvector_dtype}'")
     else:
         ev = None
     
@@ -90,11 +96,11 @@ def dispersion_with_matrix_save_opt(const, wavevectors):
     # Process each wavevector
     for k_idx in range(n_wavevectors):
         wavevector = wavevectors[k_idx, :]
-        T = get_transformation_matrix(wavevector, const)
+        T = get_transformation_matrix(wavevector.astype(np.float32), const)
         
         # Transform matrices to reduced space
-        Kr = T.conj().T @ K @ T
-        Mr = T.conj().T @ M @ T
+        Kr = (T.conj().T @ K @ T).astype(np.complex64)
+        Mr = (T.conj().T @ M @ T).astype(np.complex64)
         
         # Store transformation matrix if requested
         if const.get('isSaveKandM', False):
@@ -107,20 +113,25 @@ def dispersion_with_matrix_save_opt(const, wavevectors):
             
             # Sort eigenvalues and eigenvectors
             idxs = np.argsort(eig_vals)
-            eig_vals = eig_vals[idxs]
-            eig_vecs = eig_vecs[:, idxs]
+            eig_vals = eig_vals[idxs].astype(np.complex64)
+            eig_vecs = eig_vecs[:, idxs].astype(np.complex64)
             
-            # Store eigenvectors if requested
+            # Store eigenvectors if requested (matching Han's eigenvector_dtype)
             if const.get('isSaveEigenvectors', False):
                 # Normalize eigenvectors (exact MATLAB translation)
                 # MATLAB: ev(:,k_idx,:) = (eig_vecs./vecnorm(eig_vecs,2,1)).*exp(-1i*angle(eig_vecs(1,:)))
                 norms = np.linalg.norm(eig_vecs, axis=0)
                 eig_vecs_normalized = eig_vecs / norms
                 phase_align = np.exp(-1j * np.angle(eig_vecs[0, :]))
-                ev[:, k_idx, :] = (eig_vecs_normalized * phase_align).T
+                # Cast to the appropriate dtype based on eigenvector_dtype
+                eigenvector_dtype = const.get('eigenvector_dtype', 'double')
+                if eigenvector_dtype == 'single':
+                    ev[:, k_idx, :] = (eig_vecs_normalized * phase_align).T.astype(np.complex64)
+                else:  # double
+                    ev[:, k_idx, :] = (eig_vecs_normalized * phase_align).T.astype(np.complex128)
             
             # Convert to frequencies (exact MATLAB translation)
-            fr[k_idx, :] = np.sqrt(np.real(eig_vals)) / (2 * np.pi)
+            fr[k_idx, :] = (np.sqrt(np.real(eig_vals)).astype(np.float32) / (2 * np.pi)).astype(np.float32)
             
         elif const.get('isUseGPU', False):
             raise NotImplementedError('GPU use is not currently developed')

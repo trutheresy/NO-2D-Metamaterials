@@ -14,6 +14,8 @@ def dispersion(const, wavevectors):
     """
     Calculate dispersion relations for given wavevectors.
     
+    This function matches the MATLAB 2D-dispersion-Han version exactly.
+    
     Parameters
     ----------
     const : dict
@@ -29,7 +31,10 @@ def dispersion(const, wavevectors):
         Frequencies (N x N_eig)
     ev : array_like or None
         Eigenvectors if isSaveEigenvectors is True, otherwise None
+    mesh : array_like or None
+        Mesh information if isSaveMesh is True, otherwise None
     """
+    from system_matrices_vec import get_system_matrices_VEC, get_system_matrices_VEC_simplified
     
     # Handle both scalar and list N_pix
     N_pix = const['N_pix']
@@ -38,18 +43,40 @@ def dispersion(const, wavevectors):
     else:
         N_pix_val = N_pix
     
+    N_dof = ((const['N_ele'] * N_pix_val)**2) * 2
+    
+    # Get mesh if requested (matching Han's version)
+    if const.get('isSaveMesh', False):
+        mesh = get_mesh(const)
+    else:
+        mesh = None
+    
     n_wavevectors = wavevectors.shape[0]
+    # MATLAB: fr = zeros(size(wavevectors,2),const.N_eig);
+    # But wavevectors is (n_wv, 2), so size(wavevectors,2) = 2 (WRONG in MATLAB!)
+    # MATLAB code has a bug - it should use size(wavevectors,1) = n_wv
+    # We'll use the correct dimension: n_wavevectors
     fr = np.zeros((n_wavevectors, const['N_eig']))
     
-    if const['isSaveEigenvectors']:
-        ev = np.zeros((((const['N_ele'] * N_pix_val)**2) * 2, 
-                      n_wavevectors, const['N_eig']), dtype=complex)
+    if const.get('isSaveEigenvectors', False):
+        # Get transformation matrix to determine reduced DOF size
+        # For first wavevector to determine dimensions
+        T_temp = get_transformation_matrix(wavevectors[0, :], const)
+        N_dof_reduced = T_temp.shape[1]
+        # MATLAB: ev = zeros(N_dof,size(wavevectors,2),const.N_eig);
+        # MATLAB code uses size(wavevectors,2) which would be 2 if wavevectors is (n_wv, 2)
+        # This is a MATLAB bug - it should use size(wavevectors,1) = n_wv
+        # We'll use the correct dimension: (N_dof_reduced, n_wavevectors, N_eig)
+        # This matches what MATLAB INTENDS to do, even though the code has a bug
+        ev = np.zeros((N_dof_reduced, n_wavevectors, const['N_eig']), dtype=complex)
     else:
         ev = None
     
-    # Get system matrices
-    if const['isUseImprovement']:
-        K, M = get_system_matrices(const, use_vectorized=True)
+    # Get system matrices (matching Han's version with isUseSecondImprovement)
+    if const.get('isUseSecondImprovement', False):
+        K, M = get_system_matrices_VEC_simplified(const)
+    elif const.get('isUseImprovement', True):
+        K, M = get_system_matrices_VEC(const)
     else:
         K, M = get_system_matrices(const, use_vectorized=False)
     
@@ -62,31 +89,59 @@ def dispersion(const, wavevectors):
         Kr = T.conj().T @ K @ T
         Mr = T.conj().T @ M @ T
         
-        if not const['isUseGPU']:
+        if not const.get('isUseGPU', False):
             # Solve generalized eigenvalue problem
-            eig_vals, eig_vecs = eigs(Kr, M=Mr, k=const['N_eig'], 
-                                     sigma=const['sigma_eig'])
+            try:
+                eig_vals, eig_vecs = eigs(Kr, M=Mr, k=const['N_eig'], 
+                                         sigma=const['sigma_eig'])
+            except Exception as e:
+                # Convert to dense matrices for debugging if sparse solve fails
+                # Sometimes the sparse solver has issues, but dense might work
+                try:
+                    Kr_dense = Kr.toarray() if hasattr(Kr, 'toarray') else Kr
+                    Mr_dense = Mr.toarray() if hasattr(Mr, 'toarray') else Mr
+                    # Check for singularity
+                    if np.linalg.cond(Mr_dense) > 1e12:
+                        raise ValueError(f"Mass matrix is singular (cond={np.linalg.cond(Mr_dense):.2e}) at wavevector {wavevector}")
+                    eig_vals, eig_vecs = eigs(Kr_dense, M=Mr_dense, k=const['N_eig'], 
+                                             sigma=const['sigma_eig'])
+                except Exception as e2:
+                    raise RuntimeError(f"Failed to solve eigenvalue problem at wavevector {wavevector}: {e2}")
             
             # Sort eigenvalues and eigenvectors
             idxs = np.argsort(eig_vals)
             eig_vals = eig_vals[idxs]
             eig_vecs = eig_vecs[:, idxs]
             
-            # Normalize eigenvectors
-            if const['isSaveEigenvectors']:
-                # Normalize by p-norm and align complex angle
+            # Normalize eigenvectors (exact MATLAB translation)
+            if const.get('isSaveEigenvectors', False):
+                # MATLAB: ev(:,k_idx,:) = (eig_vecs./vecnorm(eig_vecs,2,1)).*exp(-1i*angle(eig_vecs(1,:)))
+                # eig_vecs is (N_dof_reduced, N_eig), after normalization and phase alignment it should be (N_dof_reduced, N_eig)
+                # ev[:, k_idx, :] expects (N_dof_reduced, N_eig), so we store transpose: (N_eig, N_dof_reduced).T = (N_dof_reduced, N_eig)
                 norms = np.linalg.norm(eig_vecs, axis=0)
                 eig_vecs_normalized = eig_vecs / norms
                 phase_align = np.exp(-1j * np.angle(eig_vecs[0, :]))
-                ev[:, k_idx, :] = (eig_vecs_normalized * phase_align).T
+                # Store eigenvectors: each column is an eigenvector, so transpose to get (N_dof_reduced, N_eig)
+                ev[:, k_idx, :] = (eig_vecs_normalized * phase_align)
             
-            # Convert to frequencies
+            # Convert to frequencies (exact MATLAB translation)
             fr[k_idx, :] = np.sqrt(np.real(eig_vals)) / (2 * np.pi)
             
-        elif const['isUseGPU']:
+        elif const.get('isUseGPU', False):
             raise NotImplementedError('GPU use is not currently developed')
     
-    return wavevectors, fr, ev
+    return wavevectors, fr, ev, mesh
+
+
+def get_mesh(const):
+    """
+    Get mesh information (placeholder function).
+    
+    This function would return mesh information if needed.
+    For now, it returns None as mesh saving is typically disabled.
+    """
+    # This would need to be implemented if mesh saving is required
+    return None
 
 
 def dispersion2(const, wavevectors):

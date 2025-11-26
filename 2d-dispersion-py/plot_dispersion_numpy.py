@@ -1,4 +1,6 @@
 """
+OBSOLETE: This script is deprecated. Use plot_dispersion_np.py for NumPy datasets instead.
+
 Plot Dispersion Script (NumPy/PyTorch dataset variant)
 
 This script loads the converted NumPy dataset (dataset_conversion_reduction format)
@@ -439,7 +441,6 @@ def main():
         print("Processing complete!")
         print(f"Output saved to: {output_dir}")
         print(f"{'='*70}")
-
 
 if __name__ == "__main__":
     main()

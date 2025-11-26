@@ -1,0 +1,224 @@
+clear; close all;
+
+% dispersion_library_path = '../../';
+% addpath(dispersion_library_path)
+
+% Check for temp file with CLI override path
+data_fn_preserve = '';
+if exist('temp_data_fn.txt', 'file')
+    fid = fopen('temp_data_fn.txt', 'r');
+    if fid ~= -1
+        data_fn_preserve = fgetl(fid);
+        fclose(fid);
+    end
+end
+
+clearvars -except data_fn_preserve; close all;
+
+% Use the saved path if it was provided, otherwise use default
+if ~isempty(data_fn_preserve) && ischar(data_fn_preserve)
+    data_fn = data_fn_preserve;
+    fprintf('Using CLI override: %s\n', data_fn);
+else
+    % Use default if not provided or invalid
+    data_fn = "C:\Users\alex\OneDrive - California Institute of Technology\Documents\Graduate\Research\2D-dispersion\LOCAL\han\generate_dispersion_dataset_Han\OUTPUT\output 09-Oct-2025 10-58-48\binarized 09-Oct-2025 10-58-48.mat";
+    fprintf('Using default path: %s\n', data_fn);
+end
+[~,fn,~] = fileparts(data_fn);
+fn = char(fn);
+
+data = load(data_fn);
+
+% flags
+isExportPng = true;
+png_resolution = 150;
+
+% Output root: save under plots/<dataset_name>_mat/... (in current directory)
+output_root = fullfile(pwd, 'plots', [fn '_mat']);
+
+% Make plots for one unit cell or multiple
+struct_idxs = 1:10;
+
+E_all = data.CONSTITUTIVE_DATA('modulus');
+rho_all = data.CONSTITUTIVE_DATA('density');
+nu_all = data.CONSTITUTIVE_DATA('poisson');
+
+for struct_idx = struct_idxs
+    %% Plot the material property fields (actual values, not design variables)
+    fig = figure();
+    tlo = tiledlayout(1,3,'Parent',fig);
+
+    E = E_all(:,:,struct_idx);
+    rho = rho_all(:,:,struct_idx);
+    nu = nu_all(:,:,struct_idx);
+
+    ax = nexttile;
+    imagesc(ax,E)
+    daspect(ax,[1 1 1])
+    colormap(ax,'gray')
+    colorbar(ax)
+    title('E [Pa]')
+
+    ax = nexttile;
+    imagesc(ax,rho)
+    daspect(ax,[1 1 1])
+    colormap(ax,'gray')
+    colorbar(ax)
+    title('rho [kg/m^3]')
+
+    ax = nexttile;
+    imagesc(ax,nu)
+    daspect(ax,[1 1 1])
+    colormap(ax,'gray')
+    colorbar(ax)
+    title('nu [-]')
+%     ax.CLim = []; % optional: set color limits if desired
+
+    if isExportPng
+        png_path = fullfile(output_root, 'constitutive_fields', [num2str(struct_idx) '.png']);
+        if ~isfolder(fileparts(png_path))
+            mkdir(fileparts(png_path))
+        end
+        exportgraphics(fig,png_path,'Resolution',png_resolution);
+    end
+
+    %% Get relevant dispersion data
+
+    disp('size(data.WAVEVECTOR_DATA)')
+    disp(size(data.WAVEVECTOR_DATA))
+    wavevectors = data.WAVEVECTOR_DATA(:,:,struct_idx);
+
+    disp('size(data.EIGENVALUE_DATA)')
+    disp(size(data.EIGENVALUE_DATA))
+    frequencies = data.EIGENVALUE_DATA(:,:,struct_idx);
+
+    %% Reconstruct frequencies from eigenvectors (if K_DATA, M_DATA, T_DATA available)
+    can_reconstruct = isfield(data, 'K_DATA') && isfield(data, 'M_DATA') && isfield(data, 'T_DATA') && ...
+                      ~isempty(data.K_DATA) && ~isempty(data.M_DATA) && ~isempty(data.T_DATA) && ...
+                      length(data.K_DATA) >= struct_idx && length(data.M_DATA) >= struct_idx;
+    
+    if can_reconstruct
+        frequencies_recon = zeros(size(data.const.wavevectors,1), data.const.N_eig);
+        K = data.K_DATA{struct_idx};
+        M = data.M_DATA{struct_idx};
+        for wv_idx = 1:size(data.const.wavevectors,1)
+            if length(data.T_DATA) >= wv_idx && ~isempty(data.T_DATA{wv_idx})
+                T = data.T_DATA{wv_idx};
+                Kr = T'*K*T;
+                Mr = T'*M*T;
+                for band_idx = 1:data.const.N_eig
+                    eigvec = data.EIGENVECTOR_DATA(:,wv_idx,band_idx,struct_idx);
+                    eigvec = double(eigvec); % NEW: Cast to double so that the following multiplication doesn't complain
+                    eigval = norm(Kr*eigvec)/norm(Mr*eigvec); % eigval = eigs(Kr,Mr) solves Kr*eigvec = Mr*eigvec*eigval ==> eigval = norm(Kr*eigvec)/norm(Mr*eigvec)
+                    frequencies_recon(wv_idx,band_idx) = sqrt(eigval)/(2*pi);
+                end
+            end
+        end
+        disp(['max(abs(frequencies_recon-frequencies))/max(abs(frequencies)) = ' num2str(max(abs(frequencies_recon-frequencies),[],'all')/max(abs(frequencies),[],'all'))])
+    else
+        frequencies_recon = frequencies; % Use original if reconstruction not possible
+        disp('Reconstruction data (K_DATA, M_DATA, T_DATA) not available, skipping reconstruction')
+    end
+
+    % Create an interpolant for each eigenvalue band
+    interp_method = 'linear';
+    extrap_method = 'linear';
+    interp_true = cell(data.const.N_eig,1);
+    if can_reconstruct
+        interp_recon = cell(data.const.N_eig,1);
+    end
+    for eig_idx = 1:data.const.N_eig
+        interp_true{eig_idx} = scatteredInterpolant(wavevectors,frequencies(:,eig_idx),interp_method,extrap_method);
+        if can_reconstruct
+            interp_recon{eig_idx} = scatteredInterpolant(wavevectors,frequencies_recon(:,eig_idx),interp_method,extrap_method);
+        end
+    end
+
+    % Get the IBZ contour wave vectors. NOTE: These only exist for some symmetry
+    % groups. symmetry = 'p4mm' has a valid IBZ contour.
+    N_k = 10; % Number of interpolation query points per contour segment
+    [wavevectors_contour, contour_info] = get_IBZ_contour_wavevectors(N_k,data.const.a,'p4mm'); % NOTE: I used symmetry='p4mm' here. If you have any unit cells that are not 'p4mm', then we can't use this contour
+
+    % Plot the IBZ contour wavevectors
+    if struct_idx == struct_idxs(1)
+        fig = figure();
+        ax = axes(fig);
+        plot(ax,wavevectors_contour(:,1),wavevectors_contour(:,2),'k.')
+        axis(ax,'padded')
+        daspect(ax,[1 1 1])
+        xlabel(ax,'wavevector x component [1/m]')
+        ylabel(ax,'wavevector y component [1/m]')
+        if isExportPng
+            png_path = fullfile(output_root, 'contour', [num2str(struct_idx) '.png']);
+            if ~isfolder(fileparts(png_path))
+                mkdir(fileparts(png_path))
+            end
+            exportgraphics(fig,png_path,'Resolution',png_resolution);
+        end
+    end
+
+    % Evaluate frequencies on the desired wavevectors using the interpolant
+    frequencies_contour = zeros(size(wavevectors_contour,1),size(frequencies,2));
+    if can_reconstruct
+        frequencies_recon_contour = zeros(size(wavevectors_contour,1),size(frequencies,2));
+    end
+    for eig_idx = 1:size(frequencies,2)
+        frequencies_contour(:,eig_idx) = interp_true{eig_idx}(wavevectors_contour(:,1),wavevectors_contour(:,2));
+        if can_reconstruct
+            frequencies_recon_contour(:,eig_idx) = interp_recon{eig_idx}(wavevectors_contour(:,1),wavevectors_contour(:,2));
+        end
+    end
+
+    %% Plot the dispersion relation (as originally computed) on the IBZ contour
+
+    fig = figure();
+    ax = axes(fig);
+    plot(ax,contour_info.wavevector_parameter,frequencies_contour)
+    xlabel(ax,'wavevector contour parameter [-]')
+    ylabel(ax, 'frequency [Hz]')
+    title('original')
+
+    for i = 0:contour_info.N_segment
+        xline(ax,i)
+    end
+
+    if isExportPng
+        png_path = fullfile(output_root, 'dispersion', [num2str(struct_idx) '.png']);
+        if ~isfolder(fileparts(png_path))
+            mkdir(fileparts(png_path))
+        end
+        exportgraphics(fig,png_path,'Resolution',png_resolution)
+    end
+
+    %% Plot the dispersion relation (reconstructed with eigenvector) on the IBZ contour (if available)
+
+    if can_reconstruct
+        fig = figure();
+        ax = axes(fig);
+        p_ = plot(ax,contour_info.wavevector_parameter,frequencies_contour,'LineStyle','-','Marker','o','Color',uint8([150 150 250]),'LineWidth',3); % first the original
+        p(1) = p_(1);
+        hold(ax,'on')
+        p_ = plot(ax,contour_info.wavevector_parameter,frequencies_recon_contour,'LineStyle','-','Marker','.','Color',uint8([180 80 80]),'LineWidth',1); % first the original % then the reconstructed overlaying it
+        p(2) = p_(1);
+        xlabel(ax,'wavevector contour parameter [-]')
+        ylabel(ax, 'frequency [Hz]')
+        title('reconstructed from eigenvectors')
+
+        p(1).DisplayName = 'true';
+        p(2).DisplayName = 'reconstructed';
+
+        for i = 0:contour_info.N_segment
+            xline(ax,i)
+        end
+
+        legend(ax,p)
+
+        if isExportPng
+            png_path = fullfile(output_root, 'dispersion', [num2str(struct_idx) '_recon.png']);
+            if ~isfolder(fileparts(png_path))
+                mkdir(fileparts(png_path))
+            end
+            exportgraphics(fig,png_path,'Resolution',png_resolution)
+        end
+    end
+end

@@ -88,6 +88,54 @@ def periodic_kernel(points_i, points_j, sigma_f, sigma_l, period):
     return C
 
 
+def periodic_kernel_not_squared(points_i, points_j, sigma_f, sigma_l, period):
+    """
+    Periodic kernel function (not squared version).
+    
+    This is the exact translation of MATLAB's periodic_kernel_not_squared.m.
+    Uses abs(sin) instead of sin^2 in the exponent.
+    
+    Parameters
+    ----------
+    points_i : array_like
+        First set of points (N_i x 2)
+    points_j : array_like
+        Second set of points (N_j x 2)
+    sigma_f : float
+        Signal standard deviation
+    sigma_l : float
+        Length scale
+    period : array_like
+        Period in each dimension (2,)
+        
+    Returns
+    -------
+    C : array_like
+        Covariance matrix (N_i x N_j)
+    """
+    
+    # Reshape for broadcasting (matching MATLAB permute operations)
+    points_i = points_i[:, np.newaxis, :]  # (N_i, 1, 2)
+    points_j = points_j[np.newaxis, :, :]  # (1, N_j, 2)
+    
+    # Compute displacements
+    displacements = points_i - points_j  # (N_i, N_j, 2)
+    
+    # Periodic kernel not squared in each dimension
+    # MATLAB: sin_arg1 = pi*abs(displacements(:,:,1)/period(1))
+    # MATLAB: C1 = sigma_f^2*exp(-2*abs(sin(sin_arg1))/sigma_l)
+    sin_arg1 = np.pi * np.abs(displacements[:, :, 0]) / period[0]
+    C1 = sigma_f**2 * np.exp(-2 * np.abs(np.sin(sin_arg1)) / sigma_l)
+    
+    sin_arg2 = np.pi * np.abs(displacements[:, :, 1]) / period[1]
+    C2 = sigma_f**2 * np.exp(-2 * np.abs(np.sin(sin_arg2)) / sigma_l)
+    
+    # Combine dimensions
+    C = C1 * C2
+    
+    return C
+
+
 def kernel_prop(kernel, N_pix, design_options):
     """
     Generate property using kernel-based Gaussian process.
@@ -124,6 +172,9 @@ def kernel_prop(kernel, N_pix, design_options):
     elif kernel == 'periodic':
         period = [1, 1]
         C = periodic_kernel(points, points, design_options['sigma_f'], design_options['sigma_l'], period)
+    elif kernel == 'periodic - not squared':
+        period = [1, 1]
+        C = periodic_kernel_not_squared(points, points, design_options['sigma_f'], design_options['sigma_l'], period)
     else:
         raise ValueError(f'Kernel name "{kernel}" not recognized')
     

@@ -61,8 +61,12 @@ def get_design(design_name, N_pix):
         
     elif design_name == 'dispersive-orthotropic':
         # Dispersive cell - Orthotropic
+        # MATLAB: idxs = (N_pix/4 + 1):(3*N_pix/4)  (1-based)
+        # For N_pix=8: 3:6 in 1-based = [2,3,4,5] in 0-based = slice(2, 6)
         design[:, :, 0] = np.zeros((N_pix, N_pix))
-        idxs = slice(N_pix//4, 3*N_pix//4)
+        start_idx = int(N_pix / 4 + 1) - 1  # Convert from 1-based to 0-based: (N_pix/4 + 1) - 1
+        end_idx = int(3 * N_pix / 4)  # Last included index in MATLAB (1-based)
+        idxs = slice(start_idx, end_idx)  # Python slice excludes endpoint, so use end_idx directly
         design[:, idxs, 0] = 1
         design[:, :, 1] = design[:, :, 0]
         design[:, :, 2] = 0.6 * np.ones((N_pix, N_pix))
@@ -75,8 +79,10 @@ def get_design(design_name, N_pix):
         
     elif design_name == 'quasi-1D':
         # Quasi-1D cell
+        # MATLAB: design(:,1:2:end,1) = 0  (1-based: columns 1, 3, 5, ...)
+        # Python: columns 0, 2, 4, ... (0-based)
         design[:, :, 0] = np.ones((N_pix, N_pix))
-        design[:, ::2, 0] = 0  # Every other column
+        design[:, 0::2, 0] = 0  # Every other column starting from 0 (0, 2, 4, ...)
         design[:, :, 1] = design[:, :, 0]
         design[:, :, 2] = 0.6 * np.ones((N_pix, N_pix))
         

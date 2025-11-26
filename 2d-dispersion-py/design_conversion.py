@@ -6,6 +6,7 @@ design formats (linear, logarithmic, explicit).
 """
 
 import numpy as np
+from scipy.interpolate import interp1d
 
 
 def convert_design(design, initial_format, target_format, E_min=2e9, E_max=200e9,
@@ -268,4 +269,58 @@ def clip_design_to_bounds(design, design_format='linear', E_min=2e9, E_max=200e9
                                       rho_min, rho_max, poisson_min, poisson_max)
     
     return clipped_design
+
+
+def apply_steel_rubber_paradigm(design, const):
+    """
+    Apply steel-rubber paradigm to design.
+    
+    This is the exact translation of MATLAB's apply_steel_rubber_paradigm.m function.
+    
+    Parameters
+    ----------
+    design : array_like
+        Design array (N_pix x N_pix x 3)
+    const : dict
+        Constants structure containing material bounds
+        
+    Returns
+    -------
+    design_out : array_like
+        Design array with steel-rubber paradigm applied
+    """
+    design_in_polymer = 0
+    design_in_steel = 1
+    
+    E_polymer = 200e6
+    E_steel = 200e9
+    rho_polymer = 1200
+    rho_steel = 8e3
+    nu_polymer = 0.45
+    nu_steel = 0.3
+    
+    # Convert material properties to design space
+    design_out_polymer_E = (E_polymer - const['E_min']) / (const['E_max'] - const['E_min'])
+    design_out_polymer_rho = (rho_polymer - const['rho_min']) / (const['rho_max'] - const['rho_min'])
+    design_out_polymer_nu = (nu_polymer - const['poisson_min']) / (const['poisson_max'] - const['poisson_min'])
+    
+    design_out_steel_E = (E_steel - const['E_min']) / (const['E_max'] - const['E_min'])
+    design_out_steel_rho = (rho_steel - const['rho_min']) / (const['rho_max'] - const['rho_min'])
+    design_out_steel_nu = (nu_steel - const['poisson_min']) / (const['poisson_max'] - const['poisson_min'])
+    
+    design_vals = np.array([
+        [design_out_polymer_E, design_out_steel_E],
+        [design_out_polymer_rho, design_out_steel_rho],
+        [design_out_polymer_nu, design_out_steel_nu]
+    ])
+    
+    design_out = design.copy()
+    for prop_idx in range(3):
+        dvs = design_vals[prop_idx, :]
+        # Use linear interpolation (MATLAB interp1 with 'linear')
+        interp_func = interp1d([design_in_polymer, design_in_steel], dvs, 
+                              kind='linear', fill_value='extrapolate')
+        design_out[:, :, prop_idx] = interp_func(design[:, :, prop_idx])
+    
+    return design_out
 

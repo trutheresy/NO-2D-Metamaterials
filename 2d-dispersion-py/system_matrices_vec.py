@@ -61,13 +61,17 @@ def get_system_matrices_VEC(const):
         raise ValueError("const['design_scale'] not recognized as 'log' or 'linear'")
     
     # Node numbering in a grid
-    nodenrs = np.arange(1, (1 + N_ele_x) * (1 + N_ele_y) + 1).reshape(1 + N_ele_y, 1 + N_ele_x)
+    # MATLAB: reshape(1:(1+N_ele_x)*(1+N_ele_y),1+N_ele_y,1+N_ele_x)
+    # MATLAB reshape uses column-major (Fortran) order
+    nodenrs = np.arange(1, (1 + N_ele_x) * (1 + N_ele_y) + 1).reshape(1 + N_ele_y, 1 + N_ele_x, order='F')
     
     # Element degree of freedom (in a vector) (global labeling)
-    edofVec = (2 * nodenrs[0:-1, 0:-1] - 1).flatten()
+    # MATLAB: reshape(2*nodenrs(1:end-1,1:end-1)-1,N_ele_x*N_ele_y,1)
+    # MATLAB reshape to column vector is column-major
+    edofVec = (2 * nodenrs[0:-1, 0:-1] - 1).reshape(N_ele_x * N_ele_y, 1, order='F').flatten()
     
     # Element degree of freedom matrix (exact MATLAB translation)
-    # MATLAB: [2*(N_ele_y+1)+[0 1 2 3] 2 3 0 1]
+    # MATLAB: repmat(edofVec,1,8)+repmat([2*(N_ele_y+1)+[0 1 2 3] 2 3 0 1],N_ele_x*N_ele_y,1)
     offset_array = np.concatenate([
         2*(N_ele_y+1) + np.array([0, 1, 2, 3]),  # First 4 elements
         np.array([2, 3, 0, 1])                    # Last 4 elements
@@ -78,20 +82,37 @@ def get_system_matrices_VEC(const):
     )
     
     # Row and column indices for sparse matrix assembly
-    row_idxs = np.tile(edofMat, (8, 1)).T.flatten()
-    col_idxs = np.tile(edofMat, (1, 8)).flatten()
+    # MATLAB: reshape(kron(edofMat,ones(8,1))',64*N_ele_x*N_ele_y,1)
+    # MATLAB: reshape(kron(edofMat,ones(1,8))',64*N_ele_x*N_ele_y,1)
+    # Must use Kronecker product, not tile! kron(A, B) creates block matrix where each element of A is multiplied by B
+    # kron(edofMat, ones(8,1)) creates (N_ele_x*N_ele_y*8) x 8 matrix
+    # Then transpose and reshape to column vector (column-major order)
+    row_idxs_mat = np.kron(edofMat, np.ones((8, 1)))
+    row_idxs = row_idxs_mat.T.reshape(64 * N_ele_x * N_ele_y, 1, order='F').flatten()
+    
+    col_idxs_mat = np.kron(edofMat, np.ones((1, 8)))
+    col_idxs = col_idxs_mat.T.reshape(64 * N_ele_x * N_ele_y, 1, order='F').flatten()
     
     # Get element matrices (vectorized)
     AllLEle = get_element_stiffness_VEC(E.flatten(), nu.flatten(), t)
     AllLMat = get_element_mass_VEC(rho.flatten(), t, const)
     
     # Flatten element matrices for sparse assembly
-    value_K = AllLEle.flatten()
-    value_M = AllLMat.flatten()
+    value_K = AllLEle.flatten().astype(np.float32)
+    value_M = AllLMat.flatten().astype(np.float32)
     
-    # Create sparse matrices
-    K = coo_matrix((value_K, (row_idxs, col_idxs))).tocsr()
-    M = coo_matrix((value_M, (row_idxs, col_idxs))).tocsr()
+    # Convert 1-based indices to 0-based for Python
+    row_idxs = row_idxs - 1
+    col_idxs = col_idxs - 1
+    
+    # Calculate explicit matrix dimensions
+    N_nodes_x = N_ele_x + 1
+    N_nodes_y = N_ele_y + 1
+    N_dof = N_nodes_x * N_nodes_y * 2
+    
+    # Create sparse matrices with explicit shape
+    K = coo_matrix((value_K, (row_idxs, col_idxs)), shape=(N_dof, N_dof), dtype=np.float32).tocsr()
+    M = coo_matrix((value_M, (row_idxs, col_idxs)), shape=(N_dof, N_dof), dtype=np.float32).tocsr()
     
     return K, M
 

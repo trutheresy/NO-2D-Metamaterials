@@ -26,8 +26,14 @@ def get_design2(design_parameters):
         Design array of shape (N_pix, N_pix, 3)
     """
     
+    # Handle both scalar and list N_pix (matching MATLAB behavior)
+    if isinstance(design_parameters.N_pix, (list, tuple)):
+        N_pix_val = design_parameters.N_pix[0]
+    else:
+        N_pix_val = design_parameters.N_pix
+    
     # Initialize design array
-    design = np.zeros((design_parameters.N_pix, design_parameters.N_pix, 3))
+    design = np.zeros((N_pix_val, N_pix_val, 3))
     
     # Generate each property separately
     for prop_idx in range(1, 4):  # 1-based indexing as in MATLAB

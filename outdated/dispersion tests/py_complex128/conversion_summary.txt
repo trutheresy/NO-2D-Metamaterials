@@ -1,0 +1,21 @@
+NumPy Conversion Summary (dataset_conversion_reduction format)
+================================================================================
+
+This dataset follows the format from dataset_conversion_reduction.ipynb
+Shapes:
+  - designs: (N_struct=5, N_pix=32, N_pix=32)
+  - wavevectors: (N_struct=5, N_wv=325, 2)
+  - waveforms: (N_wv=325, N_pix=32, N_pix=32)
+  - eigenvalue_data: (N_struct=5, N_wv=325, N_eig=6.0)
+  - eigenvector_data_x/y: (N_struct=5, N_wv=325, N_eig=6.0, N_pix=32, N_pix=32)
+  - bands_fft: (N_eig=6.0, N_pix=32, N_pix=32)
+
+Files created:
+  - bands_fft.npy                  (    0.01 MB)
+  - design_params.npy              (    0.00 MB)
+  - designs.npy                    (    0.01 MB)
+  - eigenvalue_data.npy            (    0.07 MB)
+  - eigenvector_data_x.npy         (  152.34 MB)
+  - eigenvector_data_y.npy         (  152.34 MB)
+  - waveforms.npy                  (    0.63 MB)
+  - wavevectors.npy                (    0.01 MB)

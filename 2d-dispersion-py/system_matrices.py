@@ -55,14 +55,14 @@ def get_system_matrices(const, use_vectorized=False, return_sensitivities=False)
     # Preallocate arrays for sparse matrix construction
     row_idxs = np.zeros(N_dof_per_element**2 * total_elements, dtype=int)
     col_idxs = np.zeros(N_dof_per_element**2 * total_elements, dtype=int)
-    value_K = np.zeros(N_dof_per_element**2 * total_elements)
-    value_M = np.zeros(N_dof_per_element**2 * total_elements)
+    value_K = np.zeros(N_dof_per_element**2 * total_elements, dtype=np.float32)
+    value_M = np.zeros(N_dof_per_element**2 * total_elements, dtype=np.float32)
     
     if return_sensitivities:
         xpix_idxs = np.zeros(N_dof_per_element**2 * total_elements, dtype=int)
         ypix_idxs = np.zeros(N_dof_per_element**2 * total_elements, dtype=int)
-        value_dKddesign = np.zeros(N_dof_per_element**2 * total_elements)
-        value_dMddesign = np.zeros(N_dof_per_element**2 * total_elements)
+        value_dKddesign = np.zeros(N_dof_per_element**2 * total_elements, dtype=np.float32)
+        value_dMddesign = np.zeros(N_dof_per_element**2 * total_elements, dtype=np.float32)
     
     element_idx = 0
     for ele_idx_x in range(1, N_ele_x + 1):
@@ -89,8 +89,8 @@ def get_system_matrices(const, use_vectorized=False, return_sensitivities=False)
             
             row_idxs[start_idx:end_idx] = global_idxs_mat.flatten()
             col_idxs[start_idx:end_idx] = global_idxs_mat.T.flatten()
-            value_K[start_idx:end_idx] = k_ele.flatten()
-            value_M[start_idx:end_idx] = m_ele.flatten()
+            value_K[start_idx:end_idx] = k_ele.flatten().astype(np.float32)
+            value_M[start_idx:end_idx] = m_ele.flatten().astype(np.float32)
             
             if return_sensitivities:
                 from .elements import get_element_stiffness_sensitivity, get_element_mass_sensitivity
@@ -104,8 +104,8 @@ def get_system_matrices(const, use_vectorized=False, return_sensitivities=False)
             element_idx += 1
     
     # Assemble sparse matrices
-    K = csr_matrix((value_K, (row_idxs, col_idxs)), shape=(N_dof, N_dof))
-    M = csr_matrix((value_M, (row_idxs, col_idxs)), shape=(N_dof, N_dof))
+    K = csr_matrix((value_K, (row_idxs, col_idxs)), shape=(N_dof, N_dof), dtype=np.float32)
+    M = csr_matrix((value_M, (row_idxs, col_idxs)), shape=(N_dof, N_dof), dtype=np.float32)
     
     if return_sensitivities:
         dKddesign = []
@@ -118,11 +118,11 @@ def get_system_matrices(const, use_vectorized=False, return_sensitivities=False)
                 dKddesign[pix_idx_x].append(
                     csr_matrix((value_dKddesign[mask], 
                               (row_idxs[mask], col_idxs[mask])), 
-                             shape=(N_dof, N_dof)))
+                             shape=(N_dof, N_dof), dtype=np.float32))
                 dMddesign[pix_idx_x].append(
                     csr_matrix((value_dMddesign[mask], 
                               (row_idxs[mask], col_idxs[mask])), 
-                             shape=(N_dof, N_dof)))
+                             shape=(N_dof, N_dof), dtype=np.float32))
         
         return K, M, dKddesign, dMddesign
     
@@ -160,19 +160,19 @@ def get_transformation_matrix(wavevector, const, return_derivatives=False):
     N_node = const['N_ele'] * N_pix_val + 1
     
     # Compute phase factors
-    r_x = np.array([const['a'], 0])
-    r_y = np.array([0, -const['a']])
-    r_corner = np.array([const['a'], -const['a']])
+    r_x = np.array([const['a'], 0], dtype=np.float32)
+    r_y = np.array([0, -const['a']], dtype=np.float32)
+    r_corner = np.array([const['a'], -const['a']], dtype=np.float32)
     
-    xphase = np.exp(1j * np.dot(wavevector, r_x))
-    yphase = np.exp(1j * np.dot(wavevector, r_y))
-    cornerphase = np.exp(1j * np.dot(wavevector, r_corner))
+    xphase = np.exp(1j * np.dot(wavevector, r_x)).astype(np.complex64)
+    yphase = np.exp(1j * np.dot(wavevector, r_y)).astype(np.complex64)
+    cornerphase = np.exp(1j * np.dot(wavevector, r_corner)).astype(np.complex64)
     
     # Compute derivatives if requested
     if return_derivatives:
-        dxphasedwavevector = 1j * r_x * xphase
-        dyphasedwavevector = 1j * r_y * yphase
-        dcornerphasedwavevector = 1j * r_corner * cornerphase
+        dxphasedwavevector = (1j * r_x * xphase).astype(np.complex64)
+        dyphasedwavevector = (1j * r_y * yphase).astype(np.complex64)
+        dcornerphasedwavevector = (1j * r_corner * cornerphase).astype(np.complex64)
     
     # Generate node indices (exact MATLAB translation using 1-based indexing)
     # MATLAB: reshape(meshgrid(1:(N_node-1),1:(N_node-1)),[],1)'
@@ -199,12 +199,22 @@ def get_transformation_matrix(wavevector, const, return_derivatives=False):
     ])
     
     # Define slices for different node groups
+    # MATLAB uses 1-based indexing:
+    # unch_idxs = 1:((N_node-1)^2)
+    # x_idxs = (((N_node-1)^2) + 1):(((N_node-1)^2) + 1 + N_node - 2)
+    # y_idxs = (((N_node-1)^2) + N_node):(((N_node-1)^2) + N_node + N_node - 2)
     n_interior = (N_node - 1)**2
     n_right = N_node - 1
     n_top = N_node - 1
     
-    unch_idxs = slice(0, n_interior)
-    x_idxs = slice(n_interior, n_interior + n_right)
+    unch_idxs = slice(0, n_interior)  # 0 to (N_node-1)^2 - 1 (0-based)
+    # MATLAB: ((N_node-1)^2) + 1 to ((N_node-1)^2) + 1 + N_node - 2 (1-based, inclusive)
+    # For N_node=6: 26:30 (1-based) = [25:30) (0-based, Python slice excludes end)
+    # Convert to 0-based: (N_node-1)^2 to (N_node-1)^2 + N_node - 1
+    x_idxs = slice(n_interior, n_interior + n_right)  # Python slice excludes endpoint, so this matches MATLAB's inclusive range
+    # MATLAB: ((N_node-1)^2) + N_node to ((N_node-1)^2) + N_node + N_node - 2 (1-based, inclusive)
+    # For N_node=6: 31:35 (1-based) = [30:35) (0-based, Python slice excludes end)
+    # Convert to 0-based: (N_node-1)^2 + N_node - 1 to (N_node-1)^2 + 2*N_node - 2
     y_idxs = slice(n_interior + n_right, n_interior + n_right + n_top)
     
     # Reduced global node indices (MATLAB formulas)
@@ -233,10 +243,18 @@ def get_transformation_matrix(wavevector, const, return_derivatives=False):
         [cornerphase]  # Corner node
     ])
     
-    value_T = np.tile(phase_factors, 2)  # Repeat for both x and y DOF
+    value_T = np.tile(phase_factors, 2).astype(np.complex64)  # Repeat for both x and y DOF
     
-    # Let scipy infer the shape from the indices (like MATLAB's sparse())
-    T = csr_matrix((value_T, (row_idxs, col_idxs)))
+    # Calculate explicit dimensions
+    # Full DOF: 2 * N_node^2 (all nodes with x and y DOF)
+    N_dof_full = 2 * N_node * N_node
+    # Reduced DOF: 2 * (N_node-1)^2 (after periodic BC reduction)
+    N_dof_reduced = 2 * (N_node - 1) * (N_node - 1)
+    
+    # Explicitly set shape to ensure correct dimensions
+    T = csr_matrix((value_T, (row_idxs, col_idxs)), 
+                   shape=(N_dof_full, N_dof_reduced), 
+                   dtype=np.complex64)
     
     if return_derivatives:
         dTdwavevector = []
@@ -256,10 +274,13 @@ def get_transformation_matrix(wavevector, const, return_derivatives=False):
                     [dcornerphasedwavevector[1]]
                 ])
             
-            value_dTdwavevector = np.tile(dphase_factors, 2)
+            value_dTdwavevector = np.tile(dphase_factors, 2).astype(np.complex64)
             # row_idxs and col_idxs are already converted to 0-based above
+            # Use same explicit shape as T
             dTdwavevector.append(
-                csr_matrix((value_dTdwavevector, (row_idxs, col_idxs))))
+                csr_matrix((value_dTdwavevector, (row_idxs, col_idxs)), 
+                          shape=(N_dof_full, N_dof_reduced), 
+                          dtype=np.complex64))
         
         return T, dTdwavevector
     

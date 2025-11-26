@@ -42,9 +42,9 @@ def get_element_stiffness(E, nu, t, const):
         [-6*nu-6,  -12+4*nu, 18*nu-6,  -12-4*nu, 6*nu+6,   24-8*nu,  -18*nu+6, 8*nu],
         [8*nu,     18*nu-6,  -12+4*nu, 6*nu+6,   -12-4*nu, -18*nu+6, 24-8*nu,  -6*nu-6],
         [-18*nu+6, -12-4*nu, 6*nu+6,   -12+4*nu, 18*nu-6,  8*nu,     -6*nu-6,  24-8*nu]
-    ])
+    ], dtype=np.float32)
     
-    return k_ele
+    return k_ele.astype(np.float32)
 
 
 def get_element_mass(rho, t, const):
@@ -90,9 +90,9 @@ def get_element_mass(rho, t, const):
         [0, 1, 0, 2, 0, 4, 0, 2],
         [2, 0, 1, 0, 2, 0, 4, 0],
         [0, 2, 0, 1, 0, 2, 0, 4]
-    ])
+    ], dtype=np.float32)
     
-    return m_ele
+    return m_ele.astype(np.float32)
 
 
 def get_pixel_properties(pix_idx_x, pix_idx_y, const):
@@ -170,7 +170,7 @@ def get_element_stiffness_sensitivity(E, nu, t, const):
     else:
         raise ValueError("const.design_scale not recognized")
     
-    return dk_eleddesign
+    return dk_eleddesign.astype(np.float32)
 
 
 def get_element_mass_sensitivity(rho, t, const):
@@ -203,5 +203,5 @@ def get_element_mass_sensitivity(rho, t, const):
     else:
         raise ValueError("const.design_scale not recognized")
     
-    return dm_eleddesign
+    return dm_eleddesign.astype(np.float32)
 
