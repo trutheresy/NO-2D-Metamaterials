@@ -10,7 +10,9 @@ clear; close all;
 % dispersion_library_path = '../../';
 % addpath(dispersion_library_path)
 
-data_fn = "generate_dispersion_dataset_Han\OUTPUT\output 23-Sep-2025 12-31-16\binarized 23-Sep-2025 12-31-16.mat";
+data_fn = "D:\Research\NO-2D-Metamaterials\test_matlab\out_binarized_1.mat";
+% data_fn = "D:\Research\NO-2D-Metamaterials\test_matlab\eigenvectors.mat";
+% data_fn = "generate_dispersion_dataset_Han\OUTPUT\output 23-Sep-2025 12-31-16\binarized 23-Sep-2025 12-31-16.mat";
 % data_fn = "generate_dispersion_dataset_Han\OUTPUT\output 15-Sep-2025 15-36-03\continuous 15-Sep-2025 15-36-03.mat";
 [~,fn,~] = fileparts(data_fn);
 fn = char(fn);
@@ -43,7 +45,7 @@ v = eigvec(2:2:end);
 %
 % Column-major vs row-major is *extremely* important to pay attention to
 % here, because it directly affects how arrays are reshaped.
-design_size = size(data.const.design); % When you do your sanity check, you may have to replace this line
+design_size = size(data.designs); % When you do your sanity check, you may have to replace this line
 u = reshape(u,design_size(1:2)); % only need first two entries of design size because the third entry is for E,rho,nu
 v = reshape(v,design_size(1:2)); % apply same to v
 

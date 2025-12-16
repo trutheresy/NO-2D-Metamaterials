@@ -21,7 +21,7 @@ if ~isempty(data_fn_preserve) && ischar(data_fn_preserve)
     fprintf('Using CLI override: %s\n', data_fn);
 else
     % Use default if not provided or invalid
-    data_fn = "C:\Users\alex\OneDrive - California Institute of Technology\Documents\Graduate\Research\2D-dispersion\LOCAL\han\generate_dispersion_dataset_Han\OUTPUT\output 09-Oct-2025 10-58-48\binarized 09-Oct-2025 10-58-48.mat";
+    data_fn = "D:\Research\NO-2D-Metamaterials\test_matlab\eigenvectors.mat";
     fprintf('Using default path: %s\n', data_fn);
 end
 [~,fn,~] = fileparts(data_fn);

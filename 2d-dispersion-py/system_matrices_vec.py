@@ -121,8 +121,8 @@ def get_system_matrices_VEC_simplified(const):
     """
     Simplified vectorized system matrices assembly.
     
-    This function would be used when const.isUseSecondImprovement is True.
-    For now, it calls the regular vectorized version.
+    This function matches the MATLAB get_system_matrices_VEC_simplified function.
+    It uses a different edofMat offset pattern compared to the regular VEC version.
     
     Parameters
     ----------
@@ -136,6 +136,89 @@ def get_system_matrices_VEC_simplified(const):
     M : scipy.sparse matrix  
         Global mass matrix
     """
-    # For now, use the regular vectorized version
-    # This could be optimized further if needed
-    return get_system_matrices_VEC(const)
+    
+    # Total number of elements along x and y directions
+    # Handle both scalar and list N_pix
+    N_pix = const['N_pix']
+    if isinstance(N_pix, (list, tuple)):
+        N_ele_x = N_pix[0] * const['N_ele']
+        N_ele_y = N_pix[1] * const['N_ele']
+    else:
+        N_ele_x = N_pix * const['N_ele']
+        N_ele_y = N_pix * const['N_ele']
+    
+    # Replicate design for element-level resolution
+    # MATLAB: const.design = repelem(const.design, const.N_ele, const.N_ele, 1)
+    design_expanded = np.repeat(
+        np.repeat(const['design'], const['N_ele'], axis=0), 
+        const['N_ele'], axis=1
+    )
+    
+    # Extract material properties based on design scale
+    if const['design_scale'] == 'linear':
+        E = (const['E_min'] + design_expanded[:, :, 0] * (const['E_max'] - const['E_min'])).T
+        nu = (const['poisson_min'] + design_expanded[:, :, 2] * (const['poisson_max'] - const['poisson_min'])).T
+        t = const['t']
+        rho = (const['rho_min'] + design_expanded[:, :, 1] * (const['rho_max'] - const['rho_min'])).T
+    elif const['design_scale'] == 'log':
+        E = np.exp(design_expanded[:, :, 0]).T
+        nu = (const['poisson_min'] + design_expanded[:, :, 2] * (const['poisson_max'] - const['poisson_min'])).T
+        t = const['t']
+        rho = np.exp(design_expanded[:, :, 1]).T
+    else:
+        raise ValueError("const['design_scale'] not recognized as 'log' or 'linear'")
+    
+    # Node numbering in a grid
+    # MATLAB: reshape(1:(1+N_ele_x)*(1+N_ele_y),1+N_ele_y,1+N_ele_x)
+    # MATLAB reshape uses column-major (Fortran) order
+    nodenrs = np.arange(1, (1 + N_ele_x) * (1 + N_ele_y) + 1).reshape(1 + N_ele_y, 1 + N_ele_x, order='F')
+    
+    # Element degree of freedom (in a vector) (global labeling)
+    # MATLAB: reshape(2*nodenrs(1:end-1,1:end-1)-1,N_ele_x*N_ele_y,1)
+    # MATLAB reshape to column vector is column-major
+    edofVec = (2 * nodenrs[0:-1, 0:-1] - 1).reshape(N_ele_x * N_ele_y, 1, order='F').flatten()
+    
+    # Element degree of freedom matrix (SIMPLIFIED VERSION - different from regular VEC)
+    # MATLAB: repmat(edofVec,1,8)+repmat([2 3 2*(N_ele_x+1)+[2 3 0 1] 0 1],N_ele_x*N_ele_y,1)
+    # NOTE: Simplified version uses N_ele_x instead of N_ele_y, and different offset pattern
+    offset_array = np.concatenate([
+        np.array([2, 3]),  # First 2 elements
+        2*(N_ele_x+1) + np.array([2, 3, 0, 1]),  # Next 4 elements
+        np.array([0, 1])   # Last 2 elements
+    ])
+    edofMat = np.tile(edofVec.reshape(-1, 1), (1, 8)) + np.tile(
+        offset_array,
+        (N_ele_x * N_ele_y, 1)
+    )
+    
+    # Row and column indices for sparse matrix assembly
+    # MATLAB: reshape(kron(edofMat,ones(8,1))',64*N_ele_x*N_ele_y,1)
+    # MATLAB: reshape(kron(edofMat,ones(1,8))',64*N_ele_x*N_ele_y,1)
+    row_idxs_mat = np.kron(edofMat, np.ones((8, 1)))
+    row_idxs = row_idxs_mat.T.reshape(64 * N_ele_x * N_ele_y, 1, order='F').flatten()
+    
+    col_idxs_mat = np.kron(edofMat, np.ones((1, 8)))
+    col_idxs = col_idxs_mat.T.reshape(64 * N_ele_x * N_ele_y, 1, order='F').flatten()
+    
+    # Get element matrices (vectorized)
+    AllLEle = get_element_stiffness_VEC(E.flatten(), nu.flatten(), t)
+    AllLMat = get_element_mass_VEC(rho.flatten(), t, const)
+    
+    # Flatten element matrices for sparse assembly
+    value_K = AllLEle.flatten().astype(np.float32)
+    value_M = AllLMat.flatten().astype(np.float32)
+    
+    # Convert 1-based indices to 0-based for Python
+    row_idxs = row_idxs - 1
+    col_idxs = col_idxs - 1
+    
+    # Calculate explicit matrix dimensions
+    N_nodes_x = N_ele_x + 1
+    N_nodes_y = N_ele_y + 1
+    N_dof = N_nodes_x * N_nodes_y * 2
+    
+    # Create sparse matrices with explicit shape
+    K = coo_matrix((value_K, (row_idxs, col_idxs)), shape=(N_dof, N_dof), dtype=np.float32).tocsr()
+    M = coo_matrix((value_M, (row_idxs, col_idxs)), shape=(N_dof, N_dof), dtype=np.float32).tocsr()
+    
+    return K, M

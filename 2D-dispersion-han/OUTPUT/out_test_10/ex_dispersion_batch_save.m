@@ -165,9 +165,9 @@ for N_value = N_values
 
         %% Save the results
         % Do something inefficient - turn K_DATA ... etc into full matrices
-        K_DATA = cellofsparse_to_full(K_DATA);
-        M_DATA = cellofsparse_to_full(M_DATA);
-        T_DATA = cellofsparse_to_full(T_DATA);
+        % K_DATA = cellofsparse_to_full(K_DATA);
+        % M_DATA = cellofsparse_to_full(M_DATA);
+        % T_DATA = cellofsparse_to_full(T_DATA);
         vars_to_save = {'WAVEVECTOR_DATA','EIGENVALUE_DATA','CONSTITUTIVE_DATA','DESIGN_NUMBERS','struct_idx_ranges','batch_idx','N_batch','N_value','K_DATA','M_DATA','T_DATA','const','design_params','designs','N_struct','N_struct_batch','imag_tol','rng_seed_offset'};
         if isSaveEigenvectors
             vars_to_save{end+1} = 'EIGENVECTOR_DATA';

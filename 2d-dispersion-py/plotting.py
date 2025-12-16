@@ -42,8 +42,13 @@ def plot_dispersion(wn, fr, N_contour_segments, ax=None):
     else:
         fig = ax.figure
     
-    # Plot dispersion curves
-    plot_handle = ax.plot(wn, fr, 'k.-')
+    # Plot dispersion curves - each band should be a separate line
+    # fr is (N_wv, N_eig) - plot each column (band) separately
+    plot_handles = []
+    for band_idx in range(fr.shape[1]):
+        # Plot each band as a separate line to avoid crossing/entanglement
+        p = ax.plot(wn, fr[:, band_idx], 'k.-', linewidth=1.5, markersize=3)
+        plot_handles.extend(p)
     
     # Add grid
     ax.grid(True, which='minor', alpha=0.3)
@@ -56,7 +61,7 @@ def plot_dispersion(wn, fr, N_contour_segments, ax=None):
     ax.set_xlabel('wavevector parameter')
     ax.set_ylabel('frequency [Hz]')
     
-    return fig, ax, plot_handle[0]
+    return fig, ax, plot_handles[0] if plot_handles else None
 
 
 def plot_design(design):
@@ -88,14 +93,21 @@ def plot_design(design):
         ax = fig.add_subplot(1, 3, prop_idx + 1)
         im = ax.imshow(design[:, :, prop_idx], cmap='viridis', vmin=0, vmax=1)
         ax.set_aspect('equal')
-        ax.set_title(titles[prop_idx], fontsize=12)
+        
+        # Get the unique value(s) in this property to display
+        unique_vals = np.unique(design[:, :, prop_idx])
+        if len(unique_vals) == 1:
+            # Uniform value - show it in the title
+            ax.set_title(f'{titles[prop_idx]} = {unique_vals[0]:.3f}', fontsize=12)
+        else:
+            ax.set_title(titles[prop_idx], fontsize=12)
+        
         ax.axis('off')  # Remove axis ticks for cleaner look
         subax_handle.append(ax)
         im_list.append(im)
     
-    # Add colorbar on the right side, same height as the plots
-    # Use the last subplot's image for colorbar
-    cbar = fig.colorbar(im_list[-1], ax=subax_handle, orientation='vertical', 
+    # Add colorbar only to the last subplot to avoid overlap
+    cbar = fig.colorbar(im_list[-1], ax=subax_handle[-1], orientation='vertical', 
                        fraction=0.046, pad=0.04)
     cbar.set_label('Property Value', fontsize=11)
     
@@ -159,14 +171,17 @@ def plot_dispersion_surface(wv, fr, N_k_x=None, N_k_y=None, ax=None):
 
 def plot_dispersion_contour(wv, fr, N_k_x=None, N_k_y=None, ax=None):
     """
-    Plot dispersion contour plot.
+    Plot dispersion contour plot (2D version).
+    
+    This function creates a 2D contour plot matching MATLAB's plot_dispersion_contour.m.
+    Uses 2D contour instead of 3D for better visualization when saved.
     
     Parameters
     ----------
     wv : array_like
         Wavevectors (N x 2)
     fr : array_like
-        Frequencies (N x N_eig)
+        Frequencies (N,) - single frequency band for contour
     N_k_x : int, optional
         Number of k-points in x-direction. If None, inferred from data.
     N_k_y : int, optional
@@ -179,7 +194,7 @@ def plot_dispersion_contour(wv, fr, N_k_x=None, N_k_y=None, ax=None):
     fig_handle : matplotlib.figure.Figure
         Figure handle
     ax_handle : matplotlib.axes.Axes
-        Axes handle
+        2D Axes handle
     """
     
     if ax is None:
@@ -193,26 +208,34 @@ def plot_dispersion_contour(wv, fr, N_k_x=None, N_k_y=None, ax=None):
         N_k_x = int(np.sqrt(wv.shape[0]))
     
     # Reshape data for contour plot
-    X = wv[:, 0].reshape(N_k_y, N_k_x)
-    Y = wv[:, 1].reshape(N_k_y, N_k_x)
-    Z = fr.reshape(N_k_y, N_k_x)
+    # MATLAB uses column-major (Fortran) order for reshape
+    # MATLAB: X = reshape(squeeze(wv(:,1)),N_k_y,N_k_x)
+    X = wv[:, 0].reshape(N_k_y, N_k_x, order='F')
+    Y = wv[:, 1].reshape(N_k_y, N_k_x, order='F')
+    Z = fr.reshape(N_k_y, N_k_x, order='F')
     
-    # Create contour plot
-    contour = ax.contour(X, Y, Z, levels=20)
-    ax.clabel(contour, inline=True, fontsize=8)
+    # Create 2D contour plot
+    n_levels = 20
+    contour = ax.contour(X, Y, Z, levels=n_levels, cmap='viridis', linewidths=1.2)
+    contour_filled = ax.contourf(X, Y, Z, levels=n_levels, cmap='viridis', alpha=0.7)
+    
+    # Add colorbar
+    plt.colorbar(contour_filled, ax=ax, label=r'$\omega$')
     
     ax.set_xlabel(r'$\gamma_x$')
     ax.set_ylabel(r'$\gamma_y$')
-    ax.set_aspect('equal')
     
-    # Tighten axes
+    # Tighten axes (matching MATLAB tighten_axes function)
     ax.set_xlim([np.min(X), np.max(X)])
     ax.set_ylim([np.min(Y), np.max(Y)])
+    
+    # Set equal aspect ratio for x and y axes
+    ax.set_aspect('equal')
     
     return fig, ax
 
 
-def plot_mode(design, eigenvector, const, mode_idx=0, ax=None):
+def plot_mode(design, eigenvector, const, mode_idx=0, ax=None, save_values=False):
     """
     Plot mode shape for a given eigenvector.
     
@@ -221,13 +244,15 @@ def plot_mode(design, eigenvector, const, mode_idx=0, ax=None):
     design : array_like
         Design pattern
     eigenvector : array_like
-        Eigenvector (mode shape)
+        Eigenvector (mode shape) - full space eigenvector (already transformed)
     const : dict
         Constants structure
     mode_idx : int, optional
         Mode index to plot (default: 0)
     ax : matplotlib.axes.Axes, optional
         Axes to plot on. If None, creates new figure and axes.
+    save_values : bool, optional
+        If True, save plotting values for comparison (default: False)
         
     Returns
     -------
@@ -253,16 +278,45 @@ def plot_mode(design, eigenvector, const, mode_idx=0, ax=None):
     else:
         N_pix_val = N_pix
     
-    # Reshape to spatial grid
+    # Reshape to spatial grid (matching MATLAB)
+    # MATLAB: U_vec = u(1:2:end); U_mat = reshape(U_vec, const.N_ele*const.N_pix + 1, const.N_ele*const.N_pix + 1)'
+    # The ' (transpose) in MATLAB means we need to transpose after reshape in Python
     N_nodes = const['N_ele'] * N_pix_val + 1
-    u_disp = mode_shape[::2].reshape(N_nodes, N_nodes)  # x-displacements
-    v_disp = mode_shape[1::2].reshape(N_nodes, N_nodes)  # y-displacements
+    U_vec = mode_shape[::2]  # x-displacements (every other element starting at 0)
+    V_vec = mode_shape[1::2]  # y-displacements (every other element starting at 1)
+    
+    # Reshape and transpose to match MATLAB (MATLAB uses ' transpose operator)
+    U_mat = U_vec.reshape(N_nodes, N_nodes).T  # Transpose to match MATLAB
+    V_mat = V_vec.reshape(N_nodes, N_nodes).T  # Transpose to match MATLAB
+    
+    # Create coordinate grids (matching MATLAB)
+    # MATLAB: original_nodal_locations = linspace(0,const.a,const.N_ele*const.N_pix + 1)
+    # MATLAB: [X,Y] = meshgrid(original_nodal_locations,flip(original_nodal_locations))
+    original_nodal_locations = np.linspace(0, const['a'], N_nodes)
+    X, Y = np.meshgrid(original_nodal_locations, np.flip(original_nodal_locations))
+    
+    # Save values if requested
+    if save_values:
+        from pathlib import Path
+        import scipy.io as sio
+        test_plots_dir = Path('test_plots')
+        test_plots_dir.mkdir(exist_ok=True)
+        plot_values = {
+            'U_mat': U_mat,
+            'V_mat': V_mat,
+            'X': X,
+            'Y': Y,
+            'U_vec': U_vec,
+            'V_vec': V_vec,
+            'mode_shape': mode_shape,
+            'N_nodes': N_nodes
+        }
+        sio.savemat(str(test_plots_dir / 'plot_mode_values_from_plotting_func.mat'), 
+                   plot_values, oned_as='column')
+        print(f"💾 TEMPORARY: Saved plot values from plotting function: {test_plots_dir / 'plot_mode_values_from_plotting_func.mat'}")
     
     # Create quiver plot
-    x_coords, y_coords = np.meshgrid(np.linspace(0, 1, N_nodes), 
-                                    np.linspace(0, 1, N_nodes))
-    
-    ax.quiver(x_coords, y_coords, u_disp, v_disp, 
+    ax.quiver(X, Y, np.real(U_mat), np.real(V_mat), 
              scale=1.0, scale_units='xy', alpha=0.7)
     
     ax.set_xlabel('x')
@@ -297,20 +351,20 @@ def visualize_designs(designs, titles=None):
     n_rows = (n_designs + n_cols - 1) // n_cols
     
     fig, axes = plt.subplots(n_rows, n_cols, figsize=(4*n_cols, 4*n_rows))
+    # Ensure axes is always 2D for consistent indexing
     if n_designs == 1:
-        axes = [axes]
+        axes = np.array([[axes]])
     elif n_rows == 1:
-        axes = axes.reshape(1, -1)
+        axes = axes.reshape(1, -1) if hasattr(axes, 'reshape') else np.array([axes])
+    elif n_cols == 1:
+        axes = axes.reshape(-1, 1) if hasattr(axes, 'reshape') else np.array([[ax] for ax in axes])
     
     axes_handle = []
     for i, design in enumerate(designs):
         row = i // n_cols
         col = i % n_cols
         
-        if n_rows == 1:
-            ax = axes[col]
-        else:
-            ax = axes[row, col]
+        ax = axes[row, col] if axes.ndim == 2 else axes[col if n_rows == 1 else row]
         
         im = ax.imshow(design[:, :, 0], cmap='gray', vmin=0, vmax=1)
         ax.set_aspect('equal')
@@ -326,10 +380,10 @@ def visualize_designs(designs, titles=None):
     for i in range(n_designs, n_rows * n_cols):
         row = i // n_cols
         col = i % n_cols
-        if n_rows == 1:
-            axes[col].set_visible(False)
-        else:
+        if axes.ndim == 2:
             axes[row, col].set_visible(False)
+        else:
+            axes[col if n_rows == 1 else row].set_visible(False)
     
     plt.tight_layout()
     

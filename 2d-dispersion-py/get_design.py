@@ -33,7 +33,7 @@ def get_design(design_name, N_pix):
         design = np.zeros((N_pix, N_pix, 3))
         design[:, :, 0] = np.round(np.random.rand(N_pix, N_pix))  # Elastic modulus
         design[:, :, 1] = design[:, :, 0]  # Density (same as elastic modulus)
-        design[:, :, 2] = 0.6 * np.ones((N_pix, N_pix))  # Poisson's ratio
+        design[:, :, 2] = design[:, :, 0]  # Poisson's ratio (same binary pattern as modulus and density)
         return design
     except (ValueError, TypeError):
         pass
@@ -43,8 +43,22 @@ def get_design(design_name, N_pix):
     
     if design_name == 'dispersive-tetragonal':
         # Dispersive cell - Tetragonal
+        # Create centered square pattern
         design[:, :, 0] = np.zeros((N_pix, N_pix))  # Elastic modulus
-        idxs = slice(N_pix//4, 3*N_pix//4)
+        # Calculate centered square: use middle portion of the grid
+        # For N_pix=5: want indices [1, 2, 3] = slice(1, 4) for 3x3 centered square
+        # For N_pix=8: want indices [2, 3, 4, 5] = slice(2, 6) for 4x4 centered square
+        # Formula: start at N_pix//4, end at 3*N_pix//4, but adjust for proper centering
+        # Better approach: center a square that's roughly N_pix/2 in size
+        center = N_pix / 2.0
+        half_size = N_pix / 4.0
+        start_idx = int(np.floor(center - half_size))
+        end_idx = int(np.ceil(center + half_size))
+        # Ensure we have at least a 2x2 square
+        if end_idx - start_idx < 2:
+            start_idx = max(0, N_pix // 2 - 1)
+            end_idx = min(N_pix, N_pix // 2 + 1)
+        idxs = slice(start_idx, end_idx)
         design[idxs, idxs, 0] = 1
         design[:, :, 1] = design[:, :, 0]  # Density
         design[:, :, 2] = 0.6 * np.ones((N_pix, N_pix))  # Poisson's ratio

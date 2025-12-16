@@ -33,6 +33,9 @@ def get_prop(design_parameters, prop_idx):
     design_style = design_parameters.design_style[prop_idx - 1]  # Convert to 0-based
     design_options = design_parameters.design_options[prop_idx - 1]
     N_pix = design_parameters.N_pix
+    # Handle both scalar and list N_pix
+    if isinstance(N_pix, (list, tuple)):
+        N_pix = N_pix[0]  # Use first element for square designs
     
     # Get design number if available
     if hasattr(design_parameters, 'design_number') and design_parameters.design_number is not None:

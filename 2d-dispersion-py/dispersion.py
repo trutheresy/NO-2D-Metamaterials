@@ -68,7 +68,9 @@ def dispersion(const, wavevectors):
         # This is a MATLAB bug - it should use size(wavevectors,1) = n_wv
         # We'll use the correct dimension: (N_dof_reduced, n_wavevectors, N_eig)
         # This matches what MATLAB INTENDS to do, even though the code has a bug
-        ev = np.zeros((N_dof_reduced, n_wavevectors, const['N_eig']), dtype=complex)
+        # Initialize as complex - will convert to real later if all eigenvectors are real
+        # MATLAB stores real eigenvectors as float64 (real arrays), complex as complex arrays
+        ev = np.zeros((N_dof_reduced, n_wavevectors, const['N_eig']), dtype=np.complex128)
     else:
         ev = None
     
@@ -91,25 +93,59 @@ def dispersion(const, wavevectors):
         
         if not const.get('isUseGPU', False):
             # Solve generalized eigenvalue problem
-            try:
-                eig_vals, eig_vecs = eigs(Kr, M=Mr, k=const['N_eig'], 
-                                         sigma=const['sigma_eig'])
-            except Exception as e:
-                # Convert to dense matrices for debugging if sparse solve fails
-                # Sometimes the sparse solver has issues, but dense might work
-                try:
-                    Kr_dense = Kr.toarray() if hasattr(Kr, 'toarray') else Kr
-                    Mr_dense = Mr.toarray() if hasattr(Mr, 'toarray') else Mr
-                    # Check for singularity
-                    if np.linalg.cond(Mr_dense) > 1e12:
-                        raise ValueError(f"Mass matrix is singular (cond={np.linalg.cond(Mr_dense):.2e}) at wavevector {wavevector}")
-                    eig_vals, eig_vecs = eigs(Kr_dense, M=Mr_dense, k=const['N_eig'], 
-                                             sigma=const['sigma_eig'])
-                except Exception as e2:
-                    raise RuntimeError(f"Failed to solve eigenvalue problem at wavevector {wavevector}: {e2}")
+            # For small problems or when finding smallest eigenvalues, use full eig for accuracy
+            # This is especially important for rigid body modes at k=0
+            N_dof_reduced = Kr.shape[0]
+            use_full_eig = (N_dof_reduced <= 1000) or (const.get('sigma_eig', '') == 'SM')
             
-            # Sort eigenvalues and eigenvectors
-            idxs = np.argsort(eig_vals)
+            if use_full_eig:
+                # Use full eigenvalue decomposition for small problems or when finding smallest eigenvalues
+                # This ensures we capture rigid body modes (zero eigenvalues) correctly
+                Kr_dense = Kr.toarray() if hasattr(Kr, 'toarray') else Kr
+                Mr_dense = Mr.toarray() if hasattr(Mr, 'toarray') else Mr
+                eig_vals, eig_vecs = np.linalg.eig(np.linalg.solve(Mr_dense, Kr_dense))
+                # Take only the first N_eig eigenvalues (sorted by real part)
+                idxs = np.argsort(np.real(eig_vals))[:const['N_eig']]
+                eig_vals = eig_vals[idxs]
+                eig_vecs = eig_vecs[:, idxs]
+                
+                # Match MATLAB's behavior: for real matrices (k=0), eigenvectors should be real
+                # Check if matrices are effectively real (imaginary parts negligible)
+                # At k=0, matrices should be real, but may be stored as complex arrays
+                is_real_matrices = (np.allclose(wavevector, 0.0) and 
+                                   np.max(np.abs(Kr_dense.imag)) < 1e-10 and 
+                                   np.max(np.abs(Mr_dense.imag)) < 1e-10)
+                if is_real_matrices:
+                    # Force eigenvectors to be real (MATLAB's eigs returns real eigenvectors for real matrices)
+                    eig_vecs = np.real(eig_vecs)
+                    eig_vals = np.real(eig_vals)
+            else:
+                # Use sparse eigs for large problems
+                # Handle sigma_eig: if string use as 'which', if number use as 'sigma'
+                sigma_eig = const.get('sigma_eig', 0)
+                eigs_kwargs = {'k': const['N_eig']}
+                if isinstance(sigma_eig, str):
+                    eigs_kwargs['which'] = sigma_eig
+                else:
+                    eigs_kwargs['sigma'] = sigma_eig
+                
+                try:
+                    eig_vals, eig_vecs = eigs(Kr, M=Mr, **eigs_kwargs)
+                except Exception as e:
+                    # Convert to dense matrices if sparse solve fails
+                    try:
+                        Kr_dense = Kr.toarray() if hasattr(Kr, 'toarray') else Kr
+                        Mr_dense = Mr.toarray() if hasattr(Mr, 'toarray') else Mr
+                        # Check for singularity
+                        if np.linalg.cond(Mr_dense) > 1e12:
+                            raise ValueError(f"Mass matrix is singular (cond={np.linalg.cond(Mr_dense):.2e}) at wavevector {wavevector}")
+                        eig_vals, eig_vecs = eigs(Kr_dense, M=Mr_dense, **eigs_kwargs)
+                    except Exception as e2:
+                        raise RuntimeError(f"Failed to solve eigenvalue problem at wavevector {wavevector}: {e2}")
+            
+            # Sort eigenvalues and eigenvectors by real part (matching MATLAB)
+            # MATLAB sorts by diag(eig_vals), which sorts by real part for real eigenvalues
+            idxs = np.argsort(np.real(eig_vals))
             eig_vals = eig_vals[idxs]
             eig_vecs = eig_vecs[:, idxs]
             
@@ -120,15 +156,38 @@ def dispersion(const, wavevectors):
                 # ev[:, k_idx, :] expects (N_dof_reduced, N_eig), so we store transpose: (N_eig, N_dof_reduced).T = (N_dof_reduced, N_eig)
                 norms = np.linalg.norm(eig_vecs, axis=0)
                 eig_vecs_normalized = eig_vecs / norms
-                phase_align = np.exp(-1j * np.angle(eig_vecs[0, :]))
-                # Store eigenvectors: each column is an eigenvector, so transpose to get (N_dof_reduced, N_eig)
-                ev[:, k_idx, :] = (eig_vecs_normalized * phase_align)
+                
+                # Phase alignment: for real eigenvectors, angle is 0 or π, so phase_align is ±1 (real)
+                # For complex eigenvectors, phase_align is complex
+                if np.isrealobj(eig_vecs):
+                    # Real eigenvectors: phase alignment is just sign alignment (±1)
+                    phase_align = np.sign(eig_vecs[0, :]).astype(np.float64)
+                    eig_vecs_aligned = eig_vecs_normalized * phase_align
+                else:
+                    # Complex eigenvectors: use complex phase alignment
+                    phase_align = np.exp(-1j * np.angle(eig_vecs[0, :]))
+                    eig_vecs_aligned = eig_vecs_normalized * phase_align
+                
+                # Store eigenvectors: each column is an eigenvector
+                ev[:, k_idx, :] = eig_vecs_aligned
             
             # Convert to frequencies (exact MATLAB translation)
-            fr[k_idx, :] = np.sqrt(np.real(eig_vals)) / (2 * np.pi)
+            # Handle negative eigenvalues (shouldn't happen but can due to numerical issues)
+            real_eig_vals = np.real(eig_vals)
+            # Set negative or very small eigenvalues to zero (rigid body modes or numerical errors)
+            real_eig_vals = np.maximum(real_eig_vals, 0.0)
+            fr[k_idx, :] = np.sqrt(real_eig_vals) / (2 * np.pi)
             
         elif const.get('isUseGPU', False):
             raise NotImplementedError('GPU use is not currently developed')
+    
+    # Match MATLAB's data type behavior: convert to real if all eigenvectors are effectively real
+    # MATLAB stores real eigenvectors as float64 (real arrays), not complex arrays
+    if ev is not None:
+        max_imag_all = np.max(np.abs(ev.imag))
+        if max_imag_all < 1e-10:  # Within numerical precision
+            # Convert to real array (matching MATLAB's float64 real arrays)
+            ev = np.real(ev).astype(np.float64)
     
     return wavevectors, fr, ev, mesh
 
