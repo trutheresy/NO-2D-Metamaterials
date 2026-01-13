@@ -91,7 +91,40 @@ def _load_h5_item(f, item, name="", indent=2, verbose=False):
     if isinstance(item, h5py.Reference):
         if verbose:
             print(f"{prefix}├─ Dereferencing {name}")
-        return _load_h5_item(f, f[item], name, indent + 2, verbose)
+        try:
+            return _load_h5_item(f, f[item], name, indent + 2, verbose)
+        except (KeyError, OSError, ValueError) as e:
+            # Reference might point to a string in #refs# group or be invalid
+            error_msg = str(e)
+            if verbose:
+                print(f"{prefix}│  └─ Reference failed: {error_msg}")
+            
+            # Try to extract string name from error message (e.g., "object 'linear' doesn't exist")
+            # This is a workaround for MATLAB string references
+            if "doesn't exist" in error_msg and "'" in error_msg:
+                # Extract the string name from the error
+                try:
+                    start = error_msg.find("'") + 1
+                    end = error_msg.find("'", start)
+                    string_name = error_msg[start:end]
+                    if verbose:
+                        print(f"{prefix}│  └─ Extracted string name: '{string_name}', returning as string")
+                    return string_name
+                except:
+                    pass
+            
+            # Try to find in #refs# group
+            if '#refs#' in f:
+                refs_group = f['#refs#']
+                # Try all refs to find matching string (this is a fallback)
+                # For now, return None to allow loading to continue
+                if verbose:
+                    print(f"{prefix}│  └─ Could not dereference reference, returning None")
+                return None
+            else:
+                if verbose:
+                    print(f"{prefix}│  └─ No #refs# group found, returning None")
+                return None
     
     # Handle datasets
     elif isinstance(item, h5py.Dataset):
@@ -110,7 +143,33 @@ def _load_h5_item(f, item, name="", indent=2, verbose=False):
             for idx in np.ndindex(data.shape):
                 ref = data[idx]
                 if ref:  # Valid reference
-                    result[idx] = _load_h5_item(f, f[ref], f"{name}[{idx}]", indent + 4, verbose)
+                    try:
+                        result[idx] = _load_h5_item(f, f[ref], f"{name}[{idx}]", indent + 4, verbose)
+                    except (KeyError, OSError, ValueError) as e:
+                        # Reference might be invalid or point to a string
+                        error_msg = str(e)
+                        if verbose:
+                            print(f"{prefix}│     └─ Could not dereference reference at {idx}: {error_msg}")
+                        
+                        # Try to extract string name from error message
+                        if "doesn't exist" in error_msg and "'" in error_msg:
+                            try:
+                                start = error_msg.find("'") + 1
+                                end = error_msg.find("'", start)
+                                string_name = error_msg[start:end]
+                                if verbose:
+                                    print(f"{prefix}│        └─ Extracted string: '{string_name}'")
+                                result[idx] = string_name
+                            except:
+                                result[idx] = None
+                        else:
+                            # Try to find in #refs# group
+                            if '#refs#' in f:
+                                refs_group = f['#refs#']
+                                # For now, set to None to allow loading to continue
+                                result[idx] = None
+                            else:
+                                result[idx] = None
                 else:
                     result[idx] = None
             

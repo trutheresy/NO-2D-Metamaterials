@@ -91,11 +91,22 @@ def plot_design(design):
     im_list = []
     for prop_idx in range(N_prop):
         ax = fig.add_subplot(1, 3, prop_idx + 1)
-        im = ax.imshow(design[:, :, prop_idx], cmap='viridis', vmin=0, vmax=1)
+        
+        # Get data range for this property (don't force vmin/vmax to [0, 1] if values exceed that)
+        prop_data = design[:, :, prop_idx]
+        vmin = np.min(prop_data)
+        vmax = np.max(prop_data)
+        
+        # If all values are the same, use a small range around that value
+        if vmin == vmax:
+            vmin = vmin - 0.1 if vmin > 0 else 0
+            vmax = vmax + 0.1 if vmax < 1 else 1
+        
+        im = ax.imshow(prop_data, cmap='viridis', vmin=vmin, vmax=vmax)
         ax.set_aspect('equal')
         
         # Get the unique value(s) in this property to display
-        unique_vals = np.unique(design[:, :, prop_idx])
+        unique_vals = np.unique(prop_data)
         if len(unique_vals) == 1:
             # Uniform value - show it in the title
             ax.set_title(f'{titles[prop_idx]} = {unique_vals[0]:.3f}', fontsize=12)
@@ -103,13 +114,14 @@ def plot_design(design):
             ax.set_title(titles[prop_idx], fontsize=12)
         
         ax.axis('off')  # Remove axis ticks for cleaner look
+        
+        # Add individual colorbar for each subplot
+        cbar = fig.colorbar(im, ax=ax, orientation='vertical', 
+                           fraction=0.046, pad=0.04)
+        cbar.set_label('Value', fontsize=10)
+        
         subax_handle.append(ax)
         im_list.append(im)
-    
-    # Add colorbar only to the last subplot to avoid overlap
-    cbar = fig.colorbar(im_list[-1], ax=subax_handle[-1], orientation='vertical', 
-                       fraction=0.046, pad=0.04)
-    cbar.set_label('Property Value', fontsize=11)
     
     plt.tight_layout()
     

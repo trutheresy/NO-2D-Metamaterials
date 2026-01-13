@@ -277,17 +277,23 @@ def apply_steel_rubber_paradigm(design, const):
     
     This is the exact translation of MATLAB's apply_steel_rubber_paradigm.m function.
     
+    Note: Despite MATLAB's comment saying "design should be a N_pix matrix (with only one pane)",
+    the actual MATLAB code accesses design(:,:,prop_idx) for prop_idx=1:3, which requires
+    a 3-channel input. In practice, MATLAB always calls this with 3-channel designs from
+    get_design2() and convert_design().
+    
     Parameters
     ----------
     design : array_like
-        Design array (N_pix x N_pix x 3)
+        Design array (N_pix x N_pix x 3) - 3-channel input expected
     const : dict
-        Constants structure containing material bounds
+        Constants structure containing material bounds (E_min, E_max, rho_min, rho_max, 
+        poisson_min, poisson_max)
         
     Returns
     -------
     design_out : array_like
-        Design array with steel-rubber paradigm applied
+        Design array (N_pix x N_pix x 3) with steel-rubber paradigm applied to each channel
     """
     design_in_polymer = 0
     design_in_steel = 1

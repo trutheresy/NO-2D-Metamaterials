@@ -29,11 +29,13 @@ try:
     from wavevectors import get_IBZ_contour_wavevectors
     from system_matrices import get_system_matrices, get_transformation_matrix
     from system_matrices_vec import get_system_matrices_VEC, get_system_matrices_VEC_simplified
+    from scipy.interpolate import interp1d
 except ImportError:
     import plotting
     import wavevectors
     import system_matrices
     import system_matrices_vec
+    from scipy.interpolate import interp1d
     plot_design = plotting.plot_design
     get_IBZ_contour_wavevectors = wavevectors.get_IBZ_contour_wavevectors
     get_system_matrices = system_matrices.get_system_matrices
@@ -251,11 +253,95 @@ def load_pt_dataset(data_dir: Path, original_data_dir: Path = None, require_eige
     return data
 
 
-def create_const_dict(design, N_pix, N_ele=4, a=1.0, 
+def apply_steel_rubber_paradigm_single_channel(design_single, E_min, E_max, rho_min, rho_max, nu_min, nu_max):
+    """
+    Apply steel-rubber paradigm to single-channel design.
+    
+    This matches MATLAB's apply_steel_rubber_paradigm.m functionality.
+    Takes a single-channel design (N_pix x N_pix) with values in [0, 1] and maps
+    them to normalized property values for E, rho, nu using the steel-rubber paradigm.
+    
+    Parameters
+    ----------
+    design_single : ndarray
+        Single-channel design (N_pix, N_pix) with values in [0, 1]
+    E_min, E_max : float
+        Young's modulus bounds
+    rho_min, rho_max : float
+        Density bounds
+    nu_min, nu_max : float
+        Poisson's ratio bounds
+        
+    Returns
+    -------
+    design_3ch : ndarray
+        3-channel design (N_pix, N_pix, 3) with normalized property values
+    """
+    # Material properties for steel-rubber paradigm (matching MATLAB)
+    design_in_polymer = 0.0
+    design_in_steel = 1.0
+    
+    E_polymer = 100e6  # MATLAB: 100e6
+    E_steel = 200e9
+    
+    rho_polymer = 1200
+    rho_steel = 8000
+    
+    nu_polymer = 0.45
+    nu_steel = 0.3
+    
+    # Convert material properties to normalized design space
+    # Formula: design_out = (prop_value - prop_min) / (prop_max - prop_min)
+    design_out_polymer_E = (E_polymer - E_min) / (E_max - E_min)
+    design_out_polymer_rho = (rho_polymer - rho_min) / (rho_max - rho_min)
+    design_out_polymer_nu = (nu_polymer - nu_min) / (nu_max - nu_min)
+    
+    design_out_steel_E = (E_steel - E_min) / (E_max - E_min)
+    design_out_steel_rho = (rho_steel - rho_min) / (rho_max - rho_min)
+    design_out_steel_nu = (nu_steel - nu_min) / (nu_max - nu_min)
+    
+    # Create 3-channel design
+    N_pix = design_single.shape[0]
+    design_3ch = np.zeros((N_pix, N_pix, 3))
+    
+    # Map design values to normalized property values using linear interpolation
+    # For each property, interpolate between polymer (design=0) and steel (design=1) values
+    design_flat = design_single.flatten()
+    
+    # Elastic modulus
+    design_3ch[:, :, 0] = np.interp(
+        design_flat,
+        [design_in_polymer, design_in_steel],
+        [design_out_polymer_E, design_out_steel_E]
+    ).reshape(N_pix, N_pix)
+    
+    # Density
+    design_3ch[:, :, 1] = np.interp(
+        design_flat,
+        [design_in_polymer, design_in_steel],
+        [design_out_polymer_rho, design_out_steel_rho]
+    ).reshape(N_pix, N_pix)
+    
+    # Poisson's ratio
+    design_3ch[:, :, 2] = np.interp(
+        design_flat,
+        [design_in_polymer, design_in_steel],
+        [design_out_polymer_nu, design_out_steel_nu]
+    ).reshape(N_pix, N_pix)
+    
+    # Don't clip - let plot_design handle the actual value ranges
+    # Some normalized values may exceed 1.0 if material properties are outside bounds
+    # This is correct behavior matching MATLAB's apply_steel_rubber_paradigm.m
+    # plot_design will now use individual colorbars and auto-scale for each property
+    
+    return design_3ch
+
+
+def create_const_dict(design, N_pix, N_ele=1, a=1.0, 
                        E_min=20e6, E_max=200e9,
-                       rho_min=400, rho_max=8000,
-                       nu_min=0.05, nu_max=0.3,
-                       t=0.01, design_scale='linear',
+                       rho_min=1200, rho_max=8000,
+                       nu_min=0.0, nu_max=0.5,
+                       t=1.0, design_scale='linear',
                        isUseImprovement=True, isUseSecondImprovement=False):
     """
     Create const dictionary for computing K, M, T matrices.
@@ -273,11 +359,11 @@ def create_const_dict(design, N_pix, N_ele=4, a=1.0,
     E_min, E_max : float, optional
         Young's modulus range (default: 20e6 to 200e9)
     rho_min, rho_max : float, optional
-        Density range (default: 400 to 8000)
+        Density range (default: 1200 to 8000, matching MATLAB)
     nu_min, nu_max : float, optional
-        Poisson's ratio range (default: 0.05 to 0.3)
+        Poisson's ratio range (default: 0.0 to 0.5, matching MATLAB)
     t : float, optional
-        Thickness (default: 0.01)
+        Thickness (default: 1.0, matching MATLAB)
     design_scale : str, optional
         Design scaling ('linear' or 'log', default: 'linear')
     isUseImprovement : bool, optional
@@ -348,11 +434,108 @@ def compute_K_M_matrices(const):
     return K, M
 
 
-def reconstruct_frequencies_from_eigenvectors(K, M, T_data, eigenvectors, wavevectors, N_eig, struct_idx=0, N_struct=1):
+def convert_field_to_dof_format(eigenvectors_field, N_pix, N_ele=1, reduced_space=True):
+    """
+    Convert field format eigenvectors (N_samples, 2, H, W) to DOF format (N_dof).
+    
+    Field format stores (N_pix, N_pix) for x and y components separately.
+    If reduced_space=True: maps to reduced DOF space 2 * (N_ele * N_pix)^2
+    If reduced_space=False: maps to full DOF space 2 * (N_ele * N_pix + 1)^2
+    
+    The field format eigenvectors are typically already in reduced space after T transformation.
+    Each pixel (i, j) in field format maps to a block of (N_ele, N_ele) nodes in the reduced grid.
+    
+    Parameters
+    ----------
+    eigenvectors_field : ndarray
+        Field format: (N_samples, 2, H, W) where H=W=N_pix
+    N_pix : int
+        Number of pixels per dimension
+    N_ele : int, optional
+        Number of elements per pixel (default: 4)
+    reduced_space : bool, optional
+        If True, convert to reduced DOF space (default: True)
+        If False, convert to full DOF space
+        
+    Returns
+    -------
+    eigenvectors_dof : ndarray
+        DOF format: (N_samples, N_dof)
+        If reduced_space=True: N_dof = 2 * (N_ele * N_pix)^2
+        If reduced_space=False: N_dof = 2 * (N_ele * N_pix + 1)^2
+    """
+    N_samples = eigenvectors_field.shape[0]
+    H, W = eigenvectors_field.shape[2], eigenvectors_field.shape[3]
+    
+    if H != N_pix or W != N_pix:
+        raise ValueError(f"Field format H={H}, W={W} does not match N_pix={N_pix}")
+    
+    # Extract x and y components
+    x_field = eigenvectors_field[:, 0, :, :]  # (N_samples, H, W)
+    y_field = eigenvectors_field[:, 1, :, :]  # (N_samples, H, W)
+    
+    # Flatten spatial dimensions
+    x_flat = x_field.reshape(N_samples, H * W)  # (N_samples, N_pix^2)
+    y_flat = y_field.reshape(N_samples, H * W)  # (N_samples, N_pix^2)
+    
+    if reduced_space:
+        # Reduced DOF space: N_dof_reduced = 2 * (N_ele * N_pix)^2
+        # Field format (N_pix, N_pix) represents pixel-level data
+        # Each pixel corresponds to (N_ele, N_ele) nodes in the reduced grid
+        # So we need to expand: pixel (i, j) -> nodes (i*N_ele:(i+1)*N_ele, j*N_ele:(j+1)*N_ele)
+        N_nodes_reduced = N_ele * N_pix
+        N_dof_reduced = 2 * N_nodes_reduced * N_nodes_reduced
+        
+        # Vectorized conversion: expand each pixel to N_ele x N_ele block of nodes
+        # Reshape x_flat and y_flat to (N_samples, N_pix, N_pix)
+        x_field_reshaped = x_flat.reshape(N_samples, N_pix, N_pix)
+        y_field_reshaped = y_flat.reshape(N_samples, N_pix, N_pix)
+        
+        # Expand each pixel to N_ele x N_ele block using np.repeat
+        # For x: (N_samples, N_pix, N_pix) -> (N_samples, N_pix, N_pix, 1, 1) -> (N_samples, N_pix, N_ele, N_pix, N_ele)
+        x_expanded = np.repeat(np.repeat(x_field_reshaped[:, :, :, np.newaxis, np.newaxis], 
+                                         N_ele, axis=3), N_ele, axis=4)
+        y_expanded = np.repeat(np.repeat(y_field_reshaped[:, :, :, np.newaxis, np.newaxis], 
+                                         N_ele, axis=3), N_ele, axis=4)
+        
+        # Reshape to (N_samples, N_nodes_reduced, N_nodes_reduced)
+        x_nodes = x_expanded.reshape(N_samples, N_nodes_reduced, N_nodes_reduced)
+        y_nodes = y_expanded.reshape(N_samples, N_nodes_reduced, N_nodes_reduced)
+        
+        # Flatten node grid: (N_samples, N_nodes_reduced, N_nodes_reduced) -> (N_samples, N_nodes_reduced^2)
+        x_nodes_flat = x_nodes.reshape(N_samples, N_nodes_reduced * N_nodes_reduced)
+        y_nodes_flat = y_nodes.reshape(N_samples, N_nodes_reduced * N_nodes_reduced)
+        
+        # Interleave x and y: DOF[2*i] = x, DOF[2*i+1] = y
+        eigenvectors_dof = np.zeros((N_samples, N_dof_reduced), dtype=eigenvectors_field.dtype)
+        eigenvectors_dof[:, 0::2] = x_nodes_flat  # x components at even indices
+        eigenvectors_dof[:, 1::2] = y_nodes_flat  # y components at odd indices
+    else:
+        # Full DOF space: N_dof_full = 2 * (N_ele * N_pix + 1)^2
+        N_nodes_full = N_ele * N_pix + 1
+        N_dof_full = 2 * N_nodes_full * N_nodes_full
+        
+        # Create DOF format array
+        eigenvectors_dof = np.zeros((N_samples, N_dof_full), dtype=eigenvectors_field.dtype)
+        
+        # Field format maps to [:N_pix, :N_pix] in the full grid
+        for i in range(N_samples):
+            for j in range(H * W):
+                row = j // W
+                col = j % W
+                node_idx = row * N_nodes_full + col
+                eigenvectors_dof[i, 2 * node_idx] = x_flat[i, j]
+                eigenvectors_dof[i, 2 * node_idx + 1] = y_flat[i, j]
+    
+    return eigenvectors_dof
+
+
+def reconstruct_frequencies_from_eigenvectors(K, M, T_data, eigenvectors, wavevectors, N_eig, struct_idx=0, N_struct=1, N_pix=None, N_ele=1):
     """
     Reconstruct frequencies from eigenvectors using K, M, T matrices.
     
     This mirrors the MATLAB plot_dispersion.m functionality (lines 100-116).
+    Always reconstructs frequencies - never uses pre-computed eigenvalue_data.
     
     Parameters
     ----------
@@ -375,12 +558,18 @@ def reconstruct_frequencies_from_eigenvectors(K, M, T_data, eigenvectors, waveve
         Structure index (for multi-structure formats)
     N_struct : int, optional
         Total number of structures (for multi-structure formats)
+    N_pix : int, optional
+        Number of pixels per dimension (required for field format conversion)
+    N_ele : int, optional
+        Number of elements per pixel (default: 4, required for field format conversion)
         
     Returns
     -------
-    frequencies_recon : array_like or None
-        Reconstructed frequencies (N_wv, N_eig), or None if reconstruction fails
+    frequencies_recon : ndarray
+        Reconstructed frequencies (N_wv, N_eig)
     """
+    import scipy.sparse as sp
+    
     n_wavevectors = len(wavevectors)
     frequencies_recon = np.zeros((n_wavevectors, N_eig))
     
@@ -400,12 +589,18 @@ def reconstruct_frequencies_from_eigenvectors(K, M, T_data, eigenvectors, waveve
             print(f"    Detected field format with x/y components: (N_samples={eigenvectors.shape[0]}, 2, H={eigenvectors.shape[2]}, W={eigenvectors.shape[3]})")
             H, W = eigenvectors.shape[2], eigenvectors.shape[3]
             
-            # Flatten spatial dimensions: (N_samples, 2*H*W)
-            eigenvectors_flat = eigenvectors.reshape(eigenvectors.shape[0], 2 * H * W)
+            if N_pix is None:
+                N_pix = H  # Assume H = N_pix
+                print(f"    Inferred N_pix = {N_pix} from field format")
             
-            # Reshape to (N_struct, N_wv, N_eig, 2*H*W)
+            # Convert field format to reduced DOF format (eigenvectors are already in reduced space)
+            print(f"    Converting field format to reduced DOF format (N_pix={N_pix}, N_ele={N_ele})...")
+            eigenvectors_dof = convert_field_to_dof_format(eigenvectors, N_pix, N_ele, reduced_space=True)
+            print(f"    Converted to reduced DOF format: shape={eigenvectors_dof.shape}")
+            
+            # Reshape to (N_struct, N_wv, N_eig, N_dof)
             samples_per_struct = n_wavevectors * N_eig
-            total_samples = eigenvectors.shape[0]
+            total_samples = eigenvectors_dof.shape[0]
             
             if total_samples % samples_per_struct != 0:
                 raise ValueError(
@@ -414,18 +609,18 @@ def reconstruct_frequencies_from_eigenvectors(K, M, T_data, eigenvectors, waveve
                 )
             
             inferred_N_struct = total_samples // samples_per_struct
-            print(f"    Reshaped to (N_struct={inferred_N_struct}, N_wv={n_wavevectors}, N_eig={N_eig}, field_size={2*H*W})")
+            N_dof = eigenvectors_dof.shape[1]
+            print(f"    Reshaped to (N_struct={inferred_N_struct}, N_wv={n_wavevectors}, N_eig={N_eig}, N_dof={N_dof})")
             
-            eigenvectors_reshaped = eigenvectors_flat.reshape(inferred_N_struct, n_wavevectors, N_eig, 2 * H * W)
+            eigenvectors_reshaped = eigenvectors_dof.reshape(inferred_N_struct, n_wavevectors, N_eig, N_dof)
             
-            # Extract for this structure: (N_wv, N_eig, 2*H*W)
+            # Extract for this structure: (N_wv, N_eig, N_dof)
             eigenvectors_struct = eigenvectors_reshaped[struct_idx]
             
-            # Transpose to (2*H*W, N_wv, N_eig) for consistent indexing
-            eigenvectors = eigenvectors_struct.transpose(2, 0, 1)  # (2*H*W, N_wv, N_eig)
+            # Transpose to (N_dof, N_wv, N_eig) for consistent indexing
+            eigenvectors = eigenvectors_struct.transpose(2, 0, 1)  # (N_dof, N_wv, N_eig)
             ev_format = 'field_xy'
-            field_size = 2 * H * W
-            print(f"    Final shape: (field_size={field_size}, N_wv={n_wavevectors}, N_eig={N_eig})")
+            print(f"    Final shape: (N_dof={eigenvectors.shape[0]}, N_wv={n_wavevectors}, N_eig={N_eig})")
             
         else:
             # Format: (N_struct, N_wv, N_eig, N_dof) - PyTorch style DOF format
@@ -441,9 +636,6 @@ def reconstruct_frequencies_from_eigenvectors(K, M, T_data, eigenvectors, waveve
             f"or (N_samples, 2, H, W)"
         )
     
-    # Check dimension compatibility before processing
-    import scipy.sparse as sp
-    
     # Get expected DOF size from first T matrix
     T_sample = None
     if isinstance(T_data, list) and len(T_data) > 0:
@@ -451,19 +643,23 @@ def reconstruct_frequencies_from_eigenvectors(K, M, T_data, eigenvectors, waveve
     elif isinstance(T_data, np.ndarray):
         T_sample = T_data[0] if T_data.ndim == 3 else T_data
     
-    if T_sample is not None:
-        if sp.issparse(T_sample):
-            expected_dof = T_sample.shape[0]  # Reduced DOF space
-        else:
-            expected_dof = T_sample.shape[0]
-        
-        actual_dof = eigenvectors.shape[0]
-        
-        if expected_dof != actual_dof:
-            print(f"    ERROR: Dimension mismatch - matrices expect {expected_dof} DOF, eigenvectors have {actual_dof}")
-            print(f"    Field format eigenvectors may not be directly usable for matrix reconstruction")
-            print(f"    Consider using full DOF format eigenvectors")
-            return None
+    if T_sample is None:
+        raise ValueError("T_data is required for frequency reconstruction")
+    
+    if sp.issparse(T_sample):
+        # T matrix shape: (full_dof, reduced_dof)
+        # Eigenvectors should be in reduced space, so check against T.shape[1]
+        expected_dof = T_sample.shape[1]  # Reduced DOF space (columns of T)
+    else:
+        expected_dof = T_sample.shape[1]  # Reduced DOF space (columns of T)
+    
+    actual_dof = eigenvectors.shape[0]
+    
+    if expected_dof != actual_dof:
+        raise ValueError(
+            f"Dimension mismatch - reduced matrices expect {expected_dof} DOF (reduced space), eigenvectors have {actual_dof}. "
+            f"This may indicate incorrect field-to-DOF conversion or matrix computation."
+        )
     
     # Process each wavevector
     for wv_idx in range(n_wavevectors):
@@ -656,7 +852,7 @@ def plot_dispersion_on_contour(ax, contour_info, frequencies_contour, contour_pa
         ax.legend()
 
 
-def main(cli_data_dir=None, cli_original_dir=None, n_structs=None, infer=True):
+def main(cli_data_dir=None, cli_original_dir=None, n_structs=None, infer=True, save_km=True, save_t=False, save_plot_points=False):
     """
     Main script execution.
     
@@ -671,6 +867,12 @@ def main(cli_data_dir=None, cli_original_dir=None, n_structs=None, infer=True):
     infer : bool, optional
         If True, reconstruct frequencies from eigenvectors using K, M, T (default: True)
         If False, use eigenvalue_data directly (requires original_dir)
+    save_km : bool, optional
+        If True, save computed K and M matrices (default: True)
+    save_t : bool, optional
+        If True, save computed T matrices (default: False)
+    save_plot_points : bool, optional
+        If True, save plot point locations (wavevectors_contour, frequencies_contour, contour_param) to .npz file (default: False)
     """
     print("=" * 70)
     print("Plot Dispersion Script with Eigenfrequency Reconstruction")
@@ -703,6 +905,7 @@ def main(cli_data_dir=None, cli_original_dir=None, n_structs=None, infer=True):
         print("  Mode: INFER frequencies from eigenvectors (infer=True)")
         print("  Will compute K, M, T matrices and reconstruct frequencies")
         print("  All data should be in the dataset directory")
+        print("  NO FALLBACK: Frequencies are ALWAYS reconstructed from eigenvectors")
     else:
         print("  Mode: USE eigenvalue_data directly (infer=False)")
         print("  Will load eigenvalue data from original_dir")
@@ -759,40 +962,40 @@ def main(cli_data_dir=None, cli_original_dir=None, n_structs=None, infer=True):
         has_K_data = 'K_data' in data and data['K_data'] is not None
         has_M_data = 'M_data' in data and data['M_data'] is not None
         has_T_data = 'T_data' in data and data['T_data'] is not None
+
+        # Prepare containers for saving K, M, and T if requested
+        km_store_K = None
+        km_store_M = None
+        t_store = None
+        if save_km:
+            n_struct_total = designs.shape[0]
+            # If existing data present, reuse; else initialize placeholders
+            km_store_K = list(data['K_data']) if has_K_data else [None] * n_struct_total
+            km_store_M = list(data['M_data']) if has_M_data else [None] * n_struct_total
+        if save_t:
+            n_struct_total = designs.shape[0]
+            # T_data is a list of lists: outer list for structures, inner list for wavevectors
+            # If existing data present, reuse; else initialize placeholders
+            if has_T_data:
+                # T_data might be a single list (for first structure) or list of lists
+                if isinstance(data['T_data'], list) and len(data['T_data']) > 0:
+                    if isinstance(data['T_data'][0], list):
+                        t_store = list(data['T_data'])  # Already list of lists
+                    else:
+                        # Single structure's T_data - wrap in outer list
+                        t_store = [list(data['T_data'])] + [None] * (n_struct_total - 1)
+                else:
+                    t_store = [None] * n_struct_total
+            else:
+                t_store = [None] * n_struct_total
         
         if has_K_data and has_M_data and has_T_data:
             print("  Found K, M, T matrices in dataset - will use them")
         else:
             print("  K, M, T matrices not found - will compute them on-the-fly")
         
-        # Try to load eigenvalue_data as fallback (in case reconstruction fails)
-        # This allows us to still generate plots even if eigenvectors are in field format
-        eigenvalues_all = None
-        if original_data_dir is not None:
-            try:
-                # Try to load eigenvalue_data from original_dir as fallback
-                if (original_data_dir / 'eigenvalue_data.npy').exists():
-                    eigenvalues_all = np.load(original_data_dir / 'eigenvalue_data.npy')
-                    print("  Loaded eigenvalue_data as fallback (for use if reconstruction fails)")
-                elif original_data_dir.suffix == '.mat' or (original_data_dir.parent / f'{original_data_dir.name}.mat').exists():
-                    mat_file = original_data_dir if original_data_dir.suffix == '.mat' else (original_data_dir.parent / f'{original_data_dir.name}.mat')
-                    if mat_file.exists():
-                        import h5py
-                        with h5py.File(mat_file, 'r') as f:
-                            eigenvalue_data_orig = np.array(f['EIGENVALUE_DATA'], dtype=np.float32)
-                            if len(eigenvalue_data_orig.shape) == 3:
-                                if eigenvalue_data_orig.shape[0] > eigenvalue_data_orig.shape[2]:
-                                    eigenvalue_data_orig = eigenvalue_data_orig.transpose(0, 2, 1)
-                                elif eigenvalue_data_orig.shape[2] > eigenvalue_data_orig.shape[0]:
-                                    eigenvalue_data_orig = eigenvalue_data_orig.transpose(2, 0, 1)
-                                else:
-                                    eigenvalue_data_orig = eigenvalue_data_orig.transpose(1, 0, 2)
-                            eigenvalues_all = eigenvalue_data_orig
-                            print("  Loaded eigenvalue_data from MATLAB file as fallback")
-            except Exception as e:
-                print(f"  Could not load eigenvalue_data as fallback: {e}")
-        
-        can_reconstruct = True
+        # NO FALLBACK: Always reconstruct frequencies from eigenvectors using K, M, T
+        print("  Mode: ALWAYS reconstruct frequencies from eigenvectors (no fallback to eigenvalue_data)")
         
     else:
         # Mode: Use eigenvalue_data directly
@@ -845,10 +1048,11 @@ def main(cli_data_dir=None, cli_original_dir=None, n_structs=None, infer=True):
         print(f"  Detected N_eig = {N_eig} from eigenvalue_data")
     a = 1.0  # Default lattice parameter
     
-    # Material parameter ranges (default values)
+    # Material parameter ranges (default values - matching MATLAB ex_dispersion_batch_save.m)
     E_min, E_max = 20e6, 200e9
-    rho_min, rho_max = 400, 8000
-    nu_min, nu_max = 0.05, 0.3
+    rho_min, rho_max = 1200, 8000  # MATLAB: const.rho_min = 1200, const.rho_max = 8e3
+    nu_min, nu_max = 0.0, 0.5  # MATLAB: const.poisson_min = 0, const.poisson_max = 0.5
+    t_val = 1.0  # MATLAB: const.t = 1 (line 61)
     
     # Number of structures/geometries to plot
     # If n_structs is None, default to 5 (or all if dataset has fewer than 5)
@@ -870,6 +1074,11 @@ def main(cli_data_dir=None, cli_original_dir=None, n_structs=None, infer=True):
         print("  Mode: Reconstructing frequencies from eigenvectors")
     else:
         print("  Mode: Using eigenvalue_data directly")
+    if save_plot_points:
+        print("  Plot point locations will be saved to .npz file")
+    
+    # Store plot points for saving
+    plot_points_data = {} if save_plot_points else None
     
     for struct_idx in struct_idxs:
         print(f"\n{'='*70}")
@@ -877,15 +1086,44 @@ def main(cli_data_dir=None, cli_original_dir=None, n_structs=None, infer=True):
         print(f"{'='*70}")
         
         # Get design and material properties
-        design_param = designs[struct_idx, :, :]
+        design_param = designs[struct_idx, :, :]  # Single channel design (N_pix, N_pix) with values in [0, 1]
+        
+        # Plot raw design (before normalization) - replicate single channel to 3 channels
+        print("  Plotting raw design (before normalization)...")
+        design_raw_3ch = np.zeros((design_param.shape[0], design_param.shape[1], 3))
+        design_raw_3ch[:, :, 0] = design_param  # Modulus
+        design_raw_3ch[:, :, 1] = design_param  # Density
+        design_raw_3ch[:, :, 2] = design_param  # Poisson's ratio
+        fig_design_raw, _ = plot_design(design_raw_3ch)
+        if isExportPng:
+            png_path_raw = output_dir / 'design_raw' / f'{struct_idx}.png'
+            png_path_raw.parent.mkdir(parents=True, exist_ok=True)
+            fig_design_raw.savefig(png_path_raw, dpi=png_resolution, bbox_inches='tight')
+            plt.close(fig_design_raw)
+        
+        # For plotting: apply steel-rubber paradigm to get actual material property values
+        # This matches MATLAB's apply_steel_rubber_paradigm.m functionality
+        # The design values [0, 1] are mapped to actual material property values for E, rho, nu
+        # First get normalized values, then convert back to actual property values for plotting
+        design_normalized = apply_steel_rubber_paradigm_single_channel(
+            design_param, E_min, E_max, rho_min, rho_max, nu_min, nu_max
+        )
+        
+        # Convert normalized values back to actual material property values for plotting
+        # This ensures the plot shows actual Poisson's ratio values (0.3-0.45) not normalized (0.6-0.9)
+        design_for_plot = np.zeros_like(design_normalized)
+        design_for_plot[:, :, 0] = E_min + (E_max - E_min) * design_normalized[:, :, 0]  # Elastic modulus
+        design_for_plot[:, :, 1] = rho_min + (rho_max - rho_min) * design_normalized[:, :, 1]  # Density
+        design_for_plot[:, :, 2] = nu_min + (nu_max - nu_min) * design_normalized[:, :, 2]  # Poisson's ratio
+        
+        # Plot design (using actual material property values)
+        print("  Plotting design (after normalization)...")
+        fig_design, _ = plot_design(design_for_plot)
+        
+        # For matrix computation: compute actual material properties
         elastic_modulus = E_min + (E_max - E_min) * design_param
         density = rho_min + (rho_max - rho_min) * design_param
         poisson_ratio = nu_min + (nu_max - nu_min) * design_param
-        geometry = np.stack([elastic_modulus, density, poisson_ratio], axis=-1)
-        
-        # Plot design
-        print("  Plotting design...")
-        fig_design, _ = plot_design(geometry)
         if isExportPng:
             png_path = output_dir / 'design' / f'{struct_idx}.png'
             png_path.parent.mkdir(parents=True, exist_ok=True)
@@ -903,138 +1141,88 @@ def main(cli_data_dir=None, cli_original_dir=None, n_structs=None, infer=True):
             print("  Reconstructing frequencies from eigenvectors...")
             try:
                 # Get or compute K, M matrices
+                expected_full_dof = 2 * (1 * N_pix + 1) * (1 * N_pix + 1)  # N_ele=1 -> 2*(N_pix+1)^2
+                use_loaded_KM = False
                 if has_K_data and has_M_data:
-                    print("    Using K, M matrices from dataset...")
-                    K = data['K_data'][struct_idx] if isinstance(data['K_data'], (list, np.ndarray)) and len(data['K_data']) > struct_idx else data['K_data']
-                    M = data['M_data'][struct_idx] if isinstance(data['M_data'], (list, np.ndarray)) and len(data['M_data']) > struct_idx else data['M_data']
-                else:
+                    K_loaded = data['K_data'][struct_idx] if isinstance(data['K_data'], (list, np.ndarray)) and len(data['K_data']) > struct_idx else data['K_data']
+                    M_loaded = data['M_data'][struct_idx] if isinstance(data['M_data'], (list, np.ndarray)) and len(data['M_data']) > struct_idx else data['M_data']
+                    try:
+                        if K_loaded.shape[0] == expected_full_dof and M_loaded.shape[0] == expected_full_dof:
+                            use_loaded_KM = True
+                            K = K_loaded
+                            M = M_loaded
+                            print(f"    Using K, M matrices from dataset (matched expected DOF={expected_full_dof})...")
+                        else:
+                            print(f"    Loaded K/M shapes {K_loaded.shape}, {M_loaded.shape} do not match expected DOF={expected_full_dof}; recomputing.")
+                    except Exception:
+                        pass
+                if not use_loaded_KM:
                     print("    Computing K, M matrices...")
                     const = create_const_dict(design_param, N_pix, a=a, 
                                             E_min=E_min, E_max=E_max,
                                             rho_min=rho_min, rho_max=rho_max,
-                                            nu_min=nu_min, nu_max=nu_max)
+                                            nu_min=nu_min, nu_max=nu_max,
+                                            t=t_val)
                     K, M = compute_K_M_matrices(const)
+                    # Store for saving later if requested
+                    if save_km:
+                        km_store_K[struct_idx] = K
+                        km_store_M[struct_idx] = M
                 
                 # Get T matrices
                 if has_T_data:
                     print("    Using T matrices from dataset...")
-                    T_data = data['T_data']
-                else:
+                    # T_data might be a list of lists (one per structure) or a single list
+                    if isinstance(data['T_data'], list) and len(data['T_data']) > 0:
+                        if isinstance(data['T_data'][0], list):
+                            # List of lists - get this structure's T matrices
+                            T_data = data['T_data'][struct_idx] if struct_idx < len(data['T_data']) else data['T_data'][0]
+                        else:
+                            # Single list - assume it's for the first structure
+                            T_data = data['T_data'] if struct_idx == 0 else None
+                    else:
+                        T_data = None
+                    
+                    if T_data is None:
+                        print("    T matrices not found for this structure, computing...")
+                        has_T_data = False  # Force recomputation
+                
+                if not has_T_data or T_data is None:
                     print("    Computing T matrices...")
                     const = create_const_dict(design_param, N_pix, a=a,
                                             E_min=E_min, E_max=E_max,
                                             rho_min=rho_min, rho_max=rho_max,
-                                            nu_min=nu_min, nu_max=nu_max)
+                                            nu_min=nu_min, nu_max=nu_max,
+                                            t=t_val)
                     T_data = []
                     for wv in wavevectors:
                         T = get_transformation_matrix(wv.astype(np.float32), const)
                         T_data.append(T)
+                    
+                    # Store for saving later if requested
+                    if save_t:
+                        t_store[struct_idx] = T_data
                 
                 # Get eigenvectors
                 eigenvectors = data['eigenvectors']
                 
-                # Reconstruct frequencies
+                # Reconstruct frequencies (always - no fallback)
                 frequencies_recon = reconstruct_frequencies_from_eigenvectors(
                     K, M, T_data, eigenvectors, wavevectors, N_eig,
-                    struct_idx=struct_idx, N_struct=designs.shape[0]
+                    struct_idx=struct_idx, N_struct=designs.shape[0],
+                    N_pix=N_pix, N_ele=1  # Match MATLAB: N_ele=1, reduced DOF=2048, full DOF=2178
                 )
                 
-                if frequencies_recon is None:
-                    print("    Reconstruction failed - field format eigenvectors incompatible with matrix DOF space")
-                    print("    Falling back to eigenvalue_data if available...")
-                    
-                    # Fallback to eigenvalue_data if available
-                    if eigenvalues_all is not None:
-                        frequencies = eigenvalues_all[struct_idx, :, :]
-                        print(f"    Using eigenvalue_data: {frequencies.shape[0]} wavevectors × {frequencies.shape[1]} bands")
-                        # If eigenvalue_data has fewer wavevectors than the dataset, it's likely IBZ subset
-                        if frequencies.shape[0] != len(wavevectors):
-                            print(f"    eigenvalue_data has {frequencies.shape[0]} wavevectors (IBZ subset), dataset has {len(wavevectors)} (full grid)")
-                            print(f"    Matching IBZ wavevectors from dataset...")
-                            
-                            # Generate IBZ wavevectors using same parameters as MATLAB
-                            # MATLAB uses: N_wv = [25, ceil(25/2)] = [25, 13], symmetry_type = 'p4mm'
-                            # We need to determine the actual parameters used, but for now try to match by finding closest wavevectors
-                            try:
-                                # Generate IBZ wavevectors to match
-                                # Try common parameters: N_wv = [25, 13] for p4mm gives ~325 points, but IBZ subset is smaller
-                                # Actually, let's match by finding the closest wavevectors in the dataset
-                                from scipy.spatial.distance import cdist
-                                
-                                # Load the actual IBZ wavevectors from MATLAB data if available
-                                # For now, find matching wavevectors by comparing coordinates
-                                # The eigenvalue_data corresponds to IBZ wavevectors, so we need to find which dataset wavevectors match
-                                
-                                # Try to load wavevectors from MATLAB file to get exact IBZ set
-                                if original_data_dir is not None:
-                                    mat_file = original_data_dir if original_data_dir.suffix == '.mat' else (original_data_dir.parent / f'{original_data_dir.name}.mat')
-                                    if mat_file.exists():
-                                        try:
-                                            import h5py
-                                            with h5py.File(mat_file, 'r') as f:
-                                                if 'WAVEVECTOR_DATA' in f:
-                                                    # MATLAB format: WAVEVECTOR_DATA is (N_wv, 2, N_struct)
-                                                    wv_matlab = np.array(f['WAVEVECTOR_DATA'][:, :, struct_idx], dtype=np.float32)
-                                                    print(f"    Loaded IBZ wavevectors from MATLAB: {wv_matlab.shape}")
-                                                    
-                                                    if wv_matlab.shape[0] == frequencies.shape[0]:
-                                                        # Match wavevectors by finding closest in dataset
-                                                        from scipy.spatial.distance import cdist
-                                                        distances = cdist(wv_matlab, wavevectors)
-                                                        matched_indices = np.argmin(distances, axis=1)
-                                                        # Check if matches are close enough (within tolerance)
-                                                        min_distances = np.min(distances, axis=1)
-                                                        tolerance = 1e-5  # Increased tolerance for float16 precision
-                                                        max_dist = np.max(min_distances)
-                                                        
-                                                        if np.all(min_distances < tolerance):
-                                                            wavevectors = wavevectors[matched_indices, :]
-                                                            print(f"    Matched {len(wavevectors)} IBZ wavevectors from dataset (max distance: {max_dist:.2e})")
-                                                        else:
-                                                            print(f"    WARNING: Some wavevector matches have distance > tolerance (max: {max_dist:.2e})")
-                                                            # Still use the matches, but warn
-                                                            wavevectors = wavevectors[matched_indices, :]
-                                                            print(f"    Using matched wavevectors anyway")
-                                                    else:
-                                                        # Fallback: use first N wavevectors
-                                                        wavevectors = wavevectors[:frequencies.shape[0], :]
-                                                        print(f"    WARNING: MATLAB wavevectors ({wv_matlab.shape[0]}) don't match frequencies ({frequencies.shape[0]})")
-                                                else:
-                                                    # Fallback: use first N wavevectors
-                                                    wavevectors = wavevectors[:frequencies.shape[0], :]
-                                                    print(f"    WAVEVECTOR_DATA not in MATLAB file, using first {frequencies.shape[0]} wavevectors")
-                                        except Exception as e:
-                                            print(f"    WARNING: Could not load WAVEVECTOR_DATA from MATLAB: {e}")
-                                            # Fallback: use first N wavevectors
-                                            wavevectors = wavevectors[:frequencies.shape[0], :]
-                                            print(f"    Using first {frequencies.shape[0]} wavevectors as fallback")
-                                    else:
-                                        # Fallback: use first N wavevectors
-                                        wavevectors = wavevectors[:frequencies.shape[0], :]
-                                        print(f"    MATLAB file not found, using first {frequencies.shape[0]} wavevectors")
-                                else:
-                                    # Fallback: use first N wavevectors
-                                    wavevectors = wavevectors[:frequencies.shape[0], :]
-                                    print(f"    No original_data_dir, using first {frequencies.shape[0]} wavevectors")
-                            except Exception as e:
-                                print(f"    WARNING: Could not match IBZ wavevectors: {e}")
-                                # Fallback: use first N wavevectors
-                                wavevectors = wavevectors[:frequencies.shape[0], :]
-                                print(f"    Using first {frequencies.shape[0]} wavevectors as fallback")
-                        frequencies_recon = None
-                    else:
-                        print("    No eigenvalue_data available as fallback")
-                        frequencies = None
-                        frequencies_recon = None
-                else:
-                    # Use reconstructed frequencies as the main frequencies
-                    frequencies = frequencies_recon
-                    print(f"    Reconstructed {frequencies.shape[0]} wavevectors × {frequencies.shape[1]} bands")
+                # Use reconstructed frequencies as the main frequencies
+                frequencies = frequencies_recon
+                print(f"    Reconstructed {frequencies.shape[0]} wavevectors × {frequencies.shape[1]} bands")
                 
             except Exception as e:
                 print(f"    ERROR during reconstruction: {e}")
                 import traceback
                 traceback.print_exc()
+                print("    Reconstruction failed - cannot proceed without frequencies")
+                print("    Check that eigenvectors are in correct format and K, M, T matrices are computed correctly")
                 frequencies = None
                 frequencies_recon = None
         else:
@@ -1045,9 +1233,10 @@ def main(cli_data_dir=None, cli_original_dir=None, n_structs=None, infer=True):
         # Create interpolants (using griddata for scattered interpolation)
         # We'll evaluate on contour points directly
         
-        # Check if we have frequencies
+        # Check if we have frequencies (required - no fallback)
         if frequencies is None:
-            print("  WARNING: No frequencies available, skipping dispersion plot")
+            print("  ERROR: No frequencies available - reconstruction failed")
+            print("  Cannot proceed without frequencies. Check eigenvectors and matrix computation.")
             continue
         
         # Get IBZ contour
@@ -1074,6 +1263,13 @@ def main(cli_data_dir=None, cli_original_dir=None, n_structs=None, infer=True):
         contour_param = contour_param_grid
         frequencies_recon_contour = None  # No overlay in infer mode (frequencies are already reconstructed)
         
+        # Save plot points if requested
+        if save_plot_points:
+            plot_points_data[f'struct_{struct_idx}_wavevectors_contour'] = wavevectors_contour
+            plot_points_data[f'struct_{struct_idx}_frequencies_contour'] = frequencies_contour
+            plot_points_data[f'struct_{struct_idx}_contour_param'] = contour_param
+            plot_points_data[f'struct_{struct_idx}_use_interpolation'] = np.array([False])  # Always grid points only
+        
         # Plot dispersion
         print("  Plotting dispersion...")
         fig_disp = plt.figure(figsize=(10, 6))
@@ -1097,7 +1293,35 @@ def main(cli_data_dir=None, cli_original_dir=None, n_structs=None, infer=True):
             fig_disp.savefig(png_path, dpi=png_resolution, bbox_inches='tight')
             print(f"    Saved: {png_path}")
             plt.close(fig_disp)
+
+    # Save computed K and M if requested and if we computed any
+    if infer and save_km and km_store_K is not None and km_store_M is not None:
+        try:
+            import torch
+            torch.save(km_store_K, data_dir / 'K_data.pt')
+            torch.save(km_store_M, data_dir / 'M_data.pt')
+            print(f"\nSaved K_data.pt and M_data.pt to {data_dir}")
+        except Exception as e:
+            print(f"\nWARNING: Failed to save K/M data: {e}")
     
+    # Save computed T matrices if requested and if we computed any
+    if infer and save_t and t_store is not None:
+        try:
+            import torch
+            # Filter out None entries (structures that weren't processed)
+            t_store_filtered = [t for t in t_store if t is not None]
+            if len(t_store_filtered) > 0:
+                torch.save(t_store_filtered, data_dir / 'T_data.pt')
+                print(f"Saved T_data.pt to {data_dir} ({len(t_store_filtered)} structures)")
+        except Exception as e:
+            print(f"\nWARNING: Failed to save T data: {e}")
+    
+    # Save plot points if requested
+    if save_plot_points and plot_points_data:
+        plot_points_path = output_dir / 'plot_points.npz'
+        np.savez_compressed(plot_points_path, **plot_points_data)
+        print(f"\nPlot point locations saved to: {plot_points_path}")
+
     print(f"\n{'='*70}")
     print("Processing complete!")
     if isExportPng:
@@ -1113,6 +1337,9 @@ if __name__ == "__main__":
                        dest="n_structs",
                        help="Maximum number of geometries to process (default: 5). If dataset has fewer geometries, all will be processed.")
     parser.add_argument("--no-infer", action="store_true", help="Use eigenvalue_data directly instead of reconstructing (requires original_dir)")
+    parser.add_argument("--no-save-km", action="store_true", help="Do not save computed K and M matrices")
+    parser.add_argument("--save-t", action="store_true", help="Save computed T matrices (default: False)")
+    parser.add_argument("--save-plot-points", action="store_true", help="Save plot point locations (wavevectors_contour, frequencies_contour, contour_param) to .npz file")
     args = parser.parse_args()
-    main(args.data_dir, args.original_dir, args.n_structs, infer=not args.no_infer)
+    main(args.data_dir, args.original_dir, args.n_structs, infer=not args.no_infer, save_km=not args.no_save_km, save_t=args.save_t, save_plot_points=args.save_plot_points)
 

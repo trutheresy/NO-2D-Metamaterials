@@ -133,14 +133,30 @@ def get_IBZ_contour_wavevectors(N_k, a, symmetry_type='none'):
     vertex_labels = []
     
     def get_contour_from_vertices(vertices, N_k):
-        """Helper function to create contour from vertices."""
+        """
+        Helper function to create contour from vertices.
+        
+        Matches MATLAB's behavior exactly:
+        - For each segment, generate N_k points using linspace
+        - MATLAB: wavevectors = [wavevectors(1:(end-1),:); pts];
+        - This always removes the last point from accumulated wavevectors (even if empty, returns empty)
+        - Then adds all N_k points from new segment
+        """
         wavevectors = np.empty((0, 2))
         for vertex_idx in range(len(vertices) - 1):
             # Generate points between consecutive vertices
-            segment = linspaceNDim(vertices[vertex_idx], vertices[vertex_idx + 1], N_k)
-            # Remove duplicate point (except for first segment)
-            if vertex_idx > 0:
-                segment = segment[1:]
+            start_pt = vertices[vertex_idx]
+            end_pt = vertices[vertex_idx + 1]
+            # Create N_k linearly spaced points (matching MATLAB's linspace)
+            segment = linspaceNDim(start_pt, end_pt, N_k)
+            
+            # MATLAB: wavevectors = [wavevectors(1:(end-1),:); pts];
+            # In MATLAB, wavevectors(1:(end-1),:) on empty array returns empty array (not error)
+            # So we always do this operation, even if wavevectors is empty
+            if len(wavevectors) > 0:
+                wavevectors = wavevectors[:-1]  # Remove last point
+            # If empty, wavevectors stays empty (matching MATLAB behavior)
+            # Add all N_k points from new segment
             wavevectors = np.vstack([wavevectors, segment])
         return wavevectors
     

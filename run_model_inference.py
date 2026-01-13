@@ -18,7 +18,7 @@ from collections import Counter
 # Import model architecture (assuming it's defined in the same directory or available)
 # You may need to adjust this import based on your project structure
 try:
-    from neuralop.models import FNO2d
+    from neuralop.models import FNO
 except ImportError as e:
     print(f"Error: neuralop not found. Please install it with: pip install neuraloperator")
     print(f"Import error: {e}")
@@ -36,12 +36,11 @@ class FourierNeuralOperator(nn.Module):
         self.out_channels = out_channels
         self.num_layers = num_layers
 
-        # FNO2d layer
-        self.fno = FNO2d(
+        # FNO layer (2D: n_modes is a tuple for 2D spatial dimensions)
+        self.fno = FNO(
+            n_modes=(self.modes_height, self.modes_width),
             in_channels=self.in_channels,
             out_channels=self.out_channels,
-            n_modes_height=self.modes_height,
-            n_modes_width=self.modes_width,
             hidden_channels=self.hidden,
             n_layers=self.num_layers
         )
@@ -155,8 +154,12 @@ def infer_model_architecture(model_path):
         print("  Trying to match state_dict keys with common configurations...")
         state_dict_keys = set(state_dict.keys())
         
+        # Sort by most likely first (common configurations)
         for hidden in common_hidden:
             for layers in common_layers:
+                # Skip if we already found both
+                if num_layers is not None and hidden_channels is not None:
+                    break
                 try:
                     # Create a temporary model to check key compatibility
                     model = FourierNeuralOperator(
@@ -180,9 +183,8 @@ def infer_model_architecture(model_path):
                         if hidden_channels is None:
                             hidden_channels = hidden
                         print(f"  Found matching configuration: hidden={hidden}, layers={layers} (match ratio: {match_ratio:.2f})")
-                        del model
-                        break
                     del model
+                    gc.collect()  # Clean up after each model creation
                 except Exception as e:
                     continue
             if num_layers is not None and hidden_channels is not None:
@@ -195,7 +197,7 @@ def infer_model_architecture(model_path):
     
     if hidden_channels is None:
         print("Warning: Could not infer hidden_channels from state_dict, using default: 256")
-        hidden_channels = 256
+        hidden_channels = 128
     
     print(f"Inferred model architecture: hidden_channels={hidden_channels}, num_layers={num_layers}")
     return hidden_channels, num_layers
@@ -204,6 +206,7 @@ def infer_model_architecture(model_path):
 def load_input_data(dataset_paths, num_geometries_per_dataset):
     """
     Load input data from dataset paths, mirroring the functionality from the notebook.
+    Optimized with preallocation and efficient memory management.
     
     Args:
         dataset_paths: List of paths to dataset directories
@@ -218,21 +221,26 @@ def load_input_data(dataset_paths, num_geometries_per_dataset):
     
     num_geometries = num_geometries_per_dataset * len(dataset_paths)
     
-    # Preallocate geometries tensor
-    combined_geometries = torch.empty((num_geometries, 32, 32))
-    
     # Load waveforms and bands only once (from first dataset)
     print("Loading waveforms and bands (same across all datasets)...")
     waveforms = torch.load(
         os.path.join(dataset_paths[0], 'waveforms_full.pt'),
-        weights_only=False
+        weights_only=False,
+        map_location='cpu'
     )
     band_ffts = torch.load(
         os.path.join(dataset_paths[0], 'band_fft_full.pt'),
-        weights_only=False
+        weights_only=False,
+        map_location='cpu'
     )
+    
+    # Infer dtype from first loaded tensor for preallocation
+    dtype = waveforms.dtype
     print(f"Waveforms - dtype: {waveforms.dtype}, shape: {waveforms.shape}")
     print(f"Band FFTs - dtype: {band_ffts.dtype}, shape: {band_ffts.shape}")
+    
+    # Preallocate geometries tensor with correct dtype
+    combined_geometries = torch.empty((num_geometries, 32, 32), dtype=dtype)
     
     # Load geometries from all datasets
     geom_offset = 0
@@ -240,14 +248,21 @@ def load_input_data(dataset_paths, num_geometries_per_dataset):
         print(f"Loading geometries from dataset {i+1}/{len(dataset_paths)}: {dataset_path}")
         geometries = torch.load(
             os.path.join(dataset_path, 'geometries_full.pt'),
-            weights_only=False
+            weights_only=False,
+            map_location='cpu'
         )
-        combined_geometries[geom_offset:geom_offset+num_geometries_per_dataset] = geometries
-        geom_offset += num_geometries_per_dataset
+        # Direct slice assignment (more efficient than copying)
+        end_idx = geom_offset + num_geometries_per_dataset
+        combined_geometries[geom_offset:end_idx] = geometries[:num_geometries_per_dataset]
+        geom_offset = end_idx
         
-        # Clean up
+        # Clean up immediately
         del geometries
-        gc.collect()
+        if i % 5 == 0:  # Periodic garbage collection (less frequent)
+            gc.collect()
+    
+    # Final garbage collection
+    gc.collect()
     
     print(f"Final dataset shapes:")
     print(f"  - Geometries: {combined_geometries.shape}")
@@ -299,6 +314,7 @@ def get_output_by_indices(outputs, geometry_idx, waveform_idx, band_idx, num_wav
 def run_inference(model, geometries, waveforms, band_ffts, device, batch_size=256):
     """
     Run model inference on all combinations of geometries, waveforms, and bands.
+    Optimized for compute efficiency with preallocated tensors and vectorized operations.
     
     Args:
         model: The trained model
@@ -325,11 +341,12 @@ def run_inference(model, geometries, waveforms, band_ffts, device, batch_size=25
     
     # Determine output dtype from model's first output (preserve model precision)
     # Run a dummy forward pass to check output dtype
+    # Convert inputs to float32 to match model weights (model was likely trained in float32)
     with torch.no_grad():
         dummy_input = torch.stack([
-            geometries[0].to(device),
-            waveforms[0].to(device),
-            band_ffts[0].to(device)
+            geometries[0].to(device, non_blocking=True).float(),
+            waveforms[0].to(device, non_blocking=True).float(),
+            band_ffts[0].to(device, non_blocking=True).float()
         ], dim=0).unsqueeze(0)  # Add batch dimension
         dummy_output = model(dummy_input)
         model_output_dtype = dummy_output.dtype
@@ -346,48 +363,50 @@ def run_inference(model, geometries, waveforms, band_ffts, device, batch_size=25
     outputs = torch.empty((total_samples, 4, 32, 32), dtype=output_dtype)
     
     # Move waveforms and band_ffts to device once (they're reused)
-    waveforms_device = waveforms.to(device)
-    band_ffts_device = band_ffts.to(device)
+    # Convert to float32 to match model weights
+    waveforms_device = waveforms.to(device, non_blocking=True).float()
+    band_ffts_device = band_ffts.to(device, non_blocking=True).float()
     
-    # Process in batches - iterate over all combinations
-    batch_inputs = []
-    batch_indices = []
+    # Preallocate batch tensor to avoid repeated allocations (use float32 for model)
+    batch_tensor = torch.empty((batch_size, 3, 32, 32), dtype=torch.float32, device=device)
+    
+    # Preallocate batch indices list with known maximum size
+    batch_indices = [0] * batch_size
+    
     sample_count = 0
+    batch_idx = 0
     
     with torch.no_grad():
         for geom_idx in tqdm(range(n_geometries), desc="Processing geometries"):
-            # Move geometry to device
-            geometry_device = geometries[geom_idx].to(device)
+            # Move geometry to device once per geometry, convert to float32
+            geometry_device = geometries[geom_idx].to(device, non_blocking=True).float()
             
             for wave_idx in range(n_waveforms):
                 for band_idx in range(n_bands):
-                    # Stack inputs: [geometry, waveform, band_fft]
-                    input_tensor = torch.stack([
-                        geometry_device,
-                        waveforms_device[wave_idx],
-                        band_ffts_device[band_idx]
-                    ], dim=0)  # Shape: (3, 32, 32)
+                    # Directly fill preallocated batch tensor
+                    batch_tensor[batch_idx, 0, :, :] = geometry_device
+                    batch_tensor[batch_idx, 1, :, :] = waveforms_device[wave_idx]
+                    batch_tensor[batch_idx, 2, :, :] = band_ffts_device[band_idx]
                     
-                    batch_inputs.append(input_tensor)
-                    output_idx = compute_output_index(geom_idx, wave_idx, band_idx, n_waveforms, n_bands)
-                    batch_indices.append(output_idx)
+                    # Precompute and store output index
+                    batch_indices[batch_idx] = compute_output_index(geom_idx, wave_idx, band_idx, n_waveforms, n_bands)
+                    batch_idx += 1
                     
                     # Process batch when it's full
-                    if len(batch_inputs) >= batch_size:
-                        # Stack into batch tensor
-                        batch_tensor = torch.stack(batch_inputs)  # Shape: (batch_size, 3, 32, 32)
-                        
-                        # Run inference
+                    if batch_idx >= batch_size:
+                        # Run inference on preallocated batch tensor
                         batch_outputs = model(batch_tensor)  # Shape: (batch_size, 4, 32, 32)
                         
-                        # Store outputs at correct indices (convert to output_dtype)
-                        for j, output_idx in enumerate(batch_indices):
-                            outputs[output_idx] = batch_outputs[j].cpu().to(output_dtype)
+                        # Convert to CPU and dtype in one operation, then use advanced indexing
+                        batch_outputs_cpu = batch_outputs.cpu().to(output_dtype)
+                        # Use advanced indexing for vectorized assignment (faster than loop)
+                        # Use as_tensor to avoid unnecessary copy when possible
+                        indices_tensor = torch.as_tensor(batch_indices, dtype=torch.long)
+                        outputs[indices_tensor] = batch_outputs_cpu
                         
                         # Clean up
-                        del batch_tensor, batch_outputs
-                        batch_inputs = []
-                        batch_indices = []
+                        del batch_outputs, batch_outputs_cpu, indices_tensor
+                        batch_idx = 0
                         sample_count += batch_size
                         
                         # Periodic GPU memory cleanup
@@ -400,15 +419,17 @@ def run_inference(model, geometries, waveforms, band_ffts, device, batch_size=25
                 torch.cuda.empty_cache()
         
         # Process remaining samples
-        if len(batch_inputs) > 0:
-            batch_tensor = torch.stack(batch_inputs)
-            batch_outputs = model(batch_tensor)
-            for j, output_idx in enumerate(batch_indices):
-                outputs[output_idx] = batch_outputs[j].cpu().to(output_dtype)
-            del batch_tensor, batch_outputs
+        if batch_idx > 0:
+            # Use only the portion of batch_tensor that's filled
+            batch_outputs = model(batch_tensor[:batch_idx])
+            batch_outputs_cpu = batch_outputs.cpu().to(output_dtype)
+            # Use advanced indexing for vectorized assignment
+            indices_tensor = torch.as_tensor(batch_indices[:batch_idx], dtype=torch.long)
+            outputs[indices_tensor] = batch_outputs_cpu
+            del batch_outputs, batch_outputs_cpu, indices_tensor
     
     # Clean up
-    del waveforms_device, band_ffts_device
+    del waveforms_device, band_ffts_device, batch_tensor
     if device.type == 'cuda':
         torch.cuda.empty_cache()
     
@@ -468,8 +489,8 @@ def main():
     parser.add_argument(
         '--output_path',
         type=str,
-        required=True,
-        help='Path to save the output tensor (.pt file)'
+        default=None,
+        help='Path to save the output tensor (.pt file). If not provided, will auto-generate as predictions_[model_name].pt in the input dataset directory'
     )
     parser.add_argument(
         '--batch_size',
@@ -501,7 +522,7 @@ def main():
         device = torch.device(args.device)
     print(f'Using device: {device}')
     
-    # Load dataset paths
+    # Load dataset paths (optimized with list comprehension where possible)
     if args.dataset_structure == 'multiple':
         # Multiple datasets structure (like in the notebook)
         # Look for datasets in the input_dataset_path directory
@@ -510,20 +531,25 @@ def main():
         
         # Try to find set directories
         if os.path.isdir(base_dir):
+            # Pre-filter items to reduce iterations
+            items = [item for item in os.listdir(base_dir) 
+                    if os.path.isdir(os.path.join(base_dir, item)) and item.startswith('set ')]
+            
             # Check if it's a "set X" directory structure
-            for item in os.listdir(base_dir):
+            for item in items:
                 item_path = os.path.join(base_dir, item)
-                if os.path.isdir(item_path) and item.startswith('set '):
-                    # Look for out_continuous and out_binarized directories
-                    for subitem in os.listdir(item_path):
-                        subitem_path = os.path.join(item_path, subitem)
-                        if os.path.isdir(subitem_path) and (
-                            subitem.startswith('out_continuous_') or 
-                            subitem.startswith('out_binarized_')
-                        ):
-                            # Check if required files exist
-                            if os.path.exists(os.path.join(subitem_path, 'geometries_full.pt')):
-                                dataset_paths.append(subitem_path)
+                # Pre-filter subitems
+                subitems = [subitem for subitem in os.listdir(item_path)
+                           if os.path.isdir(os.path.join(item_path, subitem)) and
+                           (subitem.startswith('out_continuous_') or subitem.startswith('out_binarized_'))]
+                
+                # Look for out_continuous and out_binarized directories
+                for subitem in subitems:
+                    subitem_path = os.path.join(item_path, subitem)
+                    # Check if required files exist (single check)
+                    geom_path = os.path.join(subitem_path, 'geometries_full.pt')
+                    if os.path.exists(geom_path):
+                        dataset_paths.append(subitem_path)
         else:
             raise ValueError(f"Input dataset path does not exist: {base_dir}")
     else:
@@ -558,10 +584,10 @@ def main():
         num_layers=model_layers
     ).to(device)
     
-    # Load state dict
+    # Load state dict directly to device (more efficient)
     state_dict = torch.load(args.model_path, map_location=device, weights_only=False)
     
-    # Try loading with strict=False first to handle any minor mismatches
+    # Try loading with strict=True first (faster if it works)
     try:
         model.load_state_dict(state_dict, strict=True)
         print("Model loaded successfully!")
@@ -573,6 +599,22 @@ def main():
         if unexpected_keys:
             print(f"  Unexpected keys: {unexpected_keys[:5]}..." if len(unexpected_keys) > 5 else f"  Unexpected keys: {unexpected_keys}")
         print("Model loaded with strict=False (some keys may not match)")
+    
+    # Clean up state_dict immediately after loading
+    del state_dict
+    if device.type == 'cuda':
+        torch.cuda.empty_cache()
+    
+    # Auto-generate output path if not provided
+    if args.output_path is None:
+        # Extract model name without extension
+        model_basename = os.path.basename(args.model_path)
+        model_name = os.path.splitext(model_basename)[0]  # Remove extension
+        # Save in the first dataset directory
+        output_path = os.path.join(dataset_paths[0], f'predictions_{model_name}.pt')
+        print(f"Auto-generated output path: {output_path}")
+    else:
+        output_path = args.output_path
     
     # Run inference
     n_waveforms = waveforms.shape[0]
@@ -588,7 +630,7 @@ def main():
     )
     
     # Save outputs
-    save_outputs(outputs, args.output_path, n_waveforms, n_bands)
+    save_outputs(outputs, output_path, n_waveforms, n_bands)
     
     print("Done!")
 

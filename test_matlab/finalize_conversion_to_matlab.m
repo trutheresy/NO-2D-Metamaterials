@@ -1,6 +1,6 @@
 clear; close all;
 
-input_data_path = "D:\Research\NO-2D-Metamaterials\data\dispersion_binarized_1_predictions_mat\dispersion_binarized_1_predictions.mat";
+input_data_path = "D:\Research\NO-2D-Metamaterials\data\out_test_10\out_binarized_1\out_binarized_1_predictions.mat";
 
 var_name = "EIGENVECTOR_DATA";
 

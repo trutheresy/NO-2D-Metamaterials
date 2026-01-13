@@ -173,7 +173,7 @@ def dispersion_with_matrix_save_opt(const, wavevectors):
                     eig_vecs_aligned = eig_vecs_normalized * phase_align
                 else:
                     # Complex eigenvectors: use complex phase alignment
-                    phase_align = np.exp(-1j * np.angle(eig_vecs[0, :]))
+                phase_align = np.exp(-1j * np.angle(eig_vecs[0, :]))
                     eig_vecs_aligned = eig_vecs_normalized * phase_align
                 
                 # Store eigenvectors: eig_vecs_normalized is (N_dof_reduced, N_eig)
@@ -187,9 +187,9 @@ def dispersion_with_matrix_save_opt(const, wavevectors):
                         ev[:, k_idx, :] = eig_vecs_aligned.astype(np.float64)
                 else:
                     # Complex eigenvectors: store as complex
-                    if eigenvector_dtype == 'single':
+                if eigenvector_dtype == 'single':
                         ev[:, k_idx, :] = eig_vecs_aligned.astype(np.complex64)
-                    else:  # double
+                else:  # double
                         ev[:, k_idx, :] = eig_vecs_aligned.astype(np.complex128)
             
             # Convert to frequencies (exact MATLAB translation)

@@ -48,10 +48,14 @@ def get_system_matrices_VEC(const):
     
     # Extract material properties based on design scale
     if const['design_scale'] == 'linear':
-        E = (const['E_min'] + design_expanded[:, :, 0] * (const['E_max'] - const['E_min'])).T
-        nu = (const['poisson_min'] + design_expanded[:, :, 2] * (const['poisson_max'] - const['poisson_min'])).T
+        # Use float64 for intermediate calculation to avoid overflow with large E_max
+        design_ch0 = design_expanded[:, :, 0].astype(np.float64)
+        design_ch1 = design_expanded[:, :, 1].astype(np.float64)
+        design_ch2 = design_expanded[:, :, 2].astype(np.float64)
+        E = (const['E_min'] + design_ch0 * (const['E_max'] - const['E_min'])).T.astype(np.float32)
+        nu = (const['poisson_min'] + design_ch2 * (const['poisson_max'] - const['poisson_min'])).T.astype(np.float32)
         t = const['t']
-        rho = (const['rho_min'] + design_expanded[:, :, 1] * (const['rho_max'] - const['rho_min'])).T
+        rho = (const['rho_min'] + design_ch1 * (const['rho_max'] - const['rho_min'])).T.astype(np.float32)
     elif const['design_scale'] == 'log':
         E = np.exp(design_expanded[:, :, 0]).T
         nu = (const['poisson_min'] + design_expanded[:, :, 2] * (const['poisson_max'] - const['poisson_min'])).T
@@ -84,9 +88,11 @@ def get_system_matrices_VEC(const):
     # Row and column indices for sparse matrix assembly
     # MATLAB: reshape(kron(edofMat,ones(8,1))',64*N_ele_x*N_ele_y,1)
     # MATLAB: reshape(kron(edofMat,ones(1,8))',64*N_ele_x*N_ele_y,1)
-    # Must use Kronecker product, not tile! kron(A, B) creates block matrix where each element of A is multiplied by B
-    # kron(edofMat, ones(8,1)) creates (N_ele_x*N_ele_y*8) x 8 matrix
-    # Then transpose and reshape to column vector (column-major order)
+    # MATLAB's kron+transpose+reshape produces:
+    #   row_idxs: DOFs cycling (matches kron(edofMat,ones(8,1))' after reshape)
+    #   col_idxs: each DOF repeated 8 times (matches kron(edofMat,ones(1,8))' after reshape)
+    # This indicates element matrix is stored COLUMN-MAJOR in MATLAB
+    # Replicate MATLAB's exact behavior:
     row_idxs_mat = np.kron(edofMat, np.ones((8, 1)))
     row_idxs = row_idxs_mat.T.reshape(64 * N_ele_x * N_ele_y, 1, order='F').flatten()
     
@@ -94,12 +100,25 @@ def get_system_matrices_VEC(const):
     col_idxs = col_idxs_mat.T.reshape(64 * N_ele_x * N_ele_y, 1, order='F').flatten()
     
     # Get element matrices (vectorized)
-    AllLEle = get_element_stiffness_VEC(E.flatten(), nu.flatten(), t)
-    AllLMat = get_element_mass_VEC(rho.flatten(), t, const)
+    # MATLAB: E(:), nu(:), rho(:) use column-major (F-order) flattening
+    # Python: E.flatten() uses row-major (C-order) by default, so use order='F' to match MATLAB
+    AllLEle = get_element_stiffness_VEC(E.flatten(order='F'), nu.flatten(order='F'), t)
+    AllLMat = get_element_mass_VEC(rho.flatten(order='F'), t, const)
     
     # Flatten element matrices for sparse assembly
-    value_K = AllLEle.flatten().astype(np.float32)
-    value_M = AllLMat.flatten().astype(np.float32)
+    # MATLAB: AllLEle = get_element_stiffness_VEC(E(:),nu(:),t)' then value_K = AllLEle(:)
+    # MATLAB's get_element_stiffness_VEC returns (N_ele, 64) where each row is a flattened 8x8 matrix
+    # The template is written row-by-row (64-element row vector), so flattening is C-order (row-major)
+    # After transpose: (64, N_ele), then flatten with (:) uses column-major (F-order) to interleave elements
+    N_ele_total = N_ele_x * N_ele_y
+    # Reshape each 8x8 matrix to 64 with C-order (row-major) to match MATLAB's template order
+    AllLEle_2d = AllLEle.reshape(N_ele_total, 64)  # (N_ele, 64) - C-order reshape preserves row-major
+    AllLEle_transposed = AllLEle_2d.T  # (64, N_ele) - each column is one element's flattened matrix
+    value_K = AllLEle_transposed.flatten(order='F').astype(np.float32)  # Column-major flatten (interleaves elements)
+    
+    AllLMat_2d = AllLMat.reshape(N_ele_total, 64)
+    AllLMat_transposed = AllLMat_2d.T
+    value_M = AllLMat_transposed.flatten(order='F').astype(np.float32)
     
     # Convert 1-based indices to 0-based for Python
     row_idxs = row_idxs - 1
@@ -110,9 +129,18 @@ def get_system_matrices_VEC(const):
     N_nodes_y = N_ele_y + 1
     N_dof = N_nodes_x * N_nodes_y * 2
     
-    # Create sparse matrices with explicit shape
+    # Create sparse matrices with explicit shape (duplicate entries will be summed automatically)
     K = coo_matrix((value_K, (row_idxs, col_idxs)), shape=(N_dof, N_dof), dtype=np.float32).tocsr()
     M = coo_matrix((value_M, (row_idxs, col_idxs)), shape=(N_dof, N_dof), dtype=np.float32).tocsr()
+    
+    # Filter out very small values AFTER assembly to match MATLAB's sparse() behavior
+    # MATLAB's sparse() automatically removes entries that are effectively zero after summing
+    # Use a threshold of 1e-10 to match MATLAB's behavior
+    threshold = 1e-10
+    K.data[np.abs(K.data) < threshold] = 0
+    M.data[np.abs(M.data) < threshold] = 0
+    K.eliminate_zeros()
+    M.eliminate_zeros()
     
     return K, M
 
@@ -156,10 +184,14 @@ def get_system_matrices_VEC_simplified(const):
     
     # Extract material properties based on design scale
     if const['design_scale'] == 'linear':
-        E = (const['E_min'] + design_expanded[:, :, 0] * (const['E_max'] - const['E_min'])).T
-        nu = (const['poisson_min'] + design_expanded[:, :, 2] * (const['poisson_max'] - const['poisson_min'])).T
+        # Use float64 for intermediate calculation to avoid overflow with large E_max
+        design_ch0 = design_expanded[:, :, 0].astype(np.float64)
+        design_ch1 = design_expanded[:, :, 1].astype(np.float64)
+        design_ch2 = design_expanded[:, :, 2].astype(np.float64)
+        E = (const['E_min'] + design_ch0 * (const['E_max'] - const['E_min'])).T.astype(np.float32)
+        nu = (const['poisson_min'] + design_ch2 * (const['poisson_max'] - const['poisson_min'])).T.astype(np.float32)
         t = const['t']
-        rho = (const['rho_min'] + design_expanded[:, :, 1] * (const['rho_max'] - const['rho_min'])).T
+        rho = (const['rho_min'] + design_ch1 * (const['rho_max'] - const['rho_min'])).T.astype(np.float32)
     elif const['design_scale'] == 'log':
         E = np.exp(design_expanded[:, :, 0]).T
         nu = (const['poisson_min'] + design_expanded[:, :, 2] * (const['poisson_max'] - const['poisson_min'])).T
@@ -201,12 +233,25 @@ def get_system_matrices_VEC_simplified(const):
     col_idxs = col_idxs_mat.T.reshape(64 * N_ele_x * N_ele_y, 1, order='F').flatten()
     
     # Get element matrices (vectorized)
-    AllLEle = get_element_stiffness_VEC(E.flatten(), nu.flatten(), t)
-    AllLMat = get_element_mass_VEC(rho.flatten(), t, const)
+    # MATLAB: E(:), nu(:), rho(:) use column-major (F-order) flattening
+    # Python: E.flatten() uses row-major (C-order) by default, so use order='F' to match MATLAB
+    AllLEle = get_element_stiffness_VEC(E.flatten(order='F'), nu.flatten(order='F'), t)
+    AllLMat = get_element_mass_VEC(rho.flatten(order='F'), t, const)
     
     # Flatten element matrices for sparse assembly
-    value_K = AllLEle.flatten().astype(np.float32)
-    value_M = AllLMat.flatten().astype(np.float32)
+    # MATLAB: AllLEle = get_element_stiffness_VEC(E(:),nu(:),t)' then value_K = AllLEle(:)
+    # MATLAB's get_element_stiffness_VEC returns (N_ele, 64) where each row is a flattened 8x8 matrix
+    # The template is written row-by-row (64-element row vector), so flattening is C-order (row-major)
+    # After transpose: (64, N_ele), then flatten with (:) uses column-major (F-order) to interleave elements
+    N_ele_total = N_ele_x * N_ele_y
+    # Reshape each 8x8 matrix to 64 with C-order (row-major) to match MATLAB's template order
+    AllLEle_2d = AllLEle.reshape(N_ele_total, 64)  # (N_ele, 64) - C-order reshape preserves row-major
+    AllLEle_transposed = AllLEle_2d.T  # (64, N_ele) - each column is one element's flattened matrix
+    value_K = AllLEle_transposed.flatten(order='F').astype(np.float32)  # Column-major flatten (interleaves elements)
+    
+    AllLMat_2d = AllLMat.reshape(N_ele_total, 64)
+    AllLMat_transposed = AllLMat_2d.T
+    value_M = AllLMat_transposed.flatten(order='F').astype(np.float32)
     
     # Convert 1-based indices to 0-based for Python
     row_idxs = row_idxs - 1
@@ -217,8 +262,17 @@ def get_system_matrices_VEC_simplified(const):
     N_nodes_y = N_ele_y + 1
     N_dof = N_nodes_x * N_nodes_y * 2
     
-    # Create sparse matrices with explicit shape
+    # Create sparse matrices with explicit shape (duplicate entries will be summed automatically)
     K = coo_matrix((value_K, (row_idxs, col_idxs)), shape=(N_dof, N_dof), dtype=np.float32).tocsr()
     M = coo_matrix((value_M, (row_idxs, col_idxs)), shape=(N_dof, N_dof), dtype=np.float32).tocsr()
+    
+    # Filter out very small values AFTER assembly to match MATLAB's sparse() behavior
+    # MATLAB's sparse() automatically removes entries that are effectively zero after summing
+    # Use a threshold of 1e-10 to match MATLAB's behavior
+    threshold = 1e-10
+    K.data[np.abs(K.data) < threshold] = 0
+    M.data[np.abs(M.data) < threshold] = 0
+    K.eliminate_zeros()
+    M.eliminate_zeros()
     
     return K, M
