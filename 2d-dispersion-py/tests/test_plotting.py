@@ -201,7 +201,7 @@ class TestPlotMode:
         eigenvector_reduced = ev[:, k_idx, eig_idx]  # Reduced space eigenvector
         
         # Transform to full space (matching MATLAB: u = T*u_reduced)
-        from get_transformation_matrix import get_transformation_matrix
+        from system_matrices import get_transformation_matrix
         wv_vec = wv_gamma[k_idx, :]
         T = get_transformation_matrix(wv_vec, const)
         eigenvector_full = T @ eigenvector_reduced  # Full space eigenvector
@@ -292,7 +292,7 @@ class TestPlotEigenvector:
         
         # Use actual dispersion calculation to get real eigenvectors (matching MATLAB)
         from dispersion import dispersion
-        from get_transformation_matrix import get_transformation_matrix
+        from system_matrices import get_transformation_matrix
         
         # Get a wavevector at Gamma point (k=0) for testing
         wv_gamma = np.array([[0.0, 0.0]])

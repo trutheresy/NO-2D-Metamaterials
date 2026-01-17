@@ -14,8 +14,8 @@ from scipy.sparse import issparse, csr_matrix
 # Add parent directory to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from get_system_matrices import get_system_matrices
-from get_transformation_matrix import get_transformation_matrix
+from system_matrices import get_system_matrices
+from system_matrices import get_transformation_matrix
 from system_matrices_vec import get_system_matrices_VEC, get_system_matrices_VEC_simplified
 from get_design import get_design
 

@@ -55,14 +55,16 @@ def get_system_matrices(const, use_vectorized=False, return_sensitivities=False)
     # Preallocate arrays for sparse matrix construction
     row_idxs = np.zeros(N_dof_per_element**2 * total_elements, dtype=int)
     col_idxs = np.zeros(N_dof_per_element**2 * total_elements, dtype=int)
-    value_K = np.zeros(N_dof_per_element**2 * total_elements, dtype=np.float32)
-    value_M = np.zeros(N_dof_per_element**2 * total_elements, dtype=np.float32)
+    # Use float64 to match MATLAB precision
+    value_K = np.zeros(N_dof_per_element**2 * total_elements, dtype=np.float64)
+    value_M = np.zeros(N_dof_per_element**2 * total_elements, dtype=np.float64)
     
     if return_sensitivities:
         xpix_idxs = np.zeros(N_dof_per_element**2 * total_elements, dtype=int)
         ypix_idxs = np.zeros(N_dof_per_element**2 * total_elements, dtype=int)
-        value_dKddesign = np.zeros(N_dof_per_element**2 * total_elements, dtype=np.float32)
-        value_dMddesign = np.zeros(N_dof_per_element**2 * total_elements, dtype=np.float32)
+        # Use float64 to match MATLAB precision
+        value_dKddesign = np.zeros(N_dof_per_element**2 * total_elements, dtype=np.float64)
+        value_dMddesign = np.zeros(N_dof_per_element**2 * total_elements, dtype=np.float64)
     
     element_idx = 0
     for ele_idx_x in range(1, N_ele_x + 1):
@@ -89,8 +91,8 @@ def get_system_matrices(const, use_vectorized=False, return_sensitivities=False)
             
             row_idxs[start_idx:end_idx] = global_idxs_mat.flatten()
             col_idxs[start_idx:end_idx] = global_idxs_mat.T.flatten()
-            value_K[start_idx:end_idx] = k_ele.flatten().astype(np.float32)
-            value_M[start_idx:end_idx] = m_ele.flatten().astype(np.float32)
+            value_K[start_idx:end_idx] = k_ele.flatten().astype(np.float64)  # Use float64 to match MATLAB
+            value_M[start_idx:end_idx] = m_ele.flatten().astype(np.float64)  # Use float64 to match MATLAB
             
             if return_sensitivities:
                 from .elements import get_element_stiffness_sensitivity, get_element_mass_sensitivity
@@ -104,8 +106,9 @@ def get_system_matrices(const, use_vectorized=False, return_sensitivities=False)
             element_idx += 1
     
     # Assemble sparse matrices
-    K = csr_matrix((value_K, (row_idxs, col_idxs)), shape=(N_dof, N_dof), dtype=np.float32)
-    M = csr_matrix((value_M, (row_idxs, col_idxs)), shape=(N_dof, N_dof), dtype=np.float32)
+    # Use float64 to match MATLAB precision
+    K = csr_matrix((value_K, (row_idxs, col_idxs)), shape=(N_dof, N_dof), dtype=np.float64)
+    M = csr_matrix((value_M, (row_idxs, col_idxs)), shape=(N_dof, N_dof), dtype=np.float64)
     
     if return_sensitivities:
         dKddesign = []
@@ -115,14 +118,15 @@ def get_system_matrices(const, use_vectorized=False, return_sensitivities=False)
             dMddesign.append([])
             for pix_idx_y in range(N_pix_y):
                 mask = (xpix_idxs == pix_idx_x) & (ypix_idxs == pix_idx_y)
+                # Use float64 to match MATLAB precision
                 dKddesign[pix_idx_x].append(
                     csr_matrix((value_dKddesign[mask], 
                               (row_idxs[mask], col_idxs[mask])), 
-                             shape=(N_dof, N_dof), dtype=np.float32))
+                             shape=(N_dof, N_dof), dtype=np.float64))
                 dMddesign[pix_idx_x].append(
                     csr_matrix((value_dMddesign[mask], 
                               (row_idxs[mask], col_idxs[mask])), 
-                             shape=(N_dof, N_dof), dtype=np.float32))
+                             shape=(N_dof, N_dof), dtype=np.float64))
         
         return K, M, dKddesign, dMddesign
     
@@ -160,19 +164,20 @@ def get_transformation_matrix(wavevector, const, return_derivatives=False):
     N_node = const['N_ele'] * N_pix_val + 1
     
     # Compute phase factors
-    r_x = np.array([const['a'], 0], dtype=np.float32)
-    r_y = np.array([0, -const['a']], dtype=np.float32)
-    r_corner = np.array([const['a'], -const['a']], dtype=np.float32)
+    # Use float64 to match MATLAB precision
+    r_x = np.array([const['a'], 0], dtype=np.float64)
+    r_y = np.array([0, -const['a']], dtype=np.float64)
+    r_corner = np.array([const['a'], -const['a']], dtype=np.float64)
     
-    xphase = np.exp(1j * np.dot(wavevector, r_x)).astype(np.complex64)
-    yphase = np.exp(1j * np.dot(wavevector, r_y)).astype(np.complex64)
-    cornerphase = np.exp(1j * np.dot(wavevector, r_corner)).astype(np.complex64)
+    xphase = np.exp(1j * np.dot(wavevector, r_x)).astype(np.complex128)
+    yphase = np.exp(1j * np.dot(wavevector, r_y)).astype(np.complex128)
+    cornerphase = np.exp(1j * np.dot(wavevector, r_corner)).astype(np.complex128)
     
     # Compute derivatives if requested
     if return_derivatives:
-        dxphasedwavevector = (1j * r_x * xphase).astype(np.complex64)
-        dyphasedwavevector = (1j * r_y * yphase).astype(np.complex64)
-        dcornerphasedwavevector = (1j * r_corner * cornerphase).astype(np.complex64)
+        dxphasedwavevector = (1j * r_x * xphase).astype(np.complex128)
+        dyphasedwavevector = (1j * r_y * yphase).astype(np.complex128)
+        dcornerphasedwavevector = (1j * r_corner * cornerphase).astype(np.complex128)
     
     # Generate node indices (exact MATLAB translation using 1-based indexing)
     # MATLAB: reshape(meshgrid(1:(N_node-1),1:(N_node-1)),[],1)'
@@ -243,7 +248,7 @@ def get_transformation_matrix(wavevector, const, return_derivatives=False):
         [cornerphase]  # Corner node
     ])
     
-    value_T = np.tile(phase_factors, 2).astype(np.complex64)  # Repeat for both x and y DOF
+    value_T = np.tile(phase_factors, 2).astype(np.complex128)  # Repeat for both x and y DOF - use complex128 to match MATLAB
     
     # Calculate explicit dimensions
     # Full DOF: 2 * N_node^2 (all nodes with x and y DOF)
@@ -252,9 +257,10 @@ def get_transformation_matrix(wavevector, const, return_derivatives=False):
     N_dof_reduced = 2 * (N_node - 1) * (N_node - 1)
     
     # Explicitly set shape to ensure correct dimensions
+    # Use complex128 to match MATLAB precision
     T = csr_matrix((value_T, (row_idxs, col_idxs)), 
                    shape=(N_dof_full, N_dof_reduced), 
-                   dtype=np.complex64)
+                   dtype=np.complex128)
     
     if return_derivatives:
         dTdwavevector = []
@@ -274,13 +280,13 @@ def get_transformation_matrix(wavevector, const, return_derivatives=False):
                     [dcornerphasedwavevector[1]]
                 ])
             
-            value_dTdwavevector = np.tile(dphase_factors, 2).astype(np.complex64)
+            value_dTdwavevector = np.tile(dphase_factors, 2).astype(np.complex128)  # Use complex128 to match MATLAB
             # row_idxs and col_idxs are already converted to 0-based above
             # Use same explicit shape as T
             dTdwavevector.append(
                 csr_matrix((value_dTdwavevector, (row_idxs, col_idxs)), 
                           shape=(N_dof_full, N_dof_reduced), 
-                          dtype=np.complex64))
+                          dtype=np.complex128))  # Use complex128 to match MATLAB
         
         return T, dTdwavevector
     

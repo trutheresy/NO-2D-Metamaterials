@@ -4,7 +4,7 @@ sys.path.insert(0, '.')
 
 from tests.test_plotting import create_test_const
 from dispersion import dispersion
-from get_transformation_matrix import get_transformation_matrix
+from system_matrices import get_transformation_matrix
 import numpy as np
 
 const = create_test_const()

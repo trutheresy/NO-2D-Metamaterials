@@ -1,0 +1,404 @@
+[
+  {
+    "file": "band_fft_full.pt",
+    "input_path": "D:\\Research\\NO-2D-Metamaterials\\data\\out_test_10_pt_noise\\out_binarized_1\\band_fft_full.pt",
+    "output_path": "D:\\Research\\NO-2D-Metamaterials\\data\\out_test_10_pt_noise\\out_binarized_1_noise\\band_fft_full.pt",
+    "error_stats": [
+      {
+        "mean_absolute_error": 0.00017113274952862412,
+        "max_absolute_error": 0.0234375,
+        "std_absolute_error": 0.0009500058949925005,
+        "mean_magnitude": 0.021247878670692444,
+        "num_elements": 6144,
+        "num_zero_elements": 2750,
+        "num_nonzero_elements": 3394,
+        "shape": [
+          6,
+          32,
+          32
+        ],
+        "dtype": "float32",
+        "is_complex": false,
+        "mean_relative_error_nonzero": 0.005836807191371918,
+        "max_relative_error_nonzero": 0.03880070522427559,
+        "median_relative_error_nonzero": 0.0038022813387215137,
+        "std_relative_error_nonzero": 0.006599657703191042,
+        "p95_relative_error_nonzero": 0.01886792480945587,
+        "p99_relative_error_nonzero": 0.026654426008462906,
+        "mean_relative_error_all": 0.0032243039458990097,
+        "median_relative_error_all": 0.0,
+        "p95_relative_error_all": 0.015706520527601242,
+        "p99_relative_error_all": 0.024445295333862305
+      }
+    ]
+  },
+  {
+    "file": "design_params_full.pt",
+    "input_path": "D:\\Research\\NO-2D-Metamaterials\\data\\out_test_10_pt_noise\\out_binarized_1\\design_params_full.pt",
+    "output_path": "D:\\Research\\NO-2D-Metamaterials\\data\\out_test_10_pt_noise\\out_binarized_1_noise\\design_params_full.pt",
+    "error_stats": [
+      {
+        "mean_absolute_error": NaN,
+        "max_absolute_error": NaN,
+        "std_absolute_error": NaN,
+        "mean_magnitude": Infinity,
+        "num_elements": 6,
+        "num_zero_elements": 0,
+        "num_nonzero_elements": 6,
+        "shape": [
+          1,
+          6
+        ],
+        "dtype": "float32",
+        "is_complex": false,
+        "mean_relative_error_nonzero": NaN,
+        "max_relative_error_nonzero": NaN,
+        "median_relative_error_nonzero": NaN,
+        "std_relative_error_nonzero": NaN,
+        "p95_relative_error_nonzero": NaN,
+        "p99_relative_error_nonzero": NaN,
+        "mean_relative_error_all": 0.0057617188431322575,
+        "median_relative_error_all": 0.00244140625,
+        "p95_relative_error_all": 0.013867187313735485,
+        "p99_relative_error_all": 0.015273437835276127
+      }
+    ]
+  },
+  {
+    "file": "displacements_dataset.pt",
+    "input_path": "D:\\Research\\NO-2D-Metamaterials\\data\\out_test_10_pt_noise\\out_binarized_1\\displacements_dataset.pt",
+    "output_path": "D:\\Research\\NO-2D-Metamaterials\\data\\out_test_10_pt_noise\\out_binarized_1_noise\\displacements_dataset.pt",
+    "error_stats": [
+      {
+        "mean_absolute_error": 8.551314385840669e-05,
+        "max_absolute_error": 0.0079345703125,
+        "std_absolute_error": 0.00014418231148738414,
+        "mean_magnitude": 0.010714823380112648,
+        "num_elements": 5591040,
+        "num_zero_elements": 55842,
+        "num_nonzero_elements": 5535198,
+        "shape": [
+          5460,
+          32,
+          32
+        ],
+        "dtype": "float32",
+        "is_complex": false,
+        "mean_relative_error_nonzero": 0.007929349318146706,
+        "max_relative_error_nonzero": 0.0714285746216774,
+        "median_relative_error_nonzero": 0.006715916562825441,
+        "std_relative_error_nonzero": 0.0060886964201927185,
+        "p95_relative_error_nonzero": 0.019627578556537628,
+        "p99_relative_error_nonzero": 0.025796661153435707,
+        "mean_relative_error_all": 0.007850153371691704,
+        "median_relative_error_all": 0.006653019227087498,
+        "p95_relative_error_all": 0.0195936132222414,
+        "p99_relative_error_all": 0.025746051222085953,
+        "tensor_index": 0
+      },
+      {
+        "mean_absolute_error": 6.804859003750607e-05,
+        "max_absolute_error": 0.00732421875,
+        "std_absolute_error": 0.00012811760825570673,
+        "mean_magnitude": 0.008530537597835064,
+        "num_elements": 5591040,
+        "num_zero_elements": 224922,
+        "num_nonzero_elements": 5366118,
+        "shape": [
+          5460,
+          32,
+          32
+        ],
+        "dtype": "float32",
+        "is_complex": false,
+        "mean_relative_error_nonzero": 0.007884724996984005,
+        "max_relative_error_nonzero": 0.06666667014360428,
+        "median_relative_error_nonzero": 0.006679389160126448,
+        "std_relative_error_nonzero": 0.006121341604739428,
+        "p95_relative_error_nonzero": 0.019629837945103645,
+        "p99_relative_error_nonzero": 0.025878002867102623,
+        "mean_relative_error_all": 0.007567530032247305,
+        "median_relative_error_all": 0.00632295710965991,
+        "p95_relative_error_all": 0.019474197179079056,
+        "p99_relative_error_all": 0.025673137977719307,
+        "tensor_index": 1
+      },
+      {
+        "mean_absolute_error": 8.627251372672617e-05,
+        "max_absolute_error": 0.0078125,
+        "std_absolute_error": 0.00013973788009025156,
+        "mean_magnitude": 0.010818824172019958,
+        "num_elements": 5591040,
+        "num_zero_elements": 61279,
+        "num_nonzero_elements": 5529761,
+        "shape": [
+          5460,
+          32,
+          32
+        ],
+        "dtype": "float32",
+        "is_complex": false,
+        "mean_relative_error_nonzero": 0.007911249995231628,
+        "max_relative_error_nonzero": 0.0714285746216774,
+        "median_relative_error_nonzero": 0.006700167432427406,
+        "std_relative_error_nonzero": 0.006095668766647577,
+        "p95_relative_error_nonzero": 0.019621584564447403,
+        "p99_relative_error_nonzero": 0.0258236862719059,
+        "mean_relative_error_all": 0.007824541069567204,
+        "median_relative_error_all": 0.006632277276366949,
+        "p95_relative_error_all": 0.019583070650696754,
+        "p99_relative_error_all": 0.02576112374663353,
+        "tensor_index": 2
+      },
+      {
+        "mean_absolute_error": 7.112471939763054e-05,
+        "max_absolute_error": 0.00830078125,
+        "std_absolute_error": 0.00012838341353926808,
+        "mean_magnitude": 0.008912402205169201,
+        "num_elements": 5591040,
+        "num_zero_elements": 198795,
+        "num_nonzero_elements": 5392245,
+        "shape": [
+          5460,
+          32,
+          32
+        ],
+        "dtype": "float32",
+        "is_complex": false,
+        "mean_relative_error_nonzero": 0.00788612850010395,
+        "max_relative_error_nonzero": 0.0714285746216774,
+        "median_relative_error_nonzero": 0.006679389160126448,
+        "std_relative_error_nonzero": 0.0061178430914878845,
+        "p95_relative_error_nonzero": 0.019639935344457626,
+        "p99_relative_error_nonzero": 0.025889968499541283,
+        "mean_relative_error_all": 0.007605729624629021,
+        "median_relative_error_all": 0.006398537661880255,
+        "p95_relative_error_all": 0.019498607143759727,
+        "p99_relative_error_all": 0.02568807266652584,
+        "tensor_index": 3
+      }
+    ]
+  },
+  {
+    "file": "geometries_full.pt",
+    "input_path": "D:\\Research\\NO-2D-Metamaterials\\data\\out_test_10_pt_noise\\out_binarized_1\\geometries_full.pt",
+    "output_path": "D:\\Research\\NO-2D-Metamaterials\\data\\out_test_10_pt_noise\\out_binarized_1_noise\\geometries_full.pt",
+    "error_stats": [
+      {
+        "mean_absolute_error": 0.004292202182114124,
+        "max_absolute_error": 0.0390625,
+        "std_absolute_error": 0.0059480625204741955,
+        "mean_magnitude": 0.540418267250061,
+        "num_elements": 10240,
+        "num_zero_elements": 0,
+        "num_nonzero_elements": 10240,
+        "shape": [
+          10,
+          32,
+          32
+        ],
+        "dtype": "float32",
+        "is_complex": false,
+        "mean_relative_error_nonzero": 0.007985366508364677,
+        "max_relative_error_nonzero": 0.03933253884315491,
+        "median_relative_error_nonzero": 0.006555423140525818,
+        "std_relative_error_nonzero": 0.006058086641132832,
+        "p95_relative_error_nonzero": 0.019666269421577454,
+        "p99_relative_error_nonzero": 0.02622169256210327,
+        "mean_relative_error_all": 0.007985366508364677,
+        "median_relative_error_all": 0.006555423140525818,
+        "p95_relative_error_all": 0.019666269421577454,
+        "p99_relative_error_all": 0.02622169256210327
+      }
+    ]
+  },
+  {
+    "file": "predictions_candidate_bcdr_f16_L2_hc128_lr1e-03_wd0e+00_ss2_gamma9e-01_epoch12.pt",
+    "input_path": "D:\\Research\\NO-2D-Metamaterials\\data\\out_test_10_pt_noise\\out_binarized_1\\predictions_candidate_bcdr_f16_L2_hc128_lr1e-03_wd0e+00_ss2_gamma9e-01_epoch12.pt",
+    "output_path": "D:\\Research\\NO-2D-Metamaterials\\data\\out_test_10_pt_noise\\out_binarized_1_noise\\predictions_candidate_bcdr_f16_L2_hc128_lr1e-03_wd0e+00_ss2_gamma9e-01_epoch12.pt",
+    "error_stats": [
+      {
+        "mean_absolute_error": 7.529449794674292e-05,
+        "max_absolute_error": 0.0067138671875,
+        "std_absolute_error": 0.0001280885626329109,
+        "mean_magnitude": 0.009433106519281864,
+        "num_elements": 5591040,
+        "num_zero_elements": 29,
+        "num_nonzero_elements": 5591011,
+        "shape": [
+          5460,
+          32,
+          32
+        ],
+        "dtype": "float32",
+        "is_complex": false,
+        "mean_relative_error_nonzero": 0.007976967841386795,
+        "max_relative_error_nonzero": 0.0833333358168602,
+        "median_relative_error_nonzero": 0.006750240921974182,
+        "std_relative_error_nonzero": 0.006037692539393902,
+        "p95_relative_error_nonzero": 0.019607843831181526,
+        "p99_relative_error_nonzero": 0.025708289816975594,
+        "mean_relative_error_all": 0.007976925931870937,
+        "median_relative_error_all": 0.006750240921974182,
+        "p95_relative_error_all": 0.019607843831181526,
+        "p99_relative_error_all": 0.025708289816975594,
+        "tensor_index": 0
+      },
+      {
+        "mean_absolute_error": 6.005291288602166e-05,
+        "max_absolute_error": 0.005615234375,
+        "std_absolute_error": 0.00011310790432617068,
+        "mean_magnitude": 0.007528703194111586,
+        "num_elements": 5591040,
+        "num_zero_elements": 87,
+        "num_nonzero_elements": 5590953,
+        "shape": [
+          5460,
+          32,
+          32
+        ],
+        "dtype": "float32",
+        "is_complex": false,
+        "mean_relative_error_nonzero": 0.007965561002492905,
+        "max_relative_error_nonzero": 0.05882352963089943,
+        "median_relative_error_nonzero": 0.006741573102772236,
+        "std_relative_error_nonzero": 0.006048777140676975,
+        "p95_relative_error_nonzero": 0.019607843831181526,
+        "p99_relative_error_nonzero": 0.02571638487279415,
+        "mean_relative_error_all": 0.00796543713659048,
+        "median_relative_error_all": 0.006741573102772236,
+        "p95_relative_error_all": 0.019607843831181526,
+        "p99_relative_error_all": 0.02571638487279415,
+        "tensor_index": 1
+      },
+      {
+        "mean_absolute_error": 7.534736505476758e-05,
+        "max_absolute_error": 0.00634765625,
+        "std_absolute_error": 0.00012344201968517154,
+        "mean_magnitude": 0.00944182462990284,
+        "num_elements": 5591040,
+        "num_zero_elements": 23,
+        "num_nonzero_elements": 5591017,
+        "shape": [
+          5460,
+          32,
+          32
+        ],
+        "dtype": "float32",
+        "is_complex": false,
+        "mean_relative_error_nonzero": 0.007973004132509232,
+        "max_relative_error_nonzero": 0.0714285746216774,
+        "median_relative_error_nonzero": 0.0067466264590620995,
+        "std_relative_error_nonzero": 0.006039814092218876,
+        "p95_relative_error_nonzero": 0.019607843831181526,
+        "p99_relative_error_nonzero": 0.02571638487279415,
+        "mean_relative_error_all": 0.00797297153621912,
+        "median_relative_error_all": 0.0067466264590620995,
+        "p95_relative_error_all": 0.019607843831181526,
+        "p99_relative_error_all": 0.02571638487279415,
+        "tensor_index": 2
+      },
+      {
+        "mean_absolute_error": 6.17068653809838e-05,
+        "max_absolute_error": 0.005859375,
+        "std_absolute_error": 0.00011055351205868647,
+        "mean_magnitude": 0.007733057718724012,
+        "num_elements": 5591040,
+        "num_zero_elements": 55,
+        "num_nonzero_elements": 5590985,
+        "shape": [
+          5460,
+          32,
+          32
+        ],
+        "dtype": "float32",
+        "is_complex": false,
+        "mean_relative_error_nonzero": 0.007974166423082352,
+        "max_relative_error_nonzero": 0.07692307978868484,
+        "median_relative_error_nonzero": 0.006749156396836042,
+        "std_relative_error_nonzero": 0.006043385248631239,
+        "p95_relative_error_nonzero": 0.019622093066573143,
+        "p99_relative_error_nonzero": 0.025726141408085823,
+        "mean_relative_error_all": 0.007974089123308659,
+        "median_relative_error_all": 0.006749156396836042,
+        "p95_relative_error_all": 0.019622093066573143,
+        "p99_relative_error_all": 0.025726141408085823,
+        "tensor_index": 3
+      }
+    ]
+  },
+  {
+    "file": "reduced_indices.pt",
+    "input_path": "D:\\Research\\NO-2D-Metamaterials\\data\\out_test_10_pt_noise\\out_binarized_1\\reduced_indices.pt",
+    "output_path": "D:\\Research\\NO-2D-Metamaterials\\data\\out_test_10_pt_noise\\out_binarized_1_noise\\reduced_indices.pt",
+    "error_stats": {
+      "note": "Index file - copied without noise"
+    }
+  },
+  {
+    "file": "waveforms_full.pt",
+    "input_path": "D:\\Research\\NO-2D-Metamaterials\\data\\out_test_10_pt_noise\\out_binarized_1\\waveforms_full.pt",
+    "output_path": "D:\\Research\\NO-2D-Metamaterials\\data\\out_test_10_pt_noise\\out_binarized_1_noise\\waveforms_full.pt",
+    "error_stats": [
+      {
+        "mean_absolute_error": 0.000998925999738276,
+        "max_absolute_error": 0.0302734375,
+        "std_absolute_error": 0.0019165691919624805,
+        "mean_magnitude": 0.12504392862319946,
+        "num_elements": 93184,
+        "num_zero_elements": 6,
+        "num_nonzero_elements": 93178,
+        "shape": [
+          91,
+          32,
+          32
+        ],
+        "dtype": "float32",
+        "is_complex": false,
+        "mean_relative_error_nonzero": 0.00796373188495636,
+        "max_relative_error_nonzero": 0.0625,
+        "median_relative_error_nonzero": 0.006745362654328346,
+        "std_relative_error_nonzero": 0.00606765178963542,
+        "p95_relative_error_nonzero": 0.019641559571027756,
+        "p99_relative_error_nonzero": 0.025773830711841583,
+        "mean_relative_error_all": 0.007963218726217747,
+        "median_relative_error_all": 0.006745362654328346,
+        "p95_relative_error_all": 0.01964133232831955,
+        "p99_relative_error_all": 0.025773661211133003
+      }
+    ]
+  },
+  {
+    "file": "wavevectors_full.pt",
+    "input_path": "D:\\Research\\NO-2D-Metamaterials\\data\\out_test_10_pt_noise\\out_binarized_1\\wavevectors_full.pt",
+    "output_path": "D:\\Research\\NO-2D-Metamaterials\\data\\out_test_10_pt_noise\\out_binarized_1_noise\\wavevectors_full.pt",
+    "error_stats": [
+      {
+        "mean_absolute_error": 0.01215994730591774,
+        "max_absolute_error": 0.08203125,
+        "std_absolute_error": 0.013032117858529091,
+        "mean_magnitude": 1.570387601852417,
+        "num_elements": 1820,
+        "num_zero_elements": 140,
+        "num_nonzero_elements": 1680,
+        "shape": [
+          10,
+          91,
+          2
+        ],
+        "dtype": "float32",
+        "is_complex": false,
+        "mean_relative_error_nonzero": 0.007898126728832722,
+        "max_relative_error_nonzero": 0.037935324013233185,
+        "median_relative_error_nonzero": 0.006529850885272026,
+        "std_relative_error_nonzero": 0.0060490393079817295,
+        "p95_relative_error_nonzero": 0.019605077803134918,
+        "p99_relative_error_nonzero": 0.02579185739159584,
+        "mean_relative_error_all": 0.007290577981621027,
+        "median_relative_error_all": 0.005860415752977133,
+        "p95_relative_error_all": 0.018687764182686806,
+        "p99_relative_error_all": 0.025337697938084602
+      }
+    ]
+  }
+]

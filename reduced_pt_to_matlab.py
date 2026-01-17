@@ -71,7 +71,7 @@ def apply_steel_rubber_paradigm(design, const):
     E_polymer = 100e6
     E_steel = 200e9
     
-    rho_polymer = 1200.0
+    rho_polymer = 1200
     rho_steel = 8e3
     
     nu_polymer = 0.45
@@ -194,7 +194,7 @@ def create_full_indices(n_designs, n_wavevectors, n_bands):
     return torch.from_numpy(indices)
 
 
-def convert_reduced_pt_to_matlab(pt_input_path, matlab_output_path, use_predictions=True):
+def convert_reduced_pt_to_matlab(pt_input_path, matlab_output_path, use_predictions=True, predictions_file=None):
     """
     Convert reduced PyTorch dataset back to MATLAB .mat format.
     
@@ -207,6 +207,8 @@ def convert_reduced_pt_to_matlab(pt_input_path, matlab_output_path, use_predicti
     use_predictions : bool
         If True, look for predictions*.pt file instead of displacements_dataset.pt
         and create full indices for all combinations
+    predictions_file : Path, optional
+        If provided, use this exact predictions file path instead of searching
     
     Returns:
     --------
@@ -224,23 +226,31 @@ def convert_reduced_pt_to_matlab(pt_input_path, matlab_output_path, use_predicti
     # Determine which displacements file to use
     displacements_file = None
     if use_predictions:
-        # Look for .pt files starting with "predictions"
-        prediction_files = list(pt_input_path.glob("predictions*.pt"))
-        
-        if len(prediction_files) == 0:
-            raise FileNotFoundError(
-                f"No predictions*.pt file found in {pt_input_path}. "
-                f"Set --no_use_predictions to use displacements_dataset.pt instead."
-            )
-        elif len(prediction_files) > 1:
-            raise ValueError(
-                f"Multiple predictions*.pt files found in {pt_input_path}:\n" +
-                "\n".join(f"  - {f.name}" for f in prediction_files) +
-                "\nPlease ensure only one predictions file exists, or set --no_use_predictions."
-            )
+        if predictions_file is not None:
+            # Use explicitly specified predictions file
+            displacements_file = Path(predictions_file)
+            if not displacements_file.exists():
+                raise FileNotFoundError(f"Specified predictions file not found: {displacements_file}")
+            print(f"  Using specified predictions file: {displacements_file}")
         else:
-            displacements_file = prediction_files[0]
-            print(f"  Using predictions file: {displacements_file.name}")
+            # Look for .pt files starting with "predictions"
+            prediction_files = list(pt_input_path.glob("predictions*.pt"))
+            
+            if len(prediction_files) == 0:
+                raise FileNotFoundError(
+                    f"No predictions*.pt file found in {pt_input_path}. "
+                    f"Set --no_use_predictions to use displacements_dataset.pt instead, "
+                    f"or use --predictions_file to specify the exact path."
+                )
+            elif len(prediction_files) > 1:
+                raise ValueError(
+                    f"Multiple predictions*.pt files found in {pt_input_path}:\n" +
+                    "\n".join(f"  - {f.name}" for f in prediction_files) +
+                    "\nPlease use --predictions_file to specify the exact file, or set --no_use_predictions."
+                )
+            else:
+                displacements_file = prediction_files[0]
+                print(f"  Using predictions file: {displacements_file.name}")
     else:
         displacements_file = pt_input_path / "displacements_dataset.pt"
         if not displacements_file.exists():
@@ -267,14 +277,9 @@ def convert_reduced_pt_to_matlab(pt_input_path, matlab_output_path, use_predicti
     n_wavevectors = wavevectors_np.shape[1]
     n_bands = bands_fft.shape[0]
     
-    # Create or load indices
-    if use_predictions:
-        print(f"  Creating full indices for all combinations...")
-        reduced_indices = create_full_indices(n_designs, n_wavevectors, n_bands)
-        print(f"  Created {len(reduced_indices)} indices for {n_designs} designs × {n_wavevectors} wavevectors × {n_bands} bands")
-    else:
-        reduced_indices = torch.load(pt_input_path / "reduced_indices.pt", map_location='cpu', weights_only=False)
-        print(f"  Loaded reduced_indices.pt with {len(reduced_indices)} indices")
+    # Load indices - same procedure for both predictions and default case
+    reduced_indices = torch.load(pt_input_path / "reduced_indices.pt", map_location='cpu', weights_only=False)
+    print(f"  Loaded reduced_indices.pt with {len(reduced_indices)} indices")
     geometries = torch.load(pt_input_path / "geometries_full.pt", map_location='cpu', weights_only=False)
     waveforms = torch.load(pt_input_path / "waveforms_full.pt", map_location='cpu', weights_only=False)
     wavevectors = torch.load(pt_input_path / "wavevectors_full.pt", map_location='cpu', weights_only=False)
@@ -430,7 +435,8 @@ def convert_reduced_pt_to_matlab(pt_input_path, matlab_output_path, use_predicti
         print(f"    Computing T matrices for {len(wavevectors_struct)} wavevectors...")
         T_data = []
         for wv_idx, wv in enumerate(wavevectors_struct):
-            T = get_transformation_matrix(wv.astype(np.float32), const_for_km)
+            # Use float64 for wavevector to match precision throughout computation
+            T = get_transformation_matrix(wv.astype(np.float64), const_for_km)
             if T is None:
                 raise ValueError(f"Failed to compute T matrix for wavevector {wv_idx} in structure {struct_idx + 1}")
             T_data.append(T)
@@ -451,9 +457,10 @@ def convert_reduced_pt_to_matlab(pt_input_path, matlab_output_path, use_predicti
                 raise ValueError(f"T matrix is None for wavevector {wv_idx} in structure {struct_idx + 1}")
             
             # Convert matrices to sparse format for efficiency
-            T_sparse = T if sp.issparse(T) else sp.csr_matrix(T.astype(np.float32))
-            K_sparse = K if sp.issparse(K) else sp.csr_matrix(K.astype(np.float32))
-            M_sparse = M if sp.issparse(M) else sp.csr_matrix(M.astype(np.float32))
+            # Use float64 to match MATLAB precision and the updated system_matrices_vec.py
+            T_sparse = T if sp.issparse(T) else sp.csr_matrix(T.astype(np.float64))
+            K_sparse = K if sp.issparse(K) else sp.csr_matrix(K.astype(np.float64))
+            M_sparse = M if sp.issparse(M) else sp.csr_matrix(M.astype(np.float64))
             
             # Transform to reduced space: Kr = T' * K * T, Mr = T' * M * T
             Kr = T_sparse.conj().T @ K_sparse @ T_sparse
@@ -755,6 +762,13 @@ Examples:
         help='Use displacements_dataset.pt instead of looking for predictions*.pt'
     )
     
+    parser.add_argument(
+        '--predictions_file',
+        type=str,
+        default=None,
+        help='Exact path to predictions .pt file (overrides automatic search for predictions*.pt)'
+    )
+    
     args = parser.parse_args()
     
     # Convert to Path objects
@@ -816,7 +830,12 @@ Examples:
         )
     
     # Run conversion
-    result = convert_reduced_pt_to_matlab(pt_input_path, matlab_output_path, use_predictions=args.use_predictions)
+    result = convert_reduced_pt_to_matlab(
+        pt_input_path, 
+        matlab_output_path, 
+        use_predictions=args.use_predictions,
+        predictions_file=args.predictions_file
+    )
     
     # Summary
     print("\n" + "=" * 80)

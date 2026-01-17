@@ -70,7 +70,7 @@ class TestDispersion:
         # Eigenvectors are stored in reduced DOF space
         if const['isSaveEigenvectors']:
             # Get transformation matrix to determine reduced DOF size
-            from get_transformation_matrix import get_transformation_matrix
+            from system_matrices import get_transformation_matrix
             T_temp = get_transformation_matrix(wavevectors[0, :], const)
             N_dof_reduced = T_temp.shape[1]
             assert ev.shape == (N_dof_reduced, wavevectors.shape[0], const['N_eig'])
