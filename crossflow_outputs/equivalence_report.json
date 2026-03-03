@@ -1,0 +1,33 @@
+{
+  "eigenvalue_metrics": {
+    "shape": [
+      325,
+      6
+    ],
+    "max_abs": 849.9895517291615,
+    "mean_abs": 77.1153088815641,
+    "max_rel": 6682569.764640258,
+    "mean_rel": 5649.965256741704,
+    "allclose": false
+  },
+  "eigenvector_metrics": {
+    "shape": [
+      2048,
+      325,
+      6
+    ],
+    "max_abs_norm_diff": 1.9809720595698888,
+    "mean_abs_norm_diff": 1.0102801114090763,
+    "max_rel_norm_diff": 1.9809720595698892,
+    "mean_rel_norm_diff": 1.0102801114090763,
+    "min_correlation": 2.6983714774790586e-06,
+    "mean_correlation": 0.44413400139313974,
+    "strict_pass": false
+  },
+  "overall_pass": false,
+  "paths": {
+    "geometry_mat": "D:\\Research\\NO-2D-Metamaterials\\crossflow_outputs\\fixed_geometry_input.mat",
+    "matlab_output": "D:\\Research\\NO-2D-Metamaterials\\crossflow_outputs\\matlab_fixed_output.mat",
+    "python_output": "D:\\Research\\NO-2D-Metamaterials\\crossflow_outputs\\python_fixed_output.mat"
+  }
+}

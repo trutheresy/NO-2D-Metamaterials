@@ -5,11 +5,19 @@ This is the exact translation of the MATLAB dispersion_with_matrix_save_opt.m fu
 which is the actual function used by the generation script.
 """
 
+import os
 import numpy as np
 from scipy.sparse.linalg import eigs
 from system_matrices import get_system_matrices
 from system_matrices_vec import get_system_matrices_VEC, get_system_matrices_VEC_simplified
 from system_matrices import get_transformation_matrix
+
+
+def _env_flag(name: str, default: bool = False) -> bool:
+    v = os.getenv(name)
+    if v is None:
+        return default
+    return v.strip().lower() in {"1", "true", "yes", "on"}
 
 
 def dispersion_with_matrix_save_opt(const, wavevectors):
@@ -61,7 +69,14 @@ def dispersion_with_matrix_save_opt(const, wavevectors):
     
     # Initialize frequency array
     n_wavevectors = wavevectors.shape[0]
-    fr = np.zeros((n_wavevectors, const['N_eig']), dtype=np.float32)
+    parity_fr_float64 = _env_flag("PARITY_FR_FLOAT64", default=False)
+    fr_dtype = np.float64 if parity_fr_float64 else np.float32
+    fr = np.zeros((n_wavevectors, const['N_eig']), dtype=fr_dtype)
+
+    parity_wavevector_float64 = _env_flag("PARITY_WAVEVECTOR_FLOAT64", default=False)
+    parity_use_complex128 = _env_flag("PARITY_USE_COMPLEX128", default=False)
+    parity_force_sparse_eigs = _env_flag("PARITY_FORCE_SPARSE_EIGS", default=False)
+    parity_disable_neg_clamp = _env_flag("PARITY_DISABLE_NEG_CLAMP", default=False)
     
     # Initialize eigenvector array if requested (matching Han's eigenvector_dtype support)
     # Get transformation matrix to determine reduced DOF size
@@ -100,11 +115,15 @@ def dispersion_with_matrix_save_opt(const, wavevectors):
     # Process each wavevector
     for k_idx in range(n_wavevectors):
         wavevector = wavevectors[k_idx, :]
-        T = get_transformation_matrix(wavevector.astype(np.float32), const)
+        if parity_wavevector_float64:
+            T = get_transformation_matrix(wavevector.astype(np.float64), const)
+        else:
+            T = get_transformation_matrix(wavevector.astype(np.float32), const)
         
         # Transform matrices to reduced space
-        Kr = (T.conj().T @ K @ T).astype(np.complex64)
-        Mr = (T.conj().T @ M @ T).astype(np.complex64)
+        matrix_dtype = np.complex128 if parity_use_complex128 else np.complex64
+        Kr = (T.conj().T @ K @ T).astype(matrix_dtype)
+        Mr = (T.conj().T @ M @ T).astype(matrix_dtype)
         
         # Store transformation matrix if requested
         if const.get('isSaveKandM', False):
@@ -116,6 +135,8 @@ def dispersion_with_matrix_save_opt(const, wavevectors):
             # This is especially important for rigid body modes at k=0
             N_dof_reduced = Kr.shape[0]
             use_full_eig = (N_dof_reduced <= 1000) or (const.get('sigma_eig', '') == 'SM')
+            if parity_force_sparse_eigs:
+                use_full_eig = False
             
             if use_full_eig:
                 # Use full eigenvalue decomposition for small problems or when finding smallest eigenvalues
@@ -154,9 +175,10 @@ def dispersion_with_matrix_save_opt(const, wavevectors):
             eig_vals = eig_vals[idxs]
             eig_vecs = eig_vecs[:, idxs]
             
-            # Convert to complex64 for consistency
-            eig_vals = eig_vals.astype(np.complex64)
-            eig_vecs = eig_vecs.astype(np.complex64)
+            # Convert to controlled dtype for consistency
+            eig_dtype = np.complex128 if parity_use_complex128 else np.complex64
+            eig_vals = eig_vals.astype(eig_dtype)
+            eig_vecs = eig_vecs.astype(eig_dtype)
             
             # Store eigenvectors if requested (matching Han's eigenvector_dtype)
             if const.get('isSaveEigenvectors', False):
@@ -173,7 +195,7 @@ def dispersion_with_matrix_save_opt(const, wavevectors):
                     eig_vecs_aligned = eig_vecs_normalized * phase_align
                 else:
                     # Complex eigenvectors: use complex phase alignment
-                phase_align = np.exp(-1j * np.angle(eig_vecs[0, :]))
+                    phase_align = np.exp(-1j * np.angle(eig_vecs[0, :]))
                     eig_vecs_aligned = eig_vecs_normalized * phase_align
                 
                 # Store eigenvectors: eig_vecs_normalized is (N_dof_reduced, N_eig)
@@ -187,17 +209,18 @@ def dispersion_with_matrix_save_opt(const, wavevectors):
                         ev[:, k_idx, :] = eig_vecs_aligned.astype(np.float64)
                 else:
                     # Complex eigenvectors: store as complex
-                if eigenvector_dtype == 'single':
+                    if eigenvector_dtype == 'single':
                         ev[:, k_idx, :] = eig_vecs_aligned.astype(np.complex64)
-                else:  # double
+                    else:  # double
                         ev[:, k_idx, :] = eig_vecs_aligned.astype(np.complex128)
             
             # Convert to frequencies (exact MATLAB translation)
             # Handle negative eigenvalues (shouldn't happen but can due to numerical issues)
             real_eig_vals = np.real(eig_vals)
             # Set negative or very small eigenvalues to zero (rigid body modes or numerical errors)
-            real_eig_vals = np.maximum(real_eig_vals, 0.0)
-            fr[k_idx, :] = (np.sqrt(real_eig_vals).astype(np.float32) / (2 * np.pi)).astype(np.float32)
+            if not parity_disable_neg_clamp:
+                real_eig_vals = np.maximum(real_eig_vals, 0.0)
+            fr[k_idx, :] = (np.sqrt(real_eig_vals).astype(fr_dtype) / (2 * np.pi)).astype(fr_dtype)
             
         elif const.get('isUseGPU', False):
             raise NotImplementedError('GPU use is not currently developed')

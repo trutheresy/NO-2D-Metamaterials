@@ -1,0 +1,224 @@
+{
+  "inputs": {
+    "pt_dir": "D:\\Research\\NO-2D-Metamaterials\\OUTPUT\\output_2026-03-02_04-15-15\\continuous_2026-03-02_04-15-15_pt",
+    "mat_out": "D:\\Research\\NO-2D-Metamaterials\\validation_eigenvalue_full_vs_matlab\\matlab_prescribed_from_pt.mat",
+    "n_struct": 5
+  },
+  "all_wavevector_sets_equal_order_agnostic": false,
+  "per_structure": [
+    {
+      "struct_idx": 0,
+      "wavevector_set_equal_order_agnostic": false,
+      "raw": {
+        "shape_match": true,
+        "shape": [
+          325,
+          6
+        ],
+        "max_abs": 1726.55998828276,
+        "mean_abs": 285.38240630866045,
+        "max_rel": 9.81e+16,
+        "mean_rel": 50307692321326.945,
+        "max_vs_maxmag_pct": 54.76681500021865,
+        "mean_vs_meanmag_pct": 14.178789928740112,
+        "worst_index": [
+          12,
+          1
+        ],
+        "worst_matlab": 1731.19670703276,
+        "worst_python": 4.63671875
+      },
+      "aligned": {
+        "shape_match": true,
+        "shape": [
+          325,
+          6
+        ],
+        "max_abs": 373.93158236689123,
+        "mean_abs": 155.4406659277591,
+        "max_rel": 417968750000000.0,
+        "mean_rel": 214342948760.3726,
+        "max_vs_maxmag_pct": 11.861181733161239,
+        "mean_vs_meanmag_pct": 7.722832591822197,
+        "worst_index": [
+          226,
+          5
+        ],
+        "worst_matlab": 3064.0684176331088,
+        "worst_python": 3438.0
+      }
+    },
+    {
+      "struct_idx": 1,
+      "wavevector_set_equal_order_agnostic": false,
+      "raw": {
+        "shape_match": true,
+        "shape": [
+          325,
+          6
+        ],
+        "max_abs": 841.0,
+        "mean_abs": 346.3220793887034,
+        "max_rel": 8.41e+16,
+        "mean_rel": 70461538461539.17,
+        "max_vs_maxmag_pct": 146.8457742096233,
+        "mean_vs_meanmag_pct": 67.15572282710718,
+        "worst_index": [
+          156,
+          1
+        ],
+        "worst_matlab": 0.0,
+        "worst_python": 841.0
+      },
+      "aligned": {
+        "shape_match": true,
+        "shape": [
+          325,
+          6
+        ],
+        "max_abs": 579.3831685919574,
+        "mean_abs": 328.72206637536806,
+        "max_rel": 677343750000000.0,
+        "mean_rel": 683493589744.2095,
+        "max_vs_maxmag_pct": 101.16524370500677,
+        "mean_vs_meanmag_pct": 63.74288354823913,
+        "worst_index": [
+          254,
+          5
+        ],
+        "worst_matlab": 572.6168314080426,
+        "worst_python": 1152.0
+      }
+    },
+    {
+      "struct_idx": 2,
+      "wavevector_set_equal_order_agnostic": false,
+      "raw": {
+        "shape_match": true,
+        "shape": [
+          325,
+          6
+        ],
+        "max_abs": 1442.9999271034378,
+        "mean_abs": 279.47603827626915,
+        "max_rel": 8.865e+16,
+        "mean_rel": 45461538471690.086,
+        "max_vs_maxmag_pct": 48.293424511265556,
+        "mean_vs_meanmag_pct": 15.222722665336955,
+        "worst_index": [
+          156,
+          1
+        ],
+        "worst_matlab": 7.289656228855269e-05,
+        "worst_python": 1443.0
+      },
+      "aligned": {
+        "shape_match": true,
+        "shape": [
+          325,
+          6
+        ],
+        "max_abs": 357.27343281731055,
+        "mean_abs": 157.22110699801647,
+        "max_rel": 418750000000000.0,
+        "mean_rel": 214743589779.01572,
+        "max_vs_maxmag_pct": 11.957005148487916,
+        "mean_vs_meanmag_pct": 8.563644038070274,
+        "worst_index": [
+          117,
+          5
+        ],
+        "worst_matlab": 2970.7265671826895,
+        "worst_python": 3328.0
+      }
+    },
+    {
+      "struct_idx": 3,
+      "wavevector_set_equal_order_agnostic": false,
+      "raw": {
+        "shape_match": true,
+        "shape": [
+          325,
+          6
+        ],
+        "max_abs": 824.9998464828614,
+        "mean_abs": 394.26559269782933,
+        "max_rel": 7734567.751783859,
+        "mean_rel": 6723.049540829036,
+        "max_vs_maxmag_pct": 106.72755273368226,
+        "mean_vs_meanmag_pct": 66.33458046911471,
+        "worst_index": [
+          156,
+          1
+        ],
+        "worst_matlab": 0.0001535171386965493,
+        "worst_python": 825.0
+      },
+      "aligned": {
+        "shape_match": true,
+        "shape": [
+          325,
+          6
+        ],
+        "max_abs": 622.4757180135432,
+        "mean_abs": 379.21599441788544,
+        "max_rel": 75756.20482954857,
+        "mean_rel": 65.67609238513569,
+        "max_vs_maxmag_pct": 80.52766349345897,
+        "mean_vs_meanmag_pct": 63.80250867127486,
+        "worst_index": [
+          11,
+          5
+        ],
+        "worst_matlab": 762.5242819864568,
+        "worst_python": 1385.0
+      }
+    },
+    {
+      "struct_idx": 4,
+      "wavevector_set_equal_order_agnostic": false,
+      "raw": {
+        "shape_match": true,
+        "shape": [
+          325,
+          6
+        ],
+        "max_abs": 1457.3545803655602,
+        "mean_abs": 233.2330202485018,
+        "max_rel": 40872018.07397296,
+        "mean_rel": 29775.40709789308,
+        "max_vs_maxmag_pct": 48.03350449194617,
+        "mean_vs_meanmag_pct": 12.12894457965508,
+        "worst_index": [
+          12,
+          0
+        ],
+        "worst_matlab": 1463.5694241155602,
+        "worst_python": 6.21484375
+      },
+      "aligned": {
+        "shape_match": true,
+        "shape": [
+          325,
+          6
+        ],
+        "max_abs": 217.20605613688122,
+        "mean_abs": 98.70171548678164,
+        "max_rel": 279903.3661617209,
+        "mean_rel": 186.6233378035051,
+        "max_vs_maxmag_pct": 7.1589771039191845,
+        "mean_vs_meanmag_pct": 5.132839405760549,
+        "worst_index": [
+          156,
+          5
+        ],
+        "worst_matlab": 2776.793943863119,
+        "worst_python": 2994.0
+      }
+    }
+  ],
+  "summary": {
+    "aligned_max_abs_over_structures": 622.4757180135432,
+    "aligned_mean_abs_over_structures": 223.86030984116215
+  }
+}

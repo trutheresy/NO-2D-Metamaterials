@@ -1,0 +1,8 @@
+{
+  "python_default_dtype": "float64",
+  "exempt_rows": [
+    "Save reduced sample indices",
+    "Save raw debug dataset object",
+    "Save MATLAB dataset bundle"
+  ]
+}

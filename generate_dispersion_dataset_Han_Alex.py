@@ -6,22 +6,14 @@ It creates multiple metamaterial designs and computes their dispersion relations
 eigenvectors, and system matrices.
 """
 
+import argparse
 import numpy as np
 import os
 import sys
 from datetime import datetime
 import pickle
 import scipy.io as sio
-
-# Temporarily rename conflicting local dispersion.py file
-import os
-local_dispersion_file = os.path.join(os.getcwd(), 'dispersion.py')
-temp_dispersion_file = os.path.join(os.getcwd(), 'dispersion_temp.py')
-if os.path.exists(local_dispersion_file):
-    print("WARNING: Found conflicting local dispersion.py file, temporarily renaming it...")
-    if os.path.exists(temp_dispersion_file):
-        os.remove(temp_dispersion_file)
-    os.rename(local_dispersion_file, temp_dispersion_file)
+import torch
 
 # Add the new Python dispersion library path
 dispersion_library_path = r'D:\Research\NO-2D-Metamaterials\2d-dispersion-py'
@@ -35,7 +27,7 @@ try:
     from get_design2 import get_design2
     from wavevectors import get_IBZ_wavevectors
     from design_parameters import DesignParameters
-    from design_conversion import convert_design, design_to_explicit
+    from design_conversion import convert_design, design_to_explicit, apply_steel_rubber_paradigm
     from kernels import generate_correlated_design
     from utils import validate_constants, check_contour_analysis
     
@@ -48,7 +40,88 @@ except ImportError as e:
     sys.exit(1)
 
 
-def generate_dispersion_dataset_with_matrices():
+def _build_pt_dataset_outputs(
+    designs,
+    wavevector_data,
+    eigenvalue_data,
+    eigenvector_data,
+    design_numbers,
+    n_pix,
+    n_eig,
+):
+    """
+    Build .pt-friendly outputs using convert_mat_to_pytorch-style conventions.
+    """
+    # Convert design format (N_pix, N_pix, 3, N_struct) -> (N_struct, N_pix, N_pix)
+    # Keep first pane only, matching existing .pt conventions in this repo.
+    geometries = designs[:, :, 0, :].transpose(2, 0, 1)
+
+    # Convert wavevector format (N_wv, 2, N_struct) -> (N_struct, N_wv, 2)
+    wavevectors = wavevector_data.transpose(2, 0, 1)
+
+    # Convert eigenvector format (N_dof, N_wv, N_eig, N_struct) -> split x/y panes
+    eig = eigenvector_data.transpose(3, 1, 2, 0)  # (N_struct, N_wv, N_eig, N_dof)
+    eig_x = eig[..., 0::2].reshape(eig.shape[0], eig.shape[1], eig.shape[2], n_pix, n_pix)
+    eig_y = eig[..., 1::2].reshape(eig.shape[0], eig.shape[1], eig.shape[2], n_pix, n_pix)
+
+    # Build full (non-reduced) sample index list.
+    reduced_indices_reserved = []
+    for d_idx in range(eig.shape[0]):
+        for w_idx in range(eig.shape[1]):
+            for b_idx in range(eig.shape[2]):
+                reduced_indices_reserved.append((d_idx, w_idx, b_idx))
+
+    # Flatten samples into TensorDataset-compatible arrays.
+    d_idx = [idx[0] for idx in reduced_indices_reserved]
+    w_idx = [idx[1] for idx in reduced_indices_reserved]
+    b_idx = [idx[2] for idx in reduced_indices_reserved]
+    eig_x_reduced = eig_x[d_idx, w_idx, b_idx]
+    eig_y_reduced = eig_y[d_idx, w_idx, b_idx]
+
+    # Optional wavelet embeddings to match convert_mat_to_pytorch.py.
+    # If NO_utils_multiple is unavailable, placeholders are created.
+    try:
+        import NO_utils_multiple  # type: ignore
+
+        waveforms = NO_utils_multiple.embed_2const_wavelet(
+            wavevectors[0, :, 0],
+            wavevectors[0, :, 1],
+            size=n_pix,
+        )
+        bands_fft = NO_utils_multiple.embed_integer_wavelet(np.arange(1, n_eig + 1), size=n_pix)
+    except Exception as e:
+        print(f"WARNING: Could not generate wavelet embeddings: {e}")
+        waveforms = np.zeros((wavevectors.shape[1], n_pix, n_pix), dtype=np.float16)
+        bands_fft = np.zeros((n_eig, n_pix, n_pix), dtype=np.float16)
+
+    # Build design_params tensor from generated design numbers (N_struct, 1).
+    design_params_array = np.asarray(design_numbers, dtype=np.int64).reshape(-1, 1)
+
+    # Convert to tensors (float16 to match existing reduced dataset files).
+    outputs = {
+        "displacements_dataset": torch.utils.data.TensorDataset(
+            torch.from_numpy(eig_x_reduced.real).to(torch.float16),
+            torch.from_numpy(eig_x_reduced.imag).to(torch.float16),
+            torch.from_numpy(eig_y_reduced.real).to(torch.float16),
+            torch.from_numpy(eig_y_reduced.imag).to(torch.float16),
+        ),
+        "reduced_indices": reduced_indices_reserved,
+        "geometries_full": torch.from_numpy(geometries).to(torch.float16),
+        "waveforms_full": torch.from_numpy(waveforms).to(torch.float16),
+        "wavevectors_full": torch.from_numpy(wavevectors).to(torch.float16),
+        "band_fft_full": torch.from_numpy(bands_fft).to(torch.float16),
+        "design_params_full": torch.from_numpy(design_params_array).to(torch.float16),
+        # Keep a direct frequency tensor for mat-free downstream parity/debug.
+        "eigenvalue_data_full": torch.from_numpy(eigenvalue_data.transpose(2, 0, 1)).to(torch.float16),
+    }
+    return outputs
+
+
+def generate_dispersion_dataset_with_matrices(
+    n_struct: int = 5,
+    rng_seed_offset_override: int = 0,
+    binarize_override: bool = False,
+):
     """
     Generate dispersion dataset with system matrices (equivalent to MATLAB script).
     """
@@ -92,9 +165,9 @@ def generate_dispersion_dataset_with_matrices():
     })
     
     # Design parameters
-    N_struct = 5  # Number of designs to generate
-    rng_seed_offset = 0  # RNG seed offset
-    binarize = False  # Set to False for continuous designs
+    N_struct = int(n_struct)  # Number of designs to generate
+    rng_seed_offset = int(rng_seed_offset_override)  # RNG seed offset
+    binarize = bool(binarize_override)  # False=continuous, True=binarized
     
     # Material parameters (exact MATLAB translation)
     const.update({
@@ -106,13 +179,17 @@ def generate_dispersion_dataset_with_matrices():
         'poisson_max': 0.5,
         't': 1.0
     })
+    # Validate constants expects a design key; initialize placeholder before loop.
+    const['design'] = np.zeros((const['N_pix'], const['N_pix'], 3), dtype=np.float16)
     
     # Imaginary tolerance
     imag_tol = 1e-3
     
     # Generate wavevectors
     print(f"Generating wavevectors for {const['N_wv']} grid...")
-    const['wavevectors'] = get_IBZ_wavevectors(const['N_wv'], const['a'], 'none')
+    const['wavevectors'] = np.asarray(
+        get_IBZ_wavevectors(const['N_wv'], const['a'], 'none'), dtype=np.float16
+    )
     print(f"Generated {len(const['wavevectors'])} wavevectors")
     
     # Initialize design parameters (exact MATLAB translation)
@@ -131,22 +208,25 @@ def generate_dispersion_dataset_with_matrices():
     
     # Initialize storage arrays - FIXED for scalar N_pix
     print("Initializing storage arrays...")
-    designs = np.zeros((const['N_pix'], const['N_pix'], 3, N_struct))
-    wavevector_data = np.zeros((np.prod(const['N_wv']), 2, N_struct))
-    eigenvalue_data = np.zeros((np.prod(const['N_wv']), const['N_eig'], N_struct))
+    designs = np.zeros((const['N_pix'], const['N_pix'], 3, N_struct), dtype=np.float16)
+    wavevector_data = np.zeros((np.prod(const['N_wv']), 2, N_struct), dtype=np.float16)
+    eigenvalue_data = np.zeros((np.prod(const['N_wv']), const['N_eig'], N_struct), dtype=np.float16)
     
     N_dof = 2 * (const['N_pix'] * const['N_ele'])**2
-    eigenvector_data = np.zeros((N_dof, np.prod(const['N_wv']), const['N_eig'], N_struct), dtype=complex)
+    eigenvector_data = np.zeros((N_dof, np.prod(const['N_wv']), const['N_eig'], N_struct), dtype=np.complex64)
     
     # Material property data
-    elastic_modulus_data = np.zeros((const['N_pix'], const['N_pix'], N_struct))
-    density_data = np.zeros((const['N_pix'], const['N_pix'], N_struct))
-    poisson_data = np.zeros((const['N_pix'], const['N_pix'], N_struct))
+    # NOTE: E can reach 2e11 Pa, which cannot be represented in float16.
+    # Keep constitutive arrays at float32 to avoid overflow/Inf.
+    elastic_modulus_data = np.zeros((const['N_pix'], const['N_pix'], N_struct), dtype=np.float32)
+    density_data = np.zeros((const['N_pix'], const['N_pix'], N_struct), dtype=np.float32)
+    poisson_data = np.zeros((const['N_pix'], const['N_pix'], N_struct), dtype=np.float32)
     
     # System matrices (using lists for variable sizes)
     K_data = []
     M_data = []
     T_data = []
+    design_numbers = np.zeros((N_struct,), dtype=np.int64)
     
     # Validate constants
     is_valid, missing_fields = validate_constants(const)
@@ -165,6 +245,9 @@ def generate_dispersion_dataset_with_matrices():
         try:
             # Set design number for this structure (exact MATLAB translation)
             design_params.design_number = struct_idx + rng_seed_offset
+            design_numbers[struct_idx] = struct_idx + rng_seed_offset
+            # Expand scalar design_number into per-property values (MATLAB prepare() behavior).
+            design_params = design_params.prepare()
             
             # Generate design using get_design2 (exact MATLAB translation)
             design = get_design2(design_params)
@@ -173,12 +256,15 @@ def generate_dispersion_dataset_with_matrices():
             design = convert_design(design, 'linear', const['design_scale'], 
                                   const['E_min'], const['E_max'],
                                   const['rho_min'], const['rho_max'])
+            # Match MATLAB ex_dispersion_batch_save.m channel mapping.
+            design = apply_steel_rubber_paradigm(design, const)
             
             # Binarize if requested (exact MATLAB translation)
             if binarize:
                 design = np.round(design)
             
-            # Store design
+            # Float16-first chain for stored fields and solver inputs.
+            design = np.asarray(design, dtype=np.float16)
             designs[:, :, :, struct_idx] = design
             const['design'] = design
             
@@ -186,18 +272,19 @@ def generate_dispersion_dataset_with_matrices():
             wv, fr, ev, mesh, K, M, T = dispersion_with_matrix_save_opt(const, const['wavevectors'])
             
             # Store results
-            wavevector_data[:, :, struct_idx] = wv
-            eigenvalue_data[:, :, struct_idx] = np.real(fr)
+            wavevector_data[:, :, struct_idx] = np.asarray(wv, dtype=np.float16)
+            eigenvalue_data[:, :, struct_idx] = np.asarray(np.real(fr), dtype=np.float16)
             
             if is_save_eigenvectors and ev is not None:
-                eigenvector_data[:, :, :, struct_idx] = ev
+                eigenvector_data[:, :, :, struct_idx] = np.asarray(ev, dtype=np.complex64)
             
             # Check for imaginary components
             if np.max(np.abs(np.imag(fr))) > imag_tol:
                 print(f"WARNING: Warning: Large imaginary component in frequency for structure {struct_idx + 1}")
             
             # Store material properties
-            explicit_props = design_to_explicit(design, const['design_scale'], 
+            explicit_props = design_to_explicit(
+                                              np.asarray(design, dtype=np.float32), const['design_scale'], 
                                               const['E_min'], const['E_max'],
                                               const['rho_min'], const['rho_max'],
                                               const['poisson_min'], const['poisson_max'])
@@ -236,7 +323,7 @@ def generate_dispersion_dataset_with_matrices():
         import shutil
         shutil.copy2(__file__, os.path.join(output_folder, f'{script_name}.py'))
     
-    # Prepare data for saving
+    # Prepare data for optional Python object save/debug.
     dataset = {
         'WAVEVECTOR_DATA': wavevector_data,
         'EIGENVALUE_DATA': eigenvalue_data,
@@ -244,6 +331,7 @@ def generate_dispersion_dataset_with_matrices():
         'designs': designs,
         'const': const,
         'design_params': design_params,
+        'design_numbers': design_numbers,
         'N_struct': N_struct,
         'imag_tol': imag_tol,
         'rng_seed_offset': rng_seed_offset,
@@ -263,22 +351,41 @@ def generate_dispersion_dataset_with_matrices():
     # Save results
     if is_save_output:
         design_type_label = 'binarized' if binarize else 'continuous'
-        output_file_path = os.path.join(
+        output_pt_path = os.path.join(
             output_folder,
-            f'{design_type_label}_{script_start_time}.mat'
+            f'{design_type_label}_{script_start_time}_pt'
         )
-        
-        # Save as MATLAB .mat file for compatibility
-        sio.savemat(output_file_path, dataset, oned_as='column')
-        print(f"SUCCESS: MATLAB .mat file saved to: {output_file_path}")
-        
-        # Also save as Python pickle for easier Python usage
-        pickle_file_path = os.path.join(
-            output_folder,
-            f'{design_type_label}_{script_start_time}.pkl'
+        os.makedirs(output_pt_path, exist_ok=True)
+
+        # The legacy .mat export is intentionally disabled:
+        # output_file_path = os.path.join(output_folder, f'{design_type_label}_{script_start_time}.mat')
+        # sio.savemat(output_file_path, dataset, oned_as='column')
+
+        pt_outputs = _build_pt_dataset_outputs(
+            designs=designs,
+            wavevector_data=wavevector_data,
+            eigenvalue_data=eigenvalue_data,
+            eigenvector_data=eigenvector_data,
+            design_numbers=design_numbers,
+            n_pix=const['N_pix'],
+            n_eig=const['N_eig'],
         )
+
+        torch.save(pt_outputs['displacements_dataset'], os.path.join(output_pt_path, 'displacements_dataset.pt'))
+        torch.save(pt_outputs['reduced_indices'], os.path.join(output_pt_path, 'reduced_indices.pt'))
+        torch.save(pt_outputs['geometries_full'], os.path.join(output_pt_path, 'geometries_full.pt'))
+        torch.save(pt_outputs['waveforms_full'], os.path.join(output_pt_path, 'waveforms_full.pt'))
+        torch.save(pt_outputs['wavevectors_full'], os.path.join(output_pt_path, 'wavevectors_full.pt'))
+        torch.save(pt_outputs['band_fft_full'], os.path.join(output_pt_path, 'band_fft_full.pt'))
+        torch.save(pt_outputs['design_params_full'], os.path.join(output_pt_path, 'design_params_full.pt'))
+        torch.save(pt_outputs['eigenvalue_data_full'], os.path.join(output_pt_path, 'eigenvalue_data_full.pt'))
+
+        # Preserve raw Python object dump for debugging complex/sparse structures.
+        pickle_file_path = os.path.join(output_folder, f'{design_type_label}_{script_start_time}.pkl')
         with open(pickle_file_path, 'wb') as f:
             pickle.dump(dataset, f)
+
+        print(f"SUCCESS: PyTorch dataset bundle saved to: {output_pt_path}")
         print(f"SUCCESS: Python pickle file saved to: {pickle_file_path}")
     
     # Summary
@@ -287,7 +394,7 @@ def generate_dispersion_dataset_with_matrices():
     print("="*80)
     print(f"SUCCESS: Generated {N_struct} structures")
     print(f"SUCCESS: Computed dispersion for {len(const['wavevectors'])} wavevectors")
-    print(f"SUCCESS: Design size: {const['N_pix'][0]}x{const['N_pix'][1]} pixels")
+    print(f"SUCCESS: Design size: {const['N_pix']}x{const['N_pix']} pixels")
     print(f"SUCCESS: Number of eigenvalues: {const['N_eig']}")
     print(f"SUCCESS: Frequency range: {np.min(eigenvalue_data):.3f} - {np.max(eigenvalue_data):.3f} Hz")
     print(f"SUCCESS: Design type: {design_type_label}")
@@ -462,8 +569,8 @@ def demonstrate_library_features():
         print(f"  SUCCESS: Saved MATLAB-equivalent design to {filepath}")
         print(f"  INFO: Design shape: {matlab_design.shape}")
         print(f"  INFO: Property ranges - E: [{np.min(matlab_design[:,:,0]):.3f}, {np.max(matlab_design[:,:,0]):.3f}]")
-        print(f"  INFO: Property ranges - ρ: [{np.min(matlab_design[:,:,1]):.3f}, {np.max(matlab_design[:,:,1]):.3f}]")
-        print(f"  INFO: Property ranges - ν: [{np.min(matlab_design[:,:,2]):.3f}, {np.max(matlab_design[:,:,2]):.3f}]")
+        print(f"  INFO: Property ranges - rho: [{np.min(matlab_design[:,:,1]):.3f}, {np.max(matlab_design[:,:,1]):.3f}]")
+        print(f"  INFO: Property ranges - nu: [{np.min(matlab_design[:,:,2]):.3f}, {np.max(matlab_design[:,:,2]):.3f}]")
         
     except Exception as e:
         print(f"  ERROR: Failed to create MATLAB-equivalent design visualization: {e}")
@@ -474,21 +581,23 @@ def demonstrate_library_features():
 
 
 if __name__ == "__main__":
-    try:
-        # Run the main dataset generation
-        dataset = generate_dispersion_dataset_with_matrices()
-        
-        # Demonstrate additional features
+    parser = argparse.ArgumentParser(description="Generate dispersion dataset with configurable sample count/seed offset.")
+    parser.add_argument("--n-struct", type=int, default=5, help="Number of structures/designs to generate.")
+    parser.add_argument("--rng-seed-offset", type=int, default=0, help="RNG seed offset applied to design index.")
+    parser.add_argument("--binarize", action="store_true", help="Generate binarized designs (default: continuous).")
+    parser.add_argument("--skip-demo", action="store_true", help="Skip post-generation demonstration plots.")
+    args = parser.parse_args()
+
+    # Run the main dataset generation
+    dataset = generate_dispersion_dataset_with_matrices(
+        n_struct=args.n_struct,
+        rng_seed_offset_override=args.rng_seed_offset,
+        binarize_override=args.binarize,
+    )
+
+    # Demonstrate additional features
+    if not args.skip_demo:
         demonstrate_library_features()
-        
-        print("\nCOMPLETED: Script completed successfully!")
-        print("The generated dataset is compatible with both MATLAB and Python workflows.")
-        
-    finally:
-        # Restore the original dispersion.py file if it was renamed
-        if os.path.exists(temp_dispersion_file):
-            print("\nRESTORING: Restoring original dispersion.py file...")
-            if os.path.exists(local_dispersion_file):
-                os.remove(local_dispersion_file)
-            os.rename(temp_dispersion_file, local_dispersion_file)
-            print("SUCCESS: Original dispersion.py file restored")
+
+    print("\nCOMPLETED: Script completed successfully!")
+    print("The generated dataset is compatible with both MATLAB and Python workflows.")

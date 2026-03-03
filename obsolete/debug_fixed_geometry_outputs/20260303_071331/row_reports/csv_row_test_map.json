@@ -1,0 +1,214 @@
+{
+  "row_test_map": [
+    {
+      "row_name": "Initialize geometry storage tensor for all samples: zeros(N_pix,N_pix,3,N_struct)",
+      "test_type": "shape_type_test",
+      "expected_equivalence": "Equivalent",
+      "deviation_risk": "Low"
+    },
+    {
+      "row_name": "Initialize material property storage: E/rho/nu arrays",
+      "test_type": "shape_type_test",
+      "expected_equivalence": "Equivalent",
+      "deviation_risk": "Low"
+    },
+    {
+      "row_name": "Initialize material constants E_min,E_max,rho_min,rho_max,poisson_min,poisson_max,t",
+      "test_type": "shape_type_test",
+      "expected_equivalence": "Equivalent (after recent constant fixes)",
+      "deviation_risk": "Medium"
+    },
+    {
+      "row_name": "Generate IBZ wavevectors from meshgrid",
+      "test_type": "ordering_test",
+      "expected_equivalence": "Same set, different traversal/order",
+      "deviation_risk": "High"
+    },
+    {
+      "row_name": "Prepare design params and per-structure deterministic seed",
+      "test_type": "range_physical_test",
+      "expected_equivalence": "Equivalent",
+      "deviation_risk": "Low"
+    },
+    {
+      "row_name": "Generate per-property random field",
+      "test_type": "range_physical_test",
+      "expected_equivalence": "Equivalent if kernel/options identical",
+      "deviation_risk": "Medium"
+    },
+    {
+      "row_name": "Stack 3 panes into design tensor",
+      "test_type": "shape_type_test",
+      "expected_equivalence": "Equivalent",
+      "deviation_risk": "Low"
+    },
+    {
+      "row_name": "Convert design scale",
+      "test_type": "shape_type_test",
+      "expected_equivalence": "Equivalent for linear path",
+      "deviation_risk": "Low"
+    },
+    {
+      "row_name": "Apply steel-rubber mapping",
+      "test_type": "range_physical_test",
+      "expected_equivalence": "Equivalent after E_polymer fix to 100e6",
+      "deviation_risk": "Medium"
+    },
+    {
+      "row_name": "Optional binarization round(design)",
+      "test_type": "range_physical_test",
+      "expected_equivalence": "Equivalent",
+      "deviation_risk": "Low"
+    },
+    {
+      "row_name": "Assemble global matrices K,M",
+      "test_type": "range_physical_test",
+      "expected_equivalence": "Algorithmically equivalent",
+      "deviation_risk": "Medium"
+    },
+    {
+      "row_name": "Per-wavevector Bloch reduction Kr=T^HKT, Mr=T^HMT",
+      "test_type": "ordering_test",
+      "expected_equivalence": "Equivalent formulation",
+      "deviation_risk": "Medium"
+    },
+    {
+      "row_name": "Solve generalized EVP and sort modes",
+      "test_type": "parity_test",
+      "expected_equivalence": "Not strictly identical branch behavior",
+      "deviation_risk": "High"
+    },
+    {
+      "row_name": "Frequency conversion sqrt(real(lambda))/(2pi)",
+      "test_type": "parity_test",
+      "expected_equivalence": "Close but clamp/precision behavior can differ",
+      "deviation_risk": "Medium"
+    },
+    {
+      "row_name": "Store wv/fr/ev per structure",
+      "test_type": "range_physical_test",
+      "expected_equivalence": "Equivalent layout up to ordering",
+      "deviation_risk": "Medium"
+    },
+    {
+      "row_name": "Convert normalized design to explicit E/rho/nu",
+      "test_type": "shape_type_test",
+      "expected_equivalence": "Equivalent",
+      "deviation_risk": "Low"
+    },
+    {
+      "row_name": "Collect constitutive data object",
+      "test_type": "range_physical_test",
+      "expected_equivalence": "Semantically equivalent container",
+      "deviation_risk": "Low"
+    },
+    {
+      "row_name": "Reshape design tensor to reduced geometry output (keep pane 0)",
+      "test_type": "range_physical_test",
+      "expected_equivalence": "Not equivalent representation by design",
+      "deviation_risk": "High"
+    },
+    {
+      "row_name": "Transpose wavevectors to PT full layout (N,W,2)",
+      "test_type": "ordering_test",
+      "expected_equivalence": "Equivalent content, different axis order",
+      "deviation_risk": "Medium"
+    },
+    {
+      "row_name": "Transpose eigenvalues to PT full layout (N,W,B)",
+      "test_type": "ordering_test",
+      "expected_equivalence": "Equivalent content, different axis order",
+      "deviation_risk": "Medium"
+    },
+    {
+      "row_name": "Waveform embedding from wavevectors (Gabor-like)",
+      "test_type": "ordering_test",
+      "expected_equivalence": "Python-only derived feature",
+      "deviation_risk": "High"
+    },
+    {
+      "row_name": "Band embedding from integer band index",
+      "test_type": "range_physical_test",
+      "expected_equivalence": "Python-only derived feature",
+      "deviation_risk": "High"
+    },
+    {
+      "row_name": "Create output root folder OUTPUT/output_<timestamp>",
+      "test_type": "save_artifact_test",
+      "expected_equivalence": "Equivalent",
+      "deviation_risk": "Low"
+    },
+    {
+      "row_name": "Copy generation script into output folder",
+      "test_type": "range_physical_test",
+      "expected_equivalence": "Equivalent provenance intent",
+      "deviation_risk": "Low"
+    },
+    {
+      "row_name": "Create PT bundle subfolder <design_type>_<timestamp>_pt",
+      "test_type": "range_physical_test",
+      "expected_equivalence": "Not equivalent format pathway",
+      "deviation_risk": "Medium"
+    },
+    {
+      "row_name": "Save reduced displacement dataset",
+      "test_type": "save_artifact_test",
+      "expected_equivalence": "Python-only output",
+      "deviation_risk": "High"
+    },
+    {
+      "row_name": "Save reduced sample indices",
+      "test_type": "save_artifact_test",
+      "expected_equivalence": "Python-only output",
+      "deviation_risk": "Medium"
+    },
+    {
+      "row_name": "Save geometries_full",
+      "test_type": "save_artifact_test",
+      "expected_equivalence": "Different representation + precision",
+      "deviation_risk": "High"
+    },
+    {
+      "row_name": "Save waveforms_full",
+      "test_type": "save_artifact_test",
+      "expected_equivalence": "Python-only derived output",
+      "deviation_risk": "High"
+    },
+    {
+      "row_name": "Save wavevectors_full",
+      "test_type": "save_artifact_test",
+      "expected_equivalence": "Equivalent content with order+precision differences",
+      "deviation_risk": "High"
+    },
+    {
+      "row_name": "Save band_fft_full",
+      "test_type": "save_artifact_test",
+      "expected_equivalence": "Python-only derived output",
+      "deviation_risk": "High"
+    },
+    {
+      "row_name": "Save design_params_full",
+      "test_type": "save_artifact_test",
+      "expected_equivalence": "Equivalent concept, different encoding",
+      "deviation_risk": "Medium"
+    },
+    {
+      "row_name": "Save eigenvalue_data_full",
+      "test_type": "save_artifact_test",
+      "expected_equivalence": "Equivalent physics, precision+axis-order differences",
+      "deviation_risk": "High"
+    },
+    {
+      "row_name": "Save raw debug dataset object",
+      "test_type": "save_artifact_test",
+      "expected_equivalence": "Not equivalent format (debug artifact)",
+      "deviation_risk": "Low"
+    },
+    {
+      "row_name": "Save MATLAB dataset bundle",
+      "test_type": "save_artifact_test",
+      "expected_equivalence": "Not equivalent current default output path",
+      "deviation_risk": "High"
+    }
+  ]
+}

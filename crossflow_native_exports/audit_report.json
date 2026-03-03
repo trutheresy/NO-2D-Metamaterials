@@ -1,0 +1,150 @@
+{
+  "folders": {
+    "matlab_native_folder": "D:\\Research\\NO-2D-Metamaterials\\crossflow_native_exports\\matlab_native",
+    "python_native_folder": "D:\\Research\\NO-2D-Metamaterials\\crossflow_native_exports\\python_native",
+    "plots_folder": "D:\\Research\\NO-2D-Metamaterials\\crossflow_native_exports\\plots"
+  },
+  "saved_quantities": {
+    "matlab_native_mat_files": [
+      "fixed_geometry_input.mat",
+      "matlab_flow_output.mat"
+    ],
+    "python_native_pt_files": [
+      "fixed_geometry_input.pt",
+      "python_flow_output.pt"
+    ],
+    "python_flow_pt_payload_keys": [
+      "EIGENVALUE_DATA",
+      "EIGENVECTOR_DATA",
+      "E_DATA",
+      "IMAG_TOL",
+      "K_DATA",
+      "M_DATA",
+      "NU_DATA",
+      "N_struct",
+      "RHO_DATA",
+      "SCRIPT_TIME",
+      "T_DATA",
+      "WAVEVECTOR_DATA",
+      "designs"
+    ],
+    "matlab_flow_mat_keys": [
+      "EIGENVALUE_DATA",
+      "EIGENVECTOR_DATA",
+      "K_DATA",
+      "M_DATA",
+      "N_struct",
+      "None",
+      "T_DATA",
+      "WAVEVECTOR_DATA",
+      "const",
+      "designs",
+      "imag_tol",
+      "rng_seed_offset"
+    ]
+  },
+  "input_equality_checks": {
+    "fixed_input_vs_mat_design": {
+      "shape_match": true,
+      "shape": [
+        32,
+        32,
+        3
+      ],
+      "max_abs": 0.0,
+      "mean_abs": 0.0,
+      "max_rel": 0.0,
+      "mean_rel": 0.0,
+      "allclose_1e-8_1e-10": true
+    },
+    "fixed_input_vs_python_design": {
+      "shape_match": true,
+      "shape": [
+        32,
+        32,
+        3
+      ],
+      "max_abs": 0.0,
+      "mean_abs": 0.0,
+      "max_rel": 0.0,
+      "mean_rel": 0.0,
+      "allclose_1e-8_1e-10": true
+    },
+    "mat_design_vs_python_design": {
+      "shape_match": true,
+      "shape": [
+        32,
+        32,
+        3
+      ],
+      "max_abs": 0.0,
+      "mean_abs": 0.0,
+      "max_rel": 0.0,
+      "mean_rel": 0.0,
+      "allclose_1e-8_1e-10": true
+    }
+  },
+  "quantity_comparisons": {
+    "WAVEVECTOR_DATA": {
+      "present_in_both": true,
+      "shape_match": true,
+      "shape": [
+        325,
+        2
+      ],
+      "max_abs": 6.021385919380437,
+      "mean_abs": 1.5997956435972638,
+      "max_rel": 314159265358979.3,
+      "mean_rel": 7491490173946.368,
+      "allclose_1e-8_1e-10": false
+    },
+    "EIGENVALUE_DATA": {
+      "present_in_both": true,
+      "shape_match": true,
+      "shape": [
+        325,
+        6
+      ],
+      "max_abs": 849.9895517291615,
+      "mean_abs": 77.1153088815641,
+      "max_rel": 6682569.764640258,
+      "mean_rel": 5649.965256741704,
+      "allclose_1e-8_1e-10": false
+    },
+    "EIGENVECTOR_DATA": {
+      "present_in_both": true,
+      "shape_match": true,
+      "shape": [
+        2048,
+        325,
+        6
+      ],
+      "max_abs": 0.34888055103803217,
+      "mean_abs": 0.016108429824445006,
+      "max_rel": 18226447123635.383,
+      "mean_rel": 12540945788.29519,
+      "allclose_1e-8_1e-10": false
+    },
+    "designs": {
+      "present_in_both": true,
+      "shape_match": true,
+      "shape": [
+        32,
+        32,
+        3
+      ],
+      "max_abs": 0.0,
+      "mean_abs": 0.0,
+      "max_rel": 0.0,
+      "mean_rel": 0.0,
+      "allclose_1e-8_1e-10": true
+    }
+  },
+  "plot_files": [
+    "input_design_channel_0.png",
+    "input_design_channel_1.png",
+    "input_design_channel_2.png",
+    "output_eigenvalue_data.png",
+    "output_eigenvector_mode_map_k0_b0.png"
+  ]
+}

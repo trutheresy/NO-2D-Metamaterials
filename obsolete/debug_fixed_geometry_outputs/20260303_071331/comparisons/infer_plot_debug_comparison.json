@@ -1,0 +1,112 @@
+{
+  "comparisons": [
+    {
+      "name": "design_raw_single_vs_matlab_input_ch1",
+      "shape_match": true,
+      "max_abs": 0.0005006790161132812,
+      "mean_abs": 0.00038996487858531856,
+      "mean_rel_pct": 0.19032613403133283
+    },
+    {
+      "name": "design_normalized_vs_matlab_design3",
+      "shape_match": true,
+      "max_abs": 0.0004639000110447933,
+      "mean_abs": 6.963334290555325e-05,
+      "mean_rel_pct": 0.016164637558603045
+    },
+    {
+      "name": "wavevectors_raw",
+      "shape_match": true,
+      "max_abs": 6.020418265790644,
+      "mean_abs": 1.5996033657588242,
+      "mean_rel_pct": 99.83716966547057
+    },
+    {
+      "name": "wavevectors_aligned",
+      "shape_match": true,
+      "max_abs": 0.000967653589793116,
+      "mean_abs": 0.00048154840603646714,
+      "mean_rel_pct": 0.0300552192779321
+    },
+    {
+      "name": "frequencies_recon_raw",
+      "shape_match": true,
+      "max_abs": 407.33398506743254,
+      "mean_abs": 18.513267632659556,
+      "mean_rel_pct": 3.589936952310433
+    },
+    {
+      "name": "K_triplet",
+      "shape_match": true,
+      "max_abs": 94674823.03686523,
+      "mean_abs": 2323017.3903820715,
+      "mean_rel_pct": 0.017389358999465615,
+      "nnz_matlab": 35290,
+      "nnz_python": 35294,
+      "union_nnz": 35296
+    },
+    {
+      "name": "M_triplet",
+      "shape_match": true,
+      "max_abs": 0.000712315229014937,
+      "mean_abs": 2.8622280687755727e-05,
+      "mean_rel_pct": 0.010384834871550836,
+      "nnz_matlab": 18818,
+      "nnz_python": 18818,
+      "union_nnz": 18818
+    },
+    {
+      "name": "T_diag",
+      "shape_match": true,
+      "max_abs": 0.0,
+      "mean_abs": 0.0,
+      "mean_rel_pct": 0.0
+    },
+    {
+      "name": "contour_wavevectors",
+      "shape_match": false,
+      "shape_a": [
+        55,
+        2
+      ],
+      "shape_b": [
+        37,
+        2
+      ]
+    },
+    {
+      "name": "contour_parameter",
+      "shape_match": false,
+      "shape_a": [
+        55
+      ],
+      "shape_b": [
+        37
+      ]
+    },
+    {
+      "name": "frequencies_contour",
+      "shape_match": false,
+      "shape_a": [
+        55,
+        6
+      ],
+      "shape_b": [
+        37,
+        6
+      ]
+    },
+    {
+      "name": "plot_points_y",
+      "shape_match": false,
+      "shape_a": [
+        55,
+        6
+      ],
+      "shape_b": [
+        37,
+        6
+      ]
+    }
+  ]
+}

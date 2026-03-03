@@ -1,0 +1,58 @@
+{
+  "keys": [
+    "EIGENVALUE_DATA",
+    "EIGENVECTOR_DATA",
+    "K_DATA",
+    "M_DATA",
+    "N_struct",
+    "None",
+    "T_DATA",
+    "WAVEVECTOR_DATA",
+    "const",
+    "designs",
+    "imag_tol",
+    "rng_seed_offset"
+  ],
+  "WAVEVECTOR_DATA": {
+    "shape": [
+      325,
+      2
+    ],
+    "dtype": "float64",
+    "finite": true,
+    "min_real": -3.141592653589793,
+    "max_real": 3.141592653589793
+  },
+  "EIGENVALUE_DATA": {
+    "shape": [
+      325,
+      6
+    ],
+    "dtype": "float64",
+    "finite": true,
+    "min_real": 0.00012300680350062017,
+    "max_real": 1151.8750188473143
+  },
+  "EIGENVECTOR_DATA": {
+    "shape": [
+      2048,
+      325,
+      6
+    ],
+    "dtype": "complex128",
+    "finite": true,
+    "min_real": -0.1822644092630544,
+    "max_real": 0.18226440926305437
+  },
+  "designs": {
+    "shape": [
+      32,
+      32,
+      3
+    ],
+    "dtype": "float64",
+    "finite": true,
+    "min_real": 0.0,
+    "max_real": 1.0
+  }
+}

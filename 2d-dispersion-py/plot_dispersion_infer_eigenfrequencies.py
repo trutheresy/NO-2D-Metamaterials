@@ -300,13 +300,22 @@ def apply_steel_rubber_paradigm_single_channel(design_single, E_min, E_max, rho_
     design_out_steel_rho = (rho_steel - rho_min) / (rho_max - rho_min)
     design_out_steel_nu = (nu_steel - nu_min) / (nu_max - nu_min)
     
+    # geometries_full.pt stores pane-0 AFTER mapping. Recover the latent interpolation
+    # parameter first, then reconstruct all three mapped panes consistently.
+    denom = design_out_steel_E - design_out_polymer_E
+    if abs(denom) < 1e-12:
+        latent = np.zeros_like(design_single, dtype=np.float32)
+    else:
+        latent = (design_single - design_out_polymer_E) / denom
+    latent = np.clip(latent, 0.0, 1.0)
+
     # Create 3-channel design
     N_pix = design_single.shape[0]
     design_3ch = np.zeros((N_pix, N_pix, 3))
     
     # Map design values to normalized property values using linear interpolation
     # For each property, interpolate between polymer (design=0) and steel (design=1) values
-    design_flat = design_single.flatten()
+    design_flat = latent.flatten()
     
     # Elastic modulus
     design_3ch[:, :, 0] = np.interp(
@@ -338,8 +347,8 @@ def apply_steel_rubber_paradigm_single_channel(design_single, E_min, E_max, rho_
 
 
 def create_const_dict(design, N_pix, N_ele=1, a=1.0, 
-                       E_min=20e6, E_max=200e9,
-                       rho_min=1200, rho_max=8000,
+                       E_min=200e6, E_max=200e9,
+                       rho_min=800, rho_max=8000,
                        nu_min=0.0, nu_max=0.5,
                        t=1.0, design_scale='linear',
                        isUseImprovement=True, isUseSecondImprovement=False):
@@ -357,9 +366,9 @@ def create_const_dict(design, N_pix, N_ele=1, a=1.0,
     a : float, optional
         Lattice parameter (default: 1.0)
     E_min, E_max : float, optional
-        Young's modulus range (default: 20e6 to 200e9)
+        Young's modulus range (default: 200e6 to 200e9, matching generation)
     rho_min, rho_max : float, optional
-        Density range (default: 1200 to 8000, matching MATLAB)
+        Density range (default: 800 to 8000, matching generation)
     nu_min, nu_max : float, optional
         Poisson's ratio range (default: 0.0 to 0.5, matching MATLAB)
     t : float, optional
@@ -1049,8 +1058,8 @@ def main(cli_data_dir=None, cli_original_dir=None, n_structs=None, infer=True, s
     a = 1.0  # Default lattice parameter
     
     # Material parameter ranges (default values - matching MATLAB ex_dispersion_batch_save.m)
-    E_min, E_max = 20e6, 200e9
-    rho_min, rho_max = 1200, 8000  # MATLAB: const.rho_min = 1200, const.rho_max = 8e3
+    E_min, E_max = 200e6, 200e9
+    rho_min, rho_max = 800, 8000
     nu_min, nu_max = 0.0, 0.5  # MATLAB: const.poisson_min = 0, const.poisson_max = 0.5
     t_val = 1.0  # MATLAB: const.t = 1 (line 61)
     
@@ -1158,7 +1167,7 @@ def main(cli_data_dir=None, cli_original_dir=None, n_structs=None, infer=True, s
                         pass
                 if not use_loaded_KM:
                     print("    Computing K, M matrices...")
-                    const = create_const_dict(design_param, N_pix, a=a, 
+                    const = create_const_dict(design_normalized, N_pix, a=a, 
                                             E_min=E_min, E_max=E_max,
                                             rho_min=rho_min, rho_max=rho_max,
                                             nu_min=nu_min, nu_max=nu_max,
@@ -1189,7 +1198,7 @@ def main(cli_data_dir=None, cli_original_dir=None, n_structs=None, infer=True, s
                 
                 if not has_T_data or T_data is None:
                     print("    Computing T matrices...")
-                    const = create_const_dict(design_param, N_pix, a=a,
+                    const = create_const_dict(design_normalized, N_pix, a=a,
                                             E_min=E_min, E_max=E_max,
                                             rho_min=rho_min, rho_max=rho_max,
                                             nu_min=nu_min, nu_max=nu_max,
@@ -1245,7 +1254,7 @@ def main(cli_data_dir=None, cli_original_dir=None, n_structs=None, infer=True, s
             n_wv = len(wavevectors)
             # For IBZ contour, typically use a reasonable grid size (10 is common)
             # But we need to match the actual wavevector grid
-            _, contour_info = get_IBZ_contour_wavevectors(10, a, 'p4mm')
+            _, contour_info = get_IBZ_contour_wavevectors(10, a, 'none')
             wavevectors_contour, frequencies_contour_grid, contour_param_grid = \
                 extract_grid_points_on_contour(wavevectors, frequencies, contour_info, a, tolerance=2e-3)
             

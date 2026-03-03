@@ -347,3 +347,174 @@ def embed_2const_wavelet(c1, c2, size=32, freq_range=1.0):
     gabor = gaussian * np.sin(freq_x * X_rot) * np.sin(freq_y * Y_rot)
     
     return gabor
+
+def embed_eigenfrequency_wavelet(
+    s,                  # The eigenfrequency value to embed (must be positive)
+    size=32,            # Size of the 2D wavelet (image will be size x size)
+    ef_min=1.0,         # Minimum eigenfrequency for normalization
+    ef_max=8000.0,      # Maximum eigenfrequency for normalization
+    k_min=2.0,          # Minimum spatial frequency (cycles per image)
+    k_max=16.0,         # Maximum spatial frequency (cycles per image)
+    gamma=1,            # Ellipticity parameter of the Gabor (y/x aspect ratio)
+    phi=0.0,            # Phase offset of the Gabor wavelet
+    sigma_factor=8,     # Controls Gaussian envelope width (pixels)
+    theta_min=np.pi/30,           # Minimum theta (avoids 0 boundary)
+    theta_max=np.pi/2 - np.pi/30, # Maximum theta (avoids pi/2 boundary)
+):
+    """
+    Embed a positive scalar s into a 2D Gabor wavelet.
+
+    Mapping:
+      log(s) -> spatial frequency k      (linear in log space)
+      log(s) -> orientation theta        (wraps within each k-band)
+
+    Theta is restricted to [theta_min, theta_max] (default [6, 84] deg)
+    to avoid extraction errors near 0/180 deg and the pi/2 symmetry axis.
+
+    Returns: (gabor_image, k, theta)
+    """
+    if s <= 0:
+        raise ValueError("s must be positive (log-domain mapping).")
+
+    # 1. Log-normalized position in eigenfrequency space
+    ln_s = np.log(s)
+    ln_min = np.log(ef_min)
+    ln_max = np.log(ef_max)
+    log_range = ln_max - ln_min
+    k_range = k_max - k_min
+    log_per_unit_k = log_range / k_range if k_range > 0 else 0.0
+
+    t = np.clip((ln_s - ln_min) / (ln_max - ln_min), 0.0, 1.0) if ln_max != ln_min else 0.0
+
+    # 2. Map to spatial frequency (cycles per image)
+    k = k_min + t * k_range
+
+    # 3. Map to orientation within restricted range [theta_min, theta_max]
+    #    The band-local fraction [0, 1) is mapped linearly to the safe theta range.
+    if log_per_unit_k > 0:
+        band_fraction = ((ln_s - ln_min) % log_per_unit_k) / log_per_unit_k
+        theta = theta_min + band_fraction * (theta_max - theta_min)
+    else:
+        theta = theta_min
+
+    # 4. Coordinate grid
+    coords = np.linspace(-size // 2, size // 2 - 1, size)
+    X, Y = np.meshgrid(coords, coords)
+
+    # 5. Rotate coordinates
+    X_theta =  X * np.cos(theta) + Y * np.sin(theta)
+    Y_theta = -X * np.sin(theta) + Y * np.cos(theta)
+
+    # 6. Gabor wavelet = Gaussian envelope * cosine carrier
+    sigma_x = sigma_factor
+    sigma_y = sigma_x * gamma
+    freq = 2.0 * np.pi * k / size
+
+    gaussian = np.exp(-0.5 * ((X_theta**2) / sigma_x**2 + (Y_theta**2) / sigma_y**2))
+    carrier = np.cos(freq * X_theta + phi)
+
+    return gaussian * carrier, k, theta
+
+def extract_eigenfrequency_from_wavelet(
+    image,
+    size=32,
+    ef_min=1.0,
+    ef_max=8000.0,
+    k_min=2.0,
+    k_max=16.0,
+    theta_min=np.pi/30,
+    theta_max=np.pi/2 - np.pi/30,
+):
+    """
+    Extract scalar s from a 2D Gabor wavelet image.
+
+    Uses 2D FFT + weighted centroid (r=3, power=2) with Voronoi exclusion
+    for sub-pixel k and theta estimation, then reconstructs s.
+
+    Theta is expected in [theta_min, theta_max] matching the encoder.
+
+    Returns: (s, k_extracted, theta_extracted)
+    """
+    CENTROID_RADIUS = 3
+    CENTROID_POWER = 2
+
+    # Forward-mapping constants (must match embed function)
+    ln_min = np.log(ef_min)
+    ln_max = np.log(ef_max)
+    log_range = ln_max - ln_min
+    k_range = k_max - k_min
+    log_per_unit_k = log_range / k_range if k_range > 0 else 0.0
+
+    # --- 1. FFT + centroid extraction of k and theta ---
+    image_centered = image - np.mean(image)
+    F = np.fft.fft2(image_centered)
+    F_mag = np.abs(np.fft.fftshift(F))
+    center = size // 2
+
+    # 1a. Half-plane peak detection (resolves pi-ambiguity)
+    hp = np.zeros_like(F_mag)
+    hp[:center, :] = F_mag[:center, :]              # ky < 0
+    hp[center, center + 1:] = F_mag[center, center + 1:]  # ky=0, kx>0
+    peak_idx = np.unravel_index(np.argmax(hp), hp.shape)
+    peak_kx = peak_idx[1] - center
+    peak_ky = peak_idx[0] - center
+    peak_row, peak_col = peak_idx[0], peak_idx[1]
+
+    # 1b. Weighted centroid with Voronoi exclusion
+    sym_row = 2 * center - peak_row
+    sym_col = 2 * center - peak_col
+    sum_w = sum_kx = sum_ky = 0.0
+    r_int = int(np.ceil(CENTROID_RADIUS))
+    for dr in range(-r_int, r_int + 1):
+        for dc in range(-r_int, r_int + 1):
+            if dr * dr + dc * dc > CENTROID_RADIUS * CENTROID_RADIUS:
+                continue
+            r, c = peak_row + dr, peak_col + dc
+            if 0 <= r < size and 0 <= c < size:
+                d_main_sq = dr * dr + dc * dc
+                d_sym_sq = (r - sym_row)**2 + (c - sym_col)**2
+                if d_sym_sq < d_main_sq:
+                    continue
+                w = F_mag[r, c] ** CENTROID_POWER
+                sum_w += w
+                sum_kx += w * (c - center)
+                sum_ky += w * (r - center)
+
+    if sum_w > 0:
+        kx_ref = sum_kx / sum_w
+        ky_ref = sum_ky / sum_w
+    else:
+        kx_ref, ky_ref = float(peak_kx), float(peak_ky)
+
+    # 1c. Polar coordinates from centroid
+    k_extracted = np.sqrt(kx_ref**2 + ky_ref**2)
+    theta_extracted = np.arctan2(ky_ref, kx_ref) % np.pi
+
+    # --- 2. Recover s from extracted k and theta ---
+    t = np.clip((k_extracted - k_min) / k_range, 0.0, 1.0) if k_range > 0 else 0.0
+    ln_s_approx = ln_min + t * log_range
+
+    if log_per_unit_k > 0:
+        # Invert the restricted theta mapping: theta -> band_fraction
+        theta_range = theta_max - theta_min
+        band_fraction = np.clip((theta_extracted - theta_min) / theta_range, 0.0, 1.0)
+        log_position_in_band = band_fraction * log_per_unit_k
+
+        band = int(np.floor((ln_s_approx - ln_min) / log_per_unit_k))
+        # Try adjacent bands and pick closest to the k-based estimate
+        best_ln_s = None
+        best_dist = np.inf
+        for b in [band - 1, band, band + 1]:
+            cand = ln_min + b * log_per_unit_k + log_position_in_band
+            dist = abs(cand - ln_s_approx)
+            if dist < best_dist:
+                best_dist = dist
+                best_ln_s = cand
+        ln_s = best_ln_s
+    else:
+        ln_s = ln_s_approx
+
+    ln_s = np.clip(ln_s, ln_min, ln_max)
+    s = np.exp(ln_s)
+
+    return s, k_extracted, theta_extracted

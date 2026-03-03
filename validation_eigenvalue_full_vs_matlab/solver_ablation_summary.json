@@ -1,0 +1,76 @@
+[
+  {
+    "tag": "baseline_no_flags",
+    "env_flags": {},
+    "pt_dir": "D:\\Research\\NO-2D-Metamaterials\\OUTPUT\\output_2026-03-02_21-40-24\\continuous_2026-03-02_21-40-24_pt",
+    "report": "D:\\Research\\NO-2D-Metamaterials\\validation_eigenvalue_full_vs_matlab\\solver_toggle_baseline_no_flags.json",
+    "summary": {
+      "aligned_max_abs_over_structures": 312.4817705360298,
+      "aligned_mean_abs_over_structures": 79.90104039026818
+    }
+  },
+  {
+    "tag": "use_complex128",
+    "env_flags": {
+      "PARITY_USE_COMPLEX128": "1"
+    },
+    "pt_dir": "D:\\Research\\NO-2D-Metamaterials\\OUTPUT\\output_2026-03-02_21-47-46\\continuous_2026-03-02_21-47-46_pt",
+    "report": "D:\\Research\\NO-2D-Metamaterials\\validation_eigenvalue_full_vs_matlab\\solver_toggle_use_complex128.json",
+    "summary": {
+      "aligned_max_abs_over_structures": 312.4817705360298,
+      "aligned_mean_abs_over_structures": 79.87801020459077
+    }
+  },
+  {
+    "tag": "force_sparse_eigs",
+    "env_flags": {
+      "PARITY_FORCE_SPARSE_EIGS": "1"
+    },
+    "pt_dir": "D:\\Research\\NO-2D-Metamaterials\\OUTPUT\\output_2026-03-02_21-53-33\\continuous_2026-03-02_21-53-33_pt",
+    "report": "D:\\Research\\NO-2D-Metamaterials\\validation_eigenvalue_full_vs_matlab\\solver_toggle_force_sparse_eigs.json",
+    "summary": {
+      "aligned_max_abs_over_structures": 312.4817705360298,
+      "aligned_mean_abs_over_structures": 79.90104039026818
+    }
+  },
+  {
+    "tag": "disable_neg_clamp",
+    "env_flags": {
+      "PARITY_DISABLE_NEG_CLAMP": "1"
+    },
+    "pt_dir": "D:\\Research\\NO-2D-Metamaterials\\OUTPUT\\output_2026-03-02_21-59-07\\continuous_2026-03-02_21-59-07_pt",
+    "report": "D:\\Research\\NO-2D-Metamaterials\\validation_eigenvalue_full_vs_matlab\\solver_toggle_disable_neg_clamp.json",
+    "summary": {
+      "aligned_max_abs_over_structures": 312.4817705360298,
+      "aligned_mean_abs_over_structures": 79.90104039026818
+    }
+  },
+  {
+    "tag": "fr_float64",
+    "env_flags": {
+      "PARITY_FR_FLOAT64": "1"
+    },
+    "pt_dir": "D:\\Research\\NO-2D-Metamaterials\\OUTPUT\\output_2026-03-02_22-04-30\\continuous_2026-03-02_22-04-30_pt",
+    "report": "D:\\Research\\NO-2D-Metamaterials\\validation_eigenvalue_full_vs_matlab\\solver_toggle_fr_float64.json",
+    "summary": {
+      "aligned_max_abs_over_structures": 312.4817705360298,
+      "aligned_mean_abs_over_structures": 79.90104039026818
+    }
+  },
+  {
+    "tag": "parity_bundle",
+    "env_flags": {
+      "PARITY_USE_COMPLEX128": "1",
+      "PARITY_FORCE_SPARSE_EIGS": "1",
+      "PARITY_DISABLE_NEG_CLAMP": "1",
+      "PARITY_FR_FLOAT64": "1",
+      "PARITY_WAVEVECTOR_FLOAT64": "1"
+    },
+    "pt_dir": "D:\\Research\\NO-2D-Metamaterials\\OUTPUT\\output_2026-03-02_22-10-45\\continuous_2026-03-02_22-10-45_pt",
+    "report": "D:\\Research\\NO-2D-Metamaterials\\validation_eigenvalue_full_vs_matlab\\solver_toggle_parity_bundle.json",
+    "summary": {
+      "aligned_max_abs_over_structures": NaN,
+      "aligned_mean_abs_over_structures": NaN
+    }
+  }
+]

@@ -1,0 +1,97 @@
+{
+  "python_debug_dir": "D:\\Research\\NO-2D-Metamaterials\\debug_fixed_geometry_outputs\\20260303_071331\\python_stage\\intermediates_float64",
+  "matlab_stage_mat": "D:\\Research\\NO-2D-Metamaterials\\debug_fixed_geometry_outputs\\20260303_071331\\matlab_stage\\intermediates\\matlab_stage_struct_1.mat",
+  "wavevector_remap_diagnostics": {
+    "fallback_count": 0,
+    "fallback_fraction": 0.0,
+    "max_nn_distance": 0.0,
+    "mean_nn_distance": 0.0,
+    "all_unique": true,
+    "identity_fraction": 0.04
+  },
+  "matlab_fr_imag_max_abs": 9.216712324390822e-05,
+  "comparisons": [
+    {
+      "name": "design_input",
+      "shape_match": true,
+      "max_abs": 0.0,
+      "mean_abs": 0.0,
+      "mean_rel_pct": 0.0
+    },
+    {
+      "name": "design_mapped",
+      "shape_match": true,
+      "max_abs": 1.1102230246251565e-16,
+      "mean_abs": 1.580676417302825e-17,
+      "mean_rel_pct": 3.669371642517201e-15
+    },
+    {
+      "name": "wavevectors_raw",
+      "shape_match": true,
+      "max_abs": 6.021385919380437,
+      "mean_abs": 1.5997956435972638,
+      "mean_rel_pct": 99.84917043740573
+    },
+    {
+      "name": "frequencies_aligned",
+      "shape_match": true,
+      "max_abs": 5.204676628112793,
+      "mean_abs": 0.007897793308327036,
+      "mean_rel_pct": 0.0015314735681374824
+    },
+    {
+      "name": "K_triplet",
+      "nnz_a": 35290,
+      "nnz_b": 35290,
+      "union_nnz": 35294,
+      "max_abs": 6.103515625e-05,
+      "mean_abs": 1.2342112425225188e-06,
+      "mean_rel_pct": 9.238383811953612e-15
+    },
+    {
+      "name": "M_triplet",
+      "nnz_a": 18818,
+      "nnz_b": 18818,
+      "union_nnz": 18818,
+      "max_abs": 4.440892098500626e-16,
+      "mean_abs": 8.71989388030599e-18,
+      "mean_rel_pct": 3.1637820560945937e-15
+    },
+    {
+      "name": "T_diag",
+      "shape_match": true,
+      "max_abs": 0.0,
+      "mean_abs": 0.0,
+      "mean_rel_pct": 0.0
+    }
+  ],
+  "deviation_alerts": [
+    {
+      "quantity": "design_mapped",
+      "type": "precision",
+      "mean_rel_pct": 3.669371642517201e-15
+    },
+    {
+      "quantity": "wavevectors",
+      "type": "logic",
+      "reason": "grid traversal/indexing mismatch",
+      "fallback_fraction": 0.0,
+      "identity_fraction": 0.04
+    },
+    {
+      "quantity": "frequencies_aligned",
+      "type": "precision",
+      "mean_rel_pct": 0.0015314735681374824
+    },
+    {
+      "quantity": "K_triplet",
+      "type": "precision",
+      "mean_rel_pct": 9.238383811953612e-15
+    },
+    {
+      "quantity": "M_triplet",
+      "type": "precision",
+      "mean_rel_pct": 3.1637820560945937e-15
+    }
+  ]
+}

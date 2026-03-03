@@ -1,0 +1,80 @@
+{
+  "n_structs": 1,
+  "per_struct": [
+    {
+      "struct_idx": 0,
+      "comparisons": [
+        {
+          "name": "wavevectors_raw",
+          "shape_match": true,
+          "max_abs": 6.020418265790644,
+          "mean_abs": 1.5996033657588242,
+          "mean_rel_pct": 99.83716966547057
+        },
+        {
+          "name": "wavevectors_aligned",
+          "shape_match": true,
+          "max_abs": 0.000967653589793116,
+          "mean_abs": 0.00048154840603646714,
+          "mean_rel_pct": 0.0300552192779321
+        },
+        {
+          "name": "frequencies_raw",
+          "shape_match": true,
+          "max_abs": 499.75,
+          "mean_abs": 26.619162323323057,
+          "mean_rel_pct": 5.161763788012559
+        },
+        {
+          "name": "frequencies_aligned",
+          "shape_match": true,
+          "max_abs": 5.921875,
+          "mean_abs": 0.12395524341093395,
+          "mean_rel_pct": 0.024036356929693456
+        },
+        {
+          "name": "contour_wavevectors",
+          "shape_match": true,
+          "max_abs": 8.742278012618954e-08,
+          "mean_abs": 3.639732079568409e-08,
+          "mean_rel_pct": 2.3600351377511168e-06
+        },
+        {
+          "name": "contour_parameter",
+          "shape_match": true,
+          "max_abs": 2.1192762567068257e-07,
+          "mean_abs": 6.410509653816247e-08,
+          "mean_rel_pct": 2.1368365512720824e-06
+        },
+        {
+          "name": "frequencies_contour",
+          "shape_match": true,
+          "max_abs": 499.75,
+          "mean_abs": 41.151654244637726,
+          "mean_rel_pct": 8.222606973739648
+        },
+        {
+          "name": "frequencies_contour_scattered",
+          "shape_match": true,
+          "max_abs": 14.442580649382123,
+          "mean_abs": 0.4457837180309074,
+          "mean_rel_pct": 0.08907307314719097
+        },
+        {
+          "name": "plot_x",
+          "shape_match": true,
+          "max_abs": 2.1192762567068257e-07,
+          "mean_abs": 6.410509653816247e-08,
+          "mean_rel_pct": 2.1368365512720824e-06
+        },
+        {
+          "name": "plot_y",
+          "shape_match": true,
+          "max_abs": 14.442580649382123,
+          "mean_abs": 0.4457837180309074,
+          "mean_rel_pct": 0.08907307314719097
+        }
+      ]
+    }
+  ]
+}

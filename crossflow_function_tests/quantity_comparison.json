@@ -1,0 +1,166 @@
+{
+  "fixture": {
+    "shape": [
+      32,
+      32,
+      3
+    ],
+    "dtype": "float64",
+    "md5": "9a94ea115aa21b94c6d305dab04ba5d3"
+  },
+  "constants": {
+    "N_ele": 1,
+    "N_pix": 32,
+    "N_wv": [
+      25,
+      13
+    ],
+    "N_eig": 6,
+    "sigma_eig": 0.01,
+    "a": 1.0,
+    "E_min": 200000000.0,
+    "E_max": 200000000000.0,
+    "rho_min": 800.0,
+    "rho_max": 8000.0,
+    "poisson_min": 0.0,
+    "poisson_max": 0.5,
+    "t": 1.0
+  },
+  "designs_raw": {
+    "shape_match": true,
+    "shape": [
+      32,
+      32,
+      3
+    ],
+    "max_abs": 0.0,
+    "mean_abs": 0.0,
+    "max_rel": 0.0,
+    "mean_rel": 0.0,
+    "allclose": true,
+    "worst_index": [
+      0,
+      0,
+      0
+    ],
+    "worst_a": 1.0,
+    "worst_b": 1.0
+  },
+  "wavevectors_raw": {
+    "shape_match": true,
+    "shape": [
+      325,
+      2
+    ],
+    "max_abs": 6.021385919380437,
+    "mean_abs": 1.5997956435972638,
+    "max_rel": 314159265358979.3,
+    "mean_rel": 7491490173946.368,
+    "allclose": false,
+    "worst_index": [
+      24,
+      0
+    ],
+    "worst_a": -2.8797932657906435,
+    "worst_b": 3.141592653589793
+  },
+  "eigenvalues_raw": {
+    "shape_match": true,
+    "shape": [
+      325,
+      6
+    ],
+    "max_abs": 849.9895493449757,
+    "mean_abs": 77.11533421595088,
+    "max_rel": 6682568.794650717,
+    "mean_rel": 5649.964504880912,
+    "allclose": false,
+    "worst_index": [
+      12,
+      1
+    ],
+    "worst_a": 856.7621280612537,
+    "worst_b": 6.772578716278076
+  },
+  "eigenvalues_aligned": {
+    "shape_match": true,
+    "shape": [
+      325,
+      6
+    ],
+    "max_abs": 6.772452869238051,
+    "mean_abs": 0.015579035537217463,
+    "max_rel": 53814.95558327799,
+    "mean_rel": 54.91827752275126,
+    "allclose": false,
+    "worst_index": [
+      156,
+      1
+    ],
+    "worst_a": 0.00012584704002510533,
+    "worst_b": 6.772578716278076
+  },
+  "eigenvectors_raw": {
+    "shape_match": true,
+    "shape": [
+      2048,
+      325,
+      6
+    ],
+    "max_abs": 0.3292772249589631,
+    "mean_abs": 0.016073619998236924,
+    "max_rel": 18226447067671.88,
+    "mean_rel": 12540369555.375332,
+    "allclose": false,
+    "worst_index": [
+      2016,
+      3,
+      1
+    ],
+    "worst_a": [
+      -0.04188223471197243,
+      0.16279662442053341
+    ],
+    "worst_b": [
+      0.06199397146701813,
+      -0.14966653287410736
+    ]
+  },
+  "eigenvectors_aligned": {
+    "shape_match": true,
+    "shape": [
+      2048,
+      325,
+      6
+    ],
+    "max_abs": 0.35983596171979093,
+    "mean_abs": 0.001906256107949364,
+    "max_rel": 3927309294.5141006,
+    "mean_rel": 685594.8387281025,
+    "allclose": false,
+    "worst_index": [
+      33,
+      142,
+      3
+    ],
+    "worst_a": [
+      -0.1443470315148672,
+      -0.10787209525891582
+    ],
+    "worst_b": [
+      0.1313689798116684,
+      0.12334771454334259
+    ]
+  },
+  "eigenvectors_phase_aligned_metrics": {
+    "max_rel_norm_diff": 1.9999821267514442,
+    "mean_rel_norm_diff": 0.16512836393756028,
+    "min_correlation": 0.01639519849637284,
+    "mean_correlation": 0.9964835503529648,
+    "worst_mode": {
+      "rel": 1.9999821267514442,
+      "k": 285,
+      "band": 2
+    }
+  }
+}

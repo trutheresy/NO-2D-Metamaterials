@@ -1,0 +1,29 @@
+{
+  "python_wavevectors_shape": [
+    325,
+    2
+  ],
+  "matlab_wavevectors_shape": [
+    325,
+    2
+  ],
+  "set_equal_order_agnostic": true,
+  "raw_compare": {
+    "shape_match": true,
+    "shape": [
+      325,
+      2
+    ],
+    "max_abs": 6.021385919380437,
+    "mean_abs": 1.5997956435972638,
+    "max_rel": 314159265358979.3,
+    "mean_rel": 7491490173946.368,
+    "allclose": false,
+    "worst_index": [
+      24,
+      0
+    ],
+    "worst_a": -2.8797932657906435,
+    "worst_b": 3.141592653589793
+  }
+}

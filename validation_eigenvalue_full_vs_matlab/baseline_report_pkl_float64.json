@@ -1,0 +1,36 @@
+{
+  "inputs": {
+    "pkl": "D:\\Research\\NO-2D-Metamaterials\\OUTPUT\\output_2026-03-02_21-28-29\\continuous_2026-03-02_21-28-29.pkl"
+  },
+  "summary": {
+    "aligned_mean_abs_over_structures": 79.9054803632435,
+    "aligned_max_abs_over_structures": 312.35004242108926
+  },
+  "per_structure": [
+    {
+      "struct_idx": 0,
+      "mean_abs": 4.242325000729513,
+      "max_abs": 62.266520896868315
+    },
+    {
+      "struct_idx": 1,
+      "mean_abs": 183.45142397423527,
+      "max_abs": 281.1384712483016
+    },
+    {
+      "struct_idx": 2,
+      "mean_abs": 2.9276862910806654,
+      "max_abs": 7.2734538329486895
+    },
+    {
+      "struct_idx": 3,
+      "mean_abs": 205.33290657132505,
+      "max_abs": 312.35004242108926
+    },
+    {
+      "struct_idx": 4,
+      "mean_abs": 3.573059978846982,
+      "max_abs": 17.081554194228374
+    }
+  ]
+}

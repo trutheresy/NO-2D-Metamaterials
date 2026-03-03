@@ -1,0 +1,8 @@
+{
+  "output_root": "D:\\Research\\NO-2D-Metamaterials\\debug_fixed_geometry_outputs\\20260303_071331",
+  "csv_row_test_map": "D:\\Research\\NO-2D-Metamaterials\\debug_fixed_geometry_outputs\\20260303_071331\\row_reports\\csv_row_test_map.json",
+  "comparison_summary": "D:\\Research\\NO-2D-Metamaterials\\debug_fixed_geometry_outputs\\20260303_071331\\comparisons\\comparison_summary_debug.json",
+  "intermediate_comparison": "D:\\Research\\NO-2D-Metamaterials\\debug_fixed_geometry_outputs\\20260303_071331\\comparisons\\intermediate_comparison_debug.json",
+  "row_report": "D:\\Research\\NO-2D-Metamaterials\\debug_fixed_geometry_outputs\\20260303_071331\\row_reports\\row_report_debug.json",
+  "logic_fix_list": "D:\\Research\\NO-2D-Metamaterials\\debug_fixed_geometry_outputs\\20260303_071331\\row_reports\\logic_fix_list.json"
+}

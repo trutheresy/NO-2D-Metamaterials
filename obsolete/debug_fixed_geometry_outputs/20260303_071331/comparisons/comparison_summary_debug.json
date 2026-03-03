@@ -1,0 +1,22 @@
+{
+  "summary": {
+    "python_default_dtype": "float16",
+    "mean_rel_pct_over_structures": 0.0137786865234375,
+    "max_mean_rel_pct_structure": 0.0137786865234375,
+    "remap_fallback_fraction_mean": 0.9969230769230769
+  },
+  "per_structure": [
+    {
+      "struct_idx": 0,
+      "mean_rel_pct": 0.0137786865234375,
+      "max_abs": 5.921875,
+      "remap_diag": {
+        "fallback_count": 324,
+        "fallback_fraction": 0.9969230769230769,
+        "max_nearest_distance": 0.0013684688303644361,
+        "mean_nearest_distance": 0.0007432444745850154,
+        "all_indices_unique": true
+      }
+    }
+  ]
+}

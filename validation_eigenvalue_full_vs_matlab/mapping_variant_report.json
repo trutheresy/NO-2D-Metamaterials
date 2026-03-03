@@ -1,0 +1,46 @@
+{
+  "inrange": {
+    "python_default_vs_matlab": {
+      "max_abs": 0.0005005005005005005,
+      "mean_abs": 8.341675008343033e-05,
+      "finite_fraction": 1.0
+    },
+    "python_const100_extrap_vs_matlab": {
+      "max_abs": 1.1102230246251565e-16,
+      "mean_abs": 1.874734492853996e-17,
+      "finite_fraction": 1.0
+    },
+    "python_const100_noextrap_vs_matlab": {
+      "max_abs": 1.1102230246251565e-16,
+      "mean_abs": 1.874734492853996e-17,
+      "finite_fraction": 1.0
+    },
+    "per_channel_max_default": [
+      0.0005005005005005005,
+      1.1102230246251565e-16,
+      1.1102230246251565e-16
+    ]
+  },
+  "outrange": {
+    "python_default_vs_matlab": {
+      "max_abs": 0.0004999134031392096,
+      "mean_abs": 8.3416750083432e-05,
+      "finite_fraction": 0.712890625
+    },
+    "python_const100_extrap_vs_matlab": {
+      "max_abs": 1.1102230246251565e-16,
+      "mean_abs": 2.030953253113075e-17,
+      "finite_fraction": 0.712890625
+    },
+    "python_const100_noextrap_vs_matlab": {
+      "max_abs": 1.1102230246251565e-16,
+      "mean_abs": 2.030953253113075e-17,
+      "finite_fraction": 0.712890625
+    },
+    "per_channel_max_default": [
+      0.0004999134031392096,
+      1.1102230246251565e-16,
+      1.1102230246251565e-16
+    ]
+  }
+}

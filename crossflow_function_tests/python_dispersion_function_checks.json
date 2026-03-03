@@ -1,0 +1,44 @@
+{
+  "wv": {
+    "shape": [
+      325,
+      2
+    ],
+    "dtype": "float64",
+    "finite": true,
+    "min_real": -3.141592653589793,
+    "max_real": 3.141592653589793
+  },
+  "fr": {
+    "shape": [
+      325,
+      6
+    ],
+    "dtype": "float32",
+    "finite": true,
+    "min_real": 6.553386688232422,
+    "max_real": 1151.8765869140625
+  },
+  "ev": {
+    "shape": [
+      2048,
+      325,
+      6
+    ],
+    "dtype": "complex128",
+    "finite": true,
+    "min_real": -0.17960475385189056,
+    "max_real": 0.18226447701454163
+  },
+  "mesh_is_none": true,
+  "K_shape": [
+    2178,
+    2178
+  ],
+  "M_shape": [
+    2178,
+    2178
+  ],
+  "T_len": 325,
+  "N_dof_expected": 2048
+}

@@ -1,0 +1,69 @@
+{
+  "wavevectors_raw_worst": {
+    "shape_match": true,
+    "shape": [
+      325,
+      2
+    ],
+    "max_abs": 6.021385919380437,
+    "mean_abs": 1.5997956435972638,
+    "max_rel": 314159265358979.3,
+    "mean_rel": 7491490173946.368,
+    "allclose": false,
+    "worst_index": [
+      24,
+      0
+    ],
+    "worst_a": -2.8797932657906435,
+    "worst_b": 3.141592653589793
+  },
+  "eigenvalues_aligned_worst": {
+    "shape_match": true,
+    "shape": [
+      325,
+      6
+    ],
+    "max_abs": 6.772452869238051,
+    "mean_abs": 0.015579035537217463,
+    "max_rel": 53814.95558327799,
+    "mean_rel": 54.91827752275126,
+    "allclose": false,
+    "worst_index": [
+      156,
+      1
+    ],
+    "worst_a": 0.00012584704002510533,
+    "worst_b": 6.772578716278076
+  },
+  "eigenvectors_aligned_worst": {
+    "shape_match": true,
+    "shape": [
+      2048,
+      325,
+      6
+    ],
+    "max_abs": 0.35983596171979093,
+    "mean_abs": 0.001906256107949364,
+    "max_rel": 3927309294.5141006,
+    "mean_rel": 685594.8387281025,
+    "allclose": false,
+    "worst_index": [
+      33,
+      142,
+      3
+    ],
+    "worst_a": [
+      -0.1443470315148672,
+      -0.10787209525891582
+    ],
+    "worst_b": [
+      0.1313689798116684,
+      0.12334771454334259
+    ]
+  },
+  "eigenvectors_phase_aligned_worst_mode": {
+    "rel": 1.9999821267514442,
+    "k": 285,
+    "band": 2
+  }
+}

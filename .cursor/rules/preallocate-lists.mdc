@@ -1,0 +1,33 @@
+---
+description: Preallocate list and array sizes for compute efficiency
+globs: "**/*.py,**/*.ipynb"
+alwaysApply: false
+---
+
+# Preallocate Lists and Arrays
+
+Always preallocate collection sizes instead of growing them dynamically.
+
+```python
+# ❌ BAD - growing list in a loop
+results = []
+for i in range(n):
+    results.append(compute(i))
+
+# ✅ GOOD - preallocated list
+results = [None] * n
+for i in range(n):
+    results[i] = compute(i)
+
+# ✅ GOOD - preallocated numpy array
+results = np.empty(n)
+for i in range(n):
+    results[i] = compute(i)
+
+# ✅ GOOD - preallocated torch tensor
+results = torch.empty((n, 4, 32, 32))
+for i in range(n):
+    results[i] = compute(i)
+```
+
+This avoids repeated memory reallocation and copying as lists/arrays grow.

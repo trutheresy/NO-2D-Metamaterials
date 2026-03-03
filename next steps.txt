@@ -1,0 +1,8 @@
+Do a thorough investigation testing all assumptions with minimal test cases that are intelligently coded to run efficiently while checking atomic functionality of scripts and functions along the process chain. Keep track of which hypotheses are eliminated and which ones remain. Add new hypotheses of source of error as test results return. Also keep track of which scripts and functions are known to work correctly. When in doubt, generate test objects with the matlab versions of scripts, as the matlab library serves as ground truth.
+
+We know reconstruction works now for mat -> pt -> mat (Rayleigh coeff)
+
+We know K, M, T reconstruction works now
+
+We know the machine learning workflow works to generate predictions
+

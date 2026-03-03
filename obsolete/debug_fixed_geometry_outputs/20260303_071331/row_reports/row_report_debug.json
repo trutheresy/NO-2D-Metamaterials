@@ -1,0 +1,494 @@
+{
+  "rows": [
+    {
+      "row_name": "Initialize geometry storage tensor for all samples: zeros(N_pix,N_pix,3,N_struct)",
+      "equivalence_status": "Equivalent",
+      "deviation_risk": "Low",
+      "python_default_dtype": "float16",
+      "status": "pass",
+      "metric": {
+        "global_mean_rel_pct": 0.0137786865234375,
+        "global_max_struct_mean_rel_pct": 0.0137786865234375
+      },
+      "deviation_source": "precision",
+      "precision_bucket": "<1pct_mean_rel",
+      "evidence": "D:\\Research\\NO-2D-Metamaterials\\debug_fixed_geometry_outputs\\20260303_071331\\comparisons\\comparison_summary_debug.json"
+    },
+    {
+      "row_name": "Initialize material property storage: E/rho/nu arrays",
+      "equivalence_status": "Equivalent",
+      "deviation_risk": "Low",
+      "python_default_dtype": "float16",
+      "status": "pass",
+      "metric": {
+        "global_mean_rel_pct": 0.0137786865234375,
+        "global_max_struct_mean_rel_pct": 0.0137786865234375
+      },
+      "deviation_source": "precision",
+      "precision_bucket": "<1pct_mean_rel",
+      "evidence": "D:\\Research\\NO-2D-Metamaterials\\debug_fixed_geometry_outputs\\20260303_071331\\comparisons\\comparison_summary_debug.json"
+    },
+    {
+      "row_name": "Initialize material constants E_min,E_max,rho_min,rho_max,poisson_min,poisson_max,t",
+      "equivalence_status": "Equivalent (after recent constant fixes)",
+      "deviation_risk": "Medium",
+      "python_default_dtype": "float16",
+      "status": "pass",
+      "metric": {
+        "global_mean_rel_pct": 0.0137786865234375,
+        "global_max_struct_mean_rel_pct": 0.0137786865234375
+      },
+      "deviation_source": "precision",
+      "precision_bucket": "<1pct_mean_rel",
+      "evidence": "D:\\Research\\NO-2D-Metamaterials\\debug_fixed_geometry_outputs\\20260303_071331\\comparisons\\comparison_summary_debug.json"
+    },
+    {
+      "row_name": "Generate IBZ wavevectors from meshgrid",
+      "equivalence_status": "Same set, different traversal/order",
+      "deviation_risk": "High",
+      "python_default_dtype": "float16",
+      "status": "pass",
+      "metric": {
+        "global_mean_rel_pct": 0.0137786865234375,
+        "global_max_struct_mean_rel_pct": 0.0137786865234375
+      },
+      "deviation_source": "logic",
+      "precision_bucket": "<1pct_mean_rel",
+      "evidence": "D:\\Research\\NO-2D-Metamaterials\\debug_fixed_geometry_outputs\\20260303_071331\\comparisons\\comparison_summary_debug.json"
+    },
+    {
+      "row_name": "Prepare design params and per-structure deterministic seed",
+      "equivalence_status": "Equivalent",
+      "deviation_risk": "Low",
+      "python_default_dtype": "float16",
+      "status": "pass",
+      "metric": {
+        "global_mean_rel_pct": 0.0137786865234375,
+        "global_max_struct_mean_rel_pct": 0.0137786865234375
+      },
+      "deviation_source": "precision",
+      "precision_bucket": "<1pct_mean_rel",
+      "evidence": "D:\\Research\\NO-2D-Metamaterials\\debug_fixed_geometry_outputs\\20260303_071331\\comparisons\\comparison_summary_debug.json"
+    },
+    {
+      "row_name": "Generate per-property random field",
+      "equivalence_status": "Equivalent if kernel/options identical",
+      "deviation_risk": "Medium",
+      "python_default_dtype": "float16",
+      "status": "pass",
+      "metric": {
+        "global_mean_rel_pct": 0.0137786865234375,
+        "global_max_struct_mean_rel_pct": 0.0137786865234375
+      },
+      "deviation_source": "precision",
+      "precision_bucket": "<1pct_mean_rel",
+      "evidence": "D:\\Research\\NO-2D-Metamaterials\\debug_fixed_geometry_outputs\\20260303_071331\\comparisons\\comparison_summary_debug.json"
+    },
+    {
+      "row_name": "Stack 3 panes into design tensor",
+      "equivalence_status": "Equivalent",
+      "deviation_risk": "Low",
+      "python_default_dtype": "float16",
+      "status": "pass",
+      "metric": {
+        "global_mean_rel_pct": 0.0137786865234375,
+        "global_max_struct_mean_rel_pct": 0.0137786865234375
+      },
+      "deviation_source": "precision",
+      "precision_bucket": "<1pct_mean_rel",
+      "evidence": "D:\\Research\\NO-2D-Metamaterials\\debug_fixed_geometry_outputs\\20260303_071331\\comparisons\\comparison_summary_debug.json"
+    },
+    {
+      "row_name": "Convert design scale",
+      "equivalence_status": "Equivalent for linear path",
+      "deviation_risk": "Low",
+      "python_default_dtype": "float16",
+      "status": "pass",
+      "metric": {
+        "global_mean_rel_pct": 0.0137786865234375,
+        "global_max_struct_mean_rel_pct": 0.0137786865234375
+      },
+      "deviation_source": "precision",
+      "precision_bucket": "<1pct_mean_rel",
+      "evidence": "D:\\Research\\NO-2D-Metamaterials\\debug_fixed_geometry_outputs\\20260303_071331\\comparisons\\comparison_summary_debug.json"
+    },
+    {
+      "row_name": "Apply steel-rubber mapping",
+      "equivalence_status": "Equivalent after E_polymer fix to 100e6",
+      "deviation_risk": "Medium",
+      "python_default_dtype": "float16",
+      "status": "pass",
+      "metric": {
+        "global_mean_rel_pct": 0.0137786865234375,
+        "global_max_struct_mean_rel_pct": 0.0137786865234375
+      },
+      "deviation_source": "precision",
+      "precision_bucket": "<1pct_mean_rel",
+      "evidence": "D:\\Research\\NO-2D-Metamaterials\\debug_fixed_geometry_outputs\\20260303_071331\\comparisons\\comparison_summary_debug.json"
+    },
+    {
+      "row_name": "Optional binarization round(design)",
+      "equivalence_status": "Equivalent",
+      "deviation_risk": "Low",
+      "python_default_dtype": "float16",
+      "status": "pass",
+      "metric": {
+        "global_mean_rel_pct": 0.0137786865234375,
+        "global_max_struct_mean_rel_pct": 0.0137786865234375
+      },
+      "deviation_source": "precision",
+      "precision_bucket": "<1pct_mean_rel",
+      "evidence": "D:\\Research\\NO-2D-Metamaterials\\debug_fixed_geometry_outputs\\20260303_071331\\comparisons\\comparison_summary_debug.json"
+    },
+    {
+      "row_name": "Assemble global matrices K,M",
+      "equivalence_status": "Algorithmically equivalent",
+      "deviation_risk": "Medium",
+      "python_default_dtype": "float16",
+      "status": "pass",
+      "metric": {
+        "global_mean_rel_pct": 0.0137786865234375,
+        "global_max_struct_mean_rel_pct": 0.0137786865234375
+      },
+      "deviation_source": "precision",
+      "precision_bucket": "<1pct_mean_rel",
+      "evidence": "D:\\Research\\NO-2D-Metamaterials\\debug_fixed_geometry_outputs\\20260303_071331\\comparisons\\comparison_summary_debug.json"
+    },
+    {
+      "row_name": "Per-wavevector Bloch reduction Kr=T^HKT, Mr=T^HMT",
+      "equivalence_status": "Equivalent formulation",
+      "deviation_risk": "Medium",
+      "python_default_dtype": "float16",
+      "status": "pass",
+      "metric": {
+        "global_mean_rel_pct": 0.0137786865234375,
+        "global_max_struct_mean_rel_pct": 0.0137786865234375
+      },
+      "deviation_source": "precision",
+      "precision_bucket": "<1pct_mean_rel",
+      "evidence": "D:\\Research\\NO-2D-Metamaterials\\debug_fixed_geometry_outputs\\20260303_071331\\comparisons\\comparison_summary_debug.json"
+    },
+    {
+      "row_name": "Solve generalized EVP and sort modes",
+      "equivalence_status": "Not strictly identical branch behavior",
+      "deviation_risk": "High",
+      "python_default_dtype": "float16",
+      "status": "pass",
+      "metric": {
+        "global_mean_rel_pct": 0.0137786865234375,
+        "global_max_struct_mean_rel_pct": 0.0137786865234375
+      },
+      "deviation_source": "precision",
+      "precision_bucket": "<1pct_mean_rel",
+      "evidence": "D:\\Research\\NO-2D-Metamaterials\\debug_fixed_geometry_outputs\\20260303_071331\\comparisons\\comparison_summary_debug.json"
+    },
+    {
+      "row_name": "Frequency conversion sqrt(real(lambda))/(2pi)",
+      "equivalence_status": "Close but clamp/precision behavior can differ",
+      "deviation_risk": "Medium",
+      "python_default_dtype": "float16",
+      "status": "pass",
+      "metric": {
+        "global_mean_rel_pct": 0.0137786865234375,
+        "global_max_struct_mean_rel_pct": 0.0137786865234375
+      },
+      "deviation_source": "precision",
+      "precision_bucket": "<1pct_mean_rel",
+      "evidence": "D:\\Research\\NO-2D-Metamaterials\\debug_fixed_geometry_outputs\\20260303_071331\\comparisons\\comparison_summary_debug.json"
+    },
+    {
+      "row_name": "Store wv/fr/ev per structure",
+      "equivalence_status": "Equivalent layout up to ordering",
+      "deviation_risk": "Medium",
+      "python_default_dtype": "float16",
+      "status": "pass",
+      "metric": {
+        "global_mean_rel_pct": 0.0137786865234375,
+        "global_max_struct_mean_rel_pct": 0.0137786865234375
+      },
+      "deviation_source": "precision",
+      "precision_bucket": "<1pct_mean_rel",
+      "evidence": "D:\\Research\\NO-2D-Metamaterials\\debug_fixed_geometry_outputs\\20260303_071331\\comparisons\\comparison_summary_debug.json"
+    },
+    {
+      "row_name": "Convert normalized design to explicit E/rho/nu",
+      "equivalence_status": "Equivalent",
+      "deviation_risk": "Low",
+      "python_default_dtype": "float16",
+      "status": "pass",
+      "metric": {
+        "global_mean_rel_pct": 0.0137786865234375,
+        "global_max_struct_mean_rel_pct": 0.0137786865234375
+      },
+      "deviation_source": "precision",
+      "precision_bucket": "<1pct_mean_rel",
+      "evidence": "D:\\Research\\NO-2D-Metamaterials\\debug_fixed_geometry_outputs\\20260303_071331\\comparisons\\comparison_summary_debug.json"
+    },
+    {
+      "row_name": "Collect constitutive data object",
+      "equivalence_status": "Semantically equivalent container",
+      "deviation_risk": "Low",
+      "python_default_dtype": "float16",
+      "status": "pass",
+      "metric": {
+        "global_mean_rel_pct": 0.0137786865234375,
+        "global_max_struct_mean_rel_pct": 0.0137786865234375
+      },
+      "deviation_source": "precision",
+      "precision_bucket": "<1pct_mean_rel",
+      "evidence": "D:\\Research\\NO-2D-Metamaterials\\debug_fixed_geometry_outputs\\20260303_071331\\comparisons\\comparison_summary_debug.json"
+    },
+    {
+      "row_name": "Reshape design tensor to reduced geometry output (keep pane 0)",
+      "equivalence_status": "Not equivalent representation by design",
+      "deviation_risk": "High",
+      "python_default_dtype": "float16",
+      "status": "pass",
+      "metric": {
+        "global_mean_rel_pct": 0.0137786865234375,
+        "global_max_struct_mean_rel_pct": 0.0137786865234375
+      },
+      "deviation_source": "logic",
+      "precision_bucket": "<1pct_mean_rel",
+      "evidence": "D:\\Research\\NO-2D-Metamaterials\\debug_fixed_geometry_outputs\\20260303_071331\\comparisons\\comparison_summary_debug.json"
+    },
+    {
+      "row_name": "Transpose wavevectors to PT full layout (N,W,2)",
+      "equivalence_status": "Equivalent content, different axis order",
+      "deviation_risk": "Medium",
+      "python_default_dtype": "float16",
+      "status": "pass",
+      "metric": {
+        "global_mean_rel_pct": 0.0137786865234375,
+        "global_max_struct_mean_rel_pct": 0.0137786865234375
+      },
+      "deviation_source": "logic",
+      "precision_bucket": "<1pct_mean_rel",
+      "evidence": "D:\\Research\\NO-2D-Metamaterials\\debug_fixed_geometry_outputs\\20260303_071331\\comparisons\\comparison_summary_debug.json"
+    },
+    {
+      "row_name": "Transpose eigenvalues to PT full layout (N,W,B)",
+      "equivalence_status": "Equivalent content, different axis order",
+      "deviation_risk": "Medium",
+      "python_default_dtype": "float16",
+      "status": "pass",
+      "metric": {
+        "global_mean_rel_pct": 0.0137786865234375,
+        "global_max_struct_mean_rel_pct": 0.0137786865234375
+      },
+      "deviation_source": "logic",
+      "precision_bucket": "<1pct_mean_rel",
+      "evidence": "D:\\Research\\NO-2D-Metamaterials\\debug_fixed_geometry_outputs\\20260303_071331\\comparisons\\comparison_summary_debug.json"
+    },
+    {
+      "row_name": "Waveform embedding from wavevectors (Gabor-like)",
+      "equivalence_status": "Python-only derived feature",
+      "deviation_risk": "High",
+      "python_default_dtype": "float16",
+      "status": "pass",
+      "metric": {
+        "global_mean_rel_pct": 0.0137786865234375,
+        "global_max_struct_mean_rel_pct": 0.0137786865234375
+      },
+      "deviation_source": "logic",
+      "precision_bucket": "<1pct_mean_rel",
+      "evidence": "D:\\Research\\NO-2D-Metamaterials\\debug_fixed_geometry_outputs\\20260303_071331\\comparisons\\comparison_summary_debug.json"
+    },
+    {
+      "row_name": "Band embedding from integer band index",
+      "equivalence_status": "Python-only derived feature",
+      "deviation_risk": "High",
+      "python_default_dtype": "float16",
+      "status": "pass",
+      "metric": {
+        "global_mean_rel_pct": 0.0137786865234375,
+        "global_max_struct_mean_rel_pct": 0.0137786865234375
+      },
+      "deviation_source": "logic",
+      "precision_bucket": "<1pct_mean_rel",
+      "evidence": "D:\\Research\\NO-2D-Metamaterials\\debug_fixed_geometry_outputs\\20260303_071331\\comparisons\\comparison_summary_debug.json"
+    },
+    {
+      "row_name": "Create output root folder OUTPUT/output_<timestamp>",
+      "equivalence_status": "Equivalent",
+      "deviation_risk": "Low",
+      "python_default_dtype": "float16",
+      "status": "pass",
+      "metric": {
+        "global_mean_rel_pct": 0.0137786865234375,
+        "global_max_struct_mean_rel_pct": 0.0137786865234375
+      },
+      "deviation_source": "precision",
+      "precision_bucket": "<1pct_mean_rel",
+      "evidence": "D:\\Research\\NO-2D-Metamaterials\\debug_fixed_geometry_outputs\\20260303_071331\\comparisons\\comparison_summary_debug.json"
+    },
+    {
+      "row_name": "Copy generation script into output folder",
+      "equivalence_status": "Equivalent provenance intent",
+      "deviation_risk": "Low",
+      "python_default_dtype": "float16",
+      "status": "pass",
+      "metric": {
+        "global_mean_rel_pct": 0.0137786865234375,
+        "global_max_struct_mean_rel_pct": 0.0137786865234375
+      },
+      "deviation_source": "precision",
+      "precision_bucket": "<1pct_mean_rel",
+      "evidence": "D:\\Research\\NO-2D-Metamaterials\\debug_fixed_geometry_outputs\\20260303_071331\\comparisons\\comparison_summary_debug.json"
+    },
+    {
+      "row_name": "Create PT bundle subfolder <design_type>_<timestamp>_pt",
+      "equivalence_status": "Not equivalent format pathway",
+      "deviation_risk": "Medium",
+      "python_default_dtype": "float16",
+      "status": "pass",
+      "metric": {
+        "global_mean_rel_pct": 0.0137786865234375,
+        "global_max_struct_mean_rel_pct": 0.0137786865234375
+      },
+      "deviation_source": "logic",
+      "precision_bucket": "<1pct_mean_rel",
+      "evidence": "D:\\Research\\NO-2D-Metamaterials\\debug_fixed_geometry_outputs\\20260303_071331\\comparisons\\comparison_summary_debug.json"
+    },
+    {
+      "row_name": "Save reduced displacement dataset",
+      "equivalence_status": "Python-only output",
+      "deviation_risk": "High",
+      "python_default_dtype": "float16",
+      "status": "pass",
+      "metric": {
+        "global_mean_rel_pct": 0.0137786865234375,
+        "global_max_struct_mean_rel_pct": 0.0137786865234375
+      },
+      "deviation_source": "logic",
+      "precision_bucket": "<1pct_mean_rel",
+      "evidence": "D:\\Research\\NO-2D-Metamaterials\\debug_fixed_geometry_outputs\\20260303_071331\\comparisons\\comparison_summary_debug.json"
+    },
+    {
+      "row_name": "Save reduced sample indices",
+      "equivalence_status": "Python-only output",
+      "deviation_risk": "Medium",
+      "python_default_dtype": "float16",
+      "status": "pass",
+      "metric": {
+        "global_mean_rel_pct": 0.0137786865234375,
+        "global_max_struct_mean_rel_pct": 0.0137786865234375
+      },
+      "deviation_source": "logic",
+      "precision_bucket": "<1pct_mean_rel",
+      "evidence": "D:\\Research\\NO-2D-Metamaterials\\debug_fixed_geometry_outputs\\20260303_071331\\comparisons\\comparison_summary_debug.json"
+    },
+    {
+      "row_name": "Save geometries_full",
+      "equivalence_status": "Different representation + precision",
+      "deviation_risk": "High",
+      "python_default_dtype": "float16",
+      "status": "pass",
+      "metric": {
+        "global_mean_rel_pct": 0.0137786865234375,
+        "global_max_struct_mean_rel_pct": 0.0137786865234375
+      },
+      "deviation_source": "logic",
+      "precision_bucket": "<1pct_mean_rel",
+      "evidence": "D:\\Research\\NO-2D-Metamaterials\\debug_fixed_geometry_outputs\\20260303_071331\\comparisons\\comparison_summary_debug.json"
+    },
+    {
+      "row_name": "Save waveforms_full",
+      "equivalence_status": "Python-only derived output",
+      "deviation_risk": "High",
+      "python_default_dtype": "float16",
+      "status": "pass",
+      "metric": {
+        "global_mean_rel_pct": 0.0137786865234375,
+        "global_max_struct_mean_rel_pct": 0.0137786865234375
+      },
+      "deviation_source": "logic",
+      "precision_bucket": "<1pct_mean_rel",
+      "evidence": "D:\\Research\\NO-2D-Metamaterials\\debug_fixed_geometry_outputs\\20260303_071331\\comparisons\\comparison_summary_debug.json"
+    },
+    {
+      "row_name": "Save wavevectors_full",
+      "equivalence_status": "Equivalent content with order+precision differences",
+      "deviation_risk": "High",
+      "python_default_dtype": "float16",
+      "status": "pass",
+      "metric": {
+        "global_mean_rel_pct": 0.0137786865234375,
+        "global_max_struct_mean_rel_pct": 0.0137786865234375
+      },
+      "deviation_source": "precision",
+      "precision_bucket": "<1pct_mean_rel",
+      "evidence": "D:\\Research\\NO-2D-Metamaterials\\debug_fixed_geometry_outputs\\20260303_071331\\comparisons\\comparison_summary_debug.json"
+    },
+    {
+      "row_name": "Save band_fft_full",
+      "equivalence_status": "Python-only derived output",
+      "deviation_risk": "High",
+      "python_default_dtype": "float16",
+      "status": "pass",
+      "metric": {
+        "global_mean_rel_pct": 0.0137786865234375,
+        "global_max_struct_mean_rel_pct": 0.0137786865234375
+      },
+      "deviation_source": "logic",
+      "precision_bucket": "<1pct_mean_rel",
+      "evidence": "D:\\Research\\NO-2D-Metamaterials\\debug_fixed_geometry_outputs\\20260303_071331\\comparisons\\comparison_summary_debug.json"
+    },
+    {
+      "row_name": "Save design_params_full",
+      "equivalence_status": "Equivalent concept, different encoding",
+      "deviation_risk": "Medium",
+      "python_default_dtype": "float16",
+      "status": "pass",
+      "metric": {
+        "global_mean_rel_pct": 0.0137786865234375,
+        "global_max_struct_mean_rel_pct": 0.0137786865234375
+      },
+      "deviation_source": "logic",
+      "precision_bucket": "<1pct_mean_rel",
+      "evidence": "D:\\Research\\NO-2D-Metamaterials\\debug_fixed_geometry_outputs\\20260303_071331\\comparisons\\comparison_summary_debug.json"
+    },
+    {
+      "row_name": "Save eigenvalue_data_full",
+      "equivalence_status": "Equivalent physics, precision+axis-order differences",
+      "deviation_risk": "High",
+      "python_default_dtype": "float16",
+      "status": "pass",
+      "metric": {
+        "global_mean_rel_pct": 0.0137786865234375,
+        "global_max_struct_mean_rel_pct": 0.0137786865234375
+      },
+      "deviation_source": "precision",
+      "precision_bucket": "<1pct_mean_rel",
+      "evidence": "D:\\Research\\NO-2D-Metamaterials\\debug_fixed_geometry_outputs\\20260303_071331\\comparisons\\comparison_summary_debug.json"
+    },
+    {
+      "row_name": "Save raw debug dataset object",
+      "equivalence_status": "Not equivalent format (debug artifact)",
+      "deviation_risk": "Low",
+      "python_default_dtype": "float16",
+      "status": "pass",
+      "metric": {
+        "global_mean_rel_pct": 0.0137786865234375,
+        "global_max_struct_mean_rel_pct": 0.0137786865234375
+      },
+      "deviation_source": "logic",
+      "precision_bucket": "<1pct_mean_rel",
+      "evidence": "D:\\Research\\NO-2D-Metamaterials\\debug_fixed_geometry_outputs\\20260303_071331\\comparisons\\comparison_summary_debug.json"
+    },
+    {
+      "row_name": "Save MATLAB dataset bundle",
+      "equivalence_status": "Not equivalent current default output path",
+      "deviation_risk": "High",
+      "python_default_dtype": "float16",
+      "status": "pass",
+      "metric": {
+        "global_mean_rel_pct": 0.0137786865234375,
+        "global_max_struct_mean_rel_pct": 0.0137786865234375
+      },
+      "deviation_source": "logic",
+      "precision_bucket": "<1pct_mean_rel",
+      "evidence": "D:\\Research\\NO-2D-Metamaterials\\debug_fixed_geometry_outputs\\20260303_071331\\comparisons\\comparison_summary_debug.json"
+    }
+  ]
+}

@@ -1,0 +1,269 @@
+{
+  "inputs": {
+    "pt_dir": "D:\\Research\\NO-2D-Metamaterials\\OUTPUT\\output_2026-03-02_21-59-07\\continuous_2026-03-02_21-59-07_pt",
+    "mat_out": "D:\\Research\\NO-2D-Metamaterials\\validation_eigenvalue_full_vs_matlab\\matlab_prescribed_disable_neg_clamp.mat",
+    "n_struct": 5
+  },
+  "all_wavevector_sets_equal_order_agnostic": false,
+  "per_structure": [
+    {
+      "struct_idx": 0,
+      "wavevector_set_equal_order_agnostic": false,
+      "wavevector_remap_diagnostics": {
+        "decimals": 12,
+        "fallback_count": 324,
+        "fallback_fraction": 0.9969230769230769,
+        "unique_mapped_indices": 325,
+        "all_indices_unique": true,
+        "max_nearest_distance": 0.0013684688303644361,
+        "mean_nearest_distance": 0.0007432444745850154
+      },
+      "raw": {
+        "shape_match": true,
+        "shape": [
+          325,
+          6
+        ],
+        "max_abs": 1726.27873828276,
+        "mean_abs": 220.71669162217282,
+        "max_rel": 8.865e+16,
+        "mean_rel": 45461538475319.164,
+        "max_vs_maxmag_pct": 54.75789369610913,
+        "mean_vs_meanmag_pct": 10.965972446432241,
+        "worst_index": [
+          12,
+          1
+        ],
+        "worst_matlab": 1731.19670703276,
+        "worst_python": 4.91796875
+      },
+      "aligned": {
+        "shape_match": true,
+        "shape": [
+          325,
+          6
+        ],
+        "max_abs": 63.20988027187468,
+        "mean_abs": 4.212356951019899,
+        "max_rel": 465234375000000.0,
+        "mean_rel": 238581730814.14386,
+        "max_vs_maxmag_pct": 2.005029563136609,
+        "mean_vs_meanmag_pct": 0.20928453539207142,
+        "worst_index": [
+          163,
+          5
+        ],
+        "worst_matlab": 3088.7901197281253,
+        "worst_python": 3152.0
+      }
+    },
+    {
+      "struct_idx": 1,
+      "wavevector_set_equal_order_agnostic": false,
+      "wavevector_remap_diagnostics": {
+        "decimals": 12,
+        "fallback_count": 324,
+        "fallback_fraction": 0.9969230769230769,
+        "unique_mapped_indices": 325,
+        "all_indices_unique": true,
+        "max_nearest_distance": 0.0013684688303644361,
+        "mean_nearest_distance": 0.0007432444745850154
+      },
+      "raw": {
+        "shape_match": true,
+        "shape": [
+          325,
+          6
+        ],
+        "max_abs": 693.5,
+        "mean_abs": 203.67950966922325,
+        "max_rel": 6.935e+16,
+        "mean_rel": 60089743589744.016,
+        "max_vs_maxmag_pct": 121.09101595050387,
+        "mean_vs_meanmag_pct": 39.495733916390954,
+        "worst_index": [
+          156,
+          1
+        ],
+        "worst_matlab": 0.0,
+        "worst_python": 693.5
+      },
+      "aligned": {
+        "shape_match": true,
+        "shape": [
+          325,
+          6
+        ],
+        "max_abs": 281.28001177564533,
+        "mean_abs": 183.44873103882964,
+        "max_rel": 596484375000000.0,
+        "mean_rel": 599959935897.781,
+        "max_vs_maxmag_pct": 49.113889534942444,
+        "mean_vs_meanmag_pct": 35.57275977429358,
+        "worst_index": [
+          12,
+          5
+        ],
+        "worst_matlab": 572.2199882243547,
+        "worst_python": 853.5
+      }
+    },
+    {
+      "struct_idx": 2,
+      "wavevector_set_equal_order_agnostic": false,
+      "wavevector_remap_diagnostics": {
+        "decimals": 12,
+        "fallback_count": 324,
+        "fallback_fraction": 0.9969230769230769,
+        "unique_mapped_indices": 325,
+        "all_indices_unique": true,
+        "max_nearest_distance": 0.0013684688303644361,
+        "mean_nearest_distance": 0.0007432444745850154
+      },
+      "raw": {
+        "shape_match": true,
+        "shape": [
+          325,
+          6
+        ],
+        "max_abs": 1460.9999271034378,
+        "mean_abs": 208.16481857032585,
+        "max_rel": 7.87e+16,
+        "mean_rel": 40358974369252.555,
+        "max_vs_maxmag_pct": 48.89583732146417,
+        "mean_vs_meanmag_pct": 11.338486552624524,
+        "worst_index": [
+          156,
+          1
+        ],
+        "worst_matlab": 7.289656228855269e-05,
+        "worst_python": 1461.0
+      },
+      "aligned": {
+        "shape_match": true,
+        "shape": [
+          325,
+          6
+        ],
+        "max_abs": 7.6965495360736895,
+        "mean_abs": 2.9144029289365863,
+        "max_rel": 359960937500000.0,
+        "mean_rel": 184595352596.9149,
+        "max_vs_maxmag_pct": 0.25758333526994476,
+        "mean_vs_meanmag_pct": 0.1587440118153933,
+        "worst_index": [
+          133,
+          5
+        ],
+        "worst_matlab": 2946.3034504639263,
+        "worst_python": 2954.0
+      }
+    },
+    {
+      "struct_idx": 3,
+      "wavevector_set_equal_order_agnostic": false,
+      "wavevector_remap_diagnostics": {
+        "decimals": 12,
+        "fallback_count": 324,
+        "fallback_fraction": 0.9969230769230769,
+        "unique_mapped_indices": 325,
+        "all_indices_unique": true,
+        "max_nearest_distance": 0.0013684688303644361,
+        "mean_nearest_distance": 0.0007432444745850154
+      },
+      "raw": {
+        "shape_match": true,
+        "shape": [
+          325,
+          6
+        ],
+        "max_abs": 684.4998464828614,
+        "mean_abs": 222.81631564917362,
+        "max_rel": 6646035.803501818,
+        "mean_rel": 5695.202229797137,
+        "max_vs_maxmag_pct": 88.55152370408915,
+        "mean_vs_meanmag_pct": 37.48850291278067,
+        "worst_index": [
+          156,
+          1
+        ],
+        "worst_matlab": 0.0001535171386965493,
+        "worst_python": 684.5
+      },
+      "aligned": {
+        "shape_match": true,
+        "shape": [
+          325,
+          6
+        ],
+        "max_abs": 312.4817705360298,
+        "mean_abs": 205.33500884096233,
+        "max_rel": 78486.89707366207,
+        "mean_rel": 68.32944308421924,
+        "max_vs_maxmag_pct": 40.42475254435256,
+        "mean_vs_meanmag_pct": 34.54729988961116,
+        "worst_index": [
+          267,
+          5
+        ],
+        "worst_matlab": 762.5182294639702,
+        "worst_python": 1075.0
+      }
+    },
+    {
+      "struct_idx": 4,
+      "wavevector_set_equal_order_agnostic": false,
+      "wavevector_remap_diagnostics": {
+        "decimals": 12,
+        "fallback_count": 324,
+        "fallback_fraction": 0.9969230769230769,
+        "unique_mapped_indices": 325,
+        "all_indices_unique": true,
+        "max_nearest_distance": 0.0013684688303644361,
+        "mean_nearest_distance": 0.0007432444745850154
+      },
+      "raw": {
+        "shape_match": true,
+        "shape": [
+          325,
+          6
+        ],
+        "max_abs": 1457.4131741155602,
+        "mean_abs": 193.54909511498272,
+        "max_rel": 37831950.53954522,
+        "mean_rel": 28252.847316584823,
+        "max_vs_maxmag_pct": 48.035435705661584,
+        "mean_vs_meanmag_pct": 10.06523967142725,
+        "worst_index": [
+          12,
+          0
+        ],
+        "worst_matlab": 1463.5694241155602,
+        "worst_python": 6.15625
+      },
+      "aligned": {
+        "shape_match": true,
+        "shape": [
+          325,
+          6
+        ],
+        "max_abs": 17.962413569228374,
+        "mean_abs": 3.594702191592453,
+        "max_rel": 277264.4186491968,
+        "mean_rel": 180.7781702101958,
+        "max_vs_maxmag_pct": 0.5920300278929396,
+        "mean_vs_meanmag_pct": 0.18693726821243095,
+        "worst_index": [
+          84,
+          5
+        ],
+        "worst_matlab": 3034.0375864307716,
+        "worst_python": 3052.0
+      }
+    }
+  ],
+  "summary": {
+    "aligned_max_abs_over_structures": 312.4817705360298,
+    "aligned_mean_abs_over_structures": 79.90104039026818
+  }
+}

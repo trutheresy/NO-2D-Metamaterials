@@ -1,0 +1,64 @@
+{
+  "logic_fix_list": [
+    {
+      "row_name": "Generate IBZ wavevectors from meshgrid",
+      "proposed_fix": "Use deterministic remap contract when comparing MATLAB/Python wavevector-indexed arrays."
+    },
+    {
+      "row_name": "Reshape design tensor to reduced geometry output (keep pane 0)",
+      "proposed_fix": "Review corresponding function implementation for logic-parity mismatch."
+    },
+    {
+      "row_name": "Transpose wavevectors to PT full layout (N,W,2)",
+      "proposed_fix": "Use deterministic remap contract when comparing MATLAB/Python wavevector-indexed arrays."
+    },
+    {
+      "row_name": "Transpose eigenvalues to PT full layout (N,W,B)",
+      "proposed_fix": "Align eigensolver branch/settings for parity runs and compare in float64 before PT export."
+    },
+    {
+      "row_name": "Waveform embedding from wavevectors (Gabor-like)",
+      "proposed_fix": "Use deterministic remap contract when comparing MATLAB/Python wavevector-indexed arrays."
+    },
+    {
+      "row_name": "Band embedding from integer band index",
+      "proposed_fix": "Review corresponding function implementation for logic-parity mismatch."
+    },
+    {
+      "row_name": "Create PT bundle subfolder <design_type>_<timestamp>_pt",
+      "proposed_fix": "Review corresponding function implementation for logic-parity mismatch."
+    },
+    {
+      "row_name": "Save reduced displacement dataset",
+      "proposed_fix": "Define explicit cross-language schema contract for non-equivalent Python-only artifacts."
+    },
+    {
+      "row_name": "Save reduced sample indices",
+      "proposed_fix": "Define explicit cross-language schema contract for non-equivalent Python-only artifacts."
+    },
+    {
+      "row_name": "Save geometries_full",
+      "proposed_fix": "Define explicit cross-language schema contract for non-equivalent Python-only artifacts."
+    },
+    {
+      "row_name": "Save waveforms_full",
+      "proposed_fix": "Define explicit cross-language schema contract for non-equivalent Python-only artifacts."
+    },
+    {
+      "row_name": "Save band_fft_full",
+      "proposed_fix": "Define explicit cross-language schema contract for non-equivalent Python-only artifacts."
+    },
+    {
+      "row_name": "Save design_params_full",
+      "proposed_fix": "Define explicit cross-language schema contract for non-equivalent Python-only artifacts."
+    },
+    {
+      "row_name": "Save raw debug dataset object",
+      "proposed_fix": "Define explicit cross-language schema contract for non-equivalent Python-only artifacts."
+    },
+    {
+      "row_name": "Save MATLAB dataset bundle",
+      "proposed_fix": "Define explicit cross-language schema contract for non-equivalent Python-only artifacts."
+    }
+  ]
+}

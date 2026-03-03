@@ -1,0 +1,7 @@
+{
+  "output_root": "D:\\Research\\NO-2D-Metamaterials\\fixed10_p4mm_outputs\\20260303_105124",
+  "geometry_mat": "D:\\Research\\NO-2D-Metamaterials\\fixed10_p4mm_outputs\\20260303_105124\\geometries_full_p4mm_10.mat",
+  "python_pt_dir": "D:\\Research\\NO-2D-Metamaterials\\fixed10_p4mm_outputs\\20260303_105124\\python_pt_dataset",
+  "n_struct": 10,
+  "symmetry_type": "p4mm"
+}

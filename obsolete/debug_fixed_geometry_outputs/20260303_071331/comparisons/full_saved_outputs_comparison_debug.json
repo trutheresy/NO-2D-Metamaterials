@@ -1,0 +1,99 @@
+{
+  "pt_dir": "D:\\Research\\NO-2D-Metamaterials\\debug_fixed_geometry_outputs\\20260303_071331\\python_stage\\python_fixed_output_debug_pt",
+  "mat_out": "D:\\Research\\NO-2D-Metamaterials\\debug_fixed_geometry_outputs\\20260303_071331\\matlab_stage\\matlab_fixed_output_debug.mat",
+  "comparisons": [
+    {
+      "name": "geometries_full",
+      "shape_match": true,
+      "max_abs": 0.0002364190915040698,
+      "mean_abs": 3.735709501586658e-05,
+      "mean_rel_pct": 0.01824703849988364
+    },
+    {
+      "name": "wavevectors_full_raw",
+      "shape_match": true,
+      "max_abs": 6.020418265790644,
+      "mean_abs": 1.5996033657588242,
+      "mean_rel_pct": 99.83716966547057
+    },
+    {
+      "name": "wavevectors_full_aligned",
+      "shape_match": true,
+      "max_abs": 0.000967653589793116,
+      "mean_abs": 0.00048154840603646714,
+      "mean_rel_pct": 0.0300552192779321
+    },
+    {
+      "name": "eigenvalue_data_full_aligned",
+      "shape_match": true,
+      "max_abs": 5.921875,
+      "mean_abs": 0.12395524341093395,
+      "mean_rel_pct": 0.024036356929693456
+    },
+    {
+      "name": "waveforms_full_raw",
+      "shape_match": true,
+      "max_abs": 1.8575716927470471,
+      "mean_abs": 0.17600342641305902,
+      "mean_rel_pct": 145.80213815546549
+    },
+    {
+      "name": "waveforms_full_aligned",
+      "shape_match": true,
+      "max_abs": 0.07999909397585925,
+      "mean_abs": 0.0015750399061415436,
+      "mean_rel_pct": 1.3047711097207462
+    },
+    {
+      "name": "band_fft_full_from_n_eig",
+      "shape_match": true,
+      "max_abs": 0.00024228644993418147,
+      "mean_abs": 3.6733661565389814e-06,
+      "mean_rel_pct": 0.017288315125139935
+    },
+    {
+      "name": "design_params_full_design_number",
+      "shape_match": true,
+      "max_abs": 0.0,
+      "mean_abs": 0.0,
+      "mean_rel_pct": 0.0
+    },
+    {
+      "name": "reduced_indices",
+      "shape_match": true,
+      "exact_match": true,
+      "count_python": 1950,
+      "count_expected": 1950
+    }
+  ],
+  "displacements_dataset_comparison": {
+    "x_real": {
+      "name": "displacements_x_real",
+      "shape_match": true,
+      "max_abs": 0.10579415597819863,
+      "mean_abs": 4.518729789511006e-05,
+      "mean_rel_pct": 0.7672161867315669
+    },
+    "x_imag": {
+      "name": "displacements_x_imag",
+      "shape_match": true,
+      "max_abs": 0.07476428986883982,
+      "mean_abs": 1.2430798956947169e-05,
+      "mean_rel_pct": 0.2521521760592185
+    },
+    "y_real": {
+      "name": "displacements_y_real",
+      "shape_match": true,
+      "max_abs": 0.08075228749178313,
+      "mean_abs": 4.488682816960004e-05,
+      "mean_rel_pct": 0.7751444377910224
+    },
+    "y_imag": {
+      "name": "displacements_y_imag",
+      "shape_match": true,
+      "max_abs": 0.07488107225439034,
+      "mean_abs": 1.232153555741816e-05,
+      "mean_rel_pct": 0.24220971234803107
+    }
+  }
+}

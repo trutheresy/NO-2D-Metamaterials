@@ -298,7 +298,7 @@ def apply_steel_rubber_paradigm(design, const):
     design_in_polymer = 0
     design_in_steel = 1
     
-    E_polymer = 200e6
+    E_polymer = 100e6
     E_steel = 200e9
     rho_polymer = 1200
     rho_steel = 8e3
