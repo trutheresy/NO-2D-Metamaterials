@@ -28,9 +28,9 @@ def get_element_stiffness_VEC(E, nu, t):
     """
     
     # Convert inputs to numpy arrays
-    E = np.asarray(E)
-    nu = np.asarray(nu)
-    t = np.asarray(t)
+    E = np.asarray(E, dtype=np.float64)
+    nu = np.asarray(nu, dtype=np.float64)
+    t = np.asarray(t, dtype=np.float64)
     
     # Ensure all inputs have the same shape
     if E.ndim == 0:
@@ -51,7 +51,7 @@ def get_element_stiffness_VEC(E, nu, t):
     
     # Vectorized stiffness matrix calculation
     # This is the exact translation of the MATLAB code
-    coeff = ((1/48) * E * t / (1 - nu**2)).astype(np.float64)  # Use float64 to match MATLAB
+    coeff = (1 / 48) * E * t / (1 - nu**2)
     
     # Define the 8x8 stiffness matrix template
     # MATLAB: [24-8*nu , 6*nu+6  , -12-4*nu, 18*nu-6 , -12+4*nu, -6*nu-6 , 8*nu    , -18*nu+6,...]
@@ -130,7 +130,7 @@ def get_element_stiffness_VEC(E, nu, t):
     # Apply the coefficient to all elements
     k_ele = k_ele * coeff[:, np.newaxis, np.newaxis]
     
-    return k_ele.astype(np.float64)  # Use float64 to match MATLAB
+    return k_ele
 
 
 def get_element_mass_VEC(rho, t, const):
@@ -153,8 +153,8 @@ def get_element_mass_VEC(rho, t, const):
     """
     
     # Convert inputs to numpy arrays
-    rho = np.asarray(rho)
-    t = np.asarray(t)
+    rho = np.asarray(rho, dtype=np.float64)
+    t = np.asarray(t, dtype=np.float64)
     
     # Ensure all inputs have the same shape
     if t.ndim == 0:
@@ -193,6 +193,5 @@ def get_element_mass_VEC(rho, t, const):
     ], dtype=np.float64)  # Use float64 to match MATLAB
     
     # Apply the mass template and coefficient to all elements
-    m_ele = ((1/36) * m[:, np.newaxis, np.newaxis] * mass_template[np.newaxis, :, :]).astype(np.float64)  # Use float64 to match MATLAB
-    
-    return m_ele.astype(np.float64)  # Use float64 to match MATLAB
+    m_ele = (1 / 36) * m[:, np.newaxis, np.newaxis] * mass_template[np.newaxis, :, :]
+    return m_ele

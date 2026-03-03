@@ -77,6 +77,8 @@ def dispersion_with_matrix_save_opt(const, wavevectors):
     parity_use_complex128 = _env_flag("PARITY_USE_COMPLEX128", default=False)
     parity_force_sparse_eigs = _env_flag("PARITY_FORCE_SPARSE_EIGS", default=False)
     parity_disable_neg_clamp = _env_flag("PARITY_DISABLE_NEG_CLAMP", default=False)
+    wavevector_dtype = np.float64 if parity_wavevector_float64 else np.float32
+    wavevectors_for_T = np.asarray(wavevectors, dtype=wavevector_dtype)
     
     # Initialize eigenvector array if requested (matching Han's eigenvector_dtype support)
     # Get transformation matrix to determine reduced DOF size
@@ -115,15 +117,16 @@ def dispersion_with_matrix_save_opt(const, wavevectors):
     # Process each wavevector
     for k_idx in range(n_wavevectors):
         wavevector = wavevectors[k_idx, :]
-        if parity_wavevector_float64:
-            T = get_transformation_matrix(wavevector.astype(np.float64), const)
-        else:
-            T = get_transformation_matrix(wavevector.astype(np.float32), const)
+        T = get_transformation_matrix(wavevectors_for_T[k_idx, :], const)
         
         # Transform matrices to reduced space
         matrix_dtype = np.complex128 if parity_use_complex128 else np.complex64
-        Kr = (T.conj().T @ K @ T).astype(matrix_dtype)
-        Mr = (T.conj().T @ M @ T).astype(matrix_dtype)
+        Kr = T.conj().T @ K @ T
+        Mr = T.conj().T @ M @ T
+        if Kr.dtype != matrix_dtype:
+            Kr = Kr.astype(matrix_dtype, copy=False)
+        if Mr.dtype != matrix_dtype:
+            Mr = Mr.astype(matrix_dtype, copy=False)
         
         # Store transformation matrix if requested
         if const.get('isSaveKandM', False):
@@ -177,8 +180,10 @@ def dispersion_with_matrix_save_opt(const, wavevectors):
             
             # Convert to controlled dtype for consistency
             eig_dtype = np.complex128 if parity_use_complex128 else np.complex64
-            eig_vals = eig_vals.astype(eig_dtype)
-            eig_vecs = eig_vecs.astype(eig_dtype)
+            if eig_vals.dtype != eig_dtype:
+                eig_vals = np.asarray(eig_vals, dtype=eig_dtype)
+            if eig_vecs.dtype != eig_dtype:
+                eig_vecs = np.asarray(eig_vecs, dtype=eig_dtype)
             
             # Store eigenvectors if requested (matching Han's eigenvector_dtype)
             if const.get('isSaveEigenvectors', False):
@@ -220,7 +225,7 @@ def dispersion_with_matrix_save_opt(const, wavevectors):
             # Set negative or very small eigenvalues to zero (rigid body modes or numerical errors)
             if not parity_disable_neg_clamp:
                 real_eig_vals = np.maximum(real_eig_vals, 0.0)
-            fr[k_idx, :] = (np.sqrt(real_eig_vals).astype(fr_dtype) / (2 * np.pi)).astype(fr_dtype)
+            fr[k_idx, :] = np.sqrt(real_eig_vals) / (2 * np.pi)
             
         elif const.get('isUseGPU', False):
             raise NotImplementedError('GPU use is not currently developed')

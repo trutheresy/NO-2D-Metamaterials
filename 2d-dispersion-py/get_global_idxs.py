@@ -50,31 +50,24 @@ def get_global_idxs(ele_idx_x, ele_idx_y, const):
     
     N_node_y = N_ele_y + 1
     
-    # Node 1 (MATLAB 1-based formula, then convert to 0-based for Python)
-    node_idx_y = ele_idx_y + 1
-    node_idx_x = ele_idx_x
-    global_node_idx = (node_idx_y - 1) * N_node_y + node_idx_x
-    global_idxs = np.array([
-        2 * global_node_idx - 2, 2 * global_node_idx - 1,  # Node 1: u1, v1 (converted to 0-based)
-    ])
-    
-    # Node 2
-    node_idx_y = ele_idx_y + 1
-    node_idx_x = ele_idx_x + 1
-    global_node_idx = (node_idx_y - 1) * N_node_y + node_idx_x
-    global_idxs = np.append(global_idxs, [2 * global_node_idx - 2, 2 * global_node_idx - 1])
-    
-    # Node 3
-    node_idx_y = ele_idx_y
-    node_idx_x = ele_idx_x + 1
-    global_node_idx = (node_idx_y - 1) * N_node_y + node_idx_x
-    global_idxs = np.append(global_idxs, [2 * global_node_idx - 2, 2 * global_node_idx - 1])
-    
-    # Node 4
-    node_idx_y = ele_idx_y
-    node_idx_x = ele_idx_x
-    global_node_idx = (node_idx_y - 1) * N_node_y + node_idx_x
-    global_idxs = np.append(global_idxs, [2 * global_node_idx - 2, 2 * global_node_idx - 1])
-    
-    return global_idxs
+    # Compute all four global node indices in MATLAB node order.
+    # Node 1: upper left
+    g1 = ((ele_idx_y + 1) - 1) * N_node_y + ele_idx_x
+    # Node 2: upper right
+    g2 = ((ele_idx_y + 1) - 1) * N_node_y + (ele_idx_x + 1)
+    # Node 3: lower right
+    g3 = (ele_idx_y - 1) * N_node_y + (ele_idx_x + 1)
+    # Node 4: lower left
+    g4 = (ele_idx_y - 1) * N_node_y + ele_idx_x
+
+    # Fixed-size DOF output avoids repeated np.append reallocations.
+    return np.array(
+        [
+            2 * g1 - 2, 2 * g1 - 1,
+            2 * g2 - 2, 2 * g2 - 1,
+            2 * g3 - 2, 2 * g3 - 1,
+            2 * g4 - 2, 2 * g4 - 1,
+        ],
+        dtype=np.int64,
+    )
 

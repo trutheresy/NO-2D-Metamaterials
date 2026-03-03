@@ -10,6 +10,7 @@ import argparse
 import numpy as np
 import os
 import sys
+import time
 from datetime import datetime
 import pickle
 import scipy.io as sio
@@ -65,11 +66,17 @@ def _build_pt_dataset_outputs(
     eig_y = eig[..., 1::2].reshape(eig.shape[0], eig.shape[1], eig.shape[2], n_pix, n_pix)
 
     # Build full (non-reduced) sample index list.
-    reduced_indices_reserved = []
-    for d_idx in range(eig.shape[0]):
-        for w_idx in range(eig.shape[1]):
-            for b_idx in range(eig.shape[2]):
-                reduced_indices_reserved.append((d_idx, w_idx, b_idx))
+    n_designs = eig.shape[0]
+    n_wavevectors = eig.shape[1]
+    n_bands = eig.shape[2]
+    total_samples = n_designs * n_wavevectors * n_bands
+    reduced_indices_reserved = [None] * total_samples
+    cursor = 0
+    for d_idx in range(n_designs):
+        for w_idx in range(n_wavevectors):
+            for b_idx in range(n_bands):
+                reduced_indices_reserved[cursor] = (d_idx, w_idx, b_idx)
+                cursor += 1
 
     # Flatten samples into TensorDataset-compatible arrays.
     d_idx = [idx[0] for idx in reduced_indices_reserved]
@@ -223,9 +230,9 @@ def generate_dispersion_dataset_with_matrices(
     poisson_data = np.zeros((const['N_pix'], const['N_pix'], N_struct), dtype=np.float32)
     
     # System matrices (using lists for variable sizes)
-    K_data = []
-    M_data = []
-    T_data = []
+    K_data = [None] * N_struct
+    M_data = [None] * N_struct
+    T_data = [None] * N_struct
     design_numbers = np.zeros((N_struct,), dtype=np.int64)
     
     # Validate constants
@@ -238,9 +245,9 @@ def generate_dispersion_dataset_with_matrices(
     
     # Generate dataset
     print(f"\nGenerating {N_struct} structures...")
+    progress_every = 100 if N_struct >= 100 else max(1, N_struct // 10)
+    gen_start_time = time.perf_counter()
     for struct_idx in range(N_struct):
-        print(f"Processing structure {struct_idx + 1}/{N_struct}...")
-        
         # Generate design using EXACT MATLAB approach
         try:
             # Set design number for this structure (exact MATLAB translation)
@@ -264,9 +271,9 @@ def generate_dispersion_dataset_with_matrices(
                 design = np.round(design)
             
             # Float16-first chain for stored fields and solver inputs.
-            design = np.asarray(design, dtype=np.float16)
-            designs[:, :, :, struct_idx] = design
-            const['design'] = design
+            design_f16 = np.asarray(design, dtype=np.float16)
+            designs[:, :, :, struct_idx] = design_f16
+            const['design'] = design_f16
             
             # Compute dispersion using the CORRECT function (matches MATLAB exactly)
             wv, fr, ev, mesh, K, M, T = dispersion_with_matrix_save_opt(const, const['wavevectors'])
@@ -283,8 +290,9 @@ def generate_dispersion_dataset_with_matrices(
                 print(f"WARNING: Warning: Large imaginary component in frequency for structure {struct_idx + 1}")
             
             # Store material properties
+            design_f32 = design_f16.astype(np.float32, copy=False)
             explicit_props = design_to_explicit(
-                                              np.asarray(design, dtype=np.float32), const['design_scale'], 
+                                              design_f32, const['design_scale'],
                                               const['E_min'], const['E_max'],
                                               const['rho_min'], const['rho_max'],
                                               const['poisson_min'], const['poisson_max'])
@@ -294,11 +302,20 @@ def generate_dispersion_dataset_with_matrices(
             poisson_data[:, :, struct_idx] = explicit_props['nu']
             
             # Store system matrices (now available from dispersion_with_matrix_save_opt!)
-            K_data.append(K)
-            M_data.append(M)
-            T_data.append(T)
-            
-            print(f"  SUCCESS: Completed structure {struct_idx + 1}")
+            K_data[struct_idx] = K
+            M_data[struct_idx] = M
+            T_data[struct_idx] = T
+
+            processed = struct_idx + 1
+            if processed == 1 or processed == N_struct or processed % progress_every == 0:
+                elapsed = time.perf_counter() - gen_start_time
+                rate = processed / max(elapsed, 1e-9)
+                eta = (N_struct - processed) / max(rate, 1e-9)
+                print(
+                    f"PROGRESS: {processed}/{N_struct} "
+                    f"({100.0 * processed / N_struct:.1f}%) "
+                    f"elapsed={elapsed:.1f}s rate={rate:.2f}/s eta={eta:.1f}s"
+                )
             
         except Exception as e:
             print(f"  ERROR: Error processing structure {struct_idx + 1}: {e}")
@@ -341,11 +358,11 @@ def generate_dispersion_dataset_with_matrices(
     if is_save_eigenvectors:
         dataset['EIGENVECTOR_DATA'] = eigenvector_data
     
-    if K_data:
+    if any(k is not None for k in K_data):
         dataset['K_DATA'] = K_data
-    if M_data:
+    if any(m is not None for m in M_data):
         dataset['M_DATA'] = M_data
-    if T_data:
+    if any(t is not None for t in T_data):
         dataset['T_DATA'] = T_data
     
     # Save results
@@ -585,7 +602,9 @@ if __name__ == "__main__":
     parser.add_argument("--n-struct", type=int, default=5, help="Number of structures/designs to generate.")
     parser.add_argument("--rng-seed-offset", type=int, default=0, help="RNG seed offset applied to design index.")
     parser.add_argument("--binarize", action="store_true", help="Generate binarized designs (default: continuous).")
-    parser.add_argument("--skip-demo", action="store_true", help="Skip post-generation demonstration plots.")
+    parser.add_argument("--run-demo", action="store_true", help="Run post-generation demonstration plots (default: off).")
+    # Backward-compatible no-op: generation now skips demo by default.
+    parser.add_argument("--skip-demo", action="store_true", help=argparse.SUPPRESS)
     args = parser.parse_args()
 
     # Run the main dataset generation
@@ -596,7 +615,7 @@ if __name__ == "__main__":
     )
 
     # Demonstrate additional features
-    if not args.skip_demo:
+    if args.run_demo and not args.skip_demo:
         demonstrate_library_features()
 
     print("\nCOMPLETED: Script completed successfully!")

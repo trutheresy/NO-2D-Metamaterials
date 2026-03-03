@@ -670,6 +670,14 @@ def reconstruct_frequencies_from_eigenvectors(K, M, T_data, eigenvectors, waveve
             f"This may indicate incorrect field-to-DOF conversion or matrix computation."
         )
     
+    # Normalize K/M once to sparse float32 to avoid repeated per-wavevector recasts.
+    K_sparse = K if sp.issparse(K) else sp.csr_matrix(K)
+    M_sparse = M if sp.issparse(M) else sp.csr_matrix(M)
+    if K_sparse.dtype != np.float32:
+        K_sparse = K_sparse.astype(np.float32, copy=False)
+    if M_sparse.dtype != np.float32:
+        M_sparse = M_sparse.astype(np.float32, copy=False)
+
     # Process each wavevector
     for wv_idx in range(n_wavevectors):
         # Get transformation matrix for this wavevector
@@ -690,34 +698,29 @@ def reconstruct_frequencies_from_eigenvectors(K, M, T_data, eigenvectors, waveve
         if T is None:
             continue
         
-        # Convert matrices to sparse format for efficiency
-        T_sparse = T if sp.issparse(T) else sp.csr_matrix(T.astype(np.float32))
-        K_sparse = K if sp.issparse(K) else sp.csr_matrix(K.astype(np.float32))
-        M_sparse = M if sp.issparse(M) else sp.csr_matrix(M.astype(np.float32))
+        # Normalize T once per wavevector to sparse float32.
+        T_sparse = T if sp.issparse(T) else sp.csr_matrix(T)
+        if T_sparse.dtype != np.float32:
+            T_sparse = T_sparse.astype(np.float32, copy=False)
         
         # Transform to reduced space: Kr = T' * K * T, Mr = T' * M * T
         Kr = T_sparse.conj().T @ K_sparse @ T_sparse
         Mr = T_sparse.conj().T @ M_sparse @ T_sparse
         
-        # Process each eigenvalue band
-        for band_idx in range(N_eig):
-            # Extract eigenvector for this wavevector and band
-            eigvec = eigenvectors[:, wv_idx, band_idx].astype(np.complex128)
-            
-            # Reconstruct eigenvalue: eigval = norm(Kr*eigvec)/norm(Mr*eigvec)
-            # This is equivalent to: Kr*eigvec = eigval*Mr*eigvec
-            Kr_eigvec = Kr @ eigvec
-            Mr_eigvec = Mr @ eigvec
-            
-            # Convert sparse results to dense for norm calculation
-            if sp.issparse(Kr_eigvec):
-                Kr_eigvec = Kr_eigvec.toarray().flatten()
-            if sp.issparse(Mr_eigvec):
-                Mr_eigvec = Mr_eigvec.toarray().flatten()
-            
-            # Compute eigenvalue and convert to frequency
-            eigval = np.linalg.norm(Kr_eigvec) / np.linalg.norm(Mr_eigvec)
-            frequencies_recon[wv_idx, band_idx] = np.sqrt(np.real(eigval)) / (2 * np.pi)
+        # Batch all bands for this wavevector at once.
+        eigvecs = np.asarray(eigenvectors[:, wv_idx, :], dtype=np.complex128)
+        Kr_eigvecs = Kr @ eigvecs
+        Mr_eigvecs = Mr @ eigvecs
+
+        if sp.issparse(Kr_eigvecs):
+            Kr_eigvecs = Kr_eigvecs.toarray()
+        if sp.issparse(Mr_eigvecs):
+            Mr_eigvecs = Mr_eigvecs.toarray()
+
+        Kr_norms = np.linalg.norm(Kr_eigvecs, axis=0)
+        Mr_norms = np.linalg.norm(Mr_eigvecs, axis=0)
+        eigvals = np.divide(Kr_norms, Mr_norms, out=np.zeros_like(Kr_norms), where=Mr_norms > 0)
+        frequencies_recon[wv_idx, :] = np.sqrt(np.real(eigvals)) / (2 * np.pi)
     
     return frequencies_recon
 
