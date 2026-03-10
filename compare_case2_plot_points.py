@@ -191,7 +191,7 @@ if __name__ == "__main__":
         sys.exit(1)
     
     py_file = sorted(py_files, key=lambda p: p.stat().st_mtime)[-1]  # Most recent
-    ml_file = Path('2D-dispersion-han/plots/out_binarized_1_mat/plot_points.mat')
+    ml_file = Path('2D-dispersion-han/PLOTS/out_binarized_1_mat/plot_points.mat')
     
     print(f"Python file: {py_file}")
     print(f"MATLAB file: {ml_file}")

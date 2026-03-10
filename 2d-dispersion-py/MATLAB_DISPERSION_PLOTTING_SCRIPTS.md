@@ -22,7 +22,7 @@ This document lists all MATLAB scripts in the `2D-dispersion-han` library that g
   - `K_DATA`, `M_DATA`, `T_DATA`: System matrices (optional, for reconstruction)
 
 **Output:**
-- Saves PNG files to `plots/<dataset_name>_mat/`:
+- Saves PNG files to `PLOTS/<dataset_name>_mat/`:
   - `constitutive_fields/<struct_idx>.png` - Material properties
   - `contour/<struct_idx>.png` - IBZ contour wavevectors
   - `dispersion/<struct_idx>.png` - Original dispersion curves

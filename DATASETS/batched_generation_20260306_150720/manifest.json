@@ -1,0 +1,236 @@
+{
+  "run_root": "D:\\Research\\NO-2D-Metamaterials\\OUTPUT\\batched_generation_20260306_150720",
+  "repo_root": "D:\\Research\\NO-2D-Metamaterials",
+  "batch_size": 1000,
+  "total_samples": 24000,
+  "start_seed_offset": 0,
+  "binarize": true,
+  "parallel_workers": 16,
+  "train_batches": [
+    {
+      "exit_code": 0,
+      "seed_offset": 0,
+      "n_struct": 1000,
+      "output_pt_path": "D:\\Research\\NO-2D-Metamaterials\\OUTPUT/output_2026-03-06_17-18-57\\binarized_2026-03-06_17-18-57_pt",
+      "output_pkl_path": "",
+      "log_path": "D:\\Research\\NO-2D-Metamaterials\\OUTPUT\\batched_generation_20260306_150720\\logs\\train_batch_000.log",
+      "batch_idx": 0
+    },
+    {
+      "exit_code": 0,
+      "seed_offset": 1000,
+      "n_struct": 1000,
+      "output_pt_path": "D:\\Research\\NO-2D-Metamaterials\\OUTPUT/output_2026-03-06_19-15-56\\binarized_2026-03-06_19-15-56_pt",
+      "output_pkl_path": "",
+      "log_path": "D:\\Research\\NO-2D-Metamaterials\\OUTPUT\\batched_generation_20260306_150720\\logs\\train_batch_001.log",
+      "batch_idx": 1
+    },
+    {
+      "exit_code": 0,
+      "seed_offset": 2000,
+      "n_struct": 1000,
+      "output_pt_path": "D:\\Research\\NO-2D-Metamaterials\\OUTPUT/output_2026-03-06_21-30-46\\binarized_2026-03-06_21-30-46_pt",
+      "output_pkl_path": "",
+      "log_path": "D:\\Research\\NO-2D-Metamaterials\\OUTPUT\\batched_generation_20260306_150720\\logs\\train_batch_002.log",
+      "batch_idx": 2
+    },
+    {
+      "exit_code": 0,
+      "seed_offset": 3000,
+      "n_struct": 1000,
+      "output_pt_path": "D:\\Research\\NO-2D-Metamaterials\\OUTPUT/output_2026-03-06_23-40-44\\binarized_2026-03-06_23-40-44_pt",
+      "output_pkl_path": "",
+      "log_path": "D:\\Research\\NO-2D-Metamaterials\\OUTPUT\\batched_generation_20260306_150720\\logs\\train_batch_003.log",
+      "batch_idx": 3
+    },
+    {
+      "exit_code": 0,
+      "seed_offset": 4000,
+      "n_struct": 1000,
+      "output_pt_path": "D:\\Research\\NO-2D-Metamaterials\\OUTPUT/output_2026-03-07_01-33-10\\binarized_2026-03-07_01-33-10_pt",
+      "output_pkl_path": "",
+      "log_path": "D:\\Research\\NO-2D-Metamaterials\\OUTPUT\\batched_generation_20260306_150720\\logs\\train_batch_004.log",
+      "batch_idx": 4
+    },
+    {
+      "exit_code": 0,
+      "seed_offset": 5000,
+      "n_struct": 1000,
+      "output_pt_path": "D:\\Research\\NO-2D-Metamaterials\\OUTPUT/output_2026-03-07_03-24-41\\binarized_2026-03-07_03-24-41_pt",
+      "output_pkl_path": "",
+      "log_path": "D:\\Research\\NO-2D-Metamaterials\\OUTPUT\\batched_generation_20260306_150720\\logs\\train_batch_005.log",
+      "batch_idx": 5
+    },
+    {
+      "exit_code": 0,
+      "seed_offset": 6000,
+      "n_struct": 1000,
+      "output_pt_path": "D:\\Research\\NO-2D-Metamaterials\\OUTPUT/output_2026-03-07_05-16-12\\binarized_2026-03-07_05-16-12_pt",
+      "output_pkl_path": "",
+      "log_path": "D:\\Research\\NO-2D-Metamaterials\\OUTPUT\\batched_generation_20260306_150720\\logs\\train_batch_006.log",
+      "batch_idx": 6
+    },
+    {
+      "exit_code": 0,
+      "seed_offset": 7000,
+      "n_struct": 1000,
+      "output_pt_path": "D:\\Research\\NO-2D-Metamaterials\\OUTPUT/output_2026-03-07_07-07-00\\binarized_2026-03-07_07-07-00_pt",
+      "output_pkl_path": "",
+      "log_path": "D:\\Research\\NO-2D-Metamaterials\\OUTPUT\\batched_generation_20260306_150720\\logs\\train_batch_007.log",
+      "batch_idx": 7
+    },
+    {
+      "exit_code": 0,
+      "seed_offset": 8000,
+      "n_struct": 1000,
+      "output_pt_path": "D:\\Research\\NO-2D-Metamaterials\\OUTPUT/output_2026-03-07_08-57-43\\binarized_2026-03-07_08-57-43_pt",
+      "output_pkl_path": "",
+      "log_path": "D:\\Research\\NO-2D-Metamaterials\\OUTPUT\\batched_generation_20260306_150720\\logs\\train_batch_008.log",
+      "batch_idx": 8
+    },
+    {
+      "exit_code": 0,
+      "seed_offset": 9000,
+      "n_struct": 1000,
+      "output_pt_path": "D:\\Research\\NO-2D-Metamaterials\\OUTPUT/output_2026-03-07_10-49-52\\binarized_2026-03-07_10-49-52_pt",
+      "output_pkl_path": "",
+      "log_path": "D:\\Research\\NO-2D-Metamaterials\\OUTPUT\\batched_generation_20260306_150720\\logs\\train_batch_009.log",
+      "batch_idx": 9
+    },
+    {
+      "exit_code": 0,
+      "seed_offset": 10000,
+      "n_struct": 1000,
+      "output_pt_path": "D:\\Research\\NO-2D-Metamaterials\\OUTPUT/output_2026-03-07_12-44-57\\binarized_2026-03-07_12-44-57_pt",
+      "output_pkl_path": "",
+      "log_path": "D:\\Research\\NO-2D-Metamaterials\\OUTPUT\\batched_generation_20260306_150720\\logs\\train_batch_010.log",
+      "batch_idx": 10
+    },
+    {
+      "exit_code": 0,
+      "seed_offset": 11000,
+      "n_struct": 1000,
+      "output_pt_path": "D:\\Research\\NO-2D-Metamaterials\\OUTPUT/output_2026-03-07_14-38-46\\binarized_2026-03-07_14-38-46_pt",
+      "output_pkl_path": "",
+      "log_path": "D:\\Research\\NO-2D-Metamaterials\\OUTPUT\\batched_generation_20260306_150720\\logs\\train_batch_011.log",
+      "batch_idx": 11
+    },
+    {
+      "exit_code": 0,
+      "seed_offset": 12000,
+      "n_struct": 1000,
+      "output_pt_path": "D:\\Research\\NO-2D-Metamaterials\\OUTPUT/output_2026-03-07_16-34-04\\binarized_2026-03-07_16-34-04_pt",
+      "output_pkl_path": "",
+      "log_path": "D:\\Research\\NO-2D-Metamaterials\\OUTPUT\\batched_generation_20260306_150720\\logs\\train_batch_012.log",
+      "batch_idx": 12
+    },
+    {
+      "exit_code": 0,
+      "seed_offset": 13000,
+      "n_struct": 1000,
+      "output_pt_path": "D:\\Research\\NO-2D-Metamaterials\\OUTPUT/output_2026-03-07_18-26-33\\binarized_2026-03-07_18-26-33_pt",
+      "output_pkl_path": "",
+      "log_path": "D:\\Research\\NO-2D-Metamaterials\\OUTPUT\\batched_generation_20260306_150720\\logs\\train_batch_013.log",
+      "batch_idx": 13
+    },
+    {
+      "exit_code": 0,
+      "seed_offset": 14000,
+      "n_struct": 1000,
+      "output_pt_path": "D:\\Research\\NO-2D-Metamaterials\\OUTPUT/output_2026-03-07_20-18-48\\binarized_2026-03-07_20-18-48_pt",
+      "output_pkl_path": "",
+      "log_path": "D:\\Research\\NO-2D-Metamaterials\\OUTPUT\\batched_generation_20260306_150720\\logs\\train_batch_014.log",
+      "batch_idx": 14
+    },
+    {
+      "exit_code": 0,
+      "seed_offset": 15000,
+      "n_struct": 1000,
+      "output_pt_path": "D:\\Research\\NO-2D-Metamaterials\\OUTPUT/output_2026-03-07_22-13-38\\binarized_2026-03-07_22-13-38_pt",
+      "output_pkl_path": "",
+      "log_path": "D:\\Research\\NO-2D-Metamaterials\\OUTPUT\\batched_generation_20260306_150720\\logs\\train_batch_015.log",
+      "batch_idx": 15
+    },
+    {
+      "exit_code": 0,
+      "seed_offset": 16000,
+      "n_struct": 1000,
+      "output_pt_path": "D:\\Research\\NO-2D-Metamaterials\\OUTPUT/output_2026-03-08_00-07-45\\binarized_2026-03-08_00-07-45_pt",
+      "output_pkl_path": "",
+      "log_path": "D:\\Research\\NO-2D-Metamaterials\\OUTPUT\\batched_generation_20260306_150720\\logs\\train_batch_016.log",
+      "batch_idx": 16
+    },
+    {
+      "exit_code": 0,
+      "seed_offset": 17000,
+      "n_struct": 1000,
+      "output_pt_path": "D:\\Research\\NO-2D-Metamaterials\\OUTPUT/output_2026-03-08_03-03-52\\binarized_2026-03-08_03-03-52_pt",
+      "output_pkl_path": "",
+      "log_path": "D:\\Research\\NO-2D-Metamaterials\\OUTPUT\\batched_generation_20260306_150720\\logs\\train_batch_017.log",
+      "batch_idx": 17
+    },
+    {
+      "exit_code": 0,
+      "seed_offset": 18000,
+      "n_struct": 1000,
+      "output_pt_path": "D:\\Research\\NO-2D-Metamaterials\\OUTPUT/output_2026-03-08_05-00-31\\binarized_2026-03-08_05-00-31_pt",
+      "output_pkl_path": "",
+      "log_path": "D:\\Research\\NO-2D-Metamaterials\\OUTPUT\\batched_generation_20260306_150720\\logs\\train_batch_018.log",
+      "batch_idx": 18
+    },
+    {
+      "exit_code": 0,
+      "seed_offset": 19000,
+      "n_struct": 1000,
+      "output_pt_path": "D:\\Research\\NO-2D-Metamaterials\\OUTPUT/output_2026-03-08_06-56-22\\binarized_2026-03-08_06-56-22_pt",
+      "output_pkl_path": "",
+      "log_path": "D:\\Research\\NO-2D-Metamaterials\\OUTPUT\\batched_generation_20260306_150720\\logs\\train_batch_019.log",
+      "batch_idx": 19
+    },
+    {
+      "exit_code": 0,
+      "seed_offset": 20000,
+      "n_struct": 1000,
+      "output_pt_path": "D:\\Research\\NO-2D-Metamaterials\\OUTPUT/output_2026-03-08_08-52-01\\binarized_2026-03-08_08-52-01_pt",
+      "output_pkl_path": "",
+      "log_path": "D:\\Research\\NO-2D-Metamaterials\\OUTPUT\\batched_generation_20260306_150720\\logs\\train_batch_020.log",
+      "batch_idx": 20
+    },
+    {
+      "exit_code": 0,
+      "seed_offset": 21000,
+      "n_struct": 1000,
+      "output_pt_path": "D:\\Research\\NO-2D-Metamaterials\\OUTPUT/output_2026-03-08_10-48-10\\binarized_2026-03-08_10-48-10_pt",
+      "output_pkl_path": "",
+      "log_path": "D:\\Research\\NO-2D-Metamaterials\\OUTPUT\\batched_generation_20260306_150720\\logs\\train_batch_021.log",
+      "batch_idx": 21
+    },
+    {
+      "exit_code": 0,
+      "seed_offset": 22000,
+      "n_struct": 1000,
+      "output_pt_path": "D:\\Research\\NO-2D-Metamaterials\\OUTPUT/output_2026-03-08_12-43-59\\binarized_2026-03-08_12-43-59_pt",
+      "output_pkl_path": "",
+      "log_path": "D:\\Research\\NO-2D-Metamaterials\\OUTPUT\\batched_generation_20260306_150720\\logs\\train_batch_022.log",
+      "batch_idx": 22
+    },
+    {
+      "exit_code": 0,
+      "seed_offset": 23000,
+      "n_struct": 1000,
+      "output_pt_path": "D:\\Research\\NO-2D-Metamaterials\\OUTPUT/output_2026-03-08_14-39-04\\binarized_2026-03-08_14-39-04_pt",
+      "output_pkl_path": "",
+      "log_path": "D:\\Research\\NO-2D-Metamaterials\\OUTPUT\\batched_generation_20260306_150720\\logs\\train_batch_023.log",
+      "batch_idx": 23
+    }
+  ],
+  "validation_batch": {
+    "exit_code": 0,
+    "seed_offset": 24000,
+    "n_struct": 1000,
+    "output_pt_path": "D:\\Research\\NO-2D-Metamaterials\\OUTPUT/output_2026-03-08_16-34-27\\binarized_2026-03-08_16-34-27_pt",
+    "output_pkl_path": "",
+    "log_path": "D:\\Research\\NO-2D-Metamaterials\\OUTPUT\\batched_generation_20260306_150720\\logs\\validation_batch.log",
+    "batch_idx": "validation"
+  }
+}

@@ -1,0 +1,115 @@
+D:\Research\NO-2D-Metamaterials\generate_dispersion_dataset_Han_Alex.py:57: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  "ts_utc": datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
+D:\Research\NO-2D-Metamaterials\2d-dispersion-py\symmetry.py:46: RuntimeWarning: invalid value encountered in divide
+  A_sym = A_sym / np.max(A_sym)
+SUCCESS: Successfully imported functions from the new Python dispersion library
+SUCCESS: Using dispersion_with_matrix_save_opt (the correct function!)
+SUCCESS: Successfully imported functions from the new Python dispersion library
+SUCCESS: Using dispersion_with_matrix_save_opt (the correct function!)
+SUCCESS: Successfully imported functions from the new Python dispersion library
+SUCCESS: Using dispersion_with_matrix_save_opt (the correct function!)
+SUCCESS: Successfully imported functions from the new Python dispersion library
+SUCCESS: Using dispersion_with_matrix_save_opt (the correct function!)
+SUCCESS: Successfully imported functions from the new Python dispersion library
+SUCCESS: Using dispersion_with_matrix_save_opt (the correct function!)
+SUCCESS: Successfully imported functions from the new Python dispersion library
+SUCCESS: Using dispersion_with_matrix_save_opt (the correct function!)
+SUCCESS: Successfully imported functions from the new Python dispersion library
+SUCCESS: Using dispersion_with_matrix_save_opt (the correct function!)
+SUCCESS: Successfully imported functions from the new Python dispersion library
+SUCCESS: Using dispersion_with_matrix_save_opt (the correct function!)
+SUCCESS: Successfully imported functions from the new Python dispersion library
+SUCCESS: Using dispersion_with_matrix_save_opt (the correct function!)
+SUCCESS: Successfully imported functions from the new Python dispersion library
+SUCCESS: Using dispersion_with_matrix_save_opt (the correct function!)
+SUCCESS: Successfully imported functions from the new Python dispersion library
+SUCCESS: Using dispersion_with_matrix_save_opt (the correct function!)
+SUCCESS: Successfully imported functions from the new Python dispersion library
+SUCCESS: Using dispersion_with_matrix_save_opt (the correct function!)
+SUCCESS: Successfully imported functions from the new Python dispersion library
+SUCCESS: Using dispersion_with_matrix_save_opt (the correct function!)
+SUCCESS: Successfully imported functions from the new Python dispersion library
+SUCCESS: Using dispersion_with_matrix_save_opt (the correct function!)
+SUCCESS: Successfully imported functions from the new Python dispersion library
+SUCCESS: Using dispersion_with_matrix_save_opt (the correct function!)
+SUCCESS: Successfully imported functions from the new Python dispersion library
+SUCCESS: Using dispersion_with_matrix_save_opt (the correct function!)
+SUCCESS: Successfully imported functions from the new Python dispersion library
+SUCCESS: Using dispersion_with_matrix_save_opt (the correct function!)
+================================================================================
+GENERATING DISPERSION DATASET WITH PYTHON LIBRARY
+================================================================================
+LOG_EVENT {"binarize": true, "cwd": "D:\\Research\\NO-2D-Metamaterials", "event": "run_start", "level": "INFO", "n_struct": 1000, "parallel_workers": 16, "platform": "Windows-11-10.0.22621-SP0", "python_version": "3.12.4", "rng_seed_offset": 20000, "save_pkl": false, "script": "generate_dispersion_dataset_Han_Alex", "ts_utc": "2026-03-08T10:59:15.347990Z"}
+Generating wavevectors for [25, 13] grid...
+Generated 325 wavevectors
+Initializing storage arrays...
+SUCCESS: Constants validation passed
+
+Generating 1000 structures...
+Parallel workers: 16 (enabled)
+PROGRESS: 1/1000 (0.1%) elapsed=98.7s rate=0.01/s eta=98614.3s
+PROGRESS: 100/1000 (10.0%) elapsed=750.3s rate=0.13/s eta=6752.3s
+PROGRESS: 200/1000 (20.0%) elapsed=1421.7s rate=0.14/s eta=5686.8s
+PROGRESS: 300/1000 (30.0%) elapsed=2103.0s rate=0.14/s eta=4907.0s
+PROGRESS: 400/1000 (40.0%) elapsed=2766.2s rate=0.14/s eta=4149.2s
+PROGRESS: 500/1000 (50.0%) elapsed=3445.4s rate=0.15/s eta=3445.4s
+  ERROR: Error processing structure 562: The truth value of an array with more than one element is ambiguous. Use a.any() or a.all().
+LOG_EVENT {"design_number": 20561, "error_message": "The truth value of an array with more than one element is ambiguous. Use a.any() or a.all().", "event": "structure_failure", "level": "ERROR", "struct_idx_0based": 561, "struct_idx_1based": 562, "ts_utc": "2026-03-08T12:01:41.925537Z"}
+Traceback (most recent call last):
+  File "D:\Research\NO-2D-Metamaterials\2d-dispersion-py\dispersion_with_matrix_save_opt.py", line 237, in dispersion_with_matrix_save_opt
+    eig_vals, eig_vecs = eigs(Kr, M=Mr, **eigs_kwargs)
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\hz283\AppData\Local\anaconda3\Lib\site-packages\scipy\sparse\linalg\_eigen\arpack\arpack.py", line 1341, in eigs
+    Minv_matvec = get_OPinv_matvec(A, M, sigma,
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\hz283\AppData\Local\anaconda3\Lib\site-packages\scipy\sparse\linalg\_eigen\arpack\arpack.py", line 1096, in get_OPinv_matvec
+    return SpLuInv(OP).matvec
+           ^^^^^^^^^^^
+  File "C:\Users\hz283\AppData\Local\anaconda3\Lib\site-packages\scipy\sparse\linalg\_eigen\arpack\arpack.py", line 916, in __init__
+    self.M_lu = splu(M)
+                ^^^^^^^
+  File "C:\Users\hz283\AppData\Local\anaconda3\Lib\site-packages\scipy\sparse\linalg\_dsolve\linsolve.py", line 433, in splu
+    return _superlu.gstrf(N, A.nnz, A.data, indices, indptr,
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+RuntimeError: Factor is exactly singular
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "D:\Research\NO-2D-Metamaterials\generate_dispersion_dataset_Han_Alex.py", line 258, in _compute_single_structure
+    wv, fr, ev, _, K, M, T = dispersion_with_matrix_save_opt(const_local, const_local['wavevectors'])
+                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Research\NO-2D-Metamaterials\2d-dispersion-py\dispersion_with_matrix_save_opt.py", line 239, in dispersion_with_matrix_save_opt
+    _raise_eigensolve_failure(
+  File "D:\Research\NO-2D-Metamaterials\2d-dispersion-py\dispersion_with_matrix_save_opt.py", line 39, in _raise_eigensolve_failure
+    "Kr_nnz": int(getattr(Kr, "nnz", np.count_nonzero(np.asarray(Kr)))),
+                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\hz283\AppData\Local\anaconda3\Lib\site-packages\numpy\_core\numeric.py", line 541, in count_nonzero
+    return multiarray.count_nonzero(a)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\hz283\AppData\Local\anaconda3\Lib\site-packages\scipy\sparse\_base.py", line 441, in __bool__
+    raise ValueError("The truth value of an array with more than one "
+ValueError: The truth value of an array with more than one element is ambiguous. Use a.any() or a.all().
+
+PROGRESS: 600/1000 (60.0%) elapsed=4085.6s rate=0.15/s eta=2723.7s
+PROGRESS: 700/1000 (70.0%) elapsed=4751.3s rate=0.15/s eta=2036.3s
+PROGRESS: 800/1000 (80.0%) elapsed=5449.4s rate=0.15/s eta=1362.4s
+PROGRESS: 900/1000 (90.0%) elapsed=6143.7s rate=0.15/s eta=682.6s
+PROGRESS: 1000/1000 (100.0%) elapsed=6765.0s rate=0.15/s eta=0.0s
+c1 shape: (325,) c2 shape: (325,)
+SUCCESS: PyTorch dataset bundle saved to: D:\Research\NO-2D-Metamaterials\OUTPUT/output_2026-03-08_08-52-01\binarized_2026-03-08_08-52-01_pt
+
+================================================================================
+DATASET GENERATION SUMMARY
+================================================================================
+SUCCESS: Generated 1000 structures
+SUCCESS: Computed dispersion for 325 wavevectors
+SUCCESS: Design size: 32x32 pixels
+SUCCESS: Number of eigenvalues: 6
+SUCCESS: Frequency range: 0.000 - 2636.000 Hz
+SUCCESS: Design type: binarized
+SUCCESS: Eigenvectors saved: (2048, 325, 6, 1000)
+================================================================================
+
+COMPLETED: Script completed successfully!
+The generated dataset is compatible with both MATLAB and Python workflows.

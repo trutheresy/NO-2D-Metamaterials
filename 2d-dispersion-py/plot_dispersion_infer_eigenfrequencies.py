@@ -952,7 +952,7 @@ def main(cli_data_dir=None, cli_original_dir=None, n_structs=None, infer=True, s
     import os
     current_dir = Path(os.getcwd())
     dataset_name = data_dir.name
-    output_dir = current_dir / 'plots' / f'{dataset_name}_recon'
+    output_dir = current_dir / 'PLOTS' / f'{dataset_name}_recon'
     output_dir.mkdir(parents=True, exist_ok=True)
     print(f"Output directory: {output_dir}")
     

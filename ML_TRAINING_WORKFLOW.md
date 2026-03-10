@@ -73,6 +73,10 @@ All active training models must satisfy:
 ### 2.2 Checkpoint and configuration policy
 
 - Name checkpoints with explicit I/O contract and core hyperparameters.
+- Checkpoint naming convention:
+  - epoch checkpoints: `<model_run_name>_E{epoch}.pth`
+  - final checkpoint: `<model_run_name>_final.pth`
+  - optional best checkpoint: `<model_run_name>_best.pth`
 - Store full run configuration as an artifact with every checkpoint.
 - Always record the exact dataset version and split seed used to produce the run.
 
@@ -103,15 +107,15 @@ flowchart TD
    - Build cumulative index offsets to map `global_idx -> (shard_id, local_idx)`.
    - Do not concatenate or preload all shards into RAM.
 4. Initialize disk-backed dataset/dataloader using per-shard `inputs.pt` and `outputs.pt`.
-4. Build model with `in_channels=3`, `out_channels=5`.
-5. Start MLflow run and log config immediately.
-6. Train per epoch:
+5. Build model with `in_channels=3`, `out_channels=5`.
+6. Start MLflow run and log config immediately.
+7. Train per epoch:
    - train pass
    - validation pass
    - checkpoint save
    - MLflow metric/artifact logging
-7. Select best checkpoint by documented criterion.
-8. Run final test evaluation and log final artifacts.
+8. Select best checkpoint by documented criterion.
+9. Run final test evaluation and log final artifacts.
 
 ### 3.2 Reproducibility controls
 
@@ -141,11 +145,11 @@ Use `DataLoader` to batch and prefetch from disk in parallel workers.
 ### 4.3 Baseline loader settings
 
 Starting point for this hardware profile:
-- `batch_size=256` (tune with GPU memory headroom)
+- `batch_size=260`
 - `num_workers=16`
 - `pin_memory=True`
 - `persistent_workers=True`
-- `prefetch_factor=2`
+- `prefetch_factor=3`
 - `shuffle=True` for train, `False` for eval
 - `non_blocking=True` on host->GPU transfer
 
@@ -256,8 +260,9 @@ Recommended:
 
 Log artifacts:
 - full resolved config file (`yaml` or `json`)
-- best checkpoint (`best.pth`)
-- final checkpoint (`final.pth`)
+- best checkpoint (`<model_run_name>_best.pth`)
+- final checkpoint (`<model_run_name>_final.pth`)
+- epoch checkpoints (`<model_run_name>_E{epoch}.pth`)
 - loss curves plot
 - per-channel evaluation summary (`json` or `csv`)
 - optional inference sample panels
@@ -305,4 +310,3 @@ A model is promoted only if:
 
 - Older notebook pipelines that index-build in Python loops are useful for prototyping, but for production-scale runs prefer direct `inputs.pt`/`outputs.pt` streaming.
 - Keep document and code contract synchronized: if channel semantics change, bump contract version and update this file.
-- Never compare runs across different channel contracts (e.g., out4 vs out5) without explicit migration notes.

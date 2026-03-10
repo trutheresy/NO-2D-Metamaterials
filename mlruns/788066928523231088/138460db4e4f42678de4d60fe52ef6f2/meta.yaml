@@ -1,0 +1,14 @@
+artifact_uri: file:///D:/Research/NO-2D-Metamaterials/mlruns/788066928523231088/138460db4e4f42678de4d60fe52ef6f2/artifacts
+end_time: 1773129050792
+entry_point_name: ''
+experiment_id: '788066928523231088'
+lifecycle_stage: active
+run_id: 138460db4e4f42678de4d60fe52ef6f2
+run_name: NO_I3O5_BCF16_L2_HC256_LR2e-03_WD0e+00_SS1_G9e-01_260310
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1773128969385
+status: 4
+tags: []
+user_id: hz283

@@ -21,14 +21,14 @@ Both Python and MATLAB scripts have been successfully modified to save plot poin
 
 - **Case 2 (With eigenfrequencies)**:
   - **Status**: ✅ SUCCESS
-  - **Output**: `2D-dispersion-han/plots/out_binarized_1_mat/plot_points.mat`
+  - **Output**: `2D-dispersion-han/PLOTS/out_binarized_1_mat/plot_points.mat`
   - **Structures saved**: 10 structures (struct_1 through struct_10)
   - **Data saved**: wavevectors_contour, frequencies_contour, contour_param, use_interpolation
 
 ### ✅ 3. Python Scripts Execution
 - **Case 1 (Without eigenfrequencies)**:
   - **Status**: ✅ SUCCESS
-  - **Output**: `plots/out_binarized_1_recon/plot_points.npz`
+  - **Output**: `PLOTS/out_binarized_1_recon/plot_points.npz`
   - **Structures saved**: 1 structure (struct_0)
   - **Mode**: Grid points only (use_interpolation=False)
 
@@ -96,12 +96,12 @@ Both approaches are valid, but they produce different point sets.
 ## File Locations
 
 ### Python Outputs:
-- Case 1: `plots/out_binarized_1_recon/plot_points.npz`
+- Case 1: `PLOTS/out_binarized_1_recon/plot_points.npz`
 - Case 2: (Not yet generated - needs grid interpolation fix)
 
 ### MATLAB Outputs:
 - Case 1: (Not generated - data file path issue)
-- Case 2: `2D-dispersion-han/plots/out_binarized_1_mat/plot_points.mat`
+- Case 2: `2D-dispersion-han/PLOTS/out_binarized_1_mat/plot_points.mat`
 
 ## Next Steps
 

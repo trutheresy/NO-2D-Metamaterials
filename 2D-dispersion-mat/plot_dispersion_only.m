@@ -39,8 +39,8 @@ aux_data = load(aux_data_fn);
 isExportPng = false;
 png_resolution = 150;
 
-% Output root: save under plots/<dataset_name>_mat/... (in current directory)
-output_root = fullfile(pwd, 'plots', [fn '_mat']);
+% Output root: save under PLOTS/<dataset_name>_mat/... (in current directory)
+output_root = fullfile(pwd, 'PLOTS', [fn '_mat']);
 
 % Make plots for one unit cell or multiple
 struct_idxs = 1:3;

@@ -58,24 +58,24 @@ data = struct with fields:
 **Generated Plots (saved as PNG files):**
 
 1. **Material Property Fields:**
-   - **Path:** `plots/<dataset_name>_mat/constitutive_fields/<struct_idx>.png`
+   - **Path:** `PLOTS/<dataset_name>_mat/constitutive_fields/<struct_idx>.png`
    - **Content:** 3-panel figure showing E, rho, nu as grayscale images
    - **Type:** `figure` → `exportgraphics()`
 
 2. **IBZ Contour Wavevectors:**
-   - **Path:** `plots/<dataset_name>_mat/contour/<struct_idx>.png`
+   - **Path:** `PLOTS/<dataset_name>_mat/contour/<struct_idx>.png`
    - **Content:** Scatter plot of wavevectors along IBZ contour
    - **Type:** `figure` → `exportgraphics()`
    - **Note:** Only plotted for first structure
 
 3. **Original Dispersion Curves:**
-   - **Path:** `plots/<dataset_name>_mat/dispersion/<struct_idx>.png`
+   - **Path:** `PLOTS/<dataset_name>_mat/dispersion/<struct_idx>.png`
    - **Content:** Line plot of `frequencies_contour` vs `contour_info.wavevector_parameter`
    - **Type:** `figure` → `exportgraphics()`
    - **Shape:** `(N_contour_points, N_eig)` frequencies vs `(N_contour_points,)` parameter
 
 4. **Reconstructed Dispersion Curves (if available):**
-   - **Path:** `plots/<dataset_name>_mat/dispersion/<struct_idx>_recon.png`
+   - **Path:** `PLOTS/<dataset_name>_mat/dispersion/<struct_idx>_recon.png`
    - **Content:** Overlay plot showing original (blue) and reconstructed (red) frequencies
    - **Type:** `figure` → `exportgraphics()`
 
@@ -143,17 +143,17 @@ data = {
 **Generated Plots (saved as PNG files):**
 
 1. **Material Property Fields:**
-   - **Path:** `plots/<dataset_name>_mat/constitutive_fields/<struct_idx>.png`
+   - **Path:** `PLOTS/<dataset_name>_mat/constitutive_fields/<struct_idx>.png`
    - **Content:** 3-panel figure using `plot_design()` function
    - **Type:** `matplotlib.figure.Figure` → `fig.savefig()`
 
 2. **IBZ Contour Wavevectors:**
-   - **Path:** `plots/<dataset_name>_mat/contour/<struct_idx>.png`
+   - **Path:** `PLOTS/<dataset_name>_mat/contour/<struct_idx>.png`
    - **Content:** Scatter plot using `plt.scatter()` or `plt.plot()`
    - **Type:** `matplotlib.figure.Figure` → `fig.savefig()`
 
 3. **Original Dispersion Curves:**
-   - **Path:** `plots/<dataset_name>_mat/dispersion/<struct_idx>.png`
+   - **Path:** `PLOTS/<dataset_name>_mat/dispersion/<struct_idx>.png`
    - **Content:** Line plot using `plot_dispersion()` function
    - **Type:** `matplotlib.figure.Figure` → `fig.savefig()`
    - **Function Call:**
@@ -167,7 +167,7 @@ data = {
      ```
 
 4. **Reconstructed Dispersion Curves (if available):**
-   - **Path:** `plots/<dataset_name>_mat/dispersion/<struct_idx>_recon.png`
+   - **Path:** `PLOTS/<dataset_name>_mat/dispersion/<struct_idx>_recon.png`
    - **Content:** Overlay plot using `plt.plot()` with different styles/colors
    - **Type:** `matplotlib.figure.Figure` → `fig.savefig()`
 

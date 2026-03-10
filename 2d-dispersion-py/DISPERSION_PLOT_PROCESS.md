@@ -207,7 +207,7 @@ For each `wv_idx` in range(n_wavevectors):
 6. Save figure: `fig.savefig(png_path, dpi=150, bbox_inches='tight')`
 
 **Output:**
-- PNG file: `plots/<dataset_name>_recon/dispersion/<struct_idx>_recon.png`
+- PNG file: `PLOTS/<dataset_name>_recon/dispersion/<struct_idx>_recon.png`
 
 **Potential Issues:**
 - Empty plot if `frequencies_contour` is empty

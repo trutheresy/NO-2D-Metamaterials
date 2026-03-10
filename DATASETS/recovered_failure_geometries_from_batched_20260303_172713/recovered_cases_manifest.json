@@ -1,0 +1,138 @@
+{
+  "source_run_root": "D:/Research/NO-2D-Metamaterials\\OUTPUT\\batched_generation_20260303_172713",
+  "n_failures": 12,
+  "cases": [
+    {
+      "log_file": "train_batch_000.log",
+      "logged_structure": 524,
+      "struct_idx0": 523,
+      "seed_offset": 0,
+      "design_number": 523,
+      "geom_min": -0.0005006790161132812,
+      "geom_max": 1.0,
+      "geom_nnz": 1024,
+      "geom_hash": "ed94554122a3d71ec73dca95f7f9109c0ae64de3"
+    },
+    {
+      "log_file": "train_batch_003.log",
+      "logged_structure": 252,
+      "struct_idx0": 251,
+      "seed_offset": 3000,
+      "design_number": 3251,
+      "geom_min": -0.0005006790161132812,
+      "geom_max": 1.0,
+      "geom_nnz": 1024,
+      "geom_hash": "c1558b60203c80f4cad4656b3072371332176d00"
+    },
+    {
+      "log_file": "train_batch_005.log",
+      "logged_structure": 999,
+      "struct_idx0": 998,
+      "seed_offset": 5000,
+      "design_number": 5998,
+      "geom_min": -0.0005006790161132812,
+      "geom_max": 1.0,
+      "geom_nnz": 1024,
+      "geom_hash": "6477789fe181cb7ccd3fde2e7adc97d80c983076"
+    },
+    {
+      "log_file": "train_batch_010.log",
+      "logged_structure": 547,
+      "struct_idx0": 546,
+      "seed_offset": 10000,
+      "design_number": 10546,
+      "geom_min": -0.0005006790161132812,
+      "geom_max": 1.0,
+      "geom_nnz": 1024,
+      "geom_hash": "a0f1d1a1aa337f51847bd669c7933a6c28f6818d"
+    },
+    {
+      "log_file": "train_batch_011.log",
+      "logged_structure": 621,
+      "struct_idx0": 620,
+      "seed_offset": 11000,
+      "design_number": 11620,
+      "geom_min": -0.0005006790161132812,
+      "geom_max": 1.0,
+      "geom_nnz": 1024,
+      "geom_hash": "9ed0e5e8f780b45bb0328cb8c7c0b234d5e52569"
+    },
+    {
+      "log_file": "train_batch_013.log",
+      "logged_structure": 360,
+      "struct_idx0": 359,
+      "seed_offset": 13000,
+      "design_number": 13359,
+      "geom_min": -0.0005006790161132812,
+      "geom_max": 1.0,
+      "geom_nnz": 1024,
+      "geom_hash": "e274c755cbda7afc6dd210009b7faab5bfd5929c"
+    },
+    {
+      "log_file": "train_batch_013.log",
+      "logged_structure": 375,
+      "struct_idx0": 374,
+      "seed_offset": 13000,
+      "design_number": 13374,
+      "geom_min": -0.0005006790161132812,
+      "geom_max": 1.0,
+      "geom_nnz": 1024,
+      "geom_hash": "08a74293a73a6ce0dc77b05d22c9c9ab38adb479"
+    },
+    {
+      "log_file": "train_batch_015.log",
+      "logged_structure": 154,
+      "struct_idx0": 153,
+      "seed_offset": 15000,
+      "design_number": 15153,
+      "geom_min": -0.0005006790161132812,
+      "geom_max": 1.0,
+      "geom_nnz": 1024,
+      "geom_hash": "0eaba6390899ad5fd07b7a9cc5a404c8b14a84bd"
+    },
+    {
+      "log_file": "train_batch_015.log",
+      "logged_structure": 580,
+      "struct_idx0": 579,
+      "seed_offset": 15000,
+      "design_number": 15579,
+      "geom_min": -0.0005006790161132812,
+      "geom_max": 1.0,
+      "geom_nnz": 1024,
+      "geom_hash": "316c09a8221bc6f0fb1dfccf39f0bfa565b5b6ae"
+    },
+    {
+      "log_file": "train_batch_019.log",
+      "logged_structure": 949,
+      "struct_idx0": 948,
+      "seed_offset": 19000,
+      "design_number": 19948,
+      "geom_min": -0.0005006790161132812,
+      "geom_max": 1.0,
+      "geom_nnz": 1024,
+      "geom_hash": "da43548d1e161906dd804b747ae00978e99a8e06"
+    },
+    {
+      "log_file": "train_batch_020.log",
+      "logged_structure": 562,
+      "struct_idx0": 561,
+      "seed_offset": 20000,
+      "design_number": 20561,
+      "geom_min": -0.0005006790161132812,
+      "geom_max": 1.0,
+      "geom_nnz": 1024,
+      "geom_hash": "f654697868426d45891b4e0d1ccb2804a7ca775a"
+    },
+    {
+      "log_file": "train_batch_022.log",
+      "logged_structure": 229,
+      "struct_idx0": 228,
+      "seed_offset": 22000,
+      "design_number": 22228,
+      "geom_min": -0.0005006790161132812,
+      "geom_max": 1.0,
+      "geom_nnz": 1024,
+      "geom_hash": "422409ee996727c794424e335473b002997c8e37"
+    }
+  ]
+}

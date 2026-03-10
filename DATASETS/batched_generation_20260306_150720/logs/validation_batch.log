@@ -1,0 +1,75 @@
+D:\Research\NO-2D-Metamaterials\generate_dispersion_dataset_Han_Alex.py:57: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  "ts_utc": datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
+SUCCESS: Successfully imported functions from the new Python dispersion library
+SUCCESS: Using dispersion_with_matrix_save_opt (the correct function!)
+SUCCESS: Successfully imported functions from the new Python dispersion library
+SUCCESS: Using dispersion_with_matrix_save_opt (the correct function!)
+SUCCESS: Successfully imported functions from the new Python dispersion library
+SUCCESS: Using dispersion_with_matrix_save_opt (the correct function!)
+SUCCESS: Successfully imported functions from the new Python dispersion library
+SUCCESS: Using dispersion_with_matrix_save_opt (the correct function!)
+SUCCESS: Successfully imported functions from the new Python dispersion library
+SUCCESS: Using dispersion_with_matrix_save_opt (the correct function!)
+SUCCESS: Successfully imported functions from the new Python dispersion library
+SUCCESS: Using dispersion_with_matrix_save_opt (the correct function!)
+SUCCESS: Successfully imported functions from the new Python dispersion library
+SUCCESS: Using dispersion_with_matrix_save_opt (the correct function!)
+SUCCESS: Successfully imported functions from the new Python dispersion library
+SUCCESS: Using dispersion_with_matrix_save_opt (the correct function!)
+SUCCESS: Successfully imported functions from the new Python dispersion library
+SUCCESS: Using dispersion_with_matrix_save_opt (the correct function!)
+SUCCESS: Successfully imported functions from the new Python dispersion library
+SUCCESS: Using dispersion_with_matrix_save_opt (the correct function!)
+SUCCESS: Successfully imported functions from the new Python dispersion library
+SUCCESS: Using dispersion_with_matrix_save_opt (the correct function!)
+SUCCESS: Successfully imported functions from the new Python dispersion library
+SUCCESS: Using dispersion_with_matrix_save_opt (the correct function!)
+SUCCESS: Successfully imported functions from the new Python dispersion library
+SUCCESS: Using dispersion_with_matrix_save_opt (the correct function!)
+SUCCESS: Successfully imported functions from the new Python dispersion library
+SUCCESS: Using dispersion_with_matrix_save_opt (the correct function!)
+SUCCESS: Successfully imported functions from the new Python dispersion library
+SUCCESS: Using dispersion_with_matrix_save_opt (the correct function!)
+SUCCESS: Successfully imported functions from the new Python dispersion library
+SUCCESS: Using dispersion_with_matrix_save_opt (the correct function!)
+SUCCESS: Successfully imported functions from the new Python dispersion library
+SUCCESS: Using dispersion_with_matrix_save_opt (the correct function!)
+================================================================================
+GENERATING DISPERSION DATASET WITH PYTHON LIBRARY
+================================================================================
+LOG_EVENT {"binarize": true, "cwd": "D:\\Research\\NO-2D-Metamaterials", "event": "run_start", "level": "INFO", "n_struct": 1000, "parallel_workers": 16, "platform": "Windows-11-10.0.22621-SP0", "python_version": "3.12.4", "rng_seed_offset": 24000, "save_pkl": false, "script": "generate_dispersion_dataset_Han_Alex", "ts_utc": "2026-03-08T18:43:02.345162Z"}
+Generating wavevectors for [25, 13] grid...
+Generated 325 wavevectors
+Initializing storage arrays...
+SUCCESS: Constants validation passed
+
+Generating 1000 structures...
+Parallel workers: 16 (enabled)
+PROGRESS: 1/1000 (0.1%) elapsed=112.2s rate=0.01/s eta=112118.5s
+PROGRESS: 100/1000 (10.0%) elapsed=750.2s rate=0.13/s eta=6751.9s
+PROGRESS: 200/1000 (20.0%) elapsed=1393.6s rate=0.14/s eta=5574.5s
+PROGRESS: 300/1000 (30.0%) elapsed=2058.9s rate=0.15/s eta=4804.0s
+PROGRESS: 400/1000 (40.0%) elapsed=2711.1s rate=0.15/s eta=4066.6s
+PROGRESS: 500/1000 (50.0%) elapsed=3371.0s rate=0.15/s eta=3371.0s
+PROGRESS: 600/1000 (60.0%) elapsed=4016.6s rate=0.15/s eta=2677.7s
+PROGRESS: 700/1000 (70.0%) elapsed=4689.9s rate=0.15/s eta=2009.9s
+PROGRESS: 800/1000 (80.0%) elapsed=5354.5s rate=0.15/s eta=1338.6s
+PROGRESS: 900/1000 (90.0%) elapsed=6035.0s rate=0.15/s eta=670.6s
+PROGRESS: 1000/1000 (100.0%) elapsed=6684.0s rate=0.15/s eta=0.0s
+c1 shape: (325,) c2 shape: (325,)
+SUCCESS: PyTorch dataset bundle saved to: D:\Research\NO-2D-Metamaterials\OUTPUT/output_2026-03-08_16-34-27\binarized_2026-03-08_16-34-27_pt
+
+================================================================================
+DATASET GENERATION SUMMARY
+================================================================================
+SUCCESS: Generated 1000 structures
+SUCCESS: Computed dispersion for 325 wavevectors
+SUCCESS: Design size: 32x32 pixels
+SUCCESS: Number of eigenvalues: 6
+SUCCESS: Frequency range: 0.000 - 2786.000 Hz
+SUCCESS: Design type: binarized
+SUCCESS: Eigenvectors saved: (2048, 325, 6, 1000)
+================================================================================
+
+COMPLETED: Script completed successfully!
+The generated dataset is compatible with both MATLAB and Python workflows.

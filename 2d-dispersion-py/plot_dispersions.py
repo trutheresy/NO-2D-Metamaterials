@@ -48,7 +48,7 @@ def main(data_dir: str, n_structs: int | None = None) -> None:
     n_total = int(designs.shape[0])
     n_plot = n_total if n_structs is None else min(int(n_structs), n_total)
 
-    output_dir = Path.cwd() / "plots" / f"{data_path.name}_full"
+    output_dir = Path.cwd() / "PLOTS" / f"{data_path.name}_full"
     output_dir.mkdir(parents=True, exist_ok=True)
 
     # Keep wavevector/dispersion logic consistent with existing plotting flow.

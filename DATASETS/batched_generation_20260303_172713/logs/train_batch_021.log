@@ -1,0 +1,72 @@
+SUCCESS: Successfully imported functions from the new Python dispersion library
+SUCCESS: Using dispersion_with_matrix_save_opt (the correct function!)
+SUCCESS: Successfully imported functions from the new Python dispersion library
+SUCCESS: Using dispersion_with_matrix_save_opt (the correct function!)
+SUCCESS: Successfully imported functions from the new Python dispersion library
+SUCCESS: Using dispersion_with_matrix_save_opt (the correct function!)
+SUCCESS: Successfully imported functions from the new Python dispersion library
+SUCCESS: Using dispersion_with_matrix_save_opt (the correct function!)
+SUCCESS: Successfully imported functions from the new Python dispersion library
+SUCCESS: Using dispersion_with_matrix_save_opt (the correct function!)
+SUCCESS: Successfully imported functions from the new Python dispersion library
+SUCCESS: Using dispersion_with_matrix_save_opt (the correct function!)
+SUCCESS: Successfully imported functions from the new Python dispersion library
+SUCCESS: Using dispersion_with_matrix_save_opt (the correct function!)
+SUCCESS: Successfully imported functions from the new Python dispersion library
+SUCCESS: Using dispersion_with_matrix_save_opt (the correct function!)
+SUCCESS: Successfully imported functions from the new Python dispersion library
+SUCCESS: Using dispersion_with_matrix_save_opt (the correct function!)
+SUCCESS: Successfully imported functions from the new Python dispersion library
+SUCCESS: Using dispersion_with_matrix_save_opt (the correct function!)
+SUCCESS: Successfully imported functions from the new Python dispersion library
+SUCCESS: Using dispersion_with_matrix_save_opt (the correct function!)
+SUCCESS: Successfully imported functions from the new Python dispersion library
+SUCCESS: Using dispersion_with_matrix_save_opt (the correct function!)
+SUCCESS: Successfully imported functions from the new Python dispersion library
+SUCCESS: Using dispersion_with_matrix_save_opt (the correct function!)
+SUCCESS: Successfully imported functions from the new Python dispersion library
+SUCCESS: Using dispersion_with_matrix_save_opt (the correct function!)
+SUCCESS: Successfully imported functions from the new Python dispersion library
+SUCCESS: Using dispersion_with_matrix_save_opt (the correct function!)
+SUCCESS: Successfully imported functions from the new Python dispersion library
+SUCCESS: Using dispersion_with_matrix_save_opt (the correct function!)
+SUCCESS: Successfully imported functions from the new Python dispersion library
+SUCCESS: Using dispersion_with_matrix_save_opt (the correct function!)
+================================================================================
+GENERATING DISPERSION DATASET WITH PYTHON LIBRARY
+================================================================================
+Generating wavevectors for [25, 13] grid...
+Generated 325 wavevectors
+Initializing storage arrays...
+SUCCESS: Constants validation passed
+
+Generating 1000 structures...
+Parallel workers: 16 (enabled)
+PROGRESS: 1/1000 (0.1%) elapsed=88.4s rate=0.01/s eta=88357.5s
+PROGRESS: 100/1000 (10.0%) elapsed=661.1s rate=0.15/s eta=5949.6s
+PROGRESS: 200/1000 (20.0%) elapsed=1226.2s rate=0.16/s eta=4904.7s
+PROGRESS: 300/1000 (30.0%) elapsed=1803.3s rate=0.17/s eta=4207.6s
+PROGRESS: 400/1000 (40.0%) elapsed=2382.9s rate=0.17/s eta=3574.4s
+PROGRESS: 500/1000 (50.0%) elapsed=2958.2s rate=0.17/s eta=2958.2s
+PROGRESS: 600/1000 (60.0%) elapsed=3523.7s rate=0.17/s eta=2349.1s
+PROGRESS: 700/1000 (70.0%) elapsed=4128.3s rate=0.17/s eta=1769.3s
+PROGRESS: 800/1000 (80.0%) elapsed=4684.0s rate=0.17/s eta=1171.0s
+PROGRESS: 900/1000 (90.0%) elapsed=5262.6s rate=0.17/s eta=584.7s
+PROGRESS: 1000/1000 (100.0%) elapsed=5848.5s rate=0.17/s eta=0.0s
+c1 shape: (325,) c2 shape: (325,)
+SUCCESS: PyTorch dataset bundle saved to: D:\Research\NO-2D-Metamaterials\OUTPUT/output_2026-03-05_15-03-27\continuous_2026-03-05_15-03-27_pt
+
+================================================================================
+DATASET GENERATION SUMMARY
+================================================================================
+SUCCESS: Generated 1000 structures
+SUCCESS: Computed dispersion for 325 wavevectors
+SUCCESS: Design size: 32x32 pixels
+SUCCESS: Number of eigenvalues: 6
+SUCCESS: Frequency range: 0.000 - 3844.000 Hz
+SUCCESS: Design type: continuous
+SUCCESS: Eigenvectors saved: (2048, 325, 6, 1000)
+================================================================================
+
+COMPLETED: Script completed successfully!
+The generated dataset is compatible with both MATLAB and Python workflows.

@@ -41,7 +41,7 @@ This will automatically run both scripts and generate the plot_points.mat files.
    plot_dispersion_from_predictions
    ```
 
-4. Expected output: `plots/out_binarized_1_mat/plot_points.mat`
+4. Expected output: `PLOTS/out_binarized_1_mat/plot_points.mat`
 
 #### Case 2: With Eigenfrequencies
 
@@ -63,7 +63,7 @@ This will automatically run both scripts and generate the plot_points.mat files.
    plot_dispersion
    ```
 
-4. Expected output: `plots/out_binarized_1_mat/plot_points.mat` (may overwrite Case 1 if same output directory)
+4. Expected output: `PLOTS/out_binarized_1_mat/plot_points.mat` (may overwrite Case 1 if same output directory)
 
 ## Verification
 
@@ -71,7 +71,7 @@ After running the scripts, verify that the files were created:
 
 ```matlab
 % Check Case 1 output
-case1_file = fullfile('plots', 'out_binarized_1_mat', 'plot_points.mat');
+case1_file = fullfile('PLOTS', 'out_binarized_1_mat', 'plot_points.mat');
 if exist(case1_file, 'file')
     fprintf('✓ Case 1 plot_points.mat created\n');
     load(case1_file);
@@ -101,7 +101,7 @@ This will compare the Python and MATLAB plot point locations and report any disc
 
 ### Issue: plot_points.mat not created
 - **Solution**: Check that `isSavePlotPoints = true` in the script (it should be by default)
-- Check the output directory: `plots/out_binarized_1_mat/`
+- Check the output directory: `PLOTS/out_binarized_1_mat/`
 - Look for error messages in the MATLAB command window
 
 ### Issue: Script errors during execution

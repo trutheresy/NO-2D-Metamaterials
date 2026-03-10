@@ -1,0 +1,78 @@
+{
+  "n_cases": 12,
+  "n_failures_detected": 0,
+  "results": [
+    {
+      "design_number": 523,
+      "log_file": "train_batch_000.log",
+      "logged_structure": 524,
+      "failure_found": false
+    },
+    {
+      "design_number": 3251,
+      "log_file": "train_batch_003.log",
+      "logged_structure": 252,
+      "failure_found": false
+    },
+    {
+      "design_number": 5998,
+      "log_file": "train_batch_005.log",
+      "logged_structure": 999,
+      "failure_found": false
+    },
+    {
+      "design_number": 10546,
+      "log_file": "train_batch_010.log",
+      "logged_structure": 547,
+      "failure_found": false
+    },
+    {
+      "design_number": 11620,
+      "log_file": "train_batch_011.log",
+      "logged_structure": 621,
+      "failure_found": false
+    },
+    {
+      "design_number": 13359,
+      "log_file": "train_batch_013.log",
+      "logged_structure": 360,
+      "failure_found": false
+    },
+    {
+      "design_number": 13374,
+      "log_file": "train_batch_013.log",
+      "logged_structure": 375,
+      "failure_found": false
+    },
+    {
+      "design_number": 15153,
+      "log_file": "train_batch_015.log",
+      "logged_structure": 154,
+      "failure_found": false
+    },
+    {
+      "design_number": 15579,
+      "log_file": "train_batch_015.log",
+      "logged_structure": 580,
+      "failure_found": false
+    },
+    {
+      "design_number": 19948,
+      "log_file": "train_batch_019.log",
+      "logged_structure": 949,
+      "failure_found": false
+    },
+    {
+      "design_number": 20561,
+      "log_file": "train_batch_020.log",
+      "logged_structure": 562,
+      "failure_found": false
+    },
+    {
+      "design_number": 22228,
+      "log_file": "train_batch_022.log",
+      "logged_structure": 229,
+      "failure_found": false
+    }
+  ]
+}

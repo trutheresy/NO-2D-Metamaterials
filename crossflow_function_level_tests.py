@@ -38,7 +38,7 @@ def _paths(repo_root: Path) -> Paths:
     return Paths(
         repo_root=repo_root,
         out_root=out,
-        plots=out / "plots",
+        plots=out / "PLOTS",
         fixed_input_mat=out / "fixed_geometry_input.mat",
         remap_npy=out / "wavevector_index_remap.npy",
         wavevector_parity_json=out / "wavevector_parity.json",

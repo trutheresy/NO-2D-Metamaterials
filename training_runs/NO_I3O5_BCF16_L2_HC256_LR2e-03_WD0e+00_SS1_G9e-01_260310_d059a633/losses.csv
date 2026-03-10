@@ -1,0 +1,1 @@
+epoch,train_loss,val_loss,lr,epoch_time_sec,train_samples_per_sec,val_samples_per_sec,val_loss_ch0,val_loss_ch1,val_loss_ch2,val_loss_ch3,val_loss_ch4

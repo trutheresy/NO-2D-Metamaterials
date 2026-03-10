@@ -16,7 +16,7 @@ INPUT_DIR = REPO_ROOT / "crossflow_outputs"
 OUT_DIR = REPO_ROOT / "crossflow_native_exports"
 MATLAB_NATIVE_DIR = OUT_DIR / "matlab_native"
 PYTHON_NATIVE_DIR = OUT_DIR / "python_native"
-PLOTS_DIR = OUT_DIR / "plots"
+PLOTS_DIR = OUT_DIR / "PLOTS"
 
 
 def _strip_meta_keys(payload: dict[str, Any]) -> dict[str, Any]:

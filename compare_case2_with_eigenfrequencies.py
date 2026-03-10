@@ -171,8 +171,8 @@ def main():
     print(f"\nPython output: {case2_py}")
     
     # Find MATLAB output
-    case2_ml = Path("2D-dispersion-han/plots/out_binarized_1_mat/plot_points.mat")
-    case2_ml_alt = Path("plots/out_binarized_1_mat/plot_points.mat")
+    case2_ml = Path("2D-dispersion-han/PLOTS/out_binarized_1_mat/plot_points.mat")
+    case2_ml_alt = Path("PLOTS/out_binarized_1_mat/plot_points.mat")
     
     case2_ml_actual = case2_ml if case2_ml.exists() else (case2_ml_alt if case2_ml_alt.exists() else None)
     

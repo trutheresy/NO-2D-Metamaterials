@@ -196,19 +196,19 @@ def main():
     print("="*70)
     
     # Case 1: Without eigenfrequencies (reconstructed)
-    case1_py = Path("plots/out_binarized_1_recon/plot_points.npz")
+    case1_py = Path("PLOTS/out_binarized_1_recon/plot_points.npz")
     # MATLAB may save in different locations depending on where script is run from
-    case1_ml = Path("plots/out_binarized_1_mat/plot_points.mat")
-    case1_ml_alt = Path("2D-dispersion-han/plots/out_binarized_1_mat/plot_points.mat")
+    case1_ml = Path("PLOTS/out_binarized_1_mat/plot_points.mat")
+    case1_ml_alt = Path("2D-dispersion-han/PLOTS/out_binarized_1_mat/plot_points.mat")
     
     # Case 2: With eigenfrequencies
-    case2_ml = Path("2D-dispersion-han/plots/out_binarized_1_mat/plot_points.mat")
-    case2_ml_alt = Path("plots/out_binarized_1_mat/plot_points.mat")
+    case2_ml = Path("2D-dispersion-han/PLOTS/out_binarized_1_mat/plot_points.mat")
+    case2_ml_alt = Path("PLOTS/out_binarized_1_mat/plot_points.mat")
     
     # Case 2: With eigenfrequencies
     # Note: Python script had issues loading the MATLAB file, so we'll skip this for now
-    # case2_py = Path("plots/.../plot_points.npz")
-    # case2_ml = Path("plots/out_binarized_1_mat/plot_points.mat")
+    # case2_py = Path("PLOTS/.../plot_points.npz")
+    # case2_ml = Path("PLOTS/out_binarized_1_mat/plot_points.mat")
     
     all_discrepancies = {}
     
@@ -272,7 +272,7 @@ def main():
     import os
     py_case2_patterns = [
         "dispersion_plots_*_mat/plot_points.npz",
-        "plots/*_mat/plot_points.npz"
+        "PLOTS/*_mat/plot_points.npz"
     ]
     all_py_case2 = []
     for pattern in py_case2_patterns:

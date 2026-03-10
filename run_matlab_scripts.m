@@ -111,7 +111,7 @@ fprintf('Summary\n');
 fprintf('======================================================================\n');
 
 % Check for generated plot_points.mat files
-plots_dir = fullfile(current_dir, 'plots');
+plots_dir = fullfile(current_dir, 'PLOTS');
 case1_output = fullfile(plots_dir, 'out_binarized_1_mat', 'plot_points.mat');
 case2_output = fullfile(plots_dir, 'out_binarized_1_mat', 'plot_points.mat');
 

@@ -7,7 +7,7 @@ Comparison between Python and MATLAB saved plot points for Case 2 (with eigenfre
 ## Files Compared
 
 - **Python**: `dispersion_plots_20260112_015717_mat/plot_points.npz` (struct_0)
-- **MATLAB**: `2D-dispersion-han/plots/out_binarized_1_mat/plot_points.mat` (struct_1)
+- **MATLAB**: `2D-dispersion-han/PLOTS/out_binarized_1_mat/plot_points.mat` (struct_1)
 
 ## Key Differences Found
 

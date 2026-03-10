@@ -123,8 +123,8 @@ isExportPng = true;
 png_resolution = 150;
 isSavePlotPoints = true;  % Save plot point locations for comparison with Python
 
-% Output root: save under plots/<dataset_name>_mat/... (in current directory)
-output_root = fullfile(pwd, 'plots', [fn '_mat']);
+% Output root: save under PLOTS/<dataset_name>_mat/... (in current directory)
+output_root = fullfile(pwd, 'PLOTS', [fn '_mat']);
 
 % Make plots for one unit cell or multiple
 struct_idxs = 1:10;

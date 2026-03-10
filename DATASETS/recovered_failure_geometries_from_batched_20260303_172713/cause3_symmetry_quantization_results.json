@@ -1,0 +1,134 @@
+{
+  "cause": "cause3_symmetry_quantization",
+  "subset": "small_failures",
+  "n_cases": 5,
+  "wavevectors_used": 10,
+  "variants": {
+    "current_float16": {
+      "inf_cases": 0,
+      "mean_rel_avg": 85832638296.78577,
+      "max_rel_max": 4457518100738.525,
+      "cases": [
+        {
+          "idx": 0,
+          "design_number": 523,
+          "status": "ok",
+          "mean_rel": 119439522425.58951,
+          "max_rel": 3696476221084.5947
+        },
+        {
+          "idx": 1,
+          "design_number": 3251,
+          "status": "ok",
+          "mean_rel": 108454414208.98305,
+          "max_rel": 3482817173004.1504
+        },
+        {
+          "idx": 2,
+          "design_number": 5998,
+          "status": "ok",
+          "mean_rel": 126977284749.60231,
+          "max_rel": 4058204650878.9062
+        },
+        {
+          "idx": 3,
+          "design_number": 10546,
+          "status": "ok",
+          "mean_rel": 74291969244.47073,
+          "max_rel": 4457518100738.525
+        },
+        {
+          "idx": 4,
+          "design_number": 11620,
+          "status": "ok",
+          "mean_rel": 855.2832262858473,
+          "max_rel": 46353.194846203194
+        }
+      ]
+    },
+    "guarded_float16": {
+      "inf_cases": 0,
+      "mean_rel_avg": 85832636707.52426,
+      "max_rel_max": 4457519054412.842,
+      "cases": [
+        {
+          "idx": 0,
+          "design_number": 523,
+          "status": "ok",
+          "mean_rel": 119439498583.7316,
+          "max_rel": 3696475267410.2783
+        },
+        {
+          "idx": 1,
+          "design_number": 3251,
+          "status": "ok",
+          "mean_rel": 108454418182.62602,
+          "max_rel": 3482817888259.8877
+        },
+        {
+          "idx": 2,
+          "design_number": 5998,
+          "status": "ok",
+          "mean_rel": 126977280775.95934,
+          "max_rel": 4058205127716.0645
+        },
+        {
+          "idx": 3,
+          "design_number": 10546,
+          "status": "ok",
+          "mean_rel": 74291985139.04295,
+          "max_rel": 4457519054412.842
+        },
+        {
+          "idx": 4,
+          "design_number": 11620,
+          "status": "ok",
+          "mean_rel": 856.2613506402155,
+          "max_rel": 46412.95482628947
+        }
+      ]
+    },
+    "guarded_float64_noquant": {
+      "inf_cases": 0,
+      "mean_rel_avg": 91933858812.55432,
+      "max_rel_max": 5581892490386.963,
+      "cases": [
+        {
+          "idx": 0,
+          "design_number": 523,
+          "status": "ok",
+          "mean_rel": 93283991019.18686,
+          "max_rel": 2870354175567.627
+        },
+        {
+          "idx": 1,
+          "design_number": 3251,
+          "status": "ok",
+          "mean_rel": 128658707936.85782,
+          "max_rel": 4179371356964.1113
+        },
+        {
+          "idx": 2,
+          "design_number": 5998,
+          "status": "ok",
+          "mean_rel": 172419524193.06348,
+          "max_rel": 5581892490386.963
+        },
+        {
+          "idx": 3,
+          "design_number": 10546,
+          "status": "ok",
+          "mean_rel": 65307069669.65418,
+          "max_rel": 3918424129486.084
+        },
+        {
+          "idx": 4,
+          "design_number": 11620,
+          "status": "ok",
+          "mean_rel": 1244.0092784267783,
+          "max_rel": 42669.68134297556
+        }
+      ]
+    }
+  }
+}

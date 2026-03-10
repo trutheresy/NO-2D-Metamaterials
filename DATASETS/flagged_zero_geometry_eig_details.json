@@ -1,0 +1,746 @@
+[
+  {
+    "dataset": "c_train_01",
+    "pt_dir": "D:/Research/NO-2D-Metamaterials/OUTPUT\\c_train_01\\continuous_2026-03-03_19-21-24_pt",
+    "geometries": [
+      {
+        "geometry_idx": 523,
+        "n_samples": 1950,
+        "expected_samples": 1950,
+        "unique_wavevectors": 325,
+        "unique_bands": 6,
+        "eigenvalues_shape": [
+          325,
+          6
+        ],
+        "eigenvalues_nonzero_count": 0,
+        "eigenvalues_has_nan": false,
+        "eigenvectors_total_nonzero_count": 0,
+        "eigenvectors_has_nan": false,
+        "eigenvector_tensor_details": [
+          {
+            "tensor_idx": 0,
+            "shape": [
+              1950,
+              32,
+              32
+            ],
+            "nonzero_count": 0,
+            "has_nan": false
+          },
+          {
+            "tensor_idx": 1,
+            "shape": [
+              1950,
+              32,
+              32
+            ],
+            "nonzero_count": 0,
+            "has_nan": false
+          },
+          {
+            "tensor_idx": 2,
+            "shape": [
+              1950,
+              32,
+              32
+            ],
+            "nonzero_count": 0,
+            "has_nan": false
+          },
+          {
+            "tensor_idx": 3,
+            "shape": [
+              1950,
+              32,
+              32
+            ],
+            "nonzero_count": 0,
+            "has_nan": false
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "dataset": "c_train_04",
+    "pt_dir": "D:/Research/NO-2D-Metamaterials/OUTPUT\\c_train_04\\continuous_2026-03-04_01-06-32_pt",
+    "geometries": [
+      {
+        "geometry_idx": 251,
+        "n_samples": 1950,
+        "expected_samples": 1950,
+        "unique_wavevectors": 325,
+        "unique_bands": 6,
+        "eigenvalues_shape": [
+          325,
+          6
+        ],
+        "eigenvalues_nonzero_count": 0,
+        "eigenvalues_has_nan": false,
+        "eigenvectors_total_nonzero_count": 0,
+        "eigenvectors_has_nan": false,
+        "eigenvector_tensor_details": [
+          {
+            "tensor_idx": 0,
+            "shape": [
+              1950,
+              32,
+              32
+            ],
+            "nonzero_count": 0,
+            "has_nan": false
+          },
+          {
+            "tensor_idx": 1,
+            "shape": [
+              1950,
+              32,
+              32
+            ],
+            "nonzero_count": 0,
+            "has_nan": false
+          },
+          {
+            "tensor_idx": 2,
+            "shape": [
+              1950,
+              32,
+              32
+            ],
+            "nonzero_count": 0,
+            "has_nan": false
+          },
+          {
+            "tensor_idx": 3,
+            "shape": [
+              1950,
+              32,
+              32
+            ],
+            "nonzero_count": 0,
+            "has_nan": false
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "dataset": "c_train_06",
+    "pt_dir": "D:/Research/NO-2D-Metamaterials/OUTPUT\\c_train_06\\continuous_2026-03-04_04-43-32_pt",
+    "geometries": [
+      {
+        "geometry_idx": 998,
+        "n_samples": 1950,
+        "expected_samples": 1950,
+        "unique_wavevectors": 325,
+        "unique_bands": 6,
+        "eigenvalues_shape": [
+          325,
+          6
+        ],
+        "eigenvalues_nonzero_count": 0,
+        "eigenvalues_has_nan": false,
+        "eigenvectors_total_nonzero_count": 0,
+        "eigenvectors_has_nan": false,
+        "eigenvector_tensor_details": [
+          {
+            "tensor_idx": 0,
+            "shape": [
+              1950,
+              32,
+              32
+            ],
+            "nonzero_count": 0,
+            "has_nan": false
+          },
+          {
+            "tensor_idx": 1,
+            "shape": [
+              1950,
+              32,
+              32
+            ],
+            "nonzero_count": 0,
+            "has_nan": false
+          },
+          {
+            "tensor_idx": 2,
+            "shape": [
+              1950,
+              32,
+              32
+            ],
+            "nonzero_count": 0,
+            "has_nan": false
+          },
+          {
+            "tensor_idx": 3,
+            "shape": [
+              1950,
+              32,
+              32
+            ],
+            "nonzero_count": 0,
+            "has_nan": false
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "dataset": "c_train_11",
+    "pt_dir": "D:/Research/NO-2D-Metamaterials/OUTPUT\\c_train_11\\continuous_2026-03-04_12-58-48_pt",
+    "geometries": [
+      {
+        "geometry_idx": 546,
+        "n_samples": 1950,
+        "expected_samples": 1950,
+        "unique_wavevectors": 325,
+        "unique_bands": 6,
+        "eigenvalues_shape": [
+          325,
+          6
+        ],
+        "eigenvalues_nonzero_count": 0,
+        "eigenvalues_has_nan": false,
+        "eigenvectors_total_nonzero_count": 0,
+        "eigenvectors_has_nan": false,
+        "eigenvector_tensor_details": [
+          {
+            "tensor_idx": 0,
+            "shape": [
+              1950,
+              32,
+              32
+            ],
+            "nonzero_count": 0,
+            "has_nan": false
+          },
+          {
+            "tensor_idx": 1,
+            "shape": [
+              1950,
+              32,
+              32
+            ],
+            "nonzero_count": 0,
+            "has_nan": false
+          },
+          {
+            "tensor_idx": 2,
+            "shape": [
+              1950,
+              32,
+              32
+            ],
+            "nonzero_count": 0,
+            "has_nan": false
+          },
+          {
+            "tensor_idx": 3,
+            "shape": [
+              1950,
+              32,
+              32
+            ],
+            "nonzero_count": 0,
+            "has_nan": false
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "dataset": "c_train_12",
+    "pt_dir": "D:/Research/NO-2D-Metamaterials/OUTPUT\\c_train_12\\continuous_2026-03-04_14-48-44_pt",
+    "geometries": [
+      {
+        "geometry_idx": 620,
+        "n_samples": 1950,
+        "expected_samples": 1950,
+        "unique_wavevectors": 325,
+        "unique_bands": 6,
+        "eigenvalues_shape": [
+          325,
+          6
+        ],
+        "eigenvalues_nonzero_count": 0,
+        "eigenvalues_has_nan": false,
+        "eigenvectors_total_nonzero_count": 0,
+        "eigenvectors_has_nan": false,
+        "eigenvector_tensor_details": [
+          {
+            "tensor_idx": 0,
+            "shape": [
+              1950,
+              32,
+              32
+            ],
+            "nonzero_count": 0,
+            "has_nan": false
+          },
+          {
+            "tensor_idx": 1,
+            "shape": [
+              1950,
+              32,
+              32
+            ],
+            "nonzero_count": 0,
+            "has_nan": false
+          },
+          {
+            "tensor_idx": 2,
+            "shape": [
+              1950,
+              32,
+              32
+            ],
+            "nonzero_count": 0,
+            "has_nan": false
+          },
+          {
+            "tensor_idx": 3,
+            "shape": [
+              1950,
+              32,
+              32
+            ],
+            "nonzero_count": 0,
+            "has_nan": false
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "dataset": "c_train_14",
+    "pt_dir": "D:/Research/NO-2D-Metamaterials/OUTPUT\\c_train_14\\continuous_2026-03-04_19-42-01_pt",
+    "geometries": [
+      {
+        "geometry_idx": 359,
+        "n_samples": 1950,
+        "expected_samples": 1950,
+        "unique_wavevectors": 325,
+        "unique_bands": 6,
+        "eigenvalues_shape": [
+          325,
+          6
+        ],
+        "eigenvalues_nonzero_count": 0,
+        "eigenvalues_has_nan": false,
+        "eigenvectors_total_nonzero_count": 0,
+        "eigenvectors_has_nan": false,
+        "eigenvector_tensor_details": [
+          {
+            "tensor_idx": 0,
+            "shape": [
+              1950,
+              32,
+              32
+            ],
+            "nonzero_count": 0,
+            "has_nan": false
+          },
+          {
+            "tensor_idx": 1,
+            "shape": [
+              1950,
+              32,
+              32
+            ],
+            "nonzero_count": 0,
+            "has_nan": false
+          },
+          {
+            "tensor_idx": 2,
+            "shape": [
+              1950,
+              32,
+              32
+            ],
+            "nonzero_count": 0,
+            "has_nan": false
+          },
+          {
+            "tensor_idx": 3,
+            "shape": [
+              1950,
+              32,
+              32
+            ],
+            "nonzero_count": 0,
+            "has_nan": false
+          }
+        ]
+      },
+      {
+        "geometry_idx": 374,
+        "n_samples": 1950,
+        "expected_samples": 1950,
+        "unique_wavevectors": 325,
+        "unique_bands": 6,
+        "eigenvalues_shape": [
+          325,
+          6
+        ],
+        "eigenvalues_nonzero_count": 0,
+        "eigenvalues_has_nan": false,
+        "eigenvectors_total_nonzero_count": 0,
+        "eigenvectors_has_nan": false,
+        "eigenvector_tensor_details": [
+          {
+            "tensor_idx": 0,
+            "shape": [
+              1950,
+              32,
+              32
+            ],
+            "nonzero_count": 0,
+            "has_nan": false
+          },
+          {
+            "tensor_idx": 1,
+            "shape": [
+              1950,
+              32,
+              32
+            ],
+            "nonzero_count": 0,
+            "has_nan": false
+          },
+          {
+            "tensor_idx": 2,
+            "shape": [
+              1950,
+              32,
+              32
+            ],
+            "nonzero_count": 0,
+            "has_nan": false
+          },
+          {
+            "tensor_idx": 3,
+            "shape": [
+              1950,
+              32,
+              32
+            ],
+            "nonzero_count": 0,
+            "has_nan": false
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "dataset": "c_train_16",
+    "pt_dir": "D:/Research/NO-2D-Metamaterials/OUTPUT\\c_train_16\\continuous_2026-03-05_00-47-05_pt",
+    "geometries": [
+      {
+        "geometry_idx": 153,
+        "n_samples": 1950,
+        "expected_samples": 1950,
+        "unique_wavevectors": 325,
+        "unique_bands": 6,
+        "eigenvalues_shape": [
+          325,
+          6
+        ],
+        "eigenvalues_nonzero_count": 0,
+        "eigenvalues_has_nan": false,
+        "eigenvectors_total_nonzero_count": 0,
+        "eigenvectors_has_nan": false,
+        "eigenvector_tensor_details": [
+          {
+            "tensor_idx": 0,
+            "shape": [
+              1950,
+              32,
+              32
+            ],
+            "nonzero_count": 0,
+            "has_nan": false
+          },
+          {
+            "tensor_idx": 1,
+            "shape": [
+              1950,
+              32,
+              32
+            ],
+            "nonzero_count": 0,
+            "has_nan": false
+          },
+          {
+            "tensor_idx": 2,
+            "shape": [
+              1950,
+              32,
+              32
+            ],
+            "nonzero_count": 0,
+            "has_nan": false
+          },
+          {
+            "tensor_idx": 3,
+            "shape": [
+              1950,
+              32,
+              32
+            ],
+            "nonzero_count": 0,
+            "has_nan": false
+          }
+        ]
+      },
+      {
+        "geometry_idx": 579,
+        "n_samples": 1950,
+        "expected_samples": 1950,
+        "unique_wavevectors": 325,
+        "unique_bands": 6,
+        "eigenvalues_shape": [
+          325,
+          6
+        ],
+        "eigenvalues_nonzero_count": 0,
+        "eigenvalues_has_nan": false,
+        "eigenvectors_total_nonzero_count": 0,
+        "eigenvectors_has_nan": false,
+        "eigenvector_tensor_details": [
+          {
+            "tensor_idx": 0,
+            "shape": [
+              1950,
+              32,
+              32
+            ],
+            "nonzero_count": 0,
+            "has_nan": false
+          },
+          {
+            "tensor_idx": 1,
+            "shape": [
+              1950,
+              32,
+              32
+            ],
+            "nonzero_count": 0,
+            "has_nan": false
+          },
+          {
+            "tensor_idx": 2,
+            "shape": [
+              1950,
+              32,
+              32
+            ],
+            "nonzero_count": 0,
+            "has_nan": false
+          },
+          {
+            "tensor_idx": 3,
+            "shape": [
+              1950,
+              32,
+              32
+            ],
+            "nonzero_count": 0,
+            "has_nan": false
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "dataset": "c_train_20",
+    "pt_dir": "D:/Research/NO-2D-Metamaterials/OUTPUT\\c_train_20\\continuous_2026-03-05_10-55-07_pt",
+    "geometries": [
+      {
+        "geometry_idx": 948,
+        "n_samples": 1950,
+        "expected_samples": 1950,
+        "unique_wavevectors": 325,
+        "unique_bands": 6,
+        "eigenvalues_shape": [
+          325,
+          6
+        ],
+        "eigenvalues_nonzero_count": 0,
+        "eigenvalues_has_nan": false,
+        "eigenvectors_total_nonzero_count": 0,
+        "eigenvectors_has_nan": false,
+        "eigenvector_tensor_details": [
+          {
+            "tensor_idx": 0,
+            "shape": [
+              1950,
+              32,
+              32
+            ],
+            "nonzero_count": 0,
+            "has_nan": false
+          },
+          {
+            "tensor_idx": 1,
+            "shape": [
+              1950,
+              32,
+              32
+            ],
+            "nonzero_count": 0,
+            "has_nan": false
+          },
+          {
+            "tensor_idx": 2,
+            "shape": [
+              1950,
+              32,
+              32
+            ],
+            "nonzero_count": 0,
+            "has_nan": false
+          },
+          {
+            "tensor_idx": 3,
+            "shape": [
+              1950,
+              32,
+              32
+            ],
+            "nonzero_count": 0,
+            "has_nan": false
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "dataset": "c_train_21",
+    "pt_dir": "D:/Research/NO-2D-Metamaterials/OUTPUT\\c_train_21\\continuous_2026-03-05_13-23-20_pt",
+    "geometries": [
+      {
+        "geometry_idx": 561,
+        "n_samples": 1950,
+        "expected_samples": 1950,
+        "unique_wavevectors": 325,
+        "unique_bands": 6,
+        "eigenvalues_shape": [
+          325,
+          6
+        ],
+        "eigenvalues_nonzero_count": 0,
+        "eigenvalues_has_nan": false,
+        "eigenvectors_total_nonzero_count": 0,
+        "eigenvectors_has_nan": false,
+        "eigenvector_tensor_details": [
+          {
+            "tensor_idx": 0,
+            "shape": [
+              1950,
+              32,
+              32
+            ],
+            "nonzero_count": 0,
+            "has_nan": false
+          },
+          {
+            "tensor_idx": 1,
+            "shape": [
+              1950,
+              32,
+              32
+            ],
+            "nonzero_count": 0,
+            "has_nan": false
+          },
+          {
+            "tensor_idx": 2,
+            "shape": [
+              1950,
+              32,
+              32
+            ],
+            "nonzero_count": 0,
+            "has_nan": false
+          },
+          {
+            "tensor_idx": 3,
+            "shape": [
+              1950,
+              32,
+              32
+            ],
+            "nonzero_count": 0,
+            "has_nan": false
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "dataset": "c_train_23",
+    "pt_dir": "D:/Research/NO-2D-Metamaterials/OUTPUT\\c_train_23\\continuous_2026-03-05_16-48-57_pt",
+    "geometries": [
+      {
+        "geometry_idx": 228,
+        "n_samples": 1950,
+        "expected_samples": 1950,
+        "unique_wavevectors": 325,
+        "unique_bands": 6,
+        "eigenvalues_shape": [
+          325,
+          6
+        ],
+        "eigenvalues_nonzero_count": 0,
+        "eigenvalues_has_nan": false,
+        "eigenvectors_total_nonzero_count": 0,
+        "eigenvectors_has_nan": false,
+        "eigenvector_tensor_details": [
+          {
+            "tensor_idx": 0,
+            "shape": [
+              1950,
+              32,
+              32
+            ],
+            "nonzero_count": 0,
+            "has_nan": false
+          },
+          {
+            "tensor_idx": 1,
+            "shape": [
+              1950,
+              32,
+              32
+            ],
+            "nonzero_count": 0,
+            "has_nan": false
+          },
+          {
+            "tensor_idx": 2,
+            "shape": [
+              1950,
+              32,
+              32
+            ],
+            "nonzero_count": 0,
+            "has_nan": false
+          },
+          {
+            "tensor_idx": 3,
+            "shape": [
+              1950,
+              32,
+              32
+            ],
+            "nonzero_count": 0,
+            "has_nan": false
+          }
+        ]
+      }
+    ]
+  }
+]

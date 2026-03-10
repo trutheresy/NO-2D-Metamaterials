@@ -15,7 +15,7 @@ print(f"Using Python file: {py_file}")
 py_data = np.load(py_file)
 
 # Load MATLAB data
-ml_file = Path('2D-dispersion-han/plots/out_binarized_1_mat/plot_points.mat')
+ml_file = Path('2D-dispersion-han/PLOTS/out_binarized_1_mat/plot_points.mat')
 
 print("="*70)
 print("DETAILED COMPARISON: Python vs MATLAB Plot Points")

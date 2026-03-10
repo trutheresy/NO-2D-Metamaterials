@@ -1095,7 +1095,7 @@ def main(cli_data_path=None, cli_original_dir=None, n_structs=None, save_plot_po
         output_dir = current_dir / f'dispersion_plots_{datetime.now().strftime("%Y%m%d_%H%M%S")}_{format_type}'
     else:
         dataset_name = data_path.name
-        output_dir = current_dir / 'plots' / f'{dataset_name}_{format_type}'
+        output_dir = current_dir / 'PLOTS' / f'{dataset_name}_{format_type}'
     output_dir.mkdir(parents=True, exist_ok=True)
     print(f"Output directory: {output_dir}")
     

@@ -1,0 +1,32 @@
+repo_root = 'D:/Research/NO-2D-Metamaterials';
+addpath(fullfile(repo_root, '2D-dispersion-mat'));
+inp = fullfile(repo_root, 'OUTPUT', 'recovered_failure_geometries_from_batched_20260303_172713', 'cause2_input_designs.mat');
+outp = fullfile(repo_root, 'OUTPUT', 'recovered_failure_geometries_from_batched_20260303_172713', 'cause2_matlab_KM.mat');
+S = load(inp);
+designs = S.designs;
+const_base = S.const_base;
+N = size(designs,4);
+K_row = cell(N,1); K_col = cell(N,1); K_val = cell(N,1);
+M_row = cell(N,1); M_col = cell(N,1); M_val = cell(N,1);
+K_shape = zeros(N,2); M_shape = zeros(N,2);
+for i = 1:N
+    const = const_base;
+    const.N_ele = double(const.N_ele);
+    const.N_pix = double(const.N_pix);
+    const.a = double(const.a);
+    const.E_min = double(const.E_min);
+    const.E_max = double(const.E_max);
+    const.rho_min = double(const.rho_min);
+    const.rho_max = double(const.rho_max);
+    const.poisson_min = double(const.poisson_min);
+    const.poisson_max = double(const.poisson_max);
+    const.t = double(const.t);
+    const.design = designs(:,:,:,i);
+    [K,M] = get_system_matrices_VEC(const);
+    [r,c,v] = find(K);
+    K_row{i}=r; K_col{i}=c; K_val{i}=v; K_shape(i,:)=size(K);
+    [r,c,v] = find(M);
+    M_row{i}=r; M_col{i}=c; M_val{i}=v; M_shape(i,:)=size(M);
+end
+save(outp,'K_row','K_col','K_val','K_shape','M_row','M_col','M_val','M_shape','-v7');
+fprintf('Saved MATLAB KM triplets to %s\n', outp);

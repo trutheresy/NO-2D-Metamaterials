@@ -77,7 +77,7 @@ flowchart TD
   - `compare_dispersion_plots.py` - MATLAB/Python comparison script, overlay and difference plots + JSON summary.
   - `2D-dispersion-han/plot_dispersion.m` and `2D-dispersion-han/plot_dispersion_from_predictions.m` - MATLAB plotting side.
 - Typical outputs:
-  - plot directories under `plots/` (or timestamped plot folders)
+  - plot directories under `PLOTS/` (or timestamped plot folders)
   - `.png` files for design/contour/dispersion/reconstruction/difference/overlay
   - `plot_points.npz` and/or `plot_points.mat`
   - summary `.json` files (for selected comparison scripts)
@@ -102,7 +102,7 @@ flowchart TD
 | Reduced dataset `.pt` bundle | `matlab_to_reduced_pt.py`, `2d-dispersion-py/convert_mat_to_pytorch.py` | `<output_base>/<mat_file_stem>/` |
 | Prediction `.pt` | `run_model_inference.py` | usually `<input_dataset_dir>/predictions_<model>.pt` |
 | Optional matrix cache `.pt` (`K_data.pt`, `M_data.pt`, `T_data.pt`) | `plot_dispersion_infer_eigenfrequencies.py` | input dataset directory |
-| Dispersion and design plot `.png` | plotting scripts in `2d-dispersion-py/` and `2D-dispersion-han/`; `compare_dispersion_plots.py` | `plots/<dataset>_*`, `dispersion_plots_<timestamp>_*`, `dispersion_comparison_<timestamp>/` |
+| Dispersion and design plot `.png` | plotting scripts in `2d-dispersion-py/` and `2D-dispersion-han/`; `compare_dispersion_plots.py` | `PLOTS/<dataset>_*`, `dispersion_plots_<timestamp>_*`, `dispersion_comparison_<timestamp>/` |
 | Plot point bundles (`plot_points.npz`, `plot_points.mat`) | `plot_dispersion_infer_eigenfrequencies.py`, `plot_dispersion_with_eigenfrequencies.py`, MATLAB plotting scripts | plot output directories |
 | Comparison/report `.json` | `compare_dispersion_plots.py`, `add_noise_to_pt_dataset.py` | comparison/noise output directories |
 | Training logs (`.csv`) and arrays (`.npy`) | training notebooks (`NO_trainer*.ipynb`) | notebook-defined run directories |
@@ -128,6 +128,6 @@ flowchart TD
 
 - The repo contains both CLI and notebook-centric workflows; notebooks are heavily used for training/experiments.
 - Some comparison/debug scripts appear exploratory or historical; this map prioritizes active driver scripts and canonical docs.
-- Multiple output naming conventions coexist (timestamped experiment folders, `plots/`, per-dataset subfolders).
+- Multiple output naming conventions coexist (timestamped experiment folders, `PLOTS/`, per-dataset subfolders).
 - K/M/T may be precomputed and reused in some plotting/reconstruction flows, or recomputed on demand.
 

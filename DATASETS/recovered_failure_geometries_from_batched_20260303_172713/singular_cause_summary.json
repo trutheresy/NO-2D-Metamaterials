@@ -1,0 +1,60 @@
+{
+  "cause2": {
+    "prune_on_mean": 0.011429897649580491,
+    "prune_off_mean": 0.011429897649580491,
+    "prune_on_inf": 0,
+    "prune_off_inf": 0
+  },
+  "cause1": {
+    "current_mean": 85832638296.78577,
+    "high_mean": 561847.9848928439,
+    "current_inf": 0,
+    "high_inf": 0
+  },
+  "cause3": {
+    "current_float16": {
+      "mean": 85832638296.78577,
+      "inf": 0
+    },
+    "guarded_float16": {
+      "mean": 85832636707.52426,
+      "inf": 0
+    },
+    "guarded_float64_noquant": {
+      "mean": 91933858812.55432,
+      "inf": 0
+    }
+  },
+  "cause4": {
+    "sparse_shiftinvert_sigma": {
+      "mean": 2809238.739909641,
+      "inf": 0
+    },
+    "sparse_which_SM": {
+      "mean": 41298402.28880578,
+      "inf": 0
+    },
+    "dense_SM": {
+      "mean": 44451690.51382662,
+      "inf": 0
+    }
+  },
+  "impact_ranking": [
+    [
+      "cause1_precision",
+      85832076448.80087
+    ],
+    [
+      "cause3_symmetry_quantization",
+      1589.2615051269531
+    ],
+    [
+      "cause2_pruning",
+      0.0
+    ],
+    [
+      "cause4_backend",
+      0.0
+    ]
+  ]
+}

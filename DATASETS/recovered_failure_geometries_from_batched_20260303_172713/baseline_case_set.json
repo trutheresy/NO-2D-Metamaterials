@@ -1,0 +1,264 @@
+{
+  "source_run_root": "D:/Research/NO-2D-Metamaterials/OUTPUT/batched_generation_20260303_172713",
+  "n_failures": 12,
+  "n_controls": 20,
+  "total_cases": 32,
+  "cases": [
+    {
+      "case_type": "failure",
+      "log_file": "train_batch_000.log",
+      "seed_offset": 0,
+      "logged_structure": 524,
+      "struct_idx0": 523,
+      "design_number": 523
+    },
+    {
+      "case_type": "failure",
+      "log_file": "train_batch_003.log",
+      "seed_offset": 3000,
+      "logged_structure": 252,
+      "struct_idx0": 251,
+      "design_number": 3251
+    },
+    {
+      "case_type": "failure",
+      "log_file": "train_batch_005.log",
+      "seed_offset": 5000,
+      "logged_structure": 999,
+      "struct_idx0": 998,
+      "design_number": 5998
+    },
+    {
+      "case_type": "failure",
+      "log_file": "train_batch_010.log",
+      "seed_offset": 10000,
+      "logged_structure": 547,
+      "struct_idx0": 546,
+      "design_number": 10546
+    },
+    {
+      "case_type": "failure",
+      "log_file": "train_batch_011.log",
+      "seed_offset": 11000,
+      "logged_structure": 621,
+      "struct_idx0": 620,
+      "design_number": 11620
+    },
+    {
+      "case_type": "failure",
+      "log_file": "train_batch_013.log",
+      "seed_offset": 13000,
+      "logged_structure": 360,
+      "struct_idx0": 359,
+      "design_number": 13359
+    },
+    {
+      "case_type": "failure",
+      "log_file": "train_batch_013.log",
+      "seed_offset": 13000,
+      "logged_structure": 375,
+      "struct_idx0": 374,
+      "design_number": 13374
+    },
+    {
+      "case_type": "failure",
+      "log_file": "train_batch_015.log",
+      "seed_offset": 15000,
+      "logged_structure": 154,
+      "struct_idx0": 153,
+      "design_number": 15153
+    },
+    {
+      "case_type": "failure",
+      "log_file": "train_batch_015.log",
+      "seed_offset": 15000,
+      "logged_structure": 580,
+      "struct_idx0": 579,
+      "design_number": 15579
+    },
+    {
+      "case_type": "failure",
+      "log_file": "train_batch_019.log",
+      "seed_offset": 19000,
+      "logged_structure": 949,
+      "struct_idx0": 948,
+      "design_number": 19948
+    },
+    {
+      "case_type": "failure",
+      "log_file": "train_batch_020.log",
+      "seed_offset": 20000,
+      "logged_structure": 562,
+      "struct_idx0": 561,
+      "design_number": 20561
+    },
+    {
+      "case_type": "failure",
+      "log_file": "train_batch_022.log",
+      "seed_offset": 22000,
+      "logged_structure": 229,
+      "struct_idx0": 228,
+      "design_number": 22228
+    },
+    {
+      "case_type": "control",
+      "log_file": "train_batch_000.log",
+      "seed_offset": 0,
+      "logged_structure": 522,
+      "struct_idx0": 521,
+      "design_number": 521
+    },
+    {
+      "case_type": "control",
+      "log_file": "train_batch_000.log",
+      "seed_offset": 0,
+      "logged_structure": 523,
+      "struct_idx0": 522,
+      "design_number": 522
+    },
+    {
+      "case_type": "control",
+      "log_file": "train_batch_000.log",
+      "seed_offset": 0,
+      "logged_structure": 525,
+      "struct_idx0": 524,
+      "design_number": 524
+    },
+    {
+      "case_type": "control",
+      "log_file": "train_batch_003.log",
+      "seed_offset": 3000,
+      "logged_structure": 250,
+      "struct_idx0": 249,
+      "design_number": 3249
+    },
+    {
+      "case_type": "control",
+      "log_file": "train_batch_003.log",
+      "seed_offset": 3000,
+      "logged_structure": 251,
+      "struct_idx0": 250,
+      "design_number": 3250
+    },
+    {
+      "case_type": "control",
+      "log_file": "train_batch_003.log",
+      "seed_offset": 3000,
+      "logged_structure": 253,
+      "struct_idx0": 252,
+      "design_number": 3252
+    },
+    {
+      "case_type": "control",
+      "log_file": "train_batch_005.log",
+      "seed_offset": 5000,
+      "logged_structure": 997,
+      "struct_idx0": 996,
+      "design_number": 5996
+    },
+    {
+      "case_type": "control",
+      "log_file": "train_batch_005.log",
+      "seed_offset": 5000,
+      "logged_structure": 998,
+      "struct_idx0": 997,
+      "design_number": 5997
+    },
+    {
+      "case_type": "control",
+      "log_file": "train_batch_005.log",
+      "seed_offset": 5000,
+      "logged_structure": 1000,
+      "struct_idx0": 999,
+      "design_number": 5999
+    },
+    {
+      "case_type": "control",
+      "log_file": "train_batch_010.log",
+      "seed_offset": 10000,
+      "logged_structure": 545,
+      "struct_idx0": 544,
+      "design_number": 10544
+    },
+    {
+      "case_type": "control",
+      "log_file": "train_batch_010.log",
+      "seed_offset": 10000,
+      "logged_structure": 546,
+      "struct_idx0": 545,
+      "design_number": 10545
+    },
+    {
+      "case_type": "control",
+      "log_file": "train_batch_010.log",
+      "seed_offset": 10000,
+      "logged_structure": 548,
+      "struct_idx0": 547,
+      "design_number": 10547
+    },
+    {
+      "case_type": "control",
+      "log_file": "train_batch_011.log",
+      "seed_offset": 11000,
+      "logged_structure": 619,
+      "struct_idx0": 618,
+      "design_number": 11618
+    },
+    {
+      "case_type": "control",
+      "log_file": "train_batch_011.log",
+      "seed_offset": 11000,
+      "logged_structure": 620,
+      "struct_idx0": 619,
+      "design_number": 11619
+    },
+    {
+      "case_type": "control",
+      "log_file": "train_batch_011.log",
+      "seed_offset": 11000,
+      "logged_structure": 622,
+      "struct_idx0": 621,
+      "design_number": 11621
+    },
+    {
+      "case_type": "control",
+      "log_file": "train_batch_013.log",
+      "seed_offset": 13000,
+      "logged_structure": 358,
+      "struct_idx0": 357,
+      "design_number": 13357
+    },
+    {
+      "case_type": "control",
+      "log_file": "train_batch_013.log",
+      "seed_offset": 13000,
+      "logged_structure": 359,
+      "struct_idx0": 358,
+      "design_number": 13358
+    },
+    {
+      "case_type": "control",
+      "log_file": "train_batch_013.log",
+      "seed_offset": 13000,
+      "logged_structure": 361,
+      "struct_idx0": 360,
+      "design_number": 13360
+    },
+    {
+      "case_type": "control",
+      "log_file": "train_batch_015.log",
+      "seed_offset": 15000,
+      "logged_structure": 152,
+      "struct_idx0": 151,
+      "design_number": 15151
+    },
+    {
+      "case_type": "control",
+      "log_file": "train_batch_015.log",
+      "seed_offset": 15000,
+      "logged_structure": 153,
+      "struct_idx0": 152,
+      "design_number": 15152
+    }
+  ]
+}

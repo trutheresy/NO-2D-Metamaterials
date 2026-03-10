@@ -104,8 +104,8 @@ png_resolution = 150;
 isSavePlotPoints = true;  % Save plot point locations for comparison with Python
 force_plot_symmetry_type = 'p4mm';  % Force contour path to match Python plot_dispersions.py
 
-% Output root: save under plots/<dataset_name>_mat/... (in current directory)
-output_root = fullfile(pwd, 'plots', [fn '_mat']);
+% Output root: save under PLOTS/<dataset_name>_mat/... (in current directory)
+output_root = fullfile(pwd, 'PLOTS', [fn '_mat']);
 
 % Make plots for one unit cell or multiple.
 % Auto-detect available structures from data so this script works for

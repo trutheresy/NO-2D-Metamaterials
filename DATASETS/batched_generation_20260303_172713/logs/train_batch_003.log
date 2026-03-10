@@ -1,0 +1,95 @@
+SUCCESS: Successfully imported functions from the new Python dispersion library
+SUCCESS: Using dispersion_with_matrix_save_opt (the correct function!)
+SUCCESS: Successfully imported functions from the new Python dispersion library
+SUCCESS: Using dispersion_with_matrix_save_opt (the correct function!)
+SUCCESS: Successfully imported functions from the new Python dispersion library
+SUCCESS: Using dispersion_with_matrix_save_opt (the correct function!)
+SUCCESS: Successfully imported functions from the new Python dispersion library
+SUCCESS: Using dispersion_with_matrix_save_opt (the correct function!)
+SUCCESS: Successfully imported functions from the new Python dispersion library
+SUCCESS: Using dispersion_with_matrix_save_opt (the correct function!)
+SUCCESS: Successfully imported functions from the new Python dispersion library
+SUCCESS: Using dispersion_with_matrix_save_opt (the correct function!)
+SUCCESS: Successfully imported functions from the new Python dispersion library
+SUCCESS: Using dispersion_with_matrix_save_opt (the correct function!)
+SUCCESS: Successfully imported functions from the new Python dispersion library
+SUCCESS: Using dispersion_with_matrix_save_opt (the correct function!)
+SUCCESS: Successfully imported functions from the new Python dispersion library
+SUCCESS: Using dispersion_with_matrix_save_opt (the correct function!)
+SUCCESS: Successfully imported functions from the new Python dispersion library
+SUCCESS: Using dispersion_with_matrix_save_opt (the correct function!)
+SUCCESS: Successfully imported functions from the new Python dispersion library
+SUCCESS: Using dispersion_with_matrix_save_opt (the correct function!)
+SUCCESS: Successfully imported functions from the new Python dispersion library
+SUCCESS: Using dispersion_with_matrix_save_opt (the correct function!)
+SUCCESS: Successfully imported functions from the new Python dispersion library
+SUCCESS: Using dispersion_with_matrix_save_opt (the correct function!)
+SUCCESS: Successfully imported functions from the new Python dispersion library
+SUCCESS: Using dispersion_with_matrix_save_opt (the correct function!)
+SUCCESS: Successfully imported functions from the new Python dispersion library
+SUCCESS: Using dispersion_with_matrix_save_opt (the correct function!)
+SUCCESS: Successfully imported functions from the new Python dispersion library
+SUCCESS: Using dispersion_with_matrix_save_opt (the correct function!)
+SUCCESS: Successfully imported functions from the new Python dispersion library
+SUCCESS: Using dispersion_with_matrix_save_opt (the correct function!)
+================================================================================
+GENERATING DISPERSION DATASET WITH PYTHON LIBRARY
+================================================================================
+Generating wavevectors for [25, 13] grid...
+Generated 325 wavevectors
+Initializing storage arrays...
+SUCCESS: Constants validation passed
+
+Generating 1000 structures...
+Parallel workers: 16 (enabled)
+PROGRESS: 1/1000 (0.1%) elapsed=92.0s rate=0.01/s eta=91868.4s
+PROGRESS: 100/1000 (10.0%) elapsed=714.3s rate=0.14/s eta=6428.5s
+PROGRESS: 200/1000 (20.0%) elapsed=1346.4s rate=0.15/s eta=5385.7s
+  ERROR: Error processing structure 252: Factor is exactly singular
+Traceback (most recent call last):
+  File "D:\Research\NO-2D-Metamaterials\generate_dispersion_dataset_Han_Alex.py", line 243, in _compute_single_structure
+    wv, fr, ev, _, K, M, T = dispersion_with_matrix_save_opt(const_local, const_local['wavevectors'])
+                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Research\NO-2D-Metamaterials\2d-dispersion-py\dispersion_with_matrix_save_opt.py", line 201, in dispersion_with_matrix_save_opt
+    eig_vals, eig_vecs = eigs(Kr, M=Mr, **eigs_kwargs)
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\hz283\AppData\Local\anaconda3\Lib\site-packages\scipy\sparse\linalg\_eigen\arpack\arpack.py", line 1341, in eigs
+    Minv_matvec = get_OPinv_matvec(A, M, sigma,
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\hz283\AppData\Local\anaconda3\Lib\site-packages\scipy\sparse\linalg\_eigen\arpack\arpack.py", line 1096, in get_OPinv_matvec
+    return SpLuInv(OP).matvec
+           ^^^^^^^^^^^
+  File "C:\Users\hz283\AppData\Local\anaconda3\Lib\site-packages\scipy\sparse\linalg\_eigen\arpack\arpack.py", line 916, in __init__
+    self.M_lu = splu(M)
+                ^^^^^^^
+  File "C:\Users\hz283\AppData\Local\anaconda3\Lib\site-packages\scipy\sparse\linalg\_dsolve\linsolve.py", line 433, in splu
+    return _superlu.gstrf(N, A.nnz, A.data, indices, indptr,
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+RuntimeError: Factor is exactly singular
+
+PROGRESS: 300/1000 (30.0%) elapsed=1987.0s rate=0.15/s eta=4636.4s
+PROGRESS: 400/1000 (40.0%) elapsed=2641.6s rate=0.15/s eta=3962.5s
+PROGRESS: 500/1000 (50.0%) elapsed=3271.9s rate=0.15/s eta=3271.9s
+PROGRESS: 600/1000 (60.0%) elapsed=3899.7s rate=0.15/s eta=2599.8s
+PROGRESS: 700/1000 (70.0%) elapsed=4561.7s rate=0.15/s eta=1955.0s
+PROGRESS: 800/1000 (80.0%) elapsed=5222.2s rate=0.15/s eta=1305.6s
+PROGRESS: 900/1000 (90.0%) elapsed=5883.5s rate=0.15/s eta=653.7s
+PROGRESS: 1000/1000 (100.0%) elapsed=6536.5s rate=0.15/s eta=0.0s
+c1 shape: (325,) c2 shape: (325,)
+SUCCESS: PyTorch dataset bundle saved to: D:\Research\NO-2D-Metamaterials\OUTPUT/output_2026-03-04_01-06-32\continuous_2026-03-04_01-06-32_pt
+SUCCESS: Python pickle file saved to: D:\Research\NO-2D-Metamaterials\OUTPUT/output_2026-03-04_01-06-32\continuous_2026-03-04_01-06-32.pkl
+
+================================================================================
+DATASET GENERATION SUMMARY
+================================================================================
+SUCCESS: Generated 1000 structures
+SUCCESS: Computed dispersion for 325 wavevectors
+SUCCESS: Design size: 32x32 pixels
+SUCCESS: Number of eigenvalues: 6
+SUCCESS: Frequency range: 0.000 - 3816.000 Hz
+SUCCESS: Design type: continuous
+SUCCESS: Eigenvectors saved: (2048, 325, 6, 1000)
+================================================================================
+
+COMPLETED: Script completed successfully!
+The generated dataset is compatible with both MATLAB and Python workflows.

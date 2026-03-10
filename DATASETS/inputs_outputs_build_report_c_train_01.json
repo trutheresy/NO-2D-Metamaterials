@@ -1,0 +1,30 @@
+{
+  "output_root": "D:\\Research\\NO-2D-Metamaterials\\OUTPUT",
+  "n_datasets_found": 1,
+  "chunk_size": 20000,
+  "results": [
+    {
+      "pt_dir": "D:\\Research\\NO-2D-Metamaterials\\OUTPUT\\c_train_01\\continuous_2026-03-03_19-21-24_pt",
+      "status": "ok",
+      "n": 390000,
+      "inputs_shape": [
+        390000,
+        3,
+        32,
+        32
+      ],
+      "outputs_shape": [
+        390000,
+        5,
+        32,
+        32
+      ],
+      "disp_mode": "full",
+      "inputs_bytes": 2396161111,
+      "outputs_bytes": 3993601180,
+      "issues": []
+    }
+  ],
+  "n_ok": 1,
+  "n_bad": 0
+}

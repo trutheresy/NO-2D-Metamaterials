@@ -1,0 +1,92 @@
+{
+  "cause": "cause1_precision",
+  "subset": "small_failures",
+  "n_cases": 5,
+  "wavevectors_used": 10,
+  "variants": {
+    "current": {
+      "inf_cases": 0,
+      "mean_rel_avg": 85832638296.78577,
+      "max_rel_max": 4457518100738.525,
+      "cases": [
+        {
+          "idx": 0,
+          "design_number": 523,
+          "status": "ok",
+          "mean_rel": 119439522425.58951,
+          "max_rel": 3696476221084.5947
+        },
+        {
+          "idx": 1,
+          "design_number": 3251,
+          "status": "ok",
+          "mean_rel": 108454414208.98305,
+          "max_rel": 3482817173004.1504
+        },
+        {
+          "idx": 2,
+          "design_number": 5998,
+          "status": "ok",
+          "mean_rel": 126977284749.60231,
+          "max_rel": 4058204650878.9062
+        },
+        {
+          "idx": 3,
+          "design_number": 10546,
+          "status": "ok",
+          "mean_rel": 74291969244.47073,
+          "max_rel": 4457518100738.525
+        },
+        {
+          "idx": 4,
+          "design_number": 11620,
+          "status": "ok",
+          "mean_rel": 855.2832262858473,
+          "max_rel": 46353.194846203194
+        }
+      ]
+    },
+    "high_precision": {
+      "inf_cases": 0,
+      "mean_rel_avg": 561847.9848928439,
+      "max_rel_max": 92470601.97581042,
+      "cases": [
+        {
+          "idx": 0,
+          "design_number": 523,
+          "status": "ok",
+          "mean_rel": 0.255773766208327,
+          "max_rel": 1.210572289191493
+        },
+        {
+          "idx": 1,
+          "design_number": 3251,
+          "status": "ok",
+          "mean_rel": 2809238.8747114423,
+          "max_rel": 92470601.97581042
+        },
+        {
+          "idx": 2,
+          "design_number": 5998,
+          "status": "ok",
+          "mean_rel": 0.2533350324132498,
+          "max_rel": 1.2227293889274646
+        },
+        {
+          "idx": 3,
+          "design_number": 10546,
+          "status": "ok",
+          "mean_rel": 0.25215809299122177,
+          "max_rel": 1.1965004336666742
+        },
+        {
+          "idx": 4,
+          "design_number": 11620,
+          "status": "ok",
+          "mean_rel": 0.2884858851796569,
+          "max_rel": 1.2283603756370003
+        }
+      ]
+    }
+  }
+}

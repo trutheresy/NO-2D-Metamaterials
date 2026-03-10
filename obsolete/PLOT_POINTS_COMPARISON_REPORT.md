@@ -40,7 +40,7 @@ This document reports on the implementation of plot point location saving functi
 - Dataset: `data/out_test_10_verify/out_binarized_1`
 - Command: `python 2d-dispersion-py/plot_dispersion_infer_eigenfrequencies.py "data/out_test_10_verify/out_binarized_1" -n 1 --save-plot-points`
 - Status: ✅ **SUCCESS**
-- Output: `plots/out_binarized_1_recon/plot_points.npz`
+- Output: `PLOTS/out_binarized_1_recon/plot_points.npz`
 
 **Case 2 (With Eigenfrequencies):**
 - Script: `plot_dispersion_with_eigenfrequencies.py`
@@ -87,8 +87,8 @@ plot_dispersion
 ```
 
 **Expected Output:**
-- Case 1: `plots/out_binarized_1_mat/plot_points.mat`
-- Case 2: `plots/out_binarized_1_mat/plot_points.mat` (or similar, depending on dataset name)
+- Case 1: `PLOTS/out_binarized_1_mat/plot_points.mat`
+- Case 2: `PLOTS/out_binarized_1_mat/plot_points.mat` (or similar, depending on dataset name)
 
 ### 5. ✅ Created Comparison Script
 
@@ -137,12 +137,12 @@ python compare_plot_points.py
 ## File Locations
 
 ### Python Outputs:
-- Case 1: `plots/out_binarized_1_recon/plot_points.npz`
+- Case 1: `PLOTS/out_binarized_1_recon/plot_points.npz`
 - Case 2: (Not generated due to HDF5 loader issue)
 
 ### MATLAB Outputs (Expected):
-- Case 1: `plots/out_binarized_1_mat/plot_points.mat` (or similar)
-- Case 2: `plots/out_binarized_1_mat/plot_points.mat` (or similar)
+- Case 1: `PLOTS/out_binarized_1_mat/plot_points.mat` (or similar)
+- Case 2: `PLOTS/out_binarized_1_mat/plot_points.mat` (or similar)
 
 ### Comparison Script:
 - `compare_plot_points.py`

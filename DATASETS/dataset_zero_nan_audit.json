@@ -1,0 +1,452 @@
+{
+  "root": "D:/Research/NO-2D-Metamaterials/OUTPUT",
+  "targets": [
+    {
+      "dataset": "c_train_18",
+      "exists": false,
+      "pt_subdir": null,
+      "files": [],
+      "issues": [
+        "missing_dataset_dir"
+      ]
+    },
+    {
+      "dataset": "c_train_23",
+      "exists": true,
+      "pt_subdir": "D:/Research/NO-2D-Metamaterials/OUTPUT\\c_train_23\\continuous_2026-03-05_16-48-57_pt",
+      "files": [
+        {
+          "file": "band_fft_full.pt",
+          "status": "ok",
+          "type": "Tensor",
+          "shape": [
+            6,
+            32,
+            32
+          ],
+          "dtype": "torch.float16",
+          "all_zero": false,
+          "has_nan": false
+        },
+        {
+          "file": "design_params_full.pt",
+          "status": "ok",
+          "type": "Tensor",
+          "shape": [
+            1000,
+            1
+          ],
+          "dtype": "torch.float16",
+          "all_zero": false,
+          "has_nan": false
+        },
+        {
+          "file": "displacements_dataset.pt",
+          "status": "ok",
+          "type": "TensorDataset",
+          "tensors": [
+            {
+              "idx": 0,
+              "shape": [
+                1950000,
+                32,
+                32
+              ],
+              "dtype": "torch.float16",
+              "all_zero": false,
+              "has_nan": false
+            },
+            {
+              "idx": 1,
+              "shape": [
+                1950000,
+                32,
+                32
+              ],
+              "dtype": "torch.float16",
+              "all_zero": false,
+              "has_nan": false
+            },
+            {
+              "idx": 2,
+              "shape": [
+                1950000,
+                32,
+                32
+              ],
+              "dtype": "torch.float16",
+              "all_zero": false,
+              "has_nan": false
+            },
+            {
+              "idx": 3,
+              "shape": [
+                1950000,
+                32,
+                32
+              ],
+              "dtype": "torch.float16",
+              "all_zero": false,
+              "has_nan": false
+            }
+          ],
+          "all_zero": false,
+          "has_nan": false
+        },
+        {
+          "file": "eigenvalue_data_full.pt",
+          "status": "ok",
+          "type": "Tensor",
+          "shape": [
+            1000,
+            325,
+            6
+          ],
+          "dtype": "torch.float16",
+          "all_zero": false,
+          "has_nan": false
+        },
+        {
+          "file": "geometries_full.pt",
+          "status": "ok",
+          "type": "Tensor",
+          "shape": [
+            1000,
+            32,
+            32
+          ],
+          "dtype": "torch.float16",
+          "all_zero": false,
+          "has_nan": false
+        },
+        {
+          "file": "reduced_indices.pt",
+          "status": "ok",
+          "type": "list",
+          "len": 1950000,
+          "all_zero": false,
+          "has_nan": false
+        },
+        {
+          "file": "waveforms_full.pt",
+          "status": "ok",
+          "type": "Tensor",
+          "shape": [
+            325,
+            32,
+            32
+          ],
+          "dtype": "torch.float16",
+          "all_zero": false,
+          "has_nan": false
+        },
+        {
+          "file": "wavevectors_full.pt",
+          "status": "ok",
+          "type": "Tensor",
+          "shape": [
+            1000,
+            325,
+            2
+          ],
+          "dtype": "torch.float16",
+          "all_zero": false,
+          "has_nan": false
+        }
+      ],
+      "issues": []
+    },
+    {
+      "dataset": "c_train_24",
+      "exists": true,
+      "pt_subdir": "D:/Research/NO-2D-Metamaterials/OUTPUT\\c_train_24\\continuous_2026-03-05_18-27-44_pt",
+      "files": [
+        {
+          "file": "band_fft_full.pt",
+          "status": "ok",
+          "type": "Tensor",
+          "shape": [
+            6,
+            32,
+            32
+          ],
+          "dtype": "torch.float16",
+          "all_zero": false,
+          "has_nan": false
+        },
+        {
+          "file": "design_params_full.pt",
+          "status": "ok",
+          "type": "Tensor",
+          "shape": [
+            1000,
+            1
+          ],
+          "dtype": "torch.float16",
+          "all_zero": false,
+          "has_nan": false
+        },
+        {
+          "file": "displacements_dataset.pt",
+          "status": "ok",
+          "type": "TensorDataset",
+          "tensors": [
+            {
+              "idx": 0,
+              "shape": [
+                1950000,
+                32,
+                32
+              ],
+              "dtype": "torch.float16",
+              "all_zero": false,
+              "has_nan": false
+            },
+            {
+              "idx": 1,
+              "shape": [
+                1950000,
+                32,
+                32
+              ],
+              "dtype": "torch.float16",
+              "all_zero": false,
+              "has_nan": false
+            },
+            {
+              "idx": 2,
+              "shape": [
+                1950000,
+                32,
+                32
+              ],
+              "dtype": "torch.float16",
+              "all_zero": false,
+              "has_nan": false
+            },
+            {
+              "idx": 3,
+              "shape": [
+                1950000,
+                32,
+                32
+              ],
+              "dtype": "torch.float16",
+              "all_zero": false,
+              "has_nan": false
+            }
+          ],
+          "all_zero": false,
+          "has_nan": false
+        },
+        {
+          "file": "eigenvalue_data_full.pt",
+          "status": "ok",
+          "type": "Tensor",
+          "shape": [
+            1000,
+            325,
+            6
+          ],
+          "dtype": "torch.float16",
+          "all_zero": false,
+          "has_nan": false
+        },
+        {
+          "file": "geometries_full.pt",
+          "status": "ok",
+          "type": "Tensor",
+          "shape": [
+            1000,
+            32,
+            32
+          ],
+          "dtype": "torch.float16",
+          "all_zero": false,
+          "has_nan": false
+        },
+        {
+          "file": "reduced_indices.pt",
+          "status": "ok",
+          "type": "list",
+          "len": 1950000,
+          "all_zero": false,
+          "has_nan": false
+        },
+        {
+          "file": "waveforms_full.pt",
+          "status": "ok",
+          "type": "Tensor",
+          "shape": [
+            325,
+            32,
+            32
+          ],
+          "dtype": "torch.float16",
+          "all_zero": false,
+          "has_nan": false
+        },
+        {
+          "file": "wavevectors_full.pt",
+          "status": "ok",
+          "type": "Tensor",
+          "shape": [
+            1000,
+            325,
+            2
+          ],
+          "dtype": "torch.float16",
+          "all_zero": false,
+          "has_nan": false
+        }
+      ],
+      "issues": []
+    },
+    {
+      "dataset": "c_test",
+      "exists": true,
+      "pt_subdir": "D:/Research/NO-2D-Metamaterials/OUTPUT\\c_test\\continuous_2026-03-05_20-07-34_pt",
+      "files": [
+        {
+          "file": "band_fft_full.pt",
+          "status": "ok",
+          "type": "Tensor",
+          "shape": [
+            6,
+            32,
+            32
+          ],
+          "dtype": "torch.float16",
+          "all_zero": false,
+          "has_nan": false
+        },
+        {
+          "file": "design_params_full.pt",
+          "status": "ok",
+          "type": "Tensor",
+          "shape": [
+            1000,
+            1
+          ],
+          "dtype": "torch.float16",
+          "all_zero": false,
+          "has_nan": false
+        },
+        {
+          "file": "displacements_dataset.pt",
+          "status": "ok",
+          "type": "TensorDataset",
+          "tensors": [
+            {
+              "idx": 0,
+              "shape": [
+                1950000,
+                32,
+                32
+              ],
+              "dtype": "torch.float16",
+              "all_zero": false,
+              "has_nan": false
+            },
+            {
+              "idx": 1,
+              "shape": [
+                1950000,
+                32,
+                32
+              ],
+              "dtype": "torch.float16",
+              "all_zero": false,
+              "has_nan": false
+            },
+            {
+              "idx": 2,
+              "shape": [
+                1950000,
+                32,
+                32
+              ],
+              "dtype": "torch.float16",
+              "all_zero": false,
+              "has_nan": false
+            },
+            {
+              "idx": 3,
+              "shape": [
+                1950000,
+                32,
+                32
+              ],
+              "dtype": "torch.float16",
+              "all_zero": false,
+              "has_nan": false
+            }
+          ],
+          "all_zero": false,
+          "has_nan": false
+        },
+        {
+          "file": "eigenvalue_data_full.pt",
+          "status": "ok",
+          "type": "Tensor",
+          "shape": [
+            1000,
+            325,
+            6
+          ],
+          "dtype": "torch.float16",
+          "all_zero": false,
+          "has_nan": false
+        },
+        {
+          "file": "geometries_full.pt",
+          "status": "ok",
+          "type": "Tensor",
+          "shape": [
+            1000,
+            32,
+            32
+          ],
+          "dtype": "torch.float16",
+          "all_zero": false,
+          "has_nan": false
+        },
+        {
+          "file": "reduced_indices.pt",
+          "status": "ok",
+          "type": "list",
+          "len": 1950000,
+          "all_zero": false,
+          "has_nan": false
+        },
+        {
+          "file": "waveforms_full.pt",
+          "status": "ok",
+          "type": "Tensor",
+          "shape": [
+            325,
+            32,
+            32
+          ],
+          "dtype": "torch.float16",
+          "all_zero": false,
+          "has_nan": false
+        },
+        {
+          "file": "wavevectors_full.pt",
+          "status": "ok",
+          "type": "Tensor",
+          "shape": [
+            1000,
+            325,
+            2
+          ],
+          "dtype": "torch.float16",
+          "all_zero": false,
+          "has_nan": false
+        }
+      ],
+      "issues": []
+    }
+  ]
+}
