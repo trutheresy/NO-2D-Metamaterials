@@ -28,11 +28,10 @@ import scipy.sparse as sp
 
 # Custom utilities
 try:
-    import NO_utils
-    import NO_utils_multiple
+    import NO_utilities
 except ImportError as e:
-    print(f"Error importing utility modules: {e}")
-    print("Please ensure NO_utils.py and NO_utils_multiple.py are in the same directory or PYTHONPATH")
+    print(f"Error importing NO_utilities module: {e}")
+    print("Please ensure NO_utilities.py is in the same directory or PYTHONPATH")
     sys.exit(1)
 
 # Import functions for computing K, M, T matrices and reconstructing frequencies
@@ -745,7 +744,7 @@ Examples:
     parser.add_argument(
         '--verify',
         action='store_true',
-        help='Verify the output file can be loaded with NO_utils.extract_data()'
+        help='Verify the output file can be loaded with NO_utilities.extract_data()'
     )
     
     parser.add_argument(
@@ -866,14 +865,14 @@ Examples:
             # Copy the reconstructed file to temp directory
             shutil.copy2(matlab_output_path, temp_mat_path)
             
-            # Try to extract data using NO_utils
+            # Try to extract data using NO_utilities
             (designs, design_params, n_designs, n_panes, design_res,
              WAVEVECTOR_DATA, WAVEFORM_DATA, n_dim, n_wavevectors,
              EIGENVALUE_DATA, n_bands, EIGENVECTOR_DATA_x,
              EIGENVECTOR_DATA_y, const, N_struct,
-             imag_tol, rng_seed_offset) = NO_utils.extract_data(temp_dir)
+             imag_tol, rng_seed_offset) = NO_utilities.extract_data(temp_dir)
             
-            print("\n✓ Successfully loaded with NO_utils.extract_data()!")
+            print("\n✓ Successfully loaded with NO_utilities.extract_data()!")
             print(f"  n_designs: {n_designs}")
             print(f"  n_panes: {n_panes}")
             print(f"  design_res: {design_res}")

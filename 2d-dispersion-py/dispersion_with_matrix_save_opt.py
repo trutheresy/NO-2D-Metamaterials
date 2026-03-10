@@ -6,6 +6,7 @@ which is the actual function used by the generation script.
 """
 
 import os
+import json
 import numpy as np
 from scipy.sparse.linalg import eigs
 from system_matrices import get_system_matrices
@@ -18,6 +19,29 @@ def _env_flag(name: str, default: bool = False) -> bool:
     if v is None:
         return default
     return v.strip().lower() in {"1", "true", "yes", "on"}
+
+
+def _raise_eigensolve_failure(exc, *, k_idx, wavevector, solver, sigma_eig, Kr, Mr):
+    """
+    Raise a structured runtime error for robust downstream logging.
+    """
+    diag = {
+        "event": "eigensolve_failure",
+        "k_idx_0based": int(k_idx),
+        "k_idx_1based": int(k_idx) + 1,
+        "wavevector": [float(wavevector[0]), float(wavevector[1])],
+        "solver": str(solver),
+        "sigma_eig": str(sigma_eig),
+        "Kr_shape": tuple(int(x) for x in Kr.shape),
+        "Mr_shape": tuple(int(x) for x in Mr.shape),
+        "Kr_dtype": str(Kr.dtype),
+        "Mr_dtype": str(Mr.dtype),
+        "Kr_nnz": int(getattr(Kr, "nnz", np.count_nonzero(np.asarray(Kr)))),
+        "Mr_nnz": int(getattr(Mr, "nnz", np.count_nonzero(np.asarray(Mr)))),
+        "error_type": type(exc).__name__,
+        "error_message": str(exc),
+    }
+    raise RuntimeError("EIGENSOLVE_DIAG " + json.dumps(diag, sort_keys=True)) from exc
 
 
 def dispersion_with_matrix_save_opt(const, wavevectors):
@@ -114,10 +138,36 @@ def dispersion_with_matrix_save_opt(const, wavevectors):
         M_out = None
         T_out = None
     
+    # Optional precomputed transformation matrices.
+    precomputed_wavevectors = const.get('precomputed_wavevectors', None)
+    precomputed_T_data = const.get('precomputed_T_data', None)
+    use_precomputed_by_index = False
+    precomputed_lookup = None
+    if precomputed_wavevectors is not None and precomputed_T_data is not None:
+        precomputed_wavevectors = np.asarray(precomputed_wavevectors, dtype=np.float64)
+        use_precomputed_by_index = (
+            precomputed_wavevectors.shape == np.asarray(wavevectors).shape
+            and len(precomputed_T_data) == n_wavevectors
+            and np.allclose(precomputed_wavevectors, np.asarray(wavevectors, dtype=np.float64), rtol=0.0, atol=1e-12)
+        )
+        # Fallback lookup by wavevector key if order differs.
+        precomputed_lookup = {
+            (round(float(wv[0]), 12), round(float(wv[1]), 12)): Tm
+            for wv, Tm in zip(precomputed_wavevectors, precomputed_T_data)
+        }
+
     # Process each wavevector
     for k_idx in range(n_wavevectors):
         wavevector = wavevectors[k_idx, :]
-        T = get_transformation_matrix(wavevectors_for_T[k_idx, :], const)
+        if use_precomputed_by_index:
+            T = precomputed_T_data[k_idx]
+        elif precomputed_lookup is not None:
+            key = (round(float(wavevector[0]), 12), round(float(wavevector[1]), 12))
+            T = precomputed_lookup.get(key, None)
+            if T is None:
+                T = get_transformation_matrix(wavevectors_for_T[k_idx, :], const)
+        else:
+            T = get_transformation_matrix(wavevectors_for_T[k_idx, :], const)
         
         # Transform matrices to reduced space
         matrix_dtype = np.complex128 if parity_use_complex128 else np.complex64
@@ -146,7 +196,18 @@ def dispersion_with_matrix_save_opt(const, wavevectors):
                 # This ensures we capture rigid body modes (zero eigenvalues) correctly
                 Kr_dense = Kr.toarray() if hasattr(Kr, 'toarray') else Kr
                 Mr_dense = Mr.toarray() if hasattr(Mr, 'toarray') else Mr
-                eig_vals, eig_vecs = np.linalg.eig(np.linalg.solve(Mr_dense, Kr_dense))
+                try:
+                    eig_vals, eig_vecs = np.linalg.eig(np.linalg.solve(Mr_dense, Kr_dense))
+                except Exception as e:
+                    _raise_eigensolve_failure(
+                        e,
+                        k_idx=k_idx,
+                        wavevector=wavevector,
+                        solver="dense_np.linalg",
+                        sigma_eig=const.get("sigma_eig", 0),
+                        Kr=Kr,
+                        Mr=Mr,
+                    )
                 # Take only the first N_eig eigenvalues (sorted by real part)
                 idxs = np.argsort(np.real(eig_vals))[:const['N_eig']]
                 eig_vals = eig_vals[idxs]
@@ -172,7 +233,18 @@ def dispersion_with_matrix_save_opt(const, wavevectors):
                 else:
                     eigs_kwargs['sigma'] = sigma_eig
                 
-                eig_vals, eig_vecs = eigs(Kr, M=Mr, **eigs_kwargs)
+                try:
+                    eig_vals, eig_vecs = eigs(Kr, M=Mr, **eigs_kwargs)
+                except Exception as e:
+                    _raise_eigensolve_failure(
+                        e,
+                        k_idx=k_idx,
+                        wavevector=wavevector,
+                        solver="sparse_scipy_eigs",
+                        sigma_eig=sigma_eig,
+                        Kr=Kr,
+                        Mr=Mr,
+                    )
             # Sort eigenvalues and eigenvectors by real part (matching MATLAB)
             idxs = np.argsort(np.real(eig_vals))
             eig_vals = eig_vals[idxs]

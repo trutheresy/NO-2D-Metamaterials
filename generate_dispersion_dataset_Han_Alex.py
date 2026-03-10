@@ -7,10 +7,14 @@ eigenvectors, and system matrices.
 """
 
 import argparse
+import hashlib
+import json
 import numpy as np
 import os
+import platform
 import sys
 import time
+from concurrent.futures import ProcessPoolExecutor, as_completed
 from datetime import datetime
 import pickle
 import scipy.io as sio
@@ -30,6 +34,7 @@ try:
     from design_parameters import DesignParameters
     from design_conversion import convert_design, design_to_explicit, apply_steel_rubber_paradigm
     from kernels import generate_correlated_design
+    from system_matrices import get_transformation_matrix
     from utils import validate_constants, check_contour_analysis
     
     print("SUCCESS: Successfully imported functions from the new Python dispersion library")
@@ -39,6 +44,83 @@ except ImportError as e:
     print("Make sure the 2d-dispersion-py directory is in the correct location")
     print(f"Current library path: {dispersion_library_path}")
     sys.exit(1)
+
+
+_T_CACHE_BY_PATH = {}
+
+
+def _log_event(level: str, event: str, **fields):
+    """
+    Emit one-line structured logs for reliable downstream parsing.
+    """
+    payload = {
+        "ts_utc": datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
+        "level": level.upper(),
+        "event": event,
+    }
+    payload.update(fields)
+    print("LOG_EVENT " + json.dumps(payload, sort_keys=True))
+
+
+def _wavevector_key(wv):
+    return (round(float(wv[0]), 12), round(float(wv[1]), 12))
+
+
+def _build_t_signature(const, wavevectors):
+    wv64 = np.asarray(wavevectors, dtype=np.float64)
+    digest = hashlib.sha1(wv64.tobytes()).hexdigest()
+    return (
+        f"Nele{int(const['N_ele'])}_"
+        f"Npix{int(const['N_pix'])}_"
+        f"a{float(const['a']):.12g}_"
+        f"nwv{int(wv64.shape[0])}_"
+        f"{digest}"
+    )
+
+
+def _load_t_cache_file(cache_path):
+    if not os.path.exists(cache_path):
+        return {"version": 1, "entries": {}}
+    try:
+        with open(cache_path, "rb") as f:
+            obj = pickle.load(f)
+        if isinstance(obj, dict) and "entries" in obj:
+            return obj
+    except Exception as e:
+        print(f"WARNING: Failed reading T cache at {cache_path}: {e}. Rebuilding.")
+    return {"version": 1, "entries": {}}
+
+
+def _save_t_cache_file(cache_path, cache_obj):
+    with open(cache_path, "wb") as f:
+        pickle.dump(cache_obj, f, protocol=pickle.HIGHEST_PROTOCOL)
+
+
+def _get_or_create_precomputed_t_entry(const, wavevectors, cache_path):
+    """
+    Load or build precomputed T matrices for this lattice/wavevector signature.
+    """
+    global _T_CACHE_BY_PATH
+    cache_path = os.path.abspath(cache_path)
+    cache_obj = _T_CACHE_BY_PATH.get(cache_path)
+    if cache_obj is None:
+        cache_obj = _load_t_cache_file(cache_path)
+        _T_CACHE_BY_PATH[cache_path] = cache_obj
+
+    signature = _build_t_signature(const, wavevectors)
+    entry = cache_obj["entries"].get(signature)
+    if entry is None:
+        wv_arr = np.asarray(wavevectors, dtype=np.float32)
+        t_data = [get_transformation_matrix(wv, const) for wv in wv_arr]
+        entry = {
+            "signature": signature,
+            "wavevectors": wv_arr.astype(np.float32),
+            "T_data": t_data,
+        }
+        cache_obj["entries"][signature] = entry
+        _save_t_cache_file(cache_path, cache_obj)
+        print(f"SUCCESS: Built and cached precomputed T matrices ({len(t_data)} wavevectors) at {cache_path}")
+    return entry
 
 
 def _build_pt_dataset_outputs(
@@ -86,16 +168,16 @@ def _build_pt_dataset_outputs(
     eig_y_reduced = eig_y[d_idx, w_idx, b_idx]
 
     # Optional wavelet embeddings to match convert_mat_to_pytorch.py.
-    # If NO_utils_multiple is unavailable, placeholders are created.
+    # If NO_utilities is unavailable, placeholders are created.
     try:
-        import NO_utils_multiple  # type: ignore
+        import NO_utilities  # type: ignore
 
-        waveforms = NO_utils_multiple.embed_2const_wavelet(
+        waveforms = NO_utilities.embed_2const_wavelet(
             wavevectors[0, :, 0],
             wavevectors[0, :, 1],
             size=n_pix,
         )
-        bands_fft = NO_utils_multiple.embed_integer_wavelet(np.arange(1, n_eig + 1), size=n_pix)
+        bands_fft = NO_utilities.embed_integer_wavelet(np.arange(1, n_eig + 1), size=n_pix)
     except Exception as e:
         print(f"WARNING: Could not generate wavelet embeddings: {e}")
         waveforms = np.zeros((wavevectors.shape[1], n_pix, n_pix), dtype=np.float16)
@@ -124,10 +206,107 @@ def _build_pt_dataset_outputs(
     return outputs
 
 
+def _compute_single_structure(struct_idx, rng_seed_offset, binarize, const_template):
+    """
+    Compute one structure independently (safe for process-based parallel execution).
+    """
+    try:
+        design_number = int(struct_idx + rng_seed_offset)
+
+        # Local const copy so each worker/process is isolated.
+        const_local = dict(const_template)
+        t_cache_path = const_local.get('precomputed_T_cache_path')
+        if t_cache_path:
+            t_entry = _get_or_create_precomputed_t_entry(
+                const_local,
+                const_local['wavevectors'],
+                t_cache_path,
+            )
+            const_local['precomputed_wavevectors'] = t_entry['wavevectors']
+            const_local['precomputed_T_data'] = t_entry['T_data']
+
+        # Build design params exactly as in the serial path.
+        design_params_local = DesignParameters(1)
+        design_params_local.property_coupling = 'coupled'
+        design_params_local.design_style = 'kernel'
+        design_params_local.design_options = {
+            'kernel': 'periodic',
+            'sigma_f': 1.0,
+            'sigma_l': 1.0,
+            'symmetry_type': 'p4mm',
+            'N_value': np.inf
+        }
+        design_params_local.N_pix = [const_local['N_pix'], const_local['N_pix']]
+        design_params_local.design_number = design_number
+        design_params_local = design_params_local.prepare()
+
+        # Generate design and map properties.
+        design = get_design2(design_params_local)
+        design = convert_design(
+            design, 'linear', const_local['design_scale'],
+            const_local['E_min'], const_local['E_max'],
+            const_local['rho_min'], const_local['rho_max']
+        )
+        design = apply_steel_rubber_paradigm(design, const_local)
+        if binarize:
+            design = np.round(design)
+
+        design_f16 = np.asarray(design, dtype=np.float16)
+        const_local['design'] = design_f16
+
+        # Compute dispersion and system matrices.
+        wv, fr, ev, _, K, M, T = dispersion_with_matrix_save_opt(const_local, const_local['wavevectors'])
+
+        # Material property expansion.
+        design_f32 = design_f16.astype(np.float32, copy=False)
+        explicit_props = design_to_explicit(
+            design_f32, const_local['design_scale'],
+            const_local['E_min'], const_local['E_max'],
+            const_local['rho_min'], const_local['rho_max'],
+            const_local['poisson_min'], const_local['poisson_max']
+        )
+
+        return {
+            'ok': True,
+            'struct_idx': struct_idx,
+            'design_number': design_number,
+            'design_f16': design_f16,
+            'wv_f16': np.asarray(wv, dtype=np.float16),
+            'fr_f16': np.asarray(np.real(fr), dtype=np.float16),
+            'ev_c64': None if ev is None else np.asarray(ev, dtype=np.complex64),
+            'E_f32': np.asarray(explicit_props['E'], dtype=np.float32),
+            'rho_f32': np.asarray(explicit_props['rho'], dtype=np.float32),
+            'nu_f32': np.asarray(explicit_props['nu'], dtype=np.float32),
+            'K': K,
+            'M': M,
+            'T': T,
+            'imag_max': float(np.max(np.abs(np.imag(fr)))) if fr is not None else 0.0,
+        }
+    except Exception as e:
+        import traceback
+        error_details = None
+        if e.args and isinstance(e.args[0], str) and e.args[0].startswith("EIGENSOLVE_DIAG "):
+            raw = e.args[0][len("EIGENSOLVE_DIAG "):]
+            try:
+                error_details = json.loads(raw)
+            except Exception:
+                error_details = {"raw": raw}
+        return {
+            'ok': False,
+            'struct_idx': struct_idx,
+            'design_number': int(struct_idx + rng_seed_offset),
+            'error': str(e),
+            'traceback': traceback.format_exc(),
+            'error_details': error_details,
+        }
+
+
 def generate_dispersion_dataset_with_matrices(
     n_struct: int = 5,
     rng_seed_offset_override: int = 0,
     binarize_override: bool = False,
+    parallel_workers: int = 16,
+    save_pkl: bool = False,
 ):
     """
     Generate dispersion dataset with system matrices (equivalent to MATLAB script).
@@ -160,11 +339,12 @@ def generate_dispersion_dataset_with_matrices(
     }
     
     # Flags for computational improvements
+    use_parallel = int(parallel_workers) > 1
     const.update({
         'isUseGPU': False,
         'isUseImprovement': True,
         'isUseSecondImprovement': False,
-        'isUseParallel': True,  # Note: Python doesn't have parfor, but we can use multiprocessing if needed
+        'isUseParallel': use_parallel,
         'isSaveEigenvectors': is_save_eigenvectors,
         'isComputeGroupVelocity': False,
         'isComputeFrequencyDesignSensitivity': False,
@@ -175,6 +355,20 @@ def generate_dispersion_dataset_with_matrices(
     N_struct = int(n_struct)  # Number of designs to generate
     rng_seed_offset = int(rng_seed_offset_override)  # RNG seed offset
     binarize = bool(binarize_override)  # False=continuous, True=binarized
+
+    _log_event(
+        "INFO",
+        "run_start",
+        script=script_name,
+        cwd=script_path,
+        python_version=sys.version.split()[0],
+        platform=platform.platform(),
+        n_struct=N_struct,
+        rng_seed_offset=rng_seed_offset,
+        binarize=binarize,
+        parallel_workers=int(parallel_workers),
+        save_pkl=bool(save_pkl),
+    )
     
     # Material parameters (exact MATLAB translation)
     const.update({
@@ -198,6 +392,12 @@ def generate_dispersion_dataset_with_matrices(
         get_IBZ_wavevectors(const['N_wv'], const['a'], 'none'), dtype=np.float16
     )
     print(f"Generated {len(const['wavevectors'])} wavevectors")
+    t_cache_path = os.path.join(script_path, "precomputed_T_matrices.pkl")
+    t_entry = _get_or_create_precomputed_t_entry(const, const['wavevectors'], t_cache_path)
+    const['precomputed_T_cache_path'] = t_cache_path
+    # Keep in-process references for serial mode and optional fallback.
+    const['precomputed_wavevectors'] = t_entry['wavevectors']
+    const['precomputed_T_data'] = t_entry['T_data']
     
     # Initialize design parameters (exact MATLAB translation)
     design_params = DesignParameters(N_struct)
@@ -233,7 +433,7 @@ def generate_dispersion_dataset_with_matrices(
     K_data = [None] * N_struct
     M_data = [None] * N_struct
     T_data = [None] * N_struct
-    design_numbers = np.zeros((N_struct,), dtype=np.int64)
+    design_numbers = np.arange(N_struct, dtype=np.int64) + rng_seed_offset
     
     # Validate constants
     is_valid, missing_fields = validate_constants(const)
@@ -245,66 +445,121 @@ def generate_dispersion_dataset_with_matrices(
     
     # Generate dataset
     print(f"\nGenerating {N_struct} structures...")
+    print(f"Parallel workers: {parallel_workers} ({'enabled' if use_parallel else 'serial'})")
     progress_every = 100 if N_struct >= 100 else max(1, N_struct // 10)
     gen_start_time = time.perf_counter()
-    for struct_idx in range(N_struct):
-        # Generate design using EXACT MATLAB approach
-        try:
-            # Set design number for this structure (exact MATLAB translation)
-            design_params.design_number = struct_idx + rng_seed_offset
-            design_numbers[struct_idx] = struct_idx + rng_seed_offset
-            # Expand scalar design_number into per-property values (MATLAB prepare() behavior).
-            design_params = design_params.prepare()
-            
-            # Generate design using get_design2 (exact MATLAB translation)
-            design = get_design2(design_params)
-            
-            # Convert design scale (exact MATLAB translation)
-            design = convert_design(design, 'linear', const['design_scale'], 
-                                  const['E_min'], const['E_max'],
-                                  const['rho_min'], const['rho_max'])
-            # Match MATLAB ex_dispersion_batch_save.m channel mapping.
-            design = apply_steel_rubber_paradigm(design, const)
-            
-            # Binarize if requested (exact MATLAB translation)
-            if binarize:
-                design = np.round(design)
-            
-            # Float16-first chain for stored fields and solver inputs.
-            design_f16 = np.asarray(design, dtype=np.float16)
-            designs[:, :, :, struct_idx] = design_f16
-            const['design'] = design_f16
-            
-            # Compute dispersion using the CORRECT function (matches MATLAB exactly)
-            wv, fr, ev, mesh, K, M, T = dispersion_with_matrix_save_opt(const, const['wavevectors'])
-            
-            # Store results
-            wavevector_data[:, :, struct_idx] = np.asarray(wv, dtype=np.float16)
-            eigenvalue_data[:, :, struct_idx] = np.asarray(np.real(fr), dtype=np.float16)
-            
-            if is_save_eigenvectors and ev is not None:
-                eigenvector_data[:, :, :, struct_idx] = np.asarray(ev, dtype=np.complex64)
-            
-            # Check for imaginary components
-            if np.max(np.abs(np.imag(fr))) > imag_tol:
+    processed = 0
+    if use_parallel:
+        const_template = dict(const)
+        with ProcessPoolExecutor(max_workers=int(parallel_workers)) as executor:
+            futures = {
+                executor.submit(
+                    _compute_single_structure,
+                    struct_idx,
+                    rng_seed_offset,
+                    binarize,
+                    const_template,
+                ): struct_idx
+                for struct_idx in range(N_struct)
+            }
+            for future in as_completed(futures):
+                result = future.result()
+                struct_idx = result['struct_idx']
+                if not result['ok']:
+                    print(f"  ERROR: Error processing structure {struct_idx + 1}: {result['error']}")
+                    details = result.get('error_details')
+                    if details:
+                        _log_event(
+                            "ERROR",
+                            "structure_failure",
+                            struct_idx_0based=int(struct_idx),
+                            struct_idx_1based=int(struct_idx + 1),
+                            design_number=int(result.get('design_number', struct_idx + rng_seed_offset)),
+                            error_details=details,
+                        )
+                    else:
+                        _log_event(
+                            "ERROR",
+                            "structure_failure",
+                            struct_idx_0based=int(struct_idx),
+                            struct_idx_1based=int(struct_idx + 1),
+                            design_number=int(result.get('design_number', struct_idx + rng_seed_offset)),
+                            error_message=result['error'],
+                        )
+                    print(result.get('traceback', ''))
+                    processed += 1
+                    continue
+
+                designs[:, :, :, struct_idx] = result['design_f16']
+                wavevector_data[:, :, struct_idx] = result['wv_f16']
+                eigenvalue_data[:, :, struct_idx] = result['fr_f16']
+                if is_save_eigenvectors and result['ev_c64'] is not None:
+                    eigenvector_data[:, :, :, struct_idx] = result['ev_c64']
+                elastic_modulus_data[:, :, struct_idx] = result['E_f32']
+                density_data[:, :, struct_idx] = result['rho_f32']
+                poisson_data[:, :, struct_idx] = result['nu_f32']
+                K_data[struct_idx] = result['K']
+                M_data[struct_idx] = result['M']
+                T_data[struct_idx] = result['T']
+                if result['imag_max'] > imag_tol:
+                    print(f"WARNING: Warning: Large imaginary component in frequency for structure {struct_idx + 1}")
+
+                processed += 1
+                if processed == 1 or processed == N_struct or processed % progress_every == 0:
+                    elapsed = time.perf_counter() - gen_start_time
+                    rate = processed / max(elapsed, 1e-9)
+                    eta = (N_struct - processed) / max(rate, 1e-9)
+                    print(
+                        f"PROGRESS: {processed}/{N_struct} "
+                        f"({100.0 * processed / N_struct:.1f}%) "
+                        f"elapsed={elapsed:.1f}s rate={rate:.2f}/s eta={eta:.1f}s"
+                    )
+    else:
+        const_template = dict(const)
+        for struct_idx in range(N_struct):
+            result = _compute_single_structure(
+                struct_idx=struct_idx,
+                rng_seed_offset=rng_seed_offset,
+                binarize=binarize,
+                const_template=const_template,
+            )
+            if not result['ok']:
+                print(f"  ERROR: Error processing structure {struct_idx + 1}: {result['error']}")
+                details = result.get('error_details')
+                if details:
+                    _log_event(
+                        "ERROR",
+                        "structure_failure",
+                        struct_idx_0based=int(struct_idx),
+                        struct_idx_1based=int(struct_idx + 1),
+                        design_number=int(result.get('design_number', struct_idx + rng_seed_offset)),
+                        error_details=details,
+                    )
+                else:
+                    _log_event(
+                        "ERROR",
+                        "structure_failure",
+                        struct_idx_0based=int(struct_idx),
+                        struct_idx_1based=int(struct_idx + 1),
+                        design_number=int(result.get('design_number', struct_idx + rng_seed_offset)),
+                        error_message=result['error'],
+                    )
+                print(result.get('traceback', ''))
+                continue
+
+            designs[:, :, :, struct_idx] = result['design_f16']
+            wavevector_data[:, :, struct_idx] = result['wv_f16']
+            eigenvalue_data[:, :, struct_idx] = result['fr_f16']
+            if is_save_eigenvectors and result['ev_c64'] is not None:
+                eigenvector_data[:, :, :, struct_idx] = result['ev_c64']
+            elastic_modulus_data[:, :, struct_idx] = result['E_f32']
+            density_data[:, :, struct_idx] = result['rho_f32']
+            poisson_data[:, :, struct_idx] = result['nu_f32']
+            K_data[struct_idx] = result['K']
+            M_data[struct_idx] = result['M']
+            T_data[struct_idx] = result['T']
+            if result['imag_max'] > imag_tol:
                 print(f"WARNING: Warning: Large imaginary component in frequency for structure {struct_idx + 1}")
-            
-            # Store material properties
-            design_f32 = design_f16.astype(np.float32, copy=False)
-            explicit_props = design_to_explicit(
-                                              design_f32, const['design_scale'],
-                                              const['E_min'], const['E_max'],
-                                              const['rho_min'], const['rho_max'],
-                                              const['poisson_min'], const['poisson_max'])
-            
-            elastic_modulus_data[:, :, struct_idx] = explicit_props['E']
-            density_data[:, :, struct_idx] = explicit_props['rho']
-            poisson_data[:, :, struct_idx] = explicit_props['nu']
-            
-            # Store system matrices (now available from dispersion_with_matrix_save_opt!)
-            K_data[struct_idx] = K
-            M_data[struct_idx] = M
-            T_data[struct_idx] = T
 
             processed = struct_idx + 1
             if processed == 1 or processed == N_struct or processed % progress_every == 0:
@@ -316,12 +571,6 @@ def generate_dispersion_dataset_with_matrices(
                     f"({100.0 * processed / N_struct:.1f}%) "
                     f"elapsed={elapsed:.1f}s rate={rate:.2f}/s eta={eta:.1f}s"
                 )
-            
-        except Exception as e:
-            print(f"  ERROR: Error processing structure {struct_idx + 1}: {e}")
-            import traceback
-            traceback.print_exc()
-            continue
     
     # Collect constitutive data
     constitutive_data = {
@@ -397,13 +646,13 @@ def generate_dispersion_dataset_with_matrices(
         torch.save(pt_outputs['design_params_full'], os.path.join(output_pt_path, 'design_params_full.pt'))
         torch.save(pt_outputs['eigenvalue_data_full'], os.path.join(output_pt_path, 'eigenvalue_data_full.pt'))
 
-        # Preserve raw Python object dump for debugging complex/sparse structures.
-        pickle_file_path = os.path.join(output_folder, f'{design_type_label}_{script_start_time}.pkl')
-        with open(pickle_file_path, 'wb') as f:
-            pickle.dump(dataset, f)
-
         print(f"SUCCESS: PyTorch dataset bundle saved to: {output_pt_path}")
-        print(f"SUCCESS: Python pickle file saved to: {pickle_file_path}")
+        if save_pkl:
+            # Optional full Python object dump for debugging complex/sparse structures.
+            pickle_file_path = os.path.join(output_folder, f'{design_type_label}_{script_start_time}.pkl')
+            with open(pickle_file_path, 'wb') as f:
+                pickle.dump(dataset, f)
+            print(f"SUCCESS: Python pickle file saved to: {pickle_file_path}")
     
     # Summary
     print("\n" + "="*80)
@@ -602,6 +851,8 @@ if __name__ == "__main__":
     parser.add_argument("--n-struct", type=int, default=5, help="Number of structures/designs to generate.")
     parser.add_argument("--rng-seed-offset", type=int, default=0, help="RNG seed offset applied to design index.")
     parser.add_argument("--binarize", action="store_true", help="Generate binarized designs (default: continuous).")
+    parser.add_argument("--parallel-workers", type=int, default=16, help="Number of worker processes for geometry-level parallel generation (default: 16).")
+    parser.add_argument("--save-pkl", action="store_true", help="Also save full Python dataset snapshot as .pkl (default: off).")
     parser.add_argument("--run-demo", action="store_true", help="Run post-generation demonstration plots (default: off).")
     # Backward-compatible no-op: generation now skips demo by default.
     parser.add_argument("--skip-demo", action="store_true", help=argparse.SUPPRESS)
@@ -612,6 +863,8 @@ if __name__ == "__main__":
         n_struct=args.n_struct,
         rng_seed_offset_override=args.rng_seed_offset,
         binarize_override=args.binarize,
+        parallel_workers=args.parallel_workers,
+        save_pkl=args.save_pkl,
     )
 
     # Demonstrate additional features

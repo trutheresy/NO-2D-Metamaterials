@@ -5,8 +5,8 @@ This script converts MATLAB .mat files directly to reduced, wavelet-embedded, fl
 matching the exact functionality of matlab_to_reduced_pt.ipynb.
 
 **Features:**
-- Uses NO_utils.extract_data() for loading MATLAB files
-- Uses NO_utils_multiple.embed_2const_wavelet() and embed_integer_wavelet() for wavelet embedding
+- Uses NO_utilities.extract_data() for loading MATLAB files
+- Uses NO_utilities.embed_2const_wavelet() and embed_integer_wavelet() for wavelet embedding
 - Applies dataset reduction by random sampling (wavevectors and bands)
 - Converts to float16 precision (or float8_e4m3fn if requested)
 - Saves as PyTorch .pt files
@@ -41,16 +41,15 @@ from pathlib import Path
 import sys
 import argparse
 
-# Add parent directory to path to import NO_utils modules
+# Add parent directory to path to import NO_utilities module
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-# Import required modules
+# Import required module
 try:
-    import NO_utils
-    import NO_utils_multiple
+    import NO_utilities
 except ImportError:
-    print("ERROR: Could not import NO_utils or NO_utils_multiple")
-    print("Make sure these modules are in the parent directory")
+    print("ERROR: Could not import NO_utilities")
+    print("Make sure this module is in the parent directory")
     sys.exit(1)
 
 
@@ -97,7 +96,7 @@ def convert_matlab_to_reduced_pt(mat_file_path, output_base_path, WVR=1.0, BR=1.
     start_time = time.time()
     
     # Create a temporary directory with only this .mat file
-    # (because NO_utils.extract_data expects a folder with a single .mat file)
+    # (because NO_utilities.extract_data expects a folder with a single .mat file)
     temp_dir = tempfile.mkdtemp(prefix=f"matlab_convert_{file_name}_")
     temp_mat_path = Path(temp_dir) / mat_file_path.name
     
@@ -105,12 +104,12 @@ def convert_matlab_to_reduced_pt(mat_file_path, output_base_path, WVR=1.0, BR=1.
         # Copy the .mat file to temporary directory
         shutil.copy2(mat_file_path, temp_mat_path)
         
-        # Extract data from MATLAB file using NO_utils.extract_data()
+        # Extract data from MATLAB file using NO_utilities.extract_data()
         (designs, design_params, n_designs, n_panes, design_res,
          WAVEVECTOR_DATA, WAVEFORM_DATA, n_dim, n_wavevectors,
          EIGENVALUE_DATA, n_bands, EIGENVECTOR_DATA_x,
          EIGENVECTOR_DATA_y, const, N_struct,
-         imag_tol, rng_seed_offset) = NO_utils.extract_data(temp_dir)
+         imag_tol, rng_seed_offset) = NO_utilities.extract_data(temp_dir)
     finally:
         # Clean up temporary directory
         shutil.rmtree(temp_dir, ignore_errors=True)
@@ -124,13 +123,13 @@ def convert_matlab_to_reduced_pt(mat_file_path, output_base_path, WVR=1.0, BR=1.
     
     # Step 2: Apply Wavelet Embedding
     print("\nStep 2: Applying Wavelet Embedding")
-    waveforms = NO_utils_multiple.embed_2const_wavelet(
+    waveforms = NO_utilities.embed_2const_wavelet(
         WAVEVECTOR_DATA[0, :, 0],  # X-components of first structure
         WAVEVECTOR_DATA[0, :, 1],  # Y-components of first structure
         size=design_res
     )
     bands = np.arange(1, n_bands + 1)
-    bands_fft = NO_utils_multiple.embed_integer_wavelet(bands, size=design_res)
+    bands_fft = NO_utilities.embed_integer_wavelet(bands, size=design_res)
     print(f"  Embedded shapes: waveforms={waveforms.shape}, bands_fft={bands_fft.shape}")
     
     # Step 3: Reduce Dataset

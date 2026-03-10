@@ -29,11 +29,10 @@ import sys
 
 # Custom utilities
 try:
-    import NO_utils_multiple
-    import NO_utils
+    import NO_utilities
 except ImportError as e:
-    print(f"Error importing utility modules: {e}")
-    print("Please ensure NO_utils.py and NO_utils_multiple.py are in the same directory or PYTHONPATH")
+    print(f"Error importing NO_utilities module: {e}")
+    print("Please ensure NO_utilities.py is in the same directory or PYTHONPATH")
     sys.exit(1)
 
 
@@ -78,7 +77,7 @@ def convert_matlab_to_reduced_pt(mat_file_path, output_base_path, WVR, BR, DO, u
     start_time = time.time()
     
     # Create a temporary directory with only this .mat file
-    # (because NO_utils.extract_data expects a folder with a single .mat file)
+    # (because NO_utilities.extract_data expects a folder with a single .mat file)
     temp_dir = tempfile.mkdtemp(prefix=f"matlab_convert_{file_name}_")
     temp_mat_path = Path(temp_dir) / mat_file_path.name
     
@@ -91,7 +90,7 @@ def convert_matlab_to_reduced_pt(mat_file_path, output_base_path, WVR, BR, DO, u
          WAVEVECTOR_DATA, WAVEFORM_DATA, n_dim, n_wavevectors,
          EIGENVALUE_DATA, n_bands, EIGENVECTOR_DATA_x,
          EIGENVECTOR_DATA_y, const, N_struct,
-         imag_tol, rng_seed_offset) = NO_utils.extract_data(temp_dir)
+         imag_tol, rng_seed_offset) = NO_utilities.extract_data(temp_dir)
     finally:
         # Clean up temporary directory
         shutil.rmtree(temp_dir, ignore_errors=True)
@@ -105,13 +104,13 @@ def convert_matlab_to_reduced_pt(mat_file_path, output_base_path, WVR, BR, DO, u
     
     # Step 2: Apply Wavelet Embedding
     print("\nStep 2: Applying Wavelet Embedding")
-    waveforms = NO_utils_multiple.embed_2const_wavelet(
+    waveforms = NO_utilities.embed_2const_wavelet(
         WAVEVECTOR_DATA[0, :, 0], 
         WAVEVECTOR_DATA[0, :, 1], 
         size=design_res
     )
     bands = np.arange(1, n_bands + 1)
-    bands_fft = NO_utils_multiple.embed_integer_wavelet(bands, size=design_res)
+    bands_fft = NO_utilities.embed_integer_wavelet(bands, size=design_res)
     print(f"  Embedded shapes: waveforms={waveforms.shape}, bands_fft={bands_fft.shape}")
     
     # Step 3: Reduce Dataset

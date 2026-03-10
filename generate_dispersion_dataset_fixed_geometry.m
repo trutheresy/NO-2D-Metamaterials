@@ -13,7 +13,15 @@ if ~exist('matlab_output_path','var')
 end
 
 [repo_root, ~, ~] = fileparts(mfilename('fullpath'));
-addpath(fullfile(repo_root,'2D-dispersion-han'));
+mat_lib_primary = fullfile(repo_root,'2D-dispersion-mat');
+mat_lib_legacy = fullfile(repo_root,'2D-dispersion-han');
+if exist(mat_lib_primary, 'dir')
+    addpath(mat_lib_primary);
+elseif exist(mat_lib_legacy, 'dir')
+    addpath(mat_lib_legacy);
+else
+    error('Neither MATLAB dispersion library path exists: %s or %s', mat_lib_primary, mat_lib_legacy);
+end
 
 if ~exist(fixed_geometry_path,'file')
     error('Fixed geometry file does not exist: %s', fixed_geometry_path);

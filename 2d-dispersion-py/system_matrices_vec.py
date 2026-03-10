@@ -5,9 +5,24 @@ These functions provide vectorized versions of system matrix assembly,
 equivalent to the MATLAB get_system_matrices_VEC function.
 """
 
+import os
 import numpy as np
 from scipy.sparse import coo_matrix
 from elements_vec import get_element_stiffness_VEC, get_element_mass_VEC
+
+
+def _prune_threshold() -> float:
+    """
+    Sparse-value pruning threshold.
+
+    Default matches legacy behavior (1e-10). Set env var
+    PARITY_PRUNE_THRESHOLD=0 to disable pruning for diagnostics.
+    """
+    raw = os.getenv("PARITY_PRUNE_THRESHOLD", "1e-10")
+    try:
+        return float(raw)
+    except (TypeError, ValueError):
+        return 1e-10
 
 
 def get_system_matrices_VEC(const):
@@ -138,11 +153,12 @@ def get_system_matrices_VEC(const):
     # Filter out very small values AFTER assembly to match MATLAB's sparse() behavior
     # MATLAB's sparse() automatically removes entries that are effectively zero after summing
     # Use a threshold of 1e-10 to match MATLAB's behavior
-    threshold = 1e-10
-    K.data[np.abs(K.data) < threshold] = 0
-    M.data[np.abs(M.data) < threshold] = 0
-    K.eliminate_zeros()
-    M.eliminate_zeros()
+    threshold = _prune_threshold()
+    if threshold > 0:
+        K.data[np.abs(K.data) < threshold] = 0
+        M.data[np.abs(M.data) < threshold] = 0
+        K.eliminate_zeros()
+        M.eliminate_zeros()
     
     return K, M
 
@@ -273,10 +289,11 @@ def get_system_matrices_VEC_simplified(const):
     # Filter out very small values AFTER assembly to match MATLAB's sparse() behavior
     # MATLAB's sparse() automatically removes entries that are effectively zero after summing
     # Use a threshold of 1e-10 to match MATLAB's behavior
-    threshold = 1e-10
-    K.data[np.abs(K.data) < threshold] = 0
-    M.data[np.abs(M.data) < threshold] = 0
-    K.eliminate_zeros()
-    M.eliminate_zeros()
+    threshold = _prune_threshold()
+    if threshold > 0:
+        K.data[np.abs(K.data) < threshold] = 0
+        M.data[np.abs(M.data) < threshold] = 0
+        K.eliminate_zeros()
+        M.eliminate_zeros()
     
     return K, M

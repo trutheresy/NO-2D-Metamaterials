@@ -14,10 +14,11 @@ def _run_one_batch(
     seed_offset: int,
     binarize: bool,
     log_path: Path,
+    parallel_workers: int,
 ) -> dict:
     print(
         f"[START] n_struct={n_struct} seed_offset={seed_offset} "
-        f"binarize={binarize} log={log_path}"
+        f"binarize={binarize} parallel_workers={parallel_workers} log={log_path}"
     )
     cmd = [
         sys.executable,
@@ -26,6 +27,8 @@ def _run_one_batch(
         str(n_struct),
         "--rng-seed-offset",
         str(seed_offset),
+        "--parallel-workers",
+        str(parallel_workers),
         "--skip-demo",
     ]
     if binarize:
@@ -71,6 +74,7 @@ def main() -> None:
     parser.add_argument("--validation-size", type=int, default=1000, help="Validation structures to generate.")
     parser.add_argument("--validation-seed-offset", type=int, default=24000, help="Seed offset for validation batch.")
     parser.add_argument("--binarize", action="store_true", help="Generate binarized designs.")
+    parser.add_argument("--parallel-workers", type=int, default=16, help="Worker processes per batch run (forwarded to generator).")
     args = parser.parse_args()
 
     if args.total_samples % args.batch_size != 0:
@@ -88,6 +92,7 @@ def main() -> None:
         "total_samples": int(args.total_samples),
         "start_seed_offset": int(args.start_seed_offset),
         "binarize": bool(args.binarize),
+        "parallel_workers": int(args.parallel_workers),
         "train_batches": [],
         "validation_batch": None,
     }
@@ -102,6 +107,7 @@ def main() -> None:
             seed_offset=seed_offset,
             binarize=args.binarize,
             log_path=log_path,
+            parallel_workers=args.parallel_workers,
         )
         result["batch_idx"] = int(batch_idx)
         manifest["train_batches"].append(result)
@@ -122,6 +128,7 @@ def main() -> None:
             seed_offset=args.validation_seed_offset,
             binarize=args.binarize,
             log_path=v_log,
+            parallel_workers=args.parallel_workers,
         )
         v_result["batch_idx"] = "validation"
         manifest["validation_batch"] = v_result

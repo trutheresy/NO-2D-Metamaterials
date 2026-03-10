@@ -11,9 +11,9 @@ import os
 
 # Custom utilities
 try:
-    import NO_utils
+    import NO_utilities
 except ImportError as e:
-    print(f"Error importing NO_utils: {e}")
+    print(f"Error importing NO_utilities: {e}")
     sys.exit(1)
 
 def load_mat_data_safe(data_path):
