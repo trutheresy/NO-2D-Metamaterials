@@ -1,0 +1,36 @@
+{
+  "output_root": "D:\\Research\\NO-2D-Metamaterials\\DATASETS",
+  "train_shards_count": 48,
+  "test_shards_count": 2,
+  "train_samples": 18720000,
+  "test_samples": 780000,
+  "train_loader_batches_estimate": 72000,
+  "test_loader_batches_estimate": 3000,
+  "train_shard_sample": [
+    "b_train_01",
+    "b_train_02",
+    "b_train_03",
+    "b_train_04",
+    "b_train_05"
+  ],
+  "test_shard_sample": [
+    "b_test",
+    "c_test"
+  ],
+  "train_test_name_overlap_count": 0,
+  "train_test_name_overlap": [],
+  "audit_loader_params": {
+    "batch_size": 260,
+    "num_workers": 0,
+    "prefetch_factor": null,
+    "pin_memory": false
+  },
+  "static_checks": {
+    "test_loader_built_from_test_ds": true,
+    "train_loader_built_from_train_ds": true,
+    "eval_calls_evaluate_with_test_loader": true,
+    "eval_not_called_with_train_loader": true,
+    "discover_shards_train_prefixes_present": true,
+    "discover_shards_test_prefixes_present": true
+  }
+}

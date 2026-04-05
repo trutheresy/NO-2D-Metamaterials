@@ -1,0 +1,34 @@
+[
+  {
+    "dataset": "b_test",
+    "pt_dir": "D:\\Research\\NO-2D-Metamaterials\\DATASETS\\b_test\\binarized_2026-03-08_16-34-27_pt",
+    "ok": true,
+    "returncode": 0,
+    "stdout_tail": "[done] b_test samples=50000\n",
+    "stderr_tail": ""
+  },
+  {
+    "dataset": "c_test",
+    "pt_dir": "D:\\Research\\NO-2D-Metamaterials\\DATASETS\\c_test\\continuous_2026-03-05_20-07-34_pt",
+    "ok": true,
+    "returncode": 0,
+    "stdout_tail": "[done] c_test samples=50000\n",
+    "stderr_tail": ""
+  },
+  {
+    "dataset": "b_train_01",
+    "pt_dir": "D:\\Research\\NO-2D-Metamaterials\\DATASETS\\b_train_01\\binarized_2026-03-06_17-18-57_pt",
+    "ok": true,
+    "returncode": 0,
+    "stdout_tail": "[done] b_train_01 samples=50000\n",
+    "stderr_tail": ""
+  },
+  {
+    "dataset": "c_train_01",
+    "pt_dir": "D:\\Research\\NO-2D-Metamaterials\\DATASETS\\c_train_01\\continuous_2026-03-03_19-21-24_pt",
+    "ok": true,
+    "returncode": 0,
+    "stdout_tail": "[done] c_train_01 samples=50000\n",
+    "stderr_tail": ""
+  }
+]

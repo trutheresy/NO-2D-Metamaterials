@@ -1,0 +1,772 @@
+%% 
+%% Copyright 2007-2020 Elsevier Ltd
+%% 
+%% This file is part of the 'Elsarticle Bundle'.
+%% ---------------------------------------------
+%% 
+%% It may be distributed under the conditions of the LaTeX Project Public
+%% License, either version 1.2 of this license or (at your option) any
+%% later version.  The latest version of this license is in
+%%    http://www.latex-project.org/lppl.txt
+%% and version 1.2 or later is part of all distributions of LaTeX
+%% version 1999/12/01 or later.
+%% 
+%% The list of all files belonging to the 'Elsarticle Bundle' is
+%% given in the file `manifest.txt'.
+%% 
+%% Template article for Elsevier's document class `elsarticle'
+%% with harvard style bibliographic references
+
+%\documentclass[preprint,12pt,authoryear]{elsarticle}
+
+%% Use the option review to obtain double line spacing
+% \documentclass[authoryear,preprint,review,12pt]{elsarticle}
+
+\documentclass[preprint,review,12pt]{elsarticle}
+
+%% Use the options 1p,twocolumn; 3p; 3p,twocolumn; 5p; or 5p,twocolumn
+%% for a journal layout:
+%% \documentclass[final,1p,times,authoryear]{elsarticle}
+%% \documentclass[final,1p,times,twocolumn,authoryear]{elsarticle}
+%% \documentclass[final,3p,times,authoryear]{elsarticle}
+%% \documentclass[final,3p,times,twocolumn,authoryear]{elsarticle}
+%% \documentclass[final,5p,times,authoryear]{elsarticle}
+%%\documentclass[final,5p,times,twocolumn,authoryear]{elsarticle}
+
+%% For including figures, graphicx.sty has been loaded in
+%% elsarticle.cls. If you prefer to use the old commands
+%% please give \usepackage{epsfig}
+
+% Document Formatting and Layout
+\usepackage{geometry}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage{float}
+\usepackage{subcaption}
+
+% Math and Symbols
+\usepackage{amsmath,amsfonts,amssymb, algorithm, algorithmic}
+\usepackage{mathtools}
+\usepackage{bm}
+\usepackage{mathrsfs}
+
+% Graphics and Colors
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{tikz}
+\usepackage{pgfplots}
+
+% Tables
+\usepackage{tabularx}
+\usepackage{multirow}
+\usepackage{longtable}
+\usepackage{colortbl}
+\usepackage{booktabs}
+
+% Lists and Enumerations
+\usepackage{enumitem}
+
+% Hyperlinks and References
+\usepackage{hyperref}
+\usepackage{cleveref}
+
+% Bibliography
+%\usepackage[backend=bibtex,style=numeric]{biblatex}
+\usepackage{natbib}
+
+% Miscellaneous
+\usepackage{microtype}
+\usepackage{siunitx}
+\usepackage{todonotes}
+\usepackage{lineno}
+
+%\usepackage{todonotes}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{lipsum}
+\usepackage{xspace}
+\usepackage{setspace}
+
+% Command to highlight revised text
+\newcommand{\rev}[1]{\textcolor{black}{#1}}
+%\newcommand{\rev}[1]{\textcolor{red}{#1}}
+
+
+%% You might want to define your own abbreviated commands for common used terms, e.g.:
+\newcommand{\kms}{km\,s$^{-1}$}
+\newcommand{\msun}{$M_\odot}
+
+\journal{arXiv}
+\pdfoutput=1
+\pgfplotsset{compat=1.18}
+\begin{document}
+\linenumbers
+%\modulolinenumbers[5]
+\onehalfspacing
+
+\begin{frontmatter}
+
+%% Title, authors and addresses
+
+%% use the tnoteref command within \title for footnotes;
+%% use the tnotetext command for theassociated footnote;
+%% use the fnref command within \author or \affiliation for footnotes;
+%% use the fntext command for theassociated footnote;
+%% use the corref command within \author for corresponding author footnotes;
+%% use the cortext command for theassociated footnote;
+%% use the ead command for the email address,
+%% and the form \ead[url] for the home page:
+%% \title{Title\tnoteref{label1}}
+%% \tnotetext[label1]{}
+%% \author{Name\corref{cor1}\fnref{label2}}
+%% \ead{email address}
+%% \ead[url]{home page}
+%% \fntext[label2]{}
+%% \cortext[cor1]{}
+%% \affiliation{organization={},
+%%            addressline={}, 
+%%            city={},
+%%            postcode={}, 
+%%            state={},
+%%            country={}}
+%% \fntext[label3]{}
+% \title{Fourier Neural Operators for Computing Deformation Modes in Acoustic Metamaterials with wavelet encodings of PDE parameters to toggle between deformation modes.}
+
+%\title{Wavelet Encodings of PDE parameters Allow Fourier Neural Operators to Toggle Between Deformation Modes when Computing Deformation Fields.}
+
+%\title{The use of wavelet encodings to allow Fourier neural operators to toggle between modes when computing deformation fields}
+
+\title{Fourier Neural Operators using Wavelet Encodings for Solving Eigenvalue PDEs To Simulate Acoustic Metamaterial Displacement Fields}
+
+%% use optional labels to link authors explicitly to addresses:
+%% \author[label1,label2]{}
+%% \affiliation[label1]{organization={},
+%%             addressline={},
+%%             city={},
+%%             postcode={},
+%%             state={},
+%%             country={}}
+%%
+%% \affiliation[label2]{organization={},
+%%             addressline={},
+%%             city={},
+%%             postcode={},
+%%             state={},
+%%             country={}}
+
+\author[Mech]{Han Zhang}
+\author[Comp]{Cynthia Rudin}
+\author[Mech]{Johann Guilleminot}
+\author[Mech]{L. Catherine Brinson}
+\affiliation[Mech]{organization={Department of Mechanical Engineering and Materials Science, Duke University},%Department and Organization
+            %addressline={}, 
+            city={Durham},
+            %postcode={}, 
+            state={NC},
+            country={USA}}
+\affiliation[Comp]{organization={Department of Electrical and Computer Engineering, Duke University},%Department and Organization
+            %addressline={}, 
+            city={Durham},
+            %postcode={}, 
+            state={NC},
+            country={USA}}
+% \affiliation[Civil]{organization={Department of Civil and Environmental Engineering, Duke University},%Department and Organization
+%             %addressline={}, 
+%             city={Durham},
+%             %postcode={}, 
+%             state={NC},
+%             country={USA}}
+\begin{abstract}
+%% Text of abstract
+Neural operator models have in recent years demonstrated impressive capabilities in solving linear and non-linear non-eigenvalue PDEs, but the ability for these operator models to solve eigenvalue PDEs, where the PDE constants must simultaneously be solved for along with a solution field, has not yet been demonstrated. In this paper, we illustrate the effectiveness of Fourier Neural Operators (FNOs) combined with wavelet-based encoding techniques of PDE parameters to simultaneously and inexpensively solve for multiple eigenmodes of the wave equation for elastic solids, corresponding to multiple deformations modes from acoustic waves propagating through arbitrary metamaterial geometries. A novel wavelet encoding schema for PDE constants is shown in this paper which allows the FNO model to be used to give multiple valid solutions to an eigenvalue PDE as opposed to the typical single solution of prior works. This paper also demonstrates and explains why a purely spatial or reciprocal encoding of the same parameters will not result in a FNO model with the same eigenvalue PDE solving capability.
+
+\end{abstract}
+
+%%Graphical abstract
+%\begin{graphicalabstract}
+%\includegraphics{grabs}
+%\end{graphicalabstract}
+
+%%Research highlights
+%\begin{highlights}
+%\item Research highlight 1
+%\item Research highlight 2
+%\end{highlights}
+
+\begin{keyword}
+%% keywords here, in the form: keyword \sep keyword, up to a maximum of 6 keywords
+Neural Operator \sep Metamaterials \sep Acoustics \sep Wavelet Transform \sep Machine Learning
+%% PACS codes here, in the form: \PACS code \sep code
+
+%% MSC codes here, in the form: \MSC code \sep code
+%% or \MSC[2008] code \sep code (2000 is the default)
+
+\end{keyword}
+
+\end{frontmatter}
+
+%\tableofcontents
+
+%% \linenumbers
+
+%% main text
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Introduction}
+\label{introduction}
+Neural operator models have shown promising capabilities in solving partial differential equations (PDEs), offering a cost efficient and compelling alternative to traditional finite element solvers. These models can accurately capture both linear and nonlinear systems, enabling efficient and scalable simulation surrogates across various computational physics and mechanics domains. This capability of neural operators, and in particular including the widely used Fourier Neural Operator (FNO), makes them attractive tools for complex physics tasks like the iterative design of acoustic metamaterials, where fast surrogate models can greatly reduce iteration simulation times.
+
+However, current neural operator architectures, FNO included, have primarily been applied to problems with known PDE constants, and have not yet been extended or demonstrated to work for eigenvalue PDEs, in which both the constants and the solution field must be solved simultaneously. This limitation poses a challenge for the tool in many applied problem areas, such as the modeling of acoustic metamaterials, where predicting deformation modes from wave interactions requires capturing multiple valid eigenmodes tied to unknown frequency parameters.
+
+To address this, we present a framework that combines FNOs with wavelet-based encoding strategies, enabling the model to learn multiple eigenmodes of the elastic wave equation from arbitrary metamaterial geometries. Our approach allows the model to resolve multiple deformation modes as distinct solutions to the same PDE, controlled by the user deterministically and repeatably via encoded inputs. We also demonstrate why standard spatial or spectral encodings are insufficient for solving eigenvalue PDEs with FNOs, and how wavelet embeddings enable better interaction with the FNO’s dual-domain architecture. This work thus extends the capability of neural operators to a class of problems previously inaccessible, offering a lightweight and flexible surrogate for eigenvalue simulations in computational physics.
+
+% Recent advances in machine learning have shown a class of models, neural operators, to be particularly effective in solving various partial differential equation (PDE) problems, which makes it a promising tool for replacing expensive traditional finite element based physics solvers. However, operator based models have not yet been demonstrated to solve eigenvalue PDEs where there are unknown constants and unknown fields which must be solved simultaneously. Complex physics modeling and simulation problems, such as modeling metamaterial interactions with waves, require solvers to simultaneously find PDE constants and the solution field, which are the eigenvalues and eigenvectors of a discretized matrix representation of the PDE. The capability to solve such PDEs would enable FNOs to be utilized as surrogate lightweight models to traditional solver techniques such as FEA, or 
+
+% In this paper, we demonstrate the ability for the most widely used neural operator model, the Fourier neural operator (FNO), to solve complex eigenvalue PDEs in the context of acoustic wave propagation through periodic metamaterial geometries. These problems differ from the classical PDEs for which FNOs have been demonstrated in that there are multiple solutions, but there are only certain values for PDE constants (namely $\omega$) for which non-trivial solutions exist, and those values are unknown. A scalable, cost-effective method of solving these simulation problems would have great potential in allowing for efficient search of metamaterial design spaces for many problems, accelerating the process of metamaterial geometry design.
+
+% To extend the functionality of FNO models to solve these sorts of PDE problems, strategically chosen encodings of physical PDE constants, the acoustic wave wavevectors, as well as of the solution number, were explored, with a wavelet encoding of these constants being particularly effective due to its relatively rich interactions with the FNO model weights in both the spatial and spectral branches of the model. With some discussion on training hyperparameters, model architecture hyperparameters, and datatype representations, we present an competitive framework for FNOs to serve as surrogates for FEA solvers for metamaterial simulations.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Methodology}
+\label{sec:Methodology}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Metamaterial Design Space}
+\label{ssec:metamaterial_design_space}
+Each acoustic metamaterial cell geometry is generated by sampling from a Gaussian process with a periodic kernel, constrained to exhibit eight-fold symmetry in the 2D plane. This symmetry ensures invariance under 90-degree rotations and reflections, which is appropriate for square unit cell tilings.
+
+Each metamaterial unit cell geometry is discretized into a $3 \times 32 \times 32$ pixel array, where the three channels which encode the three material property fields: normalized elastic modulus, density, and Poisson's ratio. For scale invariance, the encodings for all fields is a number between $0$ and $1$, and the scale is separately encoded with the fixed constants in Table \ref{tab:parameter_ranges}.
+\begin{table}[h]
+  \centering
+  \begin{tabular}{|c|c|c|c|c|c|c|}
+    \hline
+    $\text{Parameter}$ & $E_{\text{min}}$ & $E_{\text{max}}$ & $\rho_{\text{min}}$ & $\rho_{\text{max}}$ & $\nu_{\text{min}}$ & $\nu_{\text{max}}$ \\
+    \hline
+    $\text{Units}$ & $\text{Pa}$ & $\text{Pa}$ & $\text{kg/m}^3$ & $\text{kg/m}^3$ & -- & -- \\
+    \hline
+    $\text{Value}$ & $2 \times 10^8$ & $2 \times 10^{11}$ & $800$ & $8000$ & $0$ & $0.5$ \\
+    \hline
+  \end{tabular}
+  \caption{Ranges for Material Parameters}
+  \label{tab:parameter_ranges}
+\end{table}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Wave Propagation Simulations} 
+\label{ssec:wave_propagration_simulations}
+The fundamental PDE we are solving is the wave equation in the context of metamaterials. For each metamaterial geometry, the wave propagation problem is solved in the frequency domain by discretizing the linear elastodynamic PDE via the finite element method (FEM). The discretized PDE, represented as an eigenvalue problem is:
+\begin{equation}
+\label{eqn:eig_PDE}
+    \left( \mathbf{K}(\mathbf{k}) - \omega^2 \mathbf{M}(\mathbf{k}) \right) \mathbf{u} = \mathbf{0},
+\end{equation}
+where $\mathbf{K}(\mathbf{k})$ is the stiffness matrix, $\mathbf{M}(\mathbf{k})$ is the mass matrix, both parameterized by the wave vector $\mathbf{k}$, $\omega$ is the angular frequency in the time domain, and $\mathbf{u}$ is the eigenvector solution which represents the displacement field. The irreducible Brillouin zone (IBZ) is discretized into a $25$ $x$ wave numbers and $13$ $y$ wave numbers, totaling $25 \times 13 = 325$ wavevectors. For each wavevector, the six lowest eigenfrequencies (i.e., bands) were computed using a custom finite element analysis (FEA) matlab script (see section \ref{sec:Repository} for repository). The resulting $\mathbf{u}$ is represented by two complex valued 2D matrices ($u_x, \space u_y)$, which is then split into four real valued 2D matrices ($u_{x,r}, \space u_{x,i}, \space u_{y,r}, \space u_{y,i}$). This results in mappings from an input tensor $(n \times 3 \times 32 \times 32)$ to an output tensor $(n \times 4 \times 32 \times 32)$ for our data set.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{Figures/distilled_FEA_process.png}
+  \caption{Flowchart of the FEA data generation method. Green squares represent varying inputs to the process, and orange squares represent computed quantities of the FEA process. Black rounded rectangles represent subroutines of the FEA process. The process starts with defined densities, stiffnesses, and Poisson ratios for each pixel of a metamaterial unit cell geometry (a $32 \times 32$ pixel grid of values ranging from 0 to 1), along with a chosen $k_x$ and $k_y$ wavevector representing the stimulus to the metamaterial. A custom optimized FEA solver takes these inputs and produces intermediate transformation matrices, and then uses those to solve an eigenvalue matrix problem to produce the solution displacement fields (eigenvectors) and frequency $\omega$ (eigenvalues) for the given inputs.}
+  \label{fig:FEA_full_process}
+\end{figure}
+
+\subsection{Dataset Construction and downsampling} 
+\label{ssec:dataset_construction}
+Our full dataset contains 9600 geometries, randomly generated as in section \ref{ssec:metamaterial_design_space}. Each geometry has 6 possible bands each with 325 possible wavevectors, resulting in $9600 \times 6 \times 325 = 18,720,000$ sample pairs of inputs with shape $(3 \times 32 \times 32)$ and outputs of shape $(4 \times 32 \times 32)$. The data is stored with float16 datatype format in PyTorch tensors. Due to computational and memory constraints, for each of the 9600 geometries, a random 1/4 of the 325 waveforms and 1/2 of the 6 deformation modes (i.e., 3 bands) were retained for FNO training. This stochastic downsampling maintains a diverse sampling of wave-structure interactions while reducing the size of the training dataset by a factor of 8.
+
+\begin{figure}[H]
+  \centering
+  \begin{subfigure}[c]{0.5\textwidth}
+    \centering
+    \includegraphics[scale=0.35]{Figures/distilled_input_tensorization.png}
+    %\includegraphics{Figures/distilled_input_tensorization.png}
+    \caption{Construction of the input datasets}
+    \label{fig:input_dataset_construction}
+  \end{subfigure}%
+  \hfill
+  \begin{subfigure}[c]{0.5\textwidth}
+    \centering
+    \includegraphics[scale=0.35]{Figures/distilled_output_tensorization2.png}
+    %\includegraphics{Figures/distilled_outout_tensorization.png}
+    \caption{Construction of the output datasets}
+    \label{fig:output_dataset_construction}
+  \end{subfigure}
+  \caption{Subfigure \subref{fig:input_dataset_construction} and \subref{fig:output_dataset_construction} shows the process of input data from subsection \ref{ssec:metamaterial_design_space} and output data from subsection \ref{ssec:wave_propagration_simulations} being tensorized for ingestion to the FNO model respectively.}
+  \label{fig:dataset_construction}
+\end{figure}
+
+\subsection{Wavelet Encoding}
+\label{ssec:wavelet_encoding}
+To allow the FNO model to toggle between PDE solutions for a given geometry, information must be fed to the model indicating which excitation waveform (wavevectors) and deformation mode (band) we are looking for a solution to. This information is given in the form of a wavevector embedding, which we have found to yield superior results compared with a constant field embedding (2D matrices of the same value) or a sinusoidal embedding (2D sinusoidal fields with constants encoded as the sinusoidal frequency).
+
+For the wavelet encodings, we use a 1D Gabor wavelet transform to map band numbers to unique wavelet images (see algorithm \ref{alg:1d_gabor_embedding}), and a 2D Gabor wavelet transform to map x and y wavevectors to another set of unique wavelet images (see algorithm \ref{alg:2d_gabor_embedding}). These representations show rich variation both in the spatial domain and in the Fourier domain, which allows for FNO model weights of both branches to richly interact with the wavelet representation, leading to better learning outcomes. 
+
+\begin{algorithm}[H]
+\caption{1D Gabor Wavelet Embedding from Scalar Input}
+\label{alg:1d_gabor_embedding}
+\begin{algorithmic}[1]
+\STATE \textbf{INPUT:} Integer \( b \); grid size \( S \leftarrow 32 \); frequency scale \( r \leftarrow 2.0 \)
+\STATE Create linspace vectors \( x, y \in [-1, 1] \) with \( S \) points
+\STATE Construct meshgrid \( X, Y \leftarrow \text{meshgrid}(x, y) \)
+\STATE Compute base frequency:
+\[
+f \leftarrow (1.0 + |b|) \cdot \frac{S}{8}
+\]
+\STATE Compute rotation angle:
+\[
+\theta \leftarrow (b \bmod 8) \cdot \frac{S}{16}
+\]
+\STATE Rotate coordinates:
+\[
+X_\theta \leftarrow X \cos \theta + Y \sin \theta, \quad
+Y_\theta \leftarrow -X \sin \theta + Y \cos \theta
+\]
+\STATE Set Gaussian envelope widths:
+\[
+\sigma_x \leftarrow \sigma_y \leftarrow \frac{0.3}{r}
+\]
+\STATE Compute Gabor wavelet embedding:
+\[
+\psi_b(x, y) \leftarrow
+\exp\left(-\frac{X_\theta^2}{2 \sigma_x^2} - \frac{Y_\theta^2}{2 \sigma_y^2}\right)
+\cdot \cos(f \cdot X_\theta)
+\]
+\STATE \textbf{RETURN:} \( \psi_b \in \mathbb{R}^{S \times S} \)
+\end{algorithmic}
+\end{algorithm}
+
+In Algorithm \ref{alg:1d_gabor_embedding}, a grid size of 32 is used so that the image size matches that of the geometry, for ease of ingestion of the FNO model. The base frequency scales with band index as \((1+|b|)\cdot S/8\), which allows bands to be encoded as unique rotations and wavelet spatial frequencies in the domain. The frequency scale $r$ and constants such as 16 and 0.3 were picked so that the images utilized most of the domain and showed sufficient scale variation across the domain.
+
+\begin{algorithm}[H]
+\caption{2D Gabor Wavelet Embedding for Wavevectors}
+\label{alg:2d_gabor_embedding}
+\begin{algorithmic}[1]
+\STATE \textbf{INPUT:} Real-valued \( k_x, k_y \); grid size \( S \leftarrow 32 \); frequency scale \( r \leftarrow 1.0 \)
+\STATE Create linspace vectors \( x, y \in [-1, 1] \) with \( S \) points
+\STATE Construct meshgrid \( X, Y \leftarrow \text{meshgrid}(x, y) \)
+\STATE Compute frequencies:
+\[
+f_x \leftarrow (1.01 + k_x) \cdot \frac{S}{2}, \quad f_y \leftarrow (1.01 + k_y) \cdot \frac{S}{2}
+\]
+\STATE Compute rotation angles:
+\[
+\theta_x \leftarrow (k_x \bmod 5) \cdot \frac{\pi}{5}, \quad \theta_y \leftarrow (k_y \bmod 7) \cdot \frac{\pi}{7}
+\]
+\STATE Rotate coordinates:
+\[
+X_\theta \leftarrow X \cos \theta_x + Y \sin \theta_y, \quad
+Y_\theta \leftarrow -X \sin \theta_x + Y \cos \theta_y
+\]
+\STATE Set Gaussian envelope widths:
+\[
+\sigma_x \leftarrow \sigma_y \leftarrow \frac{0.4}{r}
+\]
+\STATE Compute Gabor wavelet embedding:
+\[
+\psi_{k_x, k_y}(x, y) \leftarrow
+\exp\left(-\frac{X_\theta^2}{2 \sigma_x^2} - \frac{Y_\theta^2}{2 \sigma_y^2}\right)
+\cdot \sin(f_x X_\theta) \cdot \sin(f_y Y_\theta)
+\]
+\STATE \textbf{RETURN:} \( \psi_{k_x, k_y} \in \mathbb{R}^{S \times S} \)
+\end{algorithmic}
+\end{algorithm}
+
+Like with algorithm \ref{alg:1d_gabor_embedding}, in algorithm \ref{alg:2d_gabor_embedding}, a grid size of 32 is used for FNO model ease of ingestion. The wavevectors are used to compute the base frequency and rotation angle, with different modulo numbers chosen for $x$ and $y$ to eliminate wavelet image aliasing from $x$ and $y$ being swapped. The default frequency scale is $r=1.0$, and the Gaussian envelope width is set by \(0.4/r\), so the images use most of the domain while maintaining sufficient scale variation throughout the domain.
+
+\begin{algorithm}[H]
+\caption{Eigenfrequency Wavelet Encoding}
+\label{alg:eigenfrequency_wavelet_encoding}
+\begin{algorithmic}[1]
+\STATE \textbf{INPUT:} Eigenfrequency \( s>0 \); image size \( S \leftarrow 32 \); frequency bounds \( [s_{\min}, s_{\max}] \); spectral-index bounds \( [k_{\min}, k_{\max}] \)
+\STATE Set constants \( \gamma \leftarrow 1,\ \phi \leftarrow 0,\ \sigma \leftarrow 8,\ \theta_{\min}\leftarrow \pi/30,\ \theta_{\max}\leftarrow \pi/2-\pi/30 \)
+\STATE Compute log-domain values:
+\[
+\ell_s \leftarrow \log s,\quad \ell_{\min}\leftarrow \log s_{\min},\quad \ell_{\max}\leftarrow \log s_{\max}
+\]
+\STATE Compute normalized position and spectral index:
+\[
+t \leftarrow \mathrm{clip}\!\left(\frac{\ell_s-\ell_{\min}}{\ell_{\max}-\ell_{\min}},0,1\right),\quad
+k \leftarrow k_{\min} + t\,(k_{\max}-k_{\min})
+\]
+\STATE Compute log width per unit \(k\):
+\[
+\Delta_\ell \leftarrow \frac{\ell_{\max}-\ell_{\min}}{k_{\max}-k_{\min}}
+\]
+\STATE Compute orientation from within-band log position:
+\[
+\theta \leftarrow \theta_{\min} + \left(\frac{(\ell_s-\ell_{\min})\bmod \Delta_\ell}{\Delta_\ell}\right)\left(\theta_{\max}-\theta_{\min}\right)
+\]
+\STATE Build centered grid \(X,Y \in \{-S/2,\dots,S/2-1\}\), then rotate:
+\[
+X_\theta \leftarrow X\cos\theta + Y\sin\theta,\quad
+Y_\theta \leftarrow -X\sin\theta + Y\cos\theta
+\]
+\STATE Set envelope widths \( \sigma_x \leftarrow \sigma,\ \sigma_y \leftarrow \gamma \sigma_x \), and carrier frequency \( \omega \leftarrow 2\pi k/S \)
+\STATE Compute wavelet image:
+\[
+\psi_s \leftarrow
+\exp\!\left(-\frac{1}{2}\left(\frac{X_\theta^2}{\sigma_x^2}+\frac{Y_\theta^2}{\sigma_y^2}\right)\right)\cos(\omega X_\theta+\phi)
+\]
+\STATE \textbf{RETURN:} \( \psi_s \in \mathbb{R}^{S\times S},\ k,\ \theta \)
+\end{algorithmic}
+\end{algorithm}
+
+\begin{algorithm}[H]
+\caption{Eigenfrequency Wavelet Decoding}
+\label{alg:eigenfrequency_wavelet_decoding}
+\begin{algorithmic}[1]
+\STATE \textbf{INPUT:} Wavelet image \( \psi \in \mathbb{R}^{S\times S} \); bounds \( [s_{\min}, s_{\max}] \), \( [k_{\min}, k_{\max}] \), \( [\theta_{\min}, \theta_{\max}] \)
+\STATE Set constants for centroid refinement: radius \(R\leftarrow 3\), power \(p\leftarrow 2\)
+\STATE Mean-center image \( \psi_c \leftarrow \psi - \mathrm{mean}(\psi) \), then compute the centered 2D discrete Fourier magnitude:
+\[
+\hat{\psi}(k_x,k_y)\leftarrow \sum_{m=0}^{S-1}\sum_{n=0}^{S-1}\psi_c(m,n)\,
+\exp\!\left(-2\pi i\!\left(\frac{k_x m}{S}+\frac{k_y n}{S}\right)\right),\quad
+F(k_x,k_y)\leftarrow |\hat{\psi}(k_x,k_y)|
+\]
+\STATE Use centered frequency indices \(k_x,k_y\in\{-\lfloor S/2\rfloor,\dots,\lceil S/2\rceil-1\}\)
+\STATE Keep upper-half-plane spectral support (plus positive-frequency center row) and find dominant peak index \( (r^\*,c^\*) \)
+\STATE Define symmetric peak partner about center, then compute weighted local centroid around \( (r^\*,c^\*) \) within radius \(R\), using weights \(w=F^p\) and excluding points closer to the symmetric partner
+\STATE Convert refined centroid to wavevector coordinates \( (k_x,k_y) \), then:
+\[
+k_{\mathrm{ext}} \leftarrow \sqrt{k_x^2+k_y^2},\quad
+\theta_{\mathrm{ext}} \leftarrow \operatorname{atan2}(k_y,k_x)\bmod \pi
+\]
+\STATE Map extracted \(k\) to approximate log-frequency:
+\[
+\ell_{\mathrm{approx}} \leftarrow \ell_{\min} + \mathrm{clip}\!\left(\frac{k_{\mathrm{ext}}-k_{\min}}{k_{\max}-k_{\min}},0,1\right)\,(\ell_{\max}-\ell_{\min})
+\]
+\STATE Let \( \Delta_\ell \leftarrow (\ell_{\max}-\ell_{\min})/(k_{\max}-k_{\min}) \), compute within-band position from angle:
+\[
+\alpha \leftarrow \mathrm{clip}\!\left(\frac{\theta_{\mathrm{ext}}-\theta_{\min}}{\theta_{\max}-\theta_{\min}},0,1\right),\quad
+\delta_\ell \leftarrow \alpha\,\Delta_\ell
+\]
+\STATE Find nearest consistent log-frequency by testing neighboring bands \(b-1,b,b+1\):
+\[
+\ell^\star \leftarrow \arg\min_{\ell \in \{\ell_{\min} + j\Delta_\ell + \delta_\ell\}} |\ell-\ell_{\mathrm{approx}}|
+\]
+\STATE Clip \( \ell^\star \) to \( [\ell_{\min},\ell_{\max}] \), then decode:
+\[
+s_{\mathrm{ext}} \leftarrow \exp(\ell^\star)
+\]
+\STATE \textbf{RETURN:} \( s_{\mathrm{ext}},\ k_{\mathrm{ext}},\ \theta_{\mathrm{ext}} \)
+\end{algorithmic}
+\end{algorithm}
+
+Algorithms \ref{alg:eigenfrequency_wavelet_encoding} and \ref{alg:eigenfrequency_wavelet_decoding} summarize the forward and inverse mapping used for eigenfrequency wavelet images. The forward mapping places eigenfrequency on a log scale and jointly encodes magnitude and orientation into a Gabor-like pattern. The inverse mapping recovers an estimate by spectral peak detection with centroid refinement, followed by a consistency step that combines extracted magnitude and angle to reconstruct the most likely log-frequency.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Fourier Neural Operators}
+\label{ssec:fourer_neural_operators}
+An FNO model is a mapping $\mathcal{G}_\theta$ which approximates the solution operator to a PDE, which in our scenario looks like:
+\begin{equation}
+    u = \mathcal{G}_\theta(a), \quad \text{where } a: \Omega \to \mathbb{R}^3, \quad u: \Omega \to \mathbb{R}^4,
+\end{equation}
+and $\Omega \subset \mathbb{R}^2$ denotes the spatial domain of the unit cell. The model performs a sequence of transformations:
+\begin{enumerate}
+    \item \textbf{Lifting:} An input tensor $a(x)$ of shape $[n, 3, 32, 32]$ which contains the metamaterial geometry, the wavelet embedded band number, and wavelet embedded wavevector in its three channels, vis lifted into a higher-dimensional space via a pointwise linear map $v_1 = \ell(a), \space \ell : \mathbb{R}^{3} \to \mathbb{R}^{d_{L1}}$.
+    \item \textbf{Spectral Layers:} After the lifting operation, a sequence of Fourier layers is applied, with each Fourier layer $L_j$ having:
+    \begin{equation}
+        v_{j+1}(x) = L_j(v_j) = \sigma\left( \mathcal{F}^{-1}\left( R_j(k) \cdot \mathcal{F}[v_j](k) \right) + W_j v_j(x) \right)
+    \end{equation}
+    where $\mathcal{F}$ is the discrete Fourier transform, $R_j(k)$ and $W_j$ are learnable weights in frequency domain and spatial domain respectively, and $\sigma$ is a nonlinear function (GELU).
+    \item \textbf{Projection:} The output after all $n$ Fourier layers is projected back to $\mathbb{R}^4$ to obtain the real and imaginary components of the displacement field $u_x$ and $u_y$ via another linear map $u = p(v_n), \space p : \mathbb{R}^{d_{Ln}} \to \mathbb{R}^{4}$.
+\end{enumerate}
+
+This process is illustrated graphically in figure \ref{fig:FNO_architecture}. For our experiments, the neuralops Python package was used, which contains definitions for FNO models with customizable number of layers, number of hidden channels, and input and output tensor sizes. Hyperparameter combinations and optimized final combination of our FNO models are shown in table \ref{tab:FNO_hyperparameters} below. These hyperparameters are used alongside the fixed hyperparameters of model height $=32$, model width $=32$, input channels $=3$, and output channels $=4$.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{Figures/FNO_architecture.png}
+  \caption{The FNO model architecture used in this project. The input data is first expanded according to the "hidden channels" parameter, to allow for many different features to be used in latent representations between the Fourier layers. Each Fourier layer is equivalent and shown in detail in the expanded view. The data passing through a Fourier layer passes through two branches where it interacts with learned weights. One branches multiplies a weight matrix with the spatial representation of that layer's input data, whereas the other branch applies a fast Fourier transform (FFT) before a weight matrix multiplication and an inverse FFT afterwards, effectively having a set of learned weights interact with the spectral information of the input to that layer. The outputs of both branches are summed up before passing through a non-linear activation function, resulting in the output from that Fourier layer. After passing through four Fourier layers, the data is then projected from the higher hidden channel dimensional space to the final output dimensions.}
+  \label{fig:FNO_architecture}
+\end{figure}
+
+\begin{table}[H]
+  \centering
+  \begin{tabular}{|c|c|c|c|c|}
+    \hline
+    \textbf{Number of Fourier Layers} & \textbf{4} & 6 & 8 & 12 \\
+    \hline
+    \textbf{Number of Hidden channels} & 32 & \textbf{64} & 128 & 256 \\
+    \hline
+    \textbf{Non-linear Activation Function} & \textbf{GELU} & ReLU & tanh & Sigmoid \\
+    \hline
+  \end{tabular}
+  \caption{Different hyperparameters of FNO model tried in combinations. 4 Fourier layers, with 64 hidden channels and GELU activation function were found to be where performance started to asymptote with increasing model complexity, and so it was not worth the computational costs in training to use more layers or hidden channels. These are the final combination of model hyperparameters from which all data presented in this article is generated.}
+  \label{tab:FNO_hyperparameters}
+\end{table}
+
+\subsection{Training Procedure}
+\label{ssec:training_procedure}
+The Fourier Neural Operator was trained using supervised learning on paired inputs and outputs described in the previous sections. Each training sample consists of a $3 \times 32 \times 32$ input tensor (geometry and wavelet embeddings) and a $4 \times 32 \times 32$ output tensor (displacement field components).
+
+The loss function used was the pixel-wise mean squared error (MSE) between the predicted and ground truth displacement fields:
+\begin{equation}
+    \mathcal{L}_{\text{MSE}} = \frac{1}{HW} \sum_{i=1}^{H} \sum_{j=1}^{W} \sum_{c=1}^{4} \left( \hat{u}_{c}(i,j) - u_{c}(i,j) \right)^2,
+\end{equation}
+where $H = W = 32$ and $c \in \{0,1,2,3\}$ corresponds to the four output channels: real and imaginary components of $u_x$ and $u_y$.
+
+For training the FNO model, combinations of loss function, optimizer, and training hyperparameters were trialed. The ADAMW optimizer was found to achieve the best performance, but only with certain combinations of hyperparameters, retaining performance comparable to that of other optimizers in all other cases. Training was performed on a randomly down-selected subset of the full dataset. Each of the 9600 geometries was paired 81 waveforms (randomly sampled from the full 325) and 3 dispersion bands (randomly sampled from the full 6), resulting in reduced memory overhead and faster training convergence while maintaining diversity across samples.
+
+The training hyperparameters tuned are showed in table \ref{tab:training_hyperparameters} below, with the best performing combination shown in bold.
+\begin{table}[H]
+    \centering
+    \begin{tabular}{|c|c|c|c|c|}
+        \hline
+        \textbf{Epochs} & 10 & \bm{$20$} & 50 & 100 \\ \hline
+        \textbf{Learning Rate} & \bm{$10^{-4}$} & $10^{-3}$ & $10^{-2}$ & $10^{-1}$\\ \hline
+        \textbf{Weight Decay} & 0 & \bm{$10^{-4}$} & $10^{-3}$ & $10^{-2}$ \\ \hline
+        \textbf{Gamma} & 0 & 0.01 & \bm{$0.1$} & 0.5 \\ \hline
+        \textbf{Step Size} & 0 & 1 & \bm{$4$} & 10 \\ \hline
+        \textbf{Batch Size} & 64 & 128 & \bm{$256$} & 512 \\ \hline
+    \end{tabular}
+    \caption{Training Hyperparameters}
+    \label{tab:training_hyperparameters}
+\end{table}
+
+While L2 loss was used for training due to its commonality and prior successes in imaged based machine learning tasks, we chose to use L1 as the evaluation criterion for ease of interpretability of how off the model is on average for pixel predictions. Schematics of the usage of the two loss criterion in training and evaluation are shown in figure \ref{}
+\begin{figure}[H]
+    \centering
+    \begin{subfigure}[c]{0.8\textwidth}
+        \centering
+        \includegraphics[scale=0.5]{Figures/model_training.png}
+        \caption{Schematic of model training loop. For compute speed and efficiency, batches of 256 inputs and outputs are run in parallel each loop.}
+        \label{fig:model_training}
+    \end{subfigure}%
+    \vspace{1em}
+    \begin{subfigure}[c]{0.8\textwidth}
+    \centering
+        \includegraphics[scale=0.5]{Figures/model_evaluation.png}
+        \caption{Schematic of the model evaluation process. Absolute error is used here to have a simple interpretation of performance. The test datasets are of previously unseen geometries, meaning the model must be able to generalize from the highly limited number of possible geometries it is shown to the whole design space of possible geometries to do well in evaluations.}
+        \label{fig:model_evaluation}
+    \end{subfigure}
+    \caption{Subfigure \subref{fig:input_dataset_construction} and \subref{fig:output_dataset_construction} shows the training and evaluation process for the FNO model respectively.}
+    \label{fig:training_and_evaluation}
+\end{figure}
+
+It was found that final model performance did not appreciably change for changes in step size or batch size fairly early on, so those two parameters were left fixed at 4 and 256 respectively for the remainder of the training runs. Learning rate and epochs to convergence as expected, had an inverse correlation. The higher the learning rate, the faster convergence happened, but there are two problems with high learning rates. The first is that the model may arrive at a more suboptimal combination of weights if the training rate is too high, because the movements in weight space during each backward pass remain too large to arrive close in weight space to where the loss minima would occur. The second, more interesting phenomena, is that if the learning rate is set higher than $\approx 10^{-2}$, there is instability introduced in the training, whereby at certain epochs, the loss would spike, and never come back down, usually plateauing, in all later epochs. This sort of spike is documented in other applications of ADAM family optimizers indicating the model is pushed into a region of weight space where the loss was flat for movements in any direction.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Results and Discussion}
+In our search through the best encoding scheme for inputs, datatype representation for outputs, model architecture hyperparameters, and training hyperparameters for our FNO eigenvalue PDE solver, we discovered the following notable results.  
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Band and Wavevector Encoding}
+In solving this eigenvalue PDE with a FNO model, the first problem to solve was how to represent the constant parameters fed into the PDE. Specifically, for our PDE in equation \ref{eqn:eig_PDE}, we must specify the wavevectors, as well as which of the eigenvalue solutions (band) the model needs to solve. (The PDE has multiple eigenvalues and eigenvectors that satisfy it, corresponding to different deformation modes at different time frequencies.) Three encoding strategies were tried. The first is a constant-field representation, which can be considered the naive default option. In this representation, the two wavevectors $k_x$, $k_y$ and band $b$ are represented as $3 \times 32 \times 32$ images with constant pixel values, which would be stacked into a tensor and fed into the FNO. The problem with this approach is that the FNO model with this representation tends to experience mode collapse, being unable to learn anything, and outputting also constant field solutions. The reason for this is that a Fourier transform of a constant field would result in only one frequency (the constant frequency of 0) having a non-zero coefficient. Likewise, The resulting matrix from a fast Fourier transform (FFT) which is what is used in FNO, results in a matrix with all 0 values except for the center pixel which corresponds to the 0 frequency. This renders the frequency space branch of the Fourier layers shown in figure \ref{fig:FNO_architecture} effectively unable to contain or propagate information with this representation past the first layer. This in turn causes the Fourier branch to not be able to contribute at all to the model predictive power as it never contributes to any loss and thus cannot be trained. The remaining spatial domain branch of the FNO appears unable to handle the complexity of the problem. This is not surprising as it is essentially a standard CNN of shallow depth, which has not been shown in literature to be able to learn complex eigenvalue PDEs.
+
+With this insight, the next embedding trialed was a sinusoidal encoding, which does have unique representations that are not scaled versions of each other in the spectral domain. Here, we used a spatial domain sinusoid with the $x$ and $y$ frequencies a function of $b$ for the band encoding, and a function of $k_x$ and $k_y$ for the wavevector encodings. The resulting spatial domain encoding and its FFT are shown below.
+
+\begin{figure}[H]
+    \centering
+    \begin{subfigure}{\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{Figures/1D sinusoidal encoding.png}
+        \caption{The sinusoidal spatial encoding for band integer.}
+        \label{fig:1D_sinusoidal_encoding_spatial}
+    \end{subfigure}  
+    \begin{subfigure}{\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{Figures/1D sinusoidal encoding fft.png}
+        \caption{The FFT of the above sinusoidal spatial encodings.}
+        \label{fig:1D_sinusoidal_encoding_fft}
+    \end{subfigure}
+    \caption{The sinusoidal encoding of the band integer (fig. \ref{fig:1D_sinusoidal_encoding_spatial}) and its FFT (fig. \ref{fig:1D_sinusoidal_encoding_fft}). 4 frequencies in the FFT show up as non-zero, corresponding to the +/- and x/y frequencies matching the encoded frequency. This encoding is intuitive, as visually one can count the peaks in the spatial domain to recover the band integer, and serves to carry information both in the spectral and in the spatial domains.}
+    \label{fig:1D_sinusoidal_encoding}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \begin{subfigure}{\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{Figures/2D sinusoidal encoding.png}
+        \caption{The sinusoidal spatial encoding for $x$ and $y$ wavevectors.}
+        \label{fig:2D_sinusoidal_encoding_spatial}
+    \end{subfigure}  
+    \begin{subfigure}{\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{Figures/2D sinusoidal encoding fft.png}
+        \caption{The FFT of the above sinusoidal spatial encodings.}
+        \label{fig:2D_sinusoidal_encoding_fft}
+    \end{subfigure}
+    \caption{The sinusoidal encoding of the $x$ and $y$ wavevectors (\ref{fig:2D_sinusoidal_encoding_spatial}) and its FFT \ref{fig:2D_sinusoidal_encoding_fft}. The actual wavevectors are shown in the subplot titles. While the encoding is fairly intuitive as the $k_x$ and $k_y$ are scaled by $1/\pi$ and the resulting image is essentially what the waveform actually looks like physically. The FFT of many waveforms is similar in which pixels are non-zero, but different brightness for the +/-, x/y quadrants of the image, corresponding to a fairly intuitive image of the frequencies present. This similarity may not be a problem, as in general similar images can still be distinguished by CNN type models so long as there are sufficient differences, and an FNO architecture contains in one branch, the CNN architecture.}
+    \label{fig:2D_sinusoidal_encoding}
+\end{figure}
+
+With the sinusoidal encoding, the FNO model was able to learn fairly well the PDE problem, but tended to have a "fuzzy" structure where sharper edges would occur in the ground truth. See two random representative cases of unseen data inference showcasing the issue in figures \ref{fig:sinusoidal_s3} and \ref{fig:sinusoidal_s5} . At first, this was taken to be a symptom of underparameterization, as the model was grasping the problem in crude contours but could not learn the finer scale details well. 
+
+\begin{figure}[H]
+    \centering
+    \begin{subfigure}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{Figures/sinusoid/output_prediction3_hc64_lr1e-02_wd1e-02_ss10_gamma1e-01_e120_cropped.png}
+        \caption{FNO predictions}
+        \label{fig:sinusoidal_s3_prediction}
+    \end{subfigure}%
+    \hfill
+    \begin{subfigure}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{Figures/sinusoid/output_sample3_hc64_lr1e-02_wd1e-02_ss10_gamma1e-01_e120_cropped.png}
+        \caption{Ground truth}
+        \label{fig:sinusoidal_s3_truth}
+    \end{subfigure}%
+    \caption{The FNO predictions (left) and the ground truth FEA simulation (right) for a representative sample. The course structure is learned by the FNO, but the finer nuances are not grasped.}
+    \label{fig:sinusoidal_s3}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \begin{subfigure}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{Figures/sinusoid/output_prediction5_hc64_lr1e-02_wd1e-02_ss10_gamma1e-01_e120_cropped.png}
+        \caption{FNO predictions}
+        \label{fig:sinusoidal_s5_prediction}
+    \end{subfigure}%
+    \hfill
+    \begin{subfigure}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{Figures/sinusoid/output_sample5_hc64_lr1e-02_wd1e-02_ss10_gamma1e-01_e120_cropped.png}
+        \caption{Ground truth}
+        \label{fig:sinusoidal_s5_truth}
+    \end{subfigure}%
+    \caption{The FNO predictions (left) and the ground truth FEA simulation (right) for another representative sample. The course structure is learned by the FNO, but the finer nuances are not grasped.}
+    \label{fig:sinusoidal_s5}
+\end{figure}
+
+Upon further investigation however by increasing the number of Fourier layers from 4 to 6, 8, and 10, and also increasing the number of hidden channels per layer from 64 to 128 and 256, it became clear the issue was not the number of parameters. The FNO representation of inputs past the first layer barely differed, which suggesting that some information was not being well propagated through the first layer, effectively leading to the same symptoms as underparameterization due to later layer parameters not playing much of a predictive role.
+
+It was hypothesized that although the sinusoidal encodings lead to unique and meaningful representations in both the spatial and spectral domains, the sparsity of the spectral domain matrix meant that the Fourier branch of the FNO was still not playing much of a role, and an encoding where the Fourier branch of the FNO was richly interacting with the input data would likely perform better. From this, the custom wavelet encoding schema described in section \ref{sec:Methodology} was developed. See figures \ref{fig:1D_wavelet_encoding} and \ref{fig:2D_wavelet_encoding} for examples of band and wavevectors representations under the wavelet encoding.
+
+\begin{figure}[H]
+    \centering
+    \begin{subfigure}{\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{Figures/1D wavelet encoding.png}
+        \caption{The wavelet spatial encoding for band integer.}
+        \label{fig:1D_wavelet_encoding_spatial}
+    \end{subfigure}  
+    \begin{subfigure}{\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{Figures/1D wavelet encoding fft.png}
+        \caption{The FFT of the above wavelet spatial encodings.}
+        \label{fig:1D_wavelet_encoding_fft}
+    \end{subfigure}
+    \caption{The wavelet encoding of the band integer (fig. \ref{fig:1D_wavelet_encoding_spatial}) and its FFT (fig. \ref{fig:1D_wavelet_encoding_fft}). Each band corresponds to a unique wavelet with representation in both spatial and spectral domains. Compared with the sinusoidal embeddings in fig. \ref{fig:1D_sinusoidal_encoding_spatial} and \ref{fig:1D_sinusoidal_encoding_fft}, the information distribution is also much more balanced between the two domains, with much more of the spectral domain pixels being utilized for each case. This in turn allows for both greater discernibility and richer interactions between the FNO weights and the band parameter input.}
+    \label{fig:1D_wavelet_encoding}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \begin{subfigure}{\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{Figures/2D wavelet encoding.png}
+        \caption{The wavelet spatial encoding for $x$ and $y$ wavevectors.}
+        \label{fig:2D_wavelet_encoding_spatial}
+    \end{subfigure}  
+    \begin{subfigure}{\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{Figures/2D wavelet encoding fft.png}
+        \caption{The FFT of the above wavelet spatial encodings.}
+        \label{fig:2D_wavelet_encoding_fft}
+    \end{subfigure}
+    \caption{The wavelet encoding of the $x$ and $y$ wavevectors (\ref{fig:2D_wavelet_encoding_spatial}) and its FFT \ref{fig:2D_wavelet_encoding_fft}. The actual wavevectors are shown in the subplot titles. For each $k_x$ and $k_y$ value pair, there is a unique mapping in both the spatial and spectral domain representations. Compared with the sinusoidal embeddings in fig. \ref{fig:2D_sinusoidal_encoding_spatial} and \ref{fig:2D_sinusoidal_encoding_fft}, the wavelet embedding has less pixel overlap and utilizes much more of the pixel space for different $k_x$ and $k_y$ values which leads to greater differentiation and thus more possible and more orthogonal interactions between the FNO weights in both branches and the input.}
+    \label{fig:2D_wavelet_encoding}
+\end{figure}
+
+The encoding proved to be substantially more effective for the model's learning outcomes, for all tried combinations of model and training hyperparameters. See figures \ref{fig:wavelet_s1} and \ref{fig:wavelet_s2} for random representative samples of model performance using the wavelet encoding for band and wavevectors.
+
+\begin{figure}[H]
+    \centering
+    \begin{subfigure}{0.8\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{Figures/input2.png}
+        \caption{Random sample inputs}
+        \label{fig:wavelet_s1_input}
+    \end{subfigure}%
+    \hfill
+    \begin{subfigure}{\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{Figures/output2.png}
+        \caption{Random sample outputs, targets, and differences}
+        \label{fig:wavelet_s1_output}
+    \end{subfigure}%
+    \caption{Performance of the FNO model with wavelet embedding on unencountered geometries. Inputs are shown in fig. \ref{fig:wavelet_s1_input} and outputs, targets, and differences are shown in fig. \ref{fig:wavelet_s1_output}}
+    \label{fig:wavelet_s1}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \begin{subfigure}{0.8\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{Figures/input4.png}
+        \caption{Random sample inputs}
+        \label{fig:wavelet_s2_inputs}
+    \end{subfigure}%
+    \hfill
+    \begin{subfigure}{\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{Figures/output4.png}
+        \caption{Random sample outputs, targets, and differences}
+        \label{fig:wavelet_s2_outputs}
+    \end{subfigure}%
+    \caption{Performance of the FNO model with wavelet embedding on unencountered geometries. Inputs are shown in fig. \ref{fig:wavelet_s2_input} and outputs, targets, and differences are shown in fig. \ref{fig:wavelet_s2_output}}
+    \label{fig:wavelet_s2}
+\end{figure}
+
+\subsection{Output Datatype}
+\label{ssec:output_datatype}
+The natural representation of the output data is a complex field for both x and y displacements. However, it was found that the models trained on a $2\times 32 \times 32$ complex64 tensor representation did not perform statistically significantly differently compared with a $4\times 32 \times 32$ float16 tensor representation across any hyperparameter setting. In both cases, it takes within 20 epochs for training to converge, and final accuracies evaluated on an unseen test set are within 10\% relative difference for all combinations of hyperparameters. There is only one major difference between the two cases, which is that the complex64 case consistently takes $1.5$ to $2 \times$ longer to train, which is a notable disadvantage. If there was a complex32 data format in Python, it might be competitive against float16, but in its absence, even for a naturally complex tensor, we recommend float16 as the training datatype unless higher precision is absolutely necessary. 
+
+\section{Conclusions}
+\label{sec:Conclusion}
+In this work, we have demonstrated that Fourier Neural Operators, when combined with structured wavelet encodings of PDE parameters, can serve as efficient and accurate surrogates for eigenvalue PDE solvers, allowing for user toggling between the different solutions deterministically and repeatably by choice of PDE parameters in inputs. The specific example is of a non-trivial 2D PDE based on acoustic wave propagation through metamaterial geometries. It is evident from this work that the choice of embedding when using neural networks or neural operators that have specific transforms built into its architecture should be matched to the transforms. In this particular case, the FNO is actually somewhat of a misnomer, because it contains both a spatial and spectral learned kernel interacting with a spatial and spectral representation of the layer input. In this sense, it is more like a Wavelet Neural Operator. Because of this spatial and frequency domain duality and the FNO simultaneously computing and learning in both domains, wavelet embeddings which preserve both spatial and frequency domain information outperform embeddings which only use one of the two domains.
+
+The ability for FNOs paired with wavelet encodings to solve eigenvalue PDEs and generalize well past its training geometries to novel geometries, opens up many opportunities in the metamaterial research field directly, but also many other fields of computational mechanics and physics that also have their own eigenvalue PDEs with input parameters that toggle between different solutions. This model, at 2 GB of size with float16 precision, is very lightweight compared to enterprise FEA software and processes inputs on the order of milliseconds, making it a compelling tool for surrogate modeling and/or iterative design for myriad materials and structure engineering problems. Future work to expand on usability could include generalization tests to different resolutions, using physics informed losses to further enhance performance and/or generalizability, and allowing more parameters such as material constants to be used as toggles for solutions, expanding the problem and solution space to more dimensions.
+
+\section*{Declaration of Competing Interest}
+The authors declare that they have no known competing financial interests or personal relationships that could have appeared to influence the work reported in this paper.
+
+\section*{CRediT authorship contribution statement}
+
+
+\section*{Data availability}
+\label{sec:Repository}
+The code and data in this article can be found at this GitHub repository:
+\url{https://github.com/trutheresy/NO-2D-Metamaterials}.
+
+The code for FEA computations can be found at this GitHub Repository:
+\url{https://github.com/aco8ogren/2D-dispersion.git}.
+
+\section*{Acknowledgements}
+
+%% The Appendices part is started with the command \appendix;
+%% appendix sections are then done as normal sections
+%\appendix
+%\section{Supplementary Figures}
+%\subsection{7D Gamma \& Beta Distribution Experiment}
+
+%\subsection{7D Gaussian Distribution Experiment}
+%% \label{}
+
+%\section{Appendix title 2}
+%% \label{}
+
+%% If you have bibdatabase file and want bibtex to generate the
+%% bibitems, please use
+%%
+\bibliographystyle{elsarticle-num}
+%\bibliographystyle{plain} 
+\bibliography{references}
+%\todo{Add some references for metamaterials, or UQ}
+%% else use the following coding to input the bibitems directly in the
+%% TeX file.
+
+%%\begin{thebibliography}{00}
+
+%% \bibitem[Author(year)]{label}
+%% For example:
+
+%% \bibitem[Aladro et al.(2015)]{Aladro15} Aladro, R., Martín, S., Riquelme, D., et al. 2015, \aas, 579, A101
+
+
+%%\end{thebibliography}
+
+\end{document}
+
+\endinput
+%%
+%% End of file `elsarticle-template-harv.tex'.

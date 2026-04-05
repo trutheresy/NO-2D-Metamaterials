@@ -1,0 +1,23 @@
+{
+  "status": "completed",
+  "run_name": "NO_I3O4_DISP_BCF16_L2_HC128_LR2e-03_WD0e+00_SS1_G9e-01_260316",
+  "run_id": "20260316_212848_163424",
+  "target_kind": "displacement",
+  "started_at_utc": "2026-03-17T01:28:48.332277+00:00",
+  "ended_at_utc": "2026-03-17T01:29:39.972790+00:00",
+  "duration_sec": 51.640513,
+  "best_val_loss": 0.0006657465486429059,
+  "best_epoch": 1,
+  "checkpoints": {
+    "best": "D:\\Research\\NO-2D-Metamaterials\\MODELS\\training_runs\\NO_I3O4_DISP_BCF16_L2_HC128_LR2e-03_WD0e+00_SS1_G9e-01_260316_20260316_212848_163424\\NO_I3O4_DISP_BCF16_L2_HC128_LR2e-03_WD0e+00_SS1_G9e-01_260316_best.pth",
+    "final": "D:\\Research\\NO-2D-Metamaterials\\MODELS\\training_runs\\NO_I3O4_DISP_BCF16_L2_HC128_LR2e-03_WD0e+00_SS1_G9e-01_260316_20260316_212848_163424\\NO_I3O4_DISP_BCF16_L2_HC128_LR2e-03_WD0e+00_SS1_G9e-01_260316_final.pth",
+    "epoch_pattern": "D:\\Research\\NO-2D-Metamaterials\\MODELS\\training_runs\\NO_I3O4_DISP_BCF16_L2_HC128_LR2e-03_WD0e+00_SS1_G9e-01_260316_20260316_212848_163424\\NO_I3O4_DISP_BCF16_L2_HC128_LR2e-03_WD0e+00_SS1_G9e-01_260316_E{epoch}.pth"
+  },
+  "artifacts": {
+    "train_log": "D:\\Research\\NO-2D-Metamaterials\\MODELS\\training_runs\\NO_I3O4_DISP_BCF16_L2_HC128_LR2e-03_WD0e+00_SS1_G9e-01_260316_20260316_212848_163424\\train.log",
+    "resolved_config": "D:\\Research\\NO-2D-Metamaterials\\MODELS\\training_runs\\NO_I3O4_DISP_BCF16_L2_HC128_LR2e-03_WD0e+00_SS1_G9e-01_260316_20260316_212848_163424\\resolved_config.json",
+    "run_metadata": "D:\\Research\\NO-2D-Metamaterials\\MODELS\\training_runs\\NO_I3O4_DISP_BCF16_L2_HC128_LR2e-03_WD0e+00_SS1_G9e-01_260316_20260316_212848_163424\\run_metadata.json",
+    "metrics_csv": "D:\\Research\\NO-2D-Metamaterials\\MODELS\\training_runs\\NO_I3O4_DISP_BCF16_L2_HC128_LR2e-03_WD0e+00_SS1_G9e-01_260316_20260316_212848_163424\\metrics.csv",
+    "metrics_jsonl": "D:\\Research\\NO-2D-Metamaterials\\MODELS\\training_runs\\NO_I3O4_DISP_BCF16_L2_HC128_LR2e-03_WD0e+00_SS1_G9e-01_260316_20260316_212848_163424\\metrics.jsonl"
+  }
+}

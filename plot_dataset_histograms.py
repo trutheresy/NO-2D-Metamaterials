@@ -1,4 +1,5 @@
 import argparse
+import math
 from pathlib import Path
 
 import matplotlib
@@ -15,6 +16,81 @@ def resolve_pt_folder(folder: Path) -> Path:
     if not pt_dirs:
         raise FileNotFoundError(f"No *_pt dataset folder found under: {folder}")
     return pt_dirs[-1]
+
+
+def save_eigenfrequency_uniform_histogram(
+    pt_folder: Path, sample_max: int = 200_000, seed: int = 0
+) -> Path:
+    """
+    Histogram of sampled values from ``eigenfrequency_uniform_full.pt`` (matches
+    ``run_generate_pt_folder_stats_all.save_hist`` style used for other tensors).
+    """
+    path = pt_folder / "eigenfrequency_uniform_full.pt"
+    if not path.is_file():
+        raise FileNotFoundError(f"Missing {path}")
+    t = torch.load(path, map_location="cpu", weights_only=False)
+    if not torch.is_tensor(t):
+        raise TypeError(f"Expected tensor in {path}, got {type(t)}")
+    flat = t.reshape(-1).detach()
+    n = int(flat.numel())
+    rng = np.random.default_rng(seed)
+    if n <= sample_max:
+        idx_t = torch.arange(n, dtype=torch.long)
+    else:
+        idx = np.sort(rng.choice(n, size=sample_max, replace=False))
+        idx_t = torch.from_numpy(idx.astype(np.int64))
+    vals = flat[idx_t].to(torch.float64).cpu().numpy()
+    finite = vals[np.isfinite(vals)] if vals.size > 0 else np.array([], dtype=np.float64)
+    out_png = pt_folder / "hist_eigenfrequency_uniform_full.png"
+    fig, ax = plt.subplots(figsize=(9, 5))
+    if finite.size > 0:
+        bins = max(40, min(220, int(round(math.sqrt(finite.size)))))
+        ax.hist(finite, bins=bins, alpha=0.85)
+    ax.set_title("eigenfrequency_uniform_full.pt sampled value histogram")
+    ax.set_xlabel("Value")
+    ax.set_ylabel("Count")
+    ax.set_yscale("log")
+    fig.tight_layout()
+    fig.savefig(out_png, dpi=160, bbox_inches="tight")
+    plt.close(fig)
+    print(f"SAVED {out_png}")
+    return out_png
+
+
+def save_eigenfrequency_fft_histogram(
+    pt_folder: Path, sample_max: int = 200_000, seed: int = 0
+) -> Path:
+    """Sampled-value histogram for ``eigenfrequency_fft_full.pt`` (stats-script style)."""
+    path = pt_folder / "eigenfrequency_fft_full.pt"
+    if not path.is_file():
+        raise FileNotFoundError(f"Missing {path}")
+    t = torch.load(path, map_location="cpu", weights_only=False)
+    if not torch.is_tensor(t):
+        raise TypeError(f"Expected tensor in {path}, got {type(t)}")
+    flat = t.reshape(-1).detach()
+    n = int(flat.numel())
+    rng = np.random.default_rng(seed)
+    if n <= sample_max:
+        idx_t = torch.arange(n, dtype=torch.long)
+    else:
+        idx = np.sort(rng.choice(n, size=sample_max, replace=False))
+        idx_t = torch.from_numpy(idx.astype(np.int64))
+    vals = flat[idx_t].to(torch.float64).cpu().numpy()
+    finite = vals[np.isfinite(vals)] if vals.size > 0 else np.array([], dtype=np.float64)
+    out_png = pt_folder / "hist_eigenfrequency_fft_full.png"
+    fig, ax = plt.subplots(figsize=(9, 5))
+    if finite.size > 0:
+        bins = max(40, min(220, int(round(math.sqrt(finite.size)))))
+        ax.hist(finite, bins=bins, alpha=0.85)
+    ax.set_title("eigenfrequency_fft_full.pt sampled value histogram")
+    ax.set_xlabel("Value")
+    ax.set_ylabel("Count")
+    ax.set_yscale("log")
+    fig.tight_layout()
+    fig.savefig(out_png, dpi=160, bbox_inches="tight")
+    plt.close(fig)
+    print(f"SAVED {out_png}")
+    return out_png
 
 
 def plot_eigenfrequency_hist(pt_folder: Path):

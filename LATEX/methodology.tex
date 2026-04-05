@@ -1,0 +1,70 @@
+\section{Methodology}
+\label{sec:methodology}
+
+This work builds a supervised learning dataset by pairing periodic metamaterial unit-cell designs with wave-physics responses computed from a finite-element eigensolver. The full pipeline is organized as a batched generation workflow: each batch launches a deterministic set of design indices, computes dispersion data for each structure over a fixed wavevector grid in the irreducible Brillouin zone, and aggregates the resulting fields into machine-learning-ready tensors.
+
+At a high level, each sample is indexed by a triplet $(d,k,b)$, where $d$ is the design index, $k$ is the wavevector index, and $b$ is the band index. For each design, three coupled spatial fields are generated on a $32\times 32$ pixel lattice and interpreted as normalized material-property channels. These channels are mapped to physical ranges for Young's modulus, density, and Poisson's ratio, with optional binarization to enforce two-phase material realizations.
+
+\subsection{Physics Compute for Data Generation}
+\label{subsec:physics_compute}
+
+The physics computation is based on linear elastic wave propagation in a periodic unit cell with Bloch-periodic boundary conditions. For each generated microstructure, the solver performs the following sequence:
+\begin{enumerate}
+    \item Construct per-pixel constitutive parameters from the normalized design representation.
+    \item Assemble global stiffness and mass operators using vectorized finite-element assembly.
+    \item For each wavevector in the irreducible Brillouin-zone path/grid, build the complex Bloch transformation matrix and project the global operators into reduced coordinates.
+    \item Solve the reduced generalized eigenvalue problem
+    \begin{equation}
+        \mathbf{K}_r(\mathbf{k})\mathbf{u} = \lambda\,\mathbf{M}_r(\mathbf{k})\mathbf{u},
+    \end{equation}
+    then convert eigenvalues to frequencies via
+    \begin{equation}
+        f = \frac{\sqrt{\max(\Re(\lambda),0)}}{2\pi}.
+    \end{equation}
+    \item Store modal frequencies and eigenvectors across all requested bands and wavevectors, and package outputs into learning tensors.
+\end{enumerate}
+
+The batching/orchestration layer parallelizes computation over structures, while the inner solve loop scans all wavevectors per structure. This separation keeps generation reproducible (seed-offset driven) and scalable for large dataset sizes.
+
+\begin{figure}[t]
+    \centering
+    \begin{tikzpicture}[
+        node distance=5mm,
+        block/.style={draw, rounded corners, align=center, minimum width=5.2cm, minimum height=7mm},
+        line/.style={-latex}
+    ]
+        \node[block] (main) {\texttt{main}};
+        \node[block, below=of main] (runbatch) {\texttt{\_run\_one\_batch}};
+        \node[block, below=of runbatch] (gendata) {\texttt{generate\_dispersion\_dataset\_with\_matrices}};
+        \node[block, below=of gendata] (onestruct) {\texttt{\_compute\_single\_structure}};
+        \node[block, below=of onestruct] (design) {\texttt{get\_design2} $\rightarrow$ \texttt{get\_prop}};
+        \node[block, below=of design] (mapprops) {\texttt{convert\_design} $\rightarrow$ \texttt{apply\_steel\_rubber\_paradigm}};
+        \node[block, below=of mapprops] (dispersion) {\texttt{dispersion\_with\_matrix\_save\_opt}};
+        \node[block, below left=9mm and 15mm of dispersion] (assembly) {\texttt{get\_system\_matrices\_VEC}};
+        \node[block, below=of assembly] (elements) {\texttt{get\_element\_stiffness\_VEC}\\+\texttt{get\_element\_mass\_VEC}};
+        \node[block, below right=9mm and 15mm of dispersion] (transform) {\texttt{get\_transformation\_matrix}};
+        \node[block, below=18mm of dispersion] (eigs) {Generalized eigensolve\\and frequency extraction};
+        \node[block, below=of eigs] (pack) {\texttt{\_build\_pt\_dataset\_outputs}};
+
+        \draw[line] (main) -- (runbatch);
+        \draw[line] (runbatch) -- (gendata);
+        \draw[line] (gendata) -- (onestruct);
+        \draw[line] (onestruct) -- (design);
+        \draw[line] (design) -- (mapprops);
+        \draw[line] (mapprops) -- (dispersion);
+        \draw[line] (dispersion) -- (assembly);
+        \draw[line] (assembly) -- (elements);
+        \draw[line] (dispersion) -- (transform);
+        \draw[line] (assembly) |- (eigs);
+        \draw[line] (transform) |- (eigs);
+        \draw[line] (dispersion) -- (eigs);
+        \draw[line] (eigs) -- (pack);
+    \end{tikzpicture}
+    \caption{Function-level data-generation and physics-solve pipeline. Blocks correspond to stages in the call chain from batching to final tensor packaging.}
+    \label{fig:data_generation_pipeline}
+\end{figure}
+
+\noindent\textit{Overleaf note:} this section uses TikZ positioning; include
+\texttt{\textbackslash usepackage\{tikz\}} and
+\texttt{\textbackslash usetikzlibrary\{positioning,arrows.meta\}}
+in the main preamble.

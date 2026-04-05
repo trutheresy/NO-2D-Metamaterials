@@ -1,0 +1,16 @@
+2026-03-29 15:02:01,296 | INFO | Run started | run_name=NO_I3O4_DISP_BCF16_L2_HC128_LR2e-03_WD0e+00_SS1_G9e-01_260329 run_id=20260329_150149_109040 device=cuda train_samples=18720000 test_samples=780000 epoch_range=1..12
+2026-03-29 15:02:01,297 | INFO | Fault diagnostics | main_fault_log=D:\Research\NO-2D-Metamaterials\MODELS\training_runs\NO_I3O4_DISP_BCF16_L2_HC128_LR2e-03_WD0e+00_SS1_G9e-01_260329_20260329_150149_109040\main_process_fault.log
+2026-03-29 18:16:17,008 | INFO | epoch=1/12 train_loss=1.045907e-04 val_loss=7.644205e-05 lr=1.800e-03 train_sps=1630.5
+2026-03-29 21:29:46,175 | INFO | epoch=2/12 train_loss=6.756654e-05 val_loss=6.959630e-05 lr=1.620e-03 train_sps=1636.5
+2026-03-30 00:42:13,743 | INFO | epoch=3/12 train_loss=5.891076e-05 val_loss=6.652218e-05 lr=1.458e-03 train_sps=1645.3
+2026-03-30 03:54:42,262 | INFO | epoch=4/12 train_loss=5.331331e-05 val_loss=6.557936e-05 lr=1.312e-03 train_sps=1645.2
+2026-03-30 07:05:32,616 | INFO | epoch=5/12 train_loss=4.910826e-05 val_loss=6.498511e-05 lr=1.181e-03 train_sps=1659.3
+2026-03-30 10:16:16,136 | INFO | epoch=6/12 train_loss=4.568800e-05 val_loss=6.474838e-05 lr=1.063e-03 train_sps=1660.3
+2026-03-30 13:27:00,498 | INFO | epoch=7/12 train_loss=4.283894e-05 val_loss=6.380422e-05 lr=9.566e-04 train_sps=1660.2
+2026-03-30 16:37:50,008 | INFO | epoch=8/12 train_loss=4.040547e-05 val_loss=6.437634e-05 lr=8.609e-04 train_sps=1659.2
+2026-03-30 20:01:49,604 | INFO | epoch=9/12 train_loss=3.822717e-05 val_loss=6.406472e-05 lr=7.748e-04 train_sps=1553.0
+2026-03-30 23:22:26,709 | INFO | epoch=10/12 train_loss=3.627051e-05 val_loss=6.427024e-05 lr=6.974e-04 train_sps=1578.5
+2026-03-31 02:36:23,020 | INFO | epoch=11/12 train_loss=3.447037e-05 val_loss=6.394952e-05 lr=6.276e-04 train_sps=1632.4
+2026-03-31 05:47:08,477 | INFO | epoch=12/12 train_loss=3.278105e-05 val_loss=6.462081e-05 lr=5.649e-04 train_sps=1660.0
+2026-03-31 05:47:08,766 | INFO | Run complete | run_name=NO_I3O4_DISP_BCF16_L2_HC128_LR2e-03_WD0e+00_SS1_G9e-01_260329 run_id=20260329_150149_109040 best_val_loss=6.380422e-05
+2026-03-31 05:47:08,766 | INFO | Artifacts saved to: D:\Research\NO-2D-Metamaterials\MODELS\training_runs\NO_I3O4_DISP_BCF16_L2_HC128_LR2e-03_WD0e+00_SS1_G9e-01_260329_20260329_150149_109040

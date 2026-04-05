@@ -6,6 +6,7 @@ import csv
 import hashlib
 import json
 import subprocess
+import sys
 import time
 from dataclasses import dataclass
 from datetime import datetime
@@ -23,6 +24,11 @@ from tqdm import tqdm
 TRAIN_PREFIXES = ("c_train", "b_train")
 TEST_PREFIXES = ("c_test", "b_test")
 
+EIGEN_CH0_FILES = {
+    "uniform": "eigenfrequency_uniform_full.pt",
+    "fft": "eigenfrequency_fft_full.pt",
+}
+
 
 @dataclass
 class ShardInfo:
@@ -30,21 +36,24 @@ class ShardInfo:
     pt_dir: Path
     inputs_path: Path
     outputs_path: Path
+    reduced_indices_path: Path
+    eigen_ch0_path: Path
     n: int
 
 
 class ShardedTensorPairDataset(Dataset[tuple[torch.Tensor, torch.Tensor]]):
     """
-    Disk-backed dataset over many shard pairs (inputs.pt, outputs.pt).
-
-    It stores only shard metadata in RAM and lazily memory-maps one shard at a time
-    per worker process.
+    Disk-backed dataset: inputs.pt; output channel 0 from eigenfrequency_*_full.pt at
+    (design, wavevector, band) from reduced_indices.pt; channels 1–4 from outputs.pt.
     """
 
-    def __init__(self, shards: list[ShardInfo]):
+    def __init__(self, shards: list[ShardInfo], eigen_ch0_encoding: str):
+        if eigen_ch0_encoding not in EIGEN_CH0_FILES:
+            raise ValueError(f"Unknown eigen_ch0_encoding: {eigen_ch0_encoding!r}")
         if not shards:
             raise ValueError("No shards were provided.")
         self.shards = shards
+        self.eigen_ch0_encoding = eigen_ch0_encoding
         self._lengths = [s.n for s in shards]
         self._offsets = np.cumsum([0, *self._lengths]).tolist()
         self._total = self._offsets[-1]
@@ -52,6 +61,8 @@ class ShardedTensorPairDataset(Dataset[tuple[torch.Tensor, torch.Tensor]]):
         self._loaded_shard_idx: int | None = None
         self._loaded_inputs: torch.Tensor | None = None
         self._loaded_outputs: torch.Tensor | None = None
+        self._loaded_eigen_ch0: torch.Tensor | None = None
+        self._loaded_ridx: Any = None
 
     def __len__(self) -> int:
         return self._total
@@ -69,14 +80,21 @@ class ShardedTensorPairDataset(Dataset[tuple[torch.Tensor, torch.Tensor]]):
         shard = self.shards[shard_idx]
         self._loaded_inputs = torch.load(shard.inputs_path, map_location="cpu", mmap=True, weights_only=True)
         self._loaded_outputs = torch.load(shard.outputs_path, map_location="cpu", mmap=True, weights_only=True)
+        self._loaded_eigen_ch0 = torch.load(shard.eigen_ch0_path, map_location="cpu", mmap=True, weights_only=True)
+        self._loaded_ridx = torch.load(shard.reduced_indices_path, map_location="cpu", weights_only=False)
         self._loaded_shard_idx = shard_idx
 
     def __getitem__(self, idx: int) -> tuple[torch.Tensor, torch.Tensor]:
         shard_idx, local_idx = self._resolve(idx)
         self._load_shard(shard_idx)
         assert self._loaded_inputs is not None and self._loaded_outputs is not None
+        assert self._loaded_eigen_ch0 is not None and self._loaded_ridx is not None
         x = self._loaded_inputs[local_idx]
-        y = self._loaded_outputs[local_idx]
+        triplet = self._loaded_ridx[local_idx]
+        d, w, b = int(triplet[0]), int(triplet[1]), int(triplet[2])
+        y0 = self._loaded_eigen_ch0[d, w, b]
+        y_rest = self._loaded_outputs[local_idx, 1:5]
+        y = torch.cat([y0.unsqueeze(0), y_rest], dim=0)
         return x, y
 
 
@@ -132,8 +150,20 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--momentum", type=float, default=0.9, help="Used when optimizer=sgd.")
     p.add_argument("--seed", type=int, default=42)
     p.add_argument("--amp", choices=("none", "fp16", "bf16"), default="fp16")
+    p.add_argument(
+        "--allow-cpu",
+        action="store_true",
+        help="Allow CPU fallback when CUDA is unavailable. Default is to require GPU.",
+    )
     p.add_argument("--max-train-samples", type=int, default=0, help="0 means use all.")
     p.add_argument("--max-test-samples", type=int, default=0, help="0 means use all.")
+    p.add_argument(
+        "--eigen-ch0-encoding",
+        choices=tuple(EIGEN_CH0_FILES.keys()),
+        default="uniform",
+        help="Output ch0 from eigenfrequency_uniform_full.pt (uniform) or eigenfrequency_fft_full.pt (fft). "
+        "Channels 1–4 always come from outputs.pt.",
+    )
     return p.parse_args()
 
 
@@ -144,6 +174,19 @@ def seed_everything(seed: int) -> None:
         torch.cuda.manual_seed_all(seed)
 
 
+def resolve_device(allow_cpu: bool) -> torch.device:
+    if torch.cuda.is_available():
+        return torch.device("cuda")
+    if allow_cpu:
+        return torch.device("cpu")
+    cuda_visible = os.environ.get("CUDA_VISIBLE_DEVICES", "<unset>")
+    raise RuntimeError(
+        "CUDA is unavailable but GPU is required for training. "
+        "If you intentionally want CPU fallback, pass --allow-cpu. "
+        f"Current CUDA_VISIBLE_DEVICES={cuda_visible}"
+    )
+
+
 def latest_pt_dir(dataset_dir: Path) -> Path:
     cands = [p for p in dataset_dir.iterdir() if p.is_dir() and p.name.endswith("_pt")]
     if not cands:
@@ -151,7 +194,10 @@ def latest_pt_dir(dataset_dir: Path) -> Path:
     return max(cands, key=lambda p: p.stat().st_mtime)
 
 
-def discover_shards(output_root: Path, prefixes: tuple[str, ...]) -> list[ShardInfo]:
+def discover_shards(output_root: Path, prefixes: tuple[str, ...], eigen_ch0_encoding: str) -> list[ShardInfo]:
+    if eigen_ch0_encoding not in EIGEN_CH0_FILES:
+        raise ValueError(f"Unknown eigen_ch0_encoding: {eigen_ch0_encoding!r}")
+    eigen_fname = EIGEN_CH0_FILES[eigen_ch0_encoding]
     shards: list[ShardInfo] = []
     ds_dirs = sorted([p for p in output_root.iterdir() if p.is_dir() and p.name.startswith(prefixes)], key=lambda p: p.name)
     validated_contract = False
@@ -160,47 +206,88 @@ def discover_shards(output_root: Path, prefixes: tuple[str, ...]) -> list[ShardI
         in_path = pt / "inputs.pt"
         out_path = pt / "outputs.pt"
         ridx_path = pt / "reduced_indices.pt"
+        eigen_path = pt / eigen_fname
         if not in_path.exists() or not out_path.exists():
             raise FileNotFoundError(f"Missing inputs/outputs in {pt}")
         if not ridx_path.exists():
             raise FileNotFoundError(f"Missing reduced_indices.pt in {pt}")
+        if not eigen_path.exists():
+            raise FileNotFoundError(
+                f"Missing {eigen_fname} in {pt} (required for --eigen-ch0-encoding={eigen_ch0_encoding})"
+            )
+
+        ridx = torch.load(ridx_path, map_location="cpu", weights_only=False)
+        n = len(ridx)
 
         if not validated_contract:
             x = torch.load(in_path, map_location="cpu", mmap=True, weights_only=True)
             y = torch.load(out_path, map_location="cpu", mmap=True, weights_only=True)
+            eig = torch.load(eigen_path, map_location="cpu", mmap=True, weights_only=True)
             if x.ndim != 4 or y.ndim != 4:
                 raise ValueError(f"Invalid tensor dims in {pt}: inputs={tuple(x.shape)}, outputs={tuple(y.shape)}")
             if tuple(x.shape[1:]) != (3, 32, 32):
                 raise ValueError(f"Invalid inputs shape in {pt}: {tuple(x.shape)}")
             if tuple(y.shape[1:]) != (5, 32, 32):
                 raise ValueError(f"Invalid outputs shape in {pt}: {tuple(y.shape)}")
+            if eig.ndim != 5 or tuple(eig.shape[-2:]) != (32, 32):
+                raise ValueError(
+                    f"Invalid {eigen_fname} in {pt}: expected 5D with trailing (32,32), got shape={tuple(eig.shape)}"
+                )
+            if int(y.shape[0]) != n:
+                raise ValueError(
+                    f"Sample count mismatch in {pt}: outputs N={int(y.shape[0])} vs len(reduced_indices)={n}"
+                )
+            arr = np.asarray(ridx, dtype=np.int64)
+            if arr.ndim != 2 or arr.shape[1] != 3:
+                raise ValueError(f"reduced_indices must be shape [N,3] when treated as array, got {arr.shape}")
+            dmax, wmax, bmax = int(arr[:, 0].max()), int(arr[:, 1].max()), int(arr[:, 2].max())
+            dmin, wmin, bmin = int(arr[:, 0].min()), int(arr[:, 1].min()), int(arr[:, 2].min())
+            if dmin < 0 or wmin < 0 or bmin < 0:
+                raise ValueError(f"Negative (design,wavevector,band) index in reduced_indices under {pt}")
+            if dmax >= eig.shape[0] or wmax >= eig.shape[1] or bmax >= eig.shape[2]:
+                raise ValueError(
+                    f"reduced_indices out of range for {eigen_fname} in {pt}: "
+                    f"max indices ({dmax},{wmax},{bmax}) vs tensor shape {tuple(eig.shape[:3])}"
+                )
             validated_contract = True
 
-        ridx = torch.load(ridx_path, map_location="cpu", weights_only=False)
-        n = len(ridx)
-        shards.append(ShardInfo(name=d.name, pt_dir=pt, inputs_path=in_path, outputs_path=out_path, n=n))
+        shards.append(
+            ShardInfo(
+                name=d.name,
+                pt_dir=pt,
+                inputs_path=in_path,
+                outputs_path=out_path,
+                reduced_indices_path=ridx_path,
+                eigen_ch0_path=eigen_path,
+                n=n,
+            )
+        )
     if not shards:
         raise FileNotFoundError(f"No dataset shards found with prefixes={prefixes} under {output_root}")
     return shards
 
 
-def dataset_version_hash(shards: list[ShardInfo]) -> str:
+def dataset_version_hash(shards: list[ShardInfo], eigen_ch0_encoding: str) -> str:
     h = hashlib.sha256()
+    h.update(eigen_ch0_encoding.encode("utf-8"))
     for s in shards:
         h.update(str(s.pt_dir).encode("utf-8"))
         h.update(str(s.inputs_path.stat().st_size).encode("utf-8"))
         h.update(str(s.outputs_path.stat().st_size).encode("utf-8"))
+        h.update(str(s.eigen_ch0_path.stat().st_size).encode("utf-8"))
         h.update(str(int(s.inputs_path.stat().st_mtime)).encode("utf-8"))
         h.update(str(int(s.outputs_path.stat().st_mtime)).encode("utf-8"))
+        h.update(str(int(s.eigen_ch0_path.stat().st_mtime)).encode("utf-8"))
     return h.hexdigest()[:12]
 
 
 def build_run_name(args: argparse.Namespace) -> str:
     ds = datetime.now().strftime("%y%m%d")
+    ch0_tag = "ch0u" if args.eigen_ch0_encoding == "uniform" else "ch0fft"
     return (
         f"NO_I3O5_BCF16_L2_HC{args.hidden_channels}_"
         f"LR{args.learning_rate:.0e}_WD{args.weight_decay:.0e}_"
-        f"SS{args.step_size}_G{args.gamma:.0e}_{ds}"
+        f"SS{args.step_size}_G{args.gamma:.0e}_{ch0_tag}_{ds}"
     )
 
 
@@ -228,7 +315,17 @@ def maybe_cap_shards(shards: list[ShardInfo], cap: int) -> list[ShardInfo]:
         if remaining <= 0:
             break
         keep = min(s.n, remaining)
-        out.append(ShardInfo(s.name, s.pt_dir, s.inputs_path, s.outputs_path, keep))
+        out.append(
+            ShardInfo(
+                s.name,
+                s.pt_dir,
+                s.inputs_path,
+                s.outputs_path,
+                s.reduced_indices_path,
+                s.eigen_ch0_path,
+                keep,
+            )
+        )
         remaining -= keep
     return out
 
@@ -307,13 +404,13 @@ def main() -> None:
     seed_everything(args.seed)
 
     output_root = Path(args.output_root)
-    train_shards = discover_shards(output_root, TRAIN_PREFIXES)
-    test_shards = discover_shards(output_root, TEST_PREFIXES)
+    train_shards = discover_shards(output_root, TRAIN_PREFIXES, args.eigen_ch0_encoding)
+    test_shards = discover_shards(output_root, TEST_PREFIXES, args.eigen_ch0_encoding)
     train_shards = maybe_cap_shards(train_shards, args.max_train_samples)
     test_shards = maybe_cap_shards(test_shards, args.max_test_samples)
 
-    train_ds = ShardedTensorPairDataset(train_shards)
-    test_ds = ShardedTensorPairDataset(test_shards)
+    train_ds = ShardedTensorPairDataset(train_shards, args.eigen_ch0_encoding)
+    test_ds = ShardedTensorPairDataset(test_shards, args.eigen_ch0_encoding)
 
     train_loader_kwargs: dict[str, Any] = {
         "batch_size": args.batch_size,
@@ -338,7 +435,7 @@ def main() -> None:
     train_loader = DataLoader(train_ds, **train_loader_kwargs)
     test_loader = DataLoader(test_ds, **test_loader_kwargs)
 
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    device = resolve_device(args.allow_cpu)
     model = FourierNeuralOperator(
         modes_height=args.modes_height,
         modes_width=args.modes_width,
@@ -358,7 +455,7 @@ def main() -> None:
     mlflow.set_experiment(args.experiment_name)
 
     git_meta = git_info()
-    data_ver = dataset_version_hash(train_shards + test_shards)
+    data_ver = dataset_version_hash(train_shards + test_shards, args.eigen_ch0_encoding)
 
     with mlflow.start_run(run_name=run_name) as run:
         run_id = run.info.run_id
@@ -394,6 +491,7 @@ def main() -> None:
             "train_samples": len(train_ds),
             "test_samples": len(test_ds),
             "dataset_version": data_ver,
+            "eigen_ch0_encoding": args.eigen_ch0_encoding,
         }
         mlflow.log_params(params)
         mlflow.set_tags(
@@ -402,6 +500,7 @@ def main() -> None:
                 "task": "surrogate_training",
                 "contract": "in3_out5",
                 "dataset_version": data_ver,
+                "eigen_ch0_encoding": args.eigen_ch0_encoding,
                 **git_meta,
             }
         )
@@ -439,7 +538,14 @@ def main() -> None:
                 ]
             )
 
-            epoch_bar = tqdm(range(1, args.epochs + 1), total=args.epochs, desc="Epochs", unit="epoch")
+            epoch_bar = tqdm(
+                range(1, args.epochs + 1),
+                total=args.epochs,
+                desc="Epochs",
+                unit="epoch",
+                file=sys.stdout,
+                dynamic_ncols=True,
+            )
             for epoch in epoch_bar:
                 model.train()
                 start_epoch = time.time()
@@ -454,6 +560,8 @@ def main() -> None:
                     desc=f"Train E{epoch}/{args.epochs}",
                     unit="batch",
                     leave=False,
+                    file=sys.stdout,
+                    dynamic_ncols=True,
                 )
                 for xb, yb in train_iter:
                     data_time += max(time.time() - last, 0.0)

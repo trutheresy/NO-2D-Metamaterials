@@ -1,0 +1,42 @@
+2026-03-19 02:47:42,544 | INFO | Run started | run_name=NO_I3O1_EIG_BCF16_L2_HC128_LR2e-03_WD0e+00_SS1_G9e-01_260319 run_id=20260319_024731_35204 target=eigenfrequency device=cuda train_samples=18720000 test_samples=780000
+2026-03-19 02:47:42,544 | INFO | Fault diagnostics | main_fault_log=D:\Research\NO-2D-Metamaterials\MODELS\training_runs\NO_I3O1_EIG_BCF16_L2_HC128_LR2e-03_WD0e+00_SS1_G9e-01_260319_20260319_024731_35204\main_process_fault.log
+2026-03-19 02:47:42,544 | INFO | DataLoader config | batch_size=520 num_workers=6 prefetch_factor=3 pin_memory=True progress_mode=tqdm log_every_batches=100
+2026-03-19 02:47:42,550 | INFO | Main training loop start | ts_utc=2026-03-19T06:47:42.548209+00:00
+2026-03-19 05:58:06,182 | INFO | epoch=1/12 train_loss=5.871989e-02 val_loss=6.631409e-02 lr=1.800e-03 train_sps=1663.3
+2026-03-19 05:58:06,183 | INFO | Epoch 1 finished | ts_utc=2026-03-19T09:58:06.183553+00:00 epoch_time_sec=11254.50
+2026-03-19 05:58:06,185 | INFO | Worker monitor | epoch=1 worker_logs=12 suspicious=0
+2026-03-19 09:08:02,608 | INFO | epoch=2/12 train_loss=4.561435e-02 val_loss=6.311275e-02 lr=1.620e-03 train_sps=1667.0
+2026-03-19 09:08:02,608 | INFO | Epoch 2 finished | ts_utc=2026-03-19T13:08:02.608604+00:00 epoch_time_sec=11229.59
+2026-03-19 09:08:02,610 | INFO | Worker monitor | epoch=2 worker_logs=12 suspicious=0
+2026-03-19 12:17:59,689 | INFO | epoch=3/12 train_loss=3.830400e-02 val_loss=6.217917e-02 lr=1.458e-03 train_sps=1666.9
+2026-03-19 12:17:59,689 | INFO | Epoch 3 finished | ts_utc=2026-03-19T16:17:59.689481+00:00 epoch_time_sec=11230.30
+2026-03-19 12:17:59,690 | INFO | Worker monitor | epoch=3 worker_logs=12 suspicious=0
+2026-03-19 15:30:29,068 | INFO | epoch=4/12 train_loss=3.358012e-02 val_loss=6.100820e-02 lr=1.312e-03 train_sps=1645.1
+2026-03-19 15:30:29,068 | INFO | Epoch 4 finished | ts_utc=2026-03-19T19:30:29.068842+00:00 epoch_time_sec=11379.50
+2026-03-19 15:30:29,070 | INFO | Worker monitor | epoch=4 worker_logs=12 suspicious=0
+2026-03-19 18:45:14,253 | INFO | epoch=5/12 train_loss=3.001698e-02 val_loss=6.326058e-02 lr=1.181e-03 train_sps=1625.3
+2026-03-19 18:45:14,253 | INFO | Epoch 5 finished | ts_utc=2026-03-19T22:45:14.253034+00:00 epoch_time_sec=11518.14
+2026-03-19 18:45:14,255 | INFO | Worker monitor | epoch=5 worker_logs=12 suspicious=0
+2026-03-19 21:58:28,422 | INFO | epoch=6/12 train_loss=2.690915e-02 val_loss=5.903144e-02 lr=1.063e-03 train_sps=1639.6
+2026-03-19 21:58:28,423 | INFO | Epoch 6 finished | ts_utc=2026-03-20T01:58:28.423633+00:00 epoch_time_sec=11417.13
+2026-03-19 21:58:28,424 | INFO | Worker monitor | epoch=6 worker_logs=12 suspicious=0
+2026-03-20 01:45:25,240 | INFO | epoch=7/12 train_loss=2.427641e-02 val_loss=6.108496e-02 lr=9.566e-04 train_sps=1393.5
+2026-03-20 01:45:25,240 | INFO | Epoch 7 finished | ts_utc=2026-03-20T05:45:25.240718+00:00 epoch_time_sec=13433.82
+2026-03-20 01:45:25,243 | INFO | Worker monitor | epoch=7 worker_logs=12 suspicious=0
+2026-03-20 05:13:45,860 | INFO | epoch=8/12 train_loss=2.191016e-02 val_loss=6.001347e-02 lr=8.609e-04 train_sps=1519.8
+2026-03-20 05:13:45,860 | INFO | Epoch 8 finished | ts_utc=2026-03-20T09:13:45.860516+00:00 epoch_time_sec=12317.56
+2026-03-20 05:13:45,863 | INFO | Worker monitor | epoch=8 worker_logs=12 suspicious=0
+2026-03-20 08:42:11,503 | INFO | epoch=9/12 train_loss=1.989991e-02 val_loss=5.929032e-02 lr=7.748e-04 train_sps=1519.2
+2026-03-20 08:42:11,503 | INFO | Epoch 9 finished | ts_utc=2026-03-20T12:42:11.503178+00:00 epoch_time_sec=12322.44
+2026-03-20 08:42:11,506 | INFO | Worker monitor | epoch=9 worker_logs=12 suspicious=0
+2026-03-20 12:10:48,076 | INFO | epoch=10/12 train_loss=1.808093e-02 val_loss=5.938594e-02 lr=6.974e-04 train_sps=1518.1
+2026-03-20 12:10:48,076 | INFO | Epoch 10 finished | ts_utc=2026-03-20T16:10:48.076786+00:00 epoch_time_sec=12331.19
+2026-03-20 12:10:48,080 | INFO | Worker monitor | epoch=10 worker_logs=12 suspicious=0
+2026-03-20 15:38:15,509 | INFO | epoch=11/12 train_loss=1.654091e-02 val_loss=5.768691e-02 lr=6.276e-04 train_sps=1525.1
+2026-03-20 15:38:15,509 | INFO | Epoch 11 finished | ts_utc=2026-03-20T19:38:15.509012+00:00 epoch_time_sec=12274.41
+2026-03-20 15:38:15,511 | INFO | Worker monitor | epoch=11 worker_logs=12 suspicious=0
+2026-03-20 18:50:40,949 | INFO | epoch=12/12 train_loss=1.506564e-02 val_loss=5.681777e-02 lr=5.649e-04 train_sps=1650.8
+2026-03-20 18:50:40,950 | INFO | Epoch 12 finished | ts_utc=2026-03-20T22:50:40.950781+00:00 epoch_time_sec=11340.13
+2026-03-20 18:50:40,953 | INFO | Worker monitor | epoch=12 worker_logs=12 suspicious=0
+2026-03-20 18:50:40,954 | INFO | Main training loop finished | ts_utc=2026-03-20T22:50:40.953790+00:00 elapsed_sec=144178.41
+2026-03-20 18:50:41,274 | INFO | Run complete | run_name=NO_I3O1_EIG_BCF16_L2_HC128_LR2e-03_WD0e+00_SS1_G9e-01_260319 run_id=20260319_024731_35204 best_val_loss=5.681777e-02

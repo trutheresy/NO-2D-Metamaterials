@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from encode_eigenfrequency_fft_full import discover_dataset_dirs
+from dataset_pt_discovery import discover_dataset_dirs
 from plot_dataset_histograms import resolve_pt_folder, plot_eigenfrequency_hist, plot_reduced_indices_hists
 
 

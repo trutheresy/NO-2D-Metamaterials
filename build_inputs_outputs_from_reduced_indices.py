@@ -13,6 +13,17 @@ import torch
 
 PREFIXES = ("c_train", "b_train", "c_test", "b_test")
 
+EIGEN_CH0_FILES = {
+    "uniform": "eigenfrequency_uniform_full.pt",
+    "fft": "eigenfrequency_fft_full.pt",
+}
+
+# Stacked 5-channel targets (ch0 from chosen eigen full tensor; ch1–4 displacements).
+OUTPUT_STACKED_FILES = {
+    "uniform": "outputs_w_uniform.pt",
+    "fft": "outputs_w_fft.pt",
+}
+
 
 def discover_dataset_dirs(output_root: Path) -> List[Path]:
     found: List[Path] = []
@@ -51,7 +62,7 @@ def _check_image_tensor(name: str, x: torch.Tensor, expected_last_two: Tuple[int
         issues.append(f"{name}: expected trailing shape {expected_last_two}, got {tuple(x.shape[-2:])}")
 
 
-def _check_eigfft(name: str, x: torch.Tensor, issues: List[str]) -> None:
+def _check_eigenfrequency_full(name: str, x: torch.Tensor, issues: List[str]) -> None:
     if not isinstance(x, torch.Tensor):
         issues.append(f"{name}: expected Tensor, got {type(x).__name__}")
         return
@@ -69,14 +80,24 @@ def _as_triplet_arrays(reduced_indices: Sequence[Tuple[int, int, int]]) -> Tuple
     return arr[:, 0], arr[:, 1], arr[:, 2]
 
 
-def build_inputs_outputs_for_pt_dir(pt_dir: Path, chunk_size: int, use_mmap: bool) -> dict:
+def build_inputs_outputs_for_pt_dir(
+    pt_dir: Path,
+    chunk_size: int,
+    use_mmap: bool,
+    eigen_ch0_encoding: str,
+    outputs_only: bool = False,
+) -> dict:
+    if eigen_ch0_encoding not in EIGEN_CH0_FILES:
+        raise ValueError(f"Unknown eigen_ch0_encoding: {eigen_ch0_encoding!r}")
+    eigen_fname = EIGEN_CH0_FILES[eigen_ch0_encoding]
+    out_stacked_name = OUTPUT_STACKED_FILES[eigen_ch0_encoding]
     issues: List[str] = []
 
     reduced_indices_path = pt_dir / "reduced_indices.pt"
     geometries_path = pt_dir / "geometries_full.pt"
     waveforms_path = pt_dir / "waveforms_full.pt"
     band_fft_path = pt_dir / "band_fft_full.pt"
-    eigfft_path = pt_dir / "eigenfrequency_fft_full.pt"
+    eigen_full_path = pt_dir / eigen_fname
     disp_path = pt_dir / "displacements_dataset.pt"
 
     for path in (
@@ -84,7 +105,7 @@ def build_inputs_outputs_for_pt_dir(pt_dir: Path, chunk_size: int, use_mmap: boo
         geometries_path,
         waveforms_path,
         band_fft_path,
-        eigfft_path,
+        eigen_full_path,
         disp_path,
     ):
         if not path.exists():
@@ -102,25 +123,25 @@ def build_inputs_outputs_for_pt_dir(pt_dir: Path, chunk_size: int, use_mmap: boo
 
     d_np, w_np, b_np = _as_triplet_arrays(reduced_indices)
     del reduced_indices
-    print("    load geometry/waveform/band/eigfft", flush=True)
+    print(f"    load geometry/waveform/band/{eigen_fname}", flush=True)
     geometries = _load_pt(geometries_path, use_mmap=use_mmap, weights_only=True)
     waveforms = _load_pt(waveforms_path, use_mmap=use_mmap, weights_only=True)
     band_fft = _load_pt(band_fft_path, use_mmap=use_mmap, weights_only=True)
-    eigfft = _load_pt(eigfft_path, use_mmap=use_mmap, weights_only=True)
+    eigen_full = _load_pt(eigen_full_path, use_mmap=use_mmap, weights_only=True)
 
     _check_image_tensor("geometries_full", geometries, (32, 32), issues)
     _check_image_tensor("waveforms_full", waveforms, (32, 32), issues)
     _check_image_tensor("band_fft_full", band_fft, (32, 32), issues)
-    _check_eigfft("eigenfrequency_fft_full", eigfft, issues)
+    _check_eigenfrequency_full(eigen_fname, eigen_full, issues)
 
     n_design = int(geometries.shape[0])
     n_wv = int(waveforms.shape[0])
     n_band = int(band_fft.shape[0])
 
-    if int(eigfft.shape[0]) != n_design or int(eigfft.shape[1]) != n_wv or int(eigfft.shape[2]) != n_band:
+    if int(eigen_full.shape[0]) != n_design or int(eigen_full.shape[1]) != n_wv or int(eigen_full.shape[2]) != n_band:
         issues.append(
-            "eigenfrequency_fft_full leading dims do not match geometry/waveform/band counts: "
-            f"eigfft={tuple(eigfft.shape[:3])}, expected=({n_design}, {n_wv}, {n_band})"
+            f"{eigen_fname} leading dims do not match geometry/waveform/band counts: "
+            f"eigen={tuple(eigen_full.shape[:3])}, expected=({n_design}, {n_wv}, {n_band})"
         )
 
     min_d, max_d = int(d_np.min()), int(d_np.max())
@@ -144,29 +165,34 @@ def build_inputs_outputs_for_pt_dir(pt_dir: Path, chunk_size: int, use_mmap: boo
     g_np = geometries.numpy()
     wf_np = waveforms.numpy()
     bf_np = band_fft.numpy()
-    ef_np = eigfft.numpy()
-
-    tmp_inputs_path = pt_dir / "_inputs_tmp.f16"
-    inputs_mm = np.memmap(tmp_inputs_path, mode="w+", dtype=np.float16, shape=(n, 3, 32, 32))
-    print("    build inputs", flush=True)
-    for start in range(0, n, chunk_size):
-        end = min(start + chunk_size, n)
-        sl = slice(start, end)
-        d = d_np[sl]
-        w = w_np[sl]
-        b = b_np[sl]
-        inputs_mm[sl, 0] = g_np[d]
-        inputs_mm[sl, 1] = wf_np[w]
-        inputs_mm[sl, 2] = bf_np[b]
+    ef_np = eigen_full.numpy()
 
     in_path = pt_dir / "inputs.pt"
-    inputs_mm.flush()
-    print("    save inputs", flush=True)
-    torch.save(torch.from_numpy(inputs_mm), in_path)
-    del inputs_mm
-    if tmp_inputs_path.exists():
-        os.remove(tmp_inputs_path)
-    gc.collect()
+    inputs_bytes = int(in_path.stat().st_size) if in_path.exists() else 0
+    if not outputs_only:
+        tmp_inputs_path = pt_dir / "_inputs_tmp.f16"
+        inputs_mm = np.memmap(tmp_inputs_path, mode="w+", dtype=np.float16, shape=(n, 3, 32, 32))
+        print("    build inputs", flush=True)
+        for start in range(0, n, chunk_size):
+            end = min(start + chunk_size, n)
+            sl = slice(start, end)
+            d = d_np[sl]
+            w = w_np[sl]
+            b = b_np[sl]
+            inputs_mm[sl, 0] = g_np[d]
+            inputs_mm[sl, 1] = wf_np[w]
+            inputs_mm[sl, 2] = bf_np[b]
+
+        inputs_mm.flush()
+        print("    save inputs", flush=True)
+        torch.save(torch.from_numpy(inputs_mm), in_path)
+        del inputs_mm
+        if tmp_inputs_path.exists():
+            os.remove(tmp_inputs_path)
+        gc.collect()
+        inputs_bytes = int(in_path.stat().st_size)
+    else:
+        print("    skip inputs.pt (--outputs-only)", flush=True)
 
     print("    load displacements", flush=True)
     displacements = _load_pt(disp_path, use_mmap=use_mmap, weights_only=False)
@@ -233,24 +259,28 @@ def build_inputs_outputs_for_pt_dir(pt_dir: Path, chunk_size: int, use_mmap: boo
             outputs_mm[sl, 3] = disp_np[2][sl]
             outputs_mm[sl, 4] = disp_np[3][sl]
 
-    out_path = pt_dir / "outputs.pt"
+    out_path = pt_dir / out_stacked_name
     outputs_mm.flush()
-    print("    save outputs", flush=True)
+    print(f"    save {out_stacked_name}", flush=True)
     torch.save(torch.from_numpy(outputs_mm), out_path)
     del outputs_mm
     if tmp_outputs_path.exists():
         os.remove(tmp_outputs_path)
-    del disp_np, disp_tensors, displacements, ef_np, bf_np, wf_np, g_np, eigfft, band_fft, waveforms, geometries
+    del disp_np, disp_tensors, displacements, ef_np, bf_np, wf_np, g_np, eigen_full, band_fft, waveforms, geometries
     gc.collect()
 
     return {
         "pt_dir": str(pt_dir),
         "status": "ok",
         "n": n,
+        "eigen_ch0_encoding": eigen_ch0_encoding,
+        "eigen_ch0_file": eigen_fname,
+        "outputs_stacked_file": out_stacked_name,
+        "outputs_only": outputs_only,
         "inputs_shape": [n, 3, 32, 32],
         "outputs_shape": [n, 5, 32, 32],
         "disp_mode": disp_mode,
-        "inputs_bytes": int(in_path.stat().st_size),
+        "inputs_bytes": inputs_bytes,
         "outputs_bytes": int(out_path.stat().st_size),
         "issues": [],
     }
@@ -258,7 +288,8 @@ def build_inputs_outputs_for_pt_dir(pt_dir: Path, chunk_size: int, use_mmap: boo
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="Build inputs.pt and outputs.pt from reduced_indices.pt for all c_train/b_train/c_test/b_test datasets."
+        description="Build inputs.pt and stacked outputs (outputs_w_uniform.pt or outputs_w_fft.pt) from reduced_indices.pt "
+        "for all c_train/b_train/c_test/b_test datasets."
     )
     parser.add_argument(
         "--output-root",
@@ -285,7 +316,19 @@ def main() -> None:
     parser.add_argument(
         "--skip-existing",
         action="store_true",
-        help="Skip a dataset if both inputs.pt and outputs.pt already exist in its latest *_pt folder.",
+        help="Skip a dataset if the stacked output for this run (outputs_w_uniform.pt or outputs_w_fft.pt) already exists.",
+    )
+    parser.add_argument(
+        "--outputs-only",
+        action="store_true",
+        help="Only write the stacked outputs file; do not rebuild inputs.pt (safer alongside training that reads inputs.pt).",
+    )
+    parser.add_argument(
+        "--eigen-ch0-encoding",
+        choices=tuple(EIGEN_CH0_FILES.keys()),
+        default="uniform",
+        help="Which 5D eigenfrequency tensor fills output channel 0: eigenfrequency_uniform_full.pt (uniform) "
+        "or eigenfrequency_fft_full.pt (fft).",
     )
     parser.add_argument(
         "--datasets",
@@ -309,13 +352,18 @@ def main() -> None:
         "output_root": str(output_root),
         "n_datasets_found": len(dataset_dirs),
         "chunk_size": int(args.chunk_size),
+        "eigen_ch0_encoding": args.eigen_ch0_encoding,
+        "eigen_ch0_file": EIGEN_CH0_FILES[args.eigen_ch0_encoding],
+        "outputs_stacked_file": OUTPUT_STACKED_FILES[args.eigen_ch0_encoding],
+        "outputs_only": bool(args.outputs_only),
         "results": [],
     }
 
     for dataset_dir in dataset_dirs:
         try:
             pt_dir = latest_pt_dir(dataset_dir)
-            if args.skip_existing and (pt_dir / "inputs.pt").exists() and (pt_dir / "outputs.pt").exists():
+            stacked_path = pt_dir / OUTPUT_STACKED_FILES[args.eigen_ch0_encoding]
+            if args.skip_existing and stacked_path.exists():
                 result = {
                     "pt_dir": str(pt_dir),
                     "status": "skipped_existing",
@@ -323,13 +371,18 @@ def main() -> None:
                     "issues": [],
                 }
                 report["results"].append(result)
-                print(f"SKIP {dataset_dir.name} -> {pt_dir.name} (existing inputs.pt/outputs.pt)", flush=True)
+                print(
+                    f"SKIP {dataset_dir.name} -> {pt_dir.name} (existing {stacked_path.name})",
+                    flush=True,
+                )
                 continue
             print(f"BUILD {dataset_dir.name} -> {pt_dir.name}", flush=True)
             result = build_inputs_outputs_for_pt_dir(
                 pt_dir,
                 chunk_size=int(args.chunk_size),
                 use_mmap=bool(args.use_mmap),
+                eigen_ch0_encoding=args.eigen_ch0_encoding,
+                outputs_only=bool(args.outputs_only),
             )
         except Exception as e:
             result = {

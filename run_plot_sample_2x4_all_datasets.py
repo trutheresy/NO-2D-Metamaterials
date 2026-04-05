@@ -1,7 +1,7 @@
 from pathlib import Path
 import numpy as np
 
-from encode_eigenfrequency_fft_full import discover_dataset_dirs
+from dataset_pt_discovery import discover_dataset_dirs
 from plot_sample_2x4_from_pt import resolve_pt_folder, load_pt_data, plot_one
 
 

@@ -1,0 +1,4 @@
+2026-03-16 21:28:59,912 | INFO | Run started | run_name=NO_I3O4_DISP_BCF16_L2_HC128_LR2e-03_WD0e+00_SS1_G9e-01_260316 run_id=20260316_212848_163424 target=displacement device=cpu train_samples=520 test_samples=260
+2026-03-16 21:28:59,912 | INFO | Fault diagnostics | main_fault_log=D:\Research\NO-2D-Metamaterials\MODELS\training_runs\NO_I3O4_DISP_BCF16_L2_HC128_LR2e-03_WD0e+00_SS1_G9e-01_260316_20260316_212848_163424\main_process_fault.log
+2026-03-16 21:29:39,739 | INFO | epoch=1/1 train_loss=1.123824e-03 val_loss=6.657465e-04 lr=1.800e-03 train_sps=15.3
+2026-03-16 21:29:39,972 | INFO | Run complete | run_name=NO_I3O4_DISP_BCF16_L2_HC128_LR2e-03_WD0e+00_SS1_G9e-01_260316 run_id=20260316_212848_163424 best_val_loss=6.657465e-04

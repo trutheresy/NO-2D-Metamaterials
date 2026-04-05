@@ -1,0 +1,74 @@
+{
+  "args": {
+    "output_root": "D:/Research/NO-2D-Metamaterials/DATASETS",
+    "save_dir": "D:/Research/NO-2D-Metamaterials/MODELS/training_runs",
+    "epochs": 1,
+    "batch_size": 64,
+    "train_shuffle": false,
+    "num_workers": 0,
+    "prefetch_factor": 2,
+    "pin_memory": false,
+    "hidden_channels": 128,
+    "layers": 4,
+    "modes_height": 32,
+    "modes_width": 32,
+    "learning_rate": 0.002,
+    "weight_decay": 0.0,
+    "loss": "mse",
+    "scheduler": "steplr",
+    "step_size": 1,
+    "gamma": 0.9,
+    "t_max": 0,
+    "seed": 0,
+    "amp": "none",
+    "max_train_samples": 520,
+    "max_test_samples": 260,
+    "progress_mode": "plain",
+    "log_every_batches": 10
+  },
+  "params": {
+    "model_name": "FNO2d",
+    "target_kind": "displacement",
+    "in_channels": 3,
+    "out_channels": 4,
+    "hidden_channels": 128,
+    "layers": 4,
+    "modes_height": 32,
+    "modes_width": 32,
+    "optimizer": "adamw",
+    "loss": "mse",
+    "scheduler": "steplr",
+    "learning_rate": 0.002,
+    "weight_decay": 0.0,
+    "step_size": 1,
+    "gamma": 0.9,
+    "t_max": 1,
+    "epochs": 1,
+    "batch_size": 64,
+    "num_workers": 0,
+    "prefetch_factor": 2,
+    "pin_memory": false,
+    "seed": 0,
+    "amp": "none",
+    "device": "cpu",
+    "train_shards_count": 1,
+    "test_shards_count": 1,
+    "train_samples": 520,
+    "test_samples": 260,
+    "dataset_version": "9ac54f9b8e91"
+  },
+  "train_shards": [
+    {
+      "name": "b_train_01",
+      "pt_dir": "D:\\Research\\NO-2D-Metamaterials\\DATASETS\\b_train_01\\binarized_2026-03-06_17-18-57_pt",
+      "n": 520
+    }
+  ],
+  "test_shards": [
+    {
+      "name": "b_test",
+      "pt_dir": "D:\\Research\\NO-2D-Metamaterials\\DATASETS\\b_test\\binarized_2026-03-08_16-34-27_pt",
+      "n": 260
+    }
+  ]
+}

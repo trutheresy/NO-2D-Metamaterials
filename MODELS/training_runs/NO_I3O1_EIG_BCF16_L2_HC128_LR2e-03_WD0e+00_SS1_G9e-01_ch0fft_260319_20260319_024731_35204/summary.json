@@ -1,0 +1,23 @@
+{
+  "status": "completed",
+  "run_name": "NO_I3O1_EIG_BCF16_L2_HC128_LR2e-03_WD0e+00_SS1_G9e-01_260319",
+  "run_id": "20260319_024731_35204",
+  "target_kind": "eigenfrequency",
+  "started_at_utc": "2026-03-19T06:47:31.998402+00:00",
+  "ended_at_utc": "2026-03-20T22:50:41.272142+00:00",
+  "duration_sec": 144189.27374,
+  "best_val_loss": 0.056817768205810956,
+  "best_epoch": 12,
+  "checkpoints": {
+    "best": "D:\\Research\\NO-2D-Metamaterials\\MODELS\\training_runs\\NO_I3O1_EIG_BCF16_L2_HC128_LR2e-03_WD0e+00_SS1_G9e-01_260319_20260319_024731_35204\\NO_I3O1_EIG_BCF16_L2_HC128_LR2e-03_WD0e+00_SS1_G9e-01_260319_best.pth",
+    "final": "D:\\Research\\NO-2D-Metamaterials\\MODELS\\training_runs\\NO_I3O1_EIG_BCF16_L2_HC128_LR2e-03_WD0e+00_SS1_G9e-01_260319_20260319_024731_35204\\NO_I3O1_EIG_BCF16_L2_HC128_LR2e-03_WD0e+00_SS1_G9e-01_260319_final.pth",
+    "epoch_pattern": "D:\\Research\\NO-2D-Metamaterials\\MODELS\\training_runs\\NO_I3O1_EIG_BCF16_L2_HC128_LR2e-03_WD0e+00_SS1_G9e-01_260319_20260319_024731_35204\\NO_I3O1_EIG_BCF16_L2_HC128_LR2e-03_WD0e+00_SS1_G9e-01_260319_E{epoch}.pth"
+  },
+  "artifacts": {
+    "train_log": "D:\\Research\\NO-2D-Metamaterials\\MODELS\\training_runs\\NO_I3O1_EIG_BCF16_L2_HC128_LR2e-03_WD0e+00_SS1_G9e-01_260319_20260319_024731_35204\\train.log",
+    "resolved_config": "D:\\Research\\NO-2D-Metamaterials\\MODELS\\training_runs\\NO_I3O1_EIG_BCF16_L2_HC128_LR2e-03_WD0e+00_SS1_G9e-01_260319_20260319_024731_35204\\resolved_config.json",
+    "run_metadata": "D:\\Research\\NO-2D-Metamaterials\\MODELS\\training_runs\\NO_I3O1_EIG_BCF16_L2_HC128_LR2e-03_WD0e+00_SS1_G9e-01_260319_20260319_024731_35204\\run_metadata.json",
+    "metrics_csv": "D:\\Research\\NO-2D-Metamaterials\\MODELS\\training_runs\\NO_I3O1_EIG_BCF16_L2_HC128_LR2e-03_WD0e+00_SS1_G9e-01_260319_20260319_024731_35204\\metrics.csv",
+    "metrics_jsonl": "D:\\Research\\NO-2D-Metamaterials\\MODELS\\training_runs\\NO_I3O1_EIG_BCF16_L2_HC128_LR2e-03_WD0e+00_SS1_G9e-01_260319_20260319_024731_35204\\metrics.jsonl"
+  }
+}

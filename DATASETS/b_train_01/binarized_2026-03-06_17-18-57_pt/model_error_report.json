@@ -1,0 +1,49 @@
+{
+  "dataset": "b_train_01",
+  "pt_dir": "D:\\Research\\NO-2D-Metamaterials\\DATASETS\\b_train_01\\binarized_2026-03-06_17-18-57_pt",
+  "model_path": "D:\\Research\\NO-2D-Metamaterials\\MODELS\\training_runs\\NO_I3O5_BCF16_L2_HC128_LR2e-03_WD0e+00_SS1_G9e-01_260311_20260311_175808_32860\\NO_I3O5_BCF16_L2_HC128_LR2e-03_WD0e+00_SS1_G9e-01_260311_best.pth",
+  "device": "cpu",
+  "batch_size": 260,
+  "samples_evaluated": 50000,
+  "sample_values_per_channel": 300000,
+  "channels": {
+    "ch0_eigenfrequency_fft": {
+      "count": 51200000,
+      "mae": 0.20392561930216885,
+      "rmse": 0.3057343543663844,
+      "max_abs_err": 1.9073621034622192
+    },
+    "ch1_disp_x_real": {
+      "count": 51200000,
+      "mae": 0.009332713829957293,
+      "rmse": 0.01571554635902275,
+      "max_abs_err": 0.4120182991027832
+    },
+    "ch2_disp_x_imag": {
+      "count": 51200000,
+      "mae": 0.008534668016658512,
+      "rmse": 0.015063398879061584,
+      "max_abs_err": 0.40913498401641846
+    },
+    "ch3_disp_y_real": {
+      "count": 51200000,
+      "mae": 0.009298761203995195,
+      "rmse": 0.016027779430569454,
+      "max_abs_err": 0.41065189242362976
+    },
+    "ch4_disp_y_imag": {
+      "count": 51200000,
+      "mae": 0.008786593430876816,
+      "rmse": 0.015383517814088015,
+      "max_abs_err": 0.40959954261779785
+    }
+  },
+  "hist_files": [
+    "D:\\Research\\NO-2D-Metamaterials\\DATASETS\\b_train_01\\binarized_2026-03-06_17-18-57_pt\\model_error_hist_ch0_eigenfrequency_fft.png",
+    "D:\\Research\\NO-2D-Metamaterials\\DATASETS\\b_train_01\\binarized_2026-03-06_17-18-57_pt\\model_error_hist_ch1_disp_x_real.png",
+    "D:\\Research\\NO-2D-Metamaterials\\DATASETS\\b_train_01\\binarized_2026-03-06_17-18-57_pt\\model_error_hist_ch2_disp_x_imag.png",
+    "D:\\Research\\NO-2D-Metamaterials\\DATASETS\\b_train_01\\binarized_2026-03-06_17-18-57_pt\\model_error_hist_ch3_disp_y_real.png",
+    "D:\\Research\\NO-2D-Metamaterials\\DATASETS\\b_train_01\\binarized_2026-03-06_17-18-57_pt\\model_error_hist_ch4_disp_y_imag.png",
+    "D:\\Research\\NO-2D-Metamaterials\\DATASETS\\b_train_01\\binarized_2026-03-06_17-18-57_pt\\model_error_hist_all_channels.png"
+  ]
+}

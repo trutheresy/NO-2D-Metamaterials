@@ -1,6 +1,7 @@
 import os
 import h5py
 import numpy as np
+import torch
 import matplotlib.pyplot as plt
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 import time
@@ -206,6 +207,124 @@ def plot_geometry(sample_geometry, sample_index):
     plt.show()
 
 
+def visualize_sample(input_tensor, output_tensor, target_tensor, diffs=True):
+    """
+    Visualize input and output tensors from a single sample.
+
+    Args:
+        input_tensor: Tensor of shape (3, H, W) containing input components
+        output_tensor: Tensor of shape (C, H, W) containing output components
+        (optional) target_tensor: Tensor of shape (C, H, W) containing target components
+    """
+    input_titles = ["Geometry", "Wavevector (Encoded)", "Band (Encoded)"]
+
+    # Create figure for input components
+    fig1 = plt.figure(figsize=(12, 4))
+    for i in range(3):
+        plt.subplot(1, 3, i + 1)
+        tensor_data = input_tensor[i].abs()
+        if tensor_data.dtype in [torch.float8_e4m3fn, torch.float16]:
+            tensor_data = tensor_data.float()
+        im = plt.imshow(tensor_data.numpy())
+        plt.colorbar(im)
+        plt.title(input_titles[i])
+    plt.tight_layout()
+    plt.show()
+
+    channel_titles_default = [
+        "Eigfreq (Encoded)",
+        "Eigvec (x real)",
+        "Eigvec (x imag)",
+        "Eigvec (y real)",
+        "Eigvec (y imag)",
+    ]
+
+    if target_tensor is not None:
+        num_targets = target_tensor.shape[0]
+        num_outputs = output_tensor.shape[0]
+        if num_targets != num_outputs:
+            raise ValueError("Target and output tensors must have the same number of channels for matched plotting.")
+
+        n_rows = 3 if diffs else 2
+        fig, axs = plt.subplots(n_rows, num_targets, figsize=(4 * num_targets, 4 * n_rows))
+        if num_targets == 1:
+            axs = np.expand_dims(axs, axis=1)
+            if n_rows == 1:
+                axs = np.expand_dims(axs, axis=0)
+
+        channel_titles = channel_titles_default[:num_targets]
+        if num_targets > len(channel_titles_default):
+            channel_titles.extend([f"Channel {i + 1}" for i in range(len(channel_titles_default), num_targets)])
+
+        # Shared min/max per channel between target and output rows.
+        vmins = []
+        vmaxs = []
+        for i in range(num_targets):
+            tgt_data = target_tensor[i]
+            out_data = output_tensor[i]
+            if tgt_data.dtype in [torch.float8_e4m3fn, torch.float16]:
+                tgt_data = tgt_data.float()
+            if out_data.dtype in [torch.float8_e4m3fn, torch.float16]:
+                out_data = out_data.float()
+            vmins.append(min(tgt_data.min().item(), out_data.min().item()))
+            vmaxs.append(max(tgt_data.max().item(), out_data.max().item()))
+
+        # Row 1: targets
+        for i in range(num_targets):
+            ax = axs[0, i]
+            tensor_data = target_tensor[i]
+            if tensor_data.dtype in [torch.float8_e4m3fn, torch.float16]:
+                tensor_data = tensor_data.float()
+            im = ax.imshow(tensor_data.numpy(), vmin=vmins[i], vmax=vmaxs[i])
+            plt.colorbar(im, ax=ax)
+            ax.set_title(f"Target {channel_titles[i]}")
+
+        # Row 2: outputs
+        for i in range(num_outputs):
+            ax = axs[1, i]
+            tensor_data = output_tensor[i]
+            if tensor_data.dtype in [torch.float8_e4m3fn, torch.float16]:
+                tensor_data = tensor_data.float()
+            im = ax.imshow(tensor_data.numpy(), vmin=vmins[i], vmax=vmaxs[i])
+            plt.colorbar(im, ax=ax)
+            ax.set_title(f"Output {channel_titles[i]}")
+
+        # Row 3: absolute differences (with same per-channel scales as rows 1-2)
+        if diffs:
+            for i in range(num_targets):
+                ax = axs[2, i]
+                tgt_data = target_tensor[i]
+                out_data = output_tensor[i]
+                if tgt_data.dtype in [torch.float8_e4m3fn, torch.float16]:
+                    tgt_data = tgt_data.float()
+                if out_data.dtype in [torch.float8_e4m3fn, torch.float16]:
+                    out_data = out_data.float()
+                diff_data = torch.abs(out_data - tgt_data)
+                im = ax.imshow(diff_data.numpy())
+                plt.colorbar(im, ax=ax)
+                ax.set_title(f"Diff {channel_titles[i]}")
+
+        plt.tight_layout()
+        plt.show()
+    else:
+        # Fallback: outputs-only view
+        num_outputs = output_tensor.shape[0]
+        channel_titles = channel_titles_default[:num_outputs]
+        if num_outputs > len(channel_titles_default):
+            channel_titles.extend([f"Channel {i + 1}" for i in range(len(channel_titles_default), num_outputs)])
+        fig2 = plt.figure(figsize=(4 * num_outputs, 4))
+        for i in range(num_outputs):
+            plt.subplot(1, num_outputs, i + 1)
+            tensor_data = output_tensor[i].abs()
+            if tensor_data.dtype in [torch.float8_e4m3fn, torch.float16]:
+                tensor_data = tensor_data.float()
+            im = plt.imshow(tensor_data.numpy())
+            plt.colorbar(im)
+            plt.title(f"Output {channel_titles[i]}")
+        plt.tight_layout()
+        plt.show()
+
+
 def plot_eigenvectors(sample_eigenvector_x, sample_eigenvector_y, unify_scales=True):
     fig, axs = plt.subplots(2, 2, figsize=(10, 8))
     im00 = axs[0, 0].imshow(np.real(sample_eigenvector_x), cmap="viridis")
@@ -408,6 +527,108 @@ def embed_eigenfrequency_wavelet(
     gaussian = np.exp(-0.5 * ((X_theta**2) / sigma_x**2 + (Y_theta**2) / sigma_y**2))
     carrier = np.cos(freq * X_theta + phi)
     return gaussian * carrier, k, theta
+
+
+def encode_eigenfrequency_uniform(s, size=32):
+    """
+    Encode eigenfrequency as a uniform float16 patch: every pixel is ln(s)/100.
+
+    The input is cast to float16 first; ``log`` and division follow in NumPy's
+    float16 arithmetic (wider internal promotion, if any, is left to NumPy).
+
+    Parameters
+    ----------
+    s : float, or array_like of floats
+        Eigenfrequency values; must be strictly positive (log domain).
+    size : int, default 32
+        Spatial extent of the square patch.
+
+    Returns
+    -------
+    ndarray, dtype float16
+        Shape ``(size, size)`` if ``s`` is scalar (0-d after casting), otherwise
+        ``s.shape + (size, size)`` with one patch per element of ``s``.
+    """
+    s_f16 = np.asarray(s, dtype=np.float16)
+    if np.any(s_f16 <= 0):
+        raise ValueError("s must be positive (log domain).")
+
+    pixel = (np.log(s_f16) / np.float16(100.0)).astype(np.float16)
+    tail = (size, size)
+    if pixel.ndim == 0:
+        return np.full(tail, pixel, dtype=np.float16)
+    out_shape = pixel.shape + tail
+    return np.broadcast_to(pixel[..., np.newaxis, np.newaxis], out_shape).copy()
+
+
+def encode_eigenfrequency_uniform_torch(s: torch.Tensor, size: int = 32) -> torch.Tensor:
+    """
+    Torch-only analogue of :func:`encode_eigenfrequency_uniform`: float16 patches of ``ln(s)/100``.
+
+    Parameters
+    ----------
+    s : torch.Tensor
+        Eigenfrequency values; must be strictly positive (after any clamping by the caller).
+    size : int
+        Square patch side length.
+
+    Returns
+    -------
+    torch.Tensor
+        ``dtype=float16``, shape ``s.shape + (size, size)`` on the same device as ``s``.
+    """
+    if not torch.is_tensor(s):
+        raise TypeError("s must be a torch.Tensor")
+    device = s.device
+    s_f16 = s.to(device=device, dtype=torch.float16)
+    if bool((s_f16 <= 0).any().item()):
+        raise ValueError("s must be positive (log domain).")
+    hundred = torch.tensor(100.0, device=device, dtype=torch.float16)
+    pixel = (torch.log(s_f16) / hundred).to(torch.float16)
+    h, w = size, size
+    if pixel.ndim == 0:
+        return torch.full((h, w), pixel, dtype=torch.float16, device=device)
+    return pixel.unsqueeze(-1).unsqueeze(-1).expand(*pixel.shape, h, w).contiguous()
+
+
+def decode_eigenfrequency_uniform(image):
+    """
+    Decode eigenfrequency from a patch produced by :func:`encode_eigenfrequency_uniform`.
+
+    Reads the top-left pixel (all pixels are identical for valid encodings).
+    Recovers ``s`` as ``exp(pixel * 100)`` in float16, then returns ``float64``
+    scalars/arrays for downstream use.
+
+    If the spatial mean of a patch differs from ``patch[0, 0]`` beyond a small
+    tolerance, prints a warning to stdout (non-uniform or corrupted input).
+
+    Parameters
+    ----------
+    image : array_like
+        Last two dimensions are height and width (e.g. ``(size, size)`` or
+        ``(..., size, size)``).
+
+    Returns
+    -------
+    ndarray or scalar
+        Shape ``()`` if ``image`` is 2-D, otherwise ``image.shape[:-2]``,
+        dtype ``float64``.
+    """
+    arr = np.asarray(image, dtype=np.float16)
+    if arr.ndim < 2:
+        raise ValueError("image must be at least 2-D (..., height, width).")
+    ref = arr[..., 0, 0]
+    avg = np.mean(arr, axis=(-2, -1))
+    if not np.allclose(avg, ref, rtol=1e-3, atol=1e-4):
+        print(
+            "Warning: decode_eigenfrequency_uniform: patch mean differs from pixel [0, 0]; "
+            "input may not be a valid uniform encoding.",
+            flush=True,
+        )
+    pixel = ref
+    ln_s_f16 = (pixel * np.float16(100.0)).astype(np.float16)
+    s_f16 = np.exp(ln_s_f16).astype(np.float16)
+    return s_f16.astype(np.float64)
 
 
 def extract_eigenfrequency_from_wavelet(

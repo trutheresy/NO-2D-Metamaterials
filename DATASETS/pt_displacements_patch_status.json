@@ -1,0 +1,352 @@
+[
+  {
+    "dataset_dir": "b_test",
+    "ok": true,
+    "returncode": 0,
+    "stdout_tail": "[ok] b_test\n",
+    "stderr_tail": ""
+  },
+  {
+    "dataset_dir": "b_train_01",
+    "ok": true,
+    "returncode": 0,
+    "stdout_tail": "[ok] b_train_01\n",
+    "stderr_tail": ""
+  },
+  {
+    "dataset_dir": "b_train_02",
+    "ok": true,
+    "returncode": 0,
+    "stdout_tail": "[ok] b_train_02\n",
+    "stderr_tail": ""
+  },
+  {
+    "dataset_dir": "b_train_03",
+    "ok": true,
+    "returncode": 0,
+    "stdout_tail": "[ok] b_train_03\n",
+    "stderr_tail": ""
+  },
+  {
+    "dataset_dir": "b_train_04",
+    "ok": true,
+    "returncode": 0,
+    "stdout_tail": "[ok] b_train_04\n",
+    "stderr_tail": ""
+  },
+  {
+    "dataset_dir": "b_train_05",
+    "ok": true,
+    "returncode": 0,
+    "stdout_tail": "[ok] b_train_05\n",
+    "stderr_tail": ""
+  },
+  {
+    "dataset_dir": "b_train_06",
+    "ok": true,
+    "returncode": 0,
+    "stdout_tail": "[ok] b_train_06\n",
+    "stderr_tail": ""
+  },
+  {
+    "dataset_dir": "b_train_07",
+    "ok": true,
+    "returncode": 0,
+    "stdout_tail": "[ok] b_train_07\n",
+    "stderr_tail": ""
+  },
+  {
+    "dataset_dir": "b_train_08",
+    "ok": true,
+    "returncode": 0,
+    "stdout_tail": "[ok] b_train_08\n",
+    "stderr_tail": ""
+  },
+  {
+    "dataset_dir": "b_train_09",
+    "ok": true,
+    "returncode": 0,
+    "stdout_tail": "[ok] b_train_09\n",
+    "stderr_tail": ""
+  },
+  {
+    "dataset_dir": "b_train_10",
+    "ok": true,
+    "returncode": 0,
+    "stdout_tail": "[ok] b_train_10\n",
+    "stderr_tail": ""
+  },
+  {
+    "dataset_dir": "b_train_11",
+    "ok": true,
+    "returncode": 0,
+    "stdout_tail": "[ok] b_train_11\n",
+    "stderr_tail": ""
+  },
+  {
+    "dataset_dir": "b_train_12",
+    "ok": true,
+    "returncode": 0,
+    "stdout_tail": "[ok] b_train_12\n",
+    "stderr_tail": ""
+  },
+  {
+    "dataset_dir": "b_train_13",
+    "ok": true,
+    "returncode": 0,
+    "stdout_tail": "[ok] b_train_13\n",
+    "stderr_tail": ""
+  },
+  {
+    "dataset_dir": "b_train_14",
+    "ok": true,
+    "returncode": 0,
+    "stdout_tail": "[ok] b_train_14\n",
+    "stderr_tail": ""
+  },
+  {
+    "dataset_dir": "b_train_15",
+    "ok": true,
+    "returncode": 0,
+    "stdout_tail": "[ok] b_train_15\n",
+    "stderr_tail": ""
+  },
+  {
+    "dataset_dir": "b_train_16",
+    "ok": true,
+    "returncode": 0,
+    "stdout_tail": "[ok] b_train_16\n",
+    "stderr_tail": ""
+  },
+  {
+    "dataset_dir": "b_train_17",
+    "ok": true,
+    "returncode": 0,
+    "stdout_tail": "[ok] b_train_17\n",
+    "stderr_tail": ""
+  },
+  {
+    "dataset_dir": "b_train_18",
+    "ok": true,
+    "returncode": 0,
+    "stdout_tail": "[ok] b_train_18\n",
+    "stderr_tail": ""
+  },
+  {
+    "dataset_dir": "b_train_19",
+    "ok": true,
+    "returncode": 0,
+    "stdout_tail": "[ok] b_train_19\n",
+    "stderr_tail": ""
+  },
+  {
+    "dataset_dir": "b_train_20",
+    "ok": true,
+    "returncode": 0,
+    "stdout_tail": "[ok] b_train_20\n",
+    "stderr_tail": ""
+  },
+  {
+    "dataset_dir": "b_train_21",
+    "ok": true,
+    "returncode": 0,
+    "stdout_tail": "[ok] b_train_21\n",
+    "stderr_tail": ""
+  },
+  {
+    "dataset_dir": "b_train_22",
+    "ok": true,
+    "returncode": 0,
+    "stdout_tail": "[ok] b_train_22\n",
+    "stderr_tail": ""
+  },
+  {
+    "dataset_dir": "b_train_23",
+    "ok": true,
+    "returncode": 0,
+    "stdout_tail": "[ok] b_train_23\n",
+    "stderr_tail": ""
+  },
+  {
+    "dataset_dir": "b_train_24",
+    "ok": true,
+    "returncode": 0,
+    "stdout_tail": "[ok] b_train_24\n",
+    "stderr_tail": ""
+  },
+  {
+    "dataset_dir": "c_test",
+    "ok": true,
+    "returncode": 0,
+    "stdout_tail": "[ok] c_test\n",
+    "stderr_tail": ""
+  },
+  {
+    "dataset_dir": "c_train_01",
+    "ok": true,
+    "returncode": 0,
+    "stdout_tail": "[ok] c_train_01\n",
+    "stderr_tail": ""
+  },
+  {
+    "dataset_dir": "c_train_02",
+    "ok": true,
+    "returncode": 0,
+    "stdout_tail": "[ok] c_train_02\n",
+    "stderr_tail": ""
+  },
+  {
+    "dataset_dir": "c_train_03",
+    "ok": true,
+    "returncode": 0,
+    "stdout_tail": "[ok] c_train_03\n",
+    "stderr_tail": ""
+  },
+  {
+    "dataset_dir": "c_train_04",
+    "ok": true,
+    "returncode": 0,
+    "stdout_tail": "[ok] c_train_04\n",
+    "stderr_tail": ""
+  },
+  {
+    "dataset_dir": "c_train_05",
+    "ok": true,
+    "returncode": 0,
+    "stdout_tail": "[ok] c_train_05\n",
+    "stderr_tail": ""
+  },
+  {
+    "dataset_dir": "c_train_06",
+    "ok": true,
+    "returncode": 0,
+    "stdout_tail": "[ok] c_train_06\n",
+    "stderr_tail": ""
+  },
+  {
+    "dataset_dir": "c_train_07",
+    "ok": true,
+    "returncode": 0,
+    "stdout_tail": "[ok] c_train_07\n",
+    "stderr_tail": ""
+  },
+  {
+    "dataset_dir": "c_train_08",
+    "ok": true,
+    "returncode": 0,
+    "stdout_tail": "[ok] c_train_08\n",
+    "stderr_tail": ""
+  },
+  {
+    "dataset_dir": "c_train_09",
+    "ok": true,
+    "returncode": 0,
+    "stdout_tail": "[ok] c_train_09\n",
+    "stderr_tail": ""
+  },
+  {
+    "dataset_dir": "c_train_10",
+    "ok": true,
+    "returncode": 0,
+    "stdout_tail": "[ok] c_train_10\n",
+    "stderr_tail": ""
+  },
+  {
+    "dataset_dir": "c_train_11",
+    "ok": true,
+    "returncode": 0,
+    "stdout_tail": "[ok] c_train_11\n",
+    "stderr_tail": ""
+  },
+  {
+    "dataset_dir": "c_train_12",
+    "ok": true,
+    "returncode": 0,
+    "stdout_tail": "[ok] c_train_12\n",
+    "stderr_tail": ""
+  },
+  {
+    "dataset_dir": "c_train_13",
+    "ok": true,
+    "returncode": 0,
+    "stdout_tail": "[ok] c_train_13\n",
+    "stderr_tail": ""
+  },
+  {
+    "dataset_dir": "c_train_14",
+    "ok": true,
+    "returncode": 0,
+    "stdout_tail": "[ok] c_train_14\n",
+    "stderr_tail": ""
+  },
+  {
+    "dataset_dir": "c_train_15",
+    "ok": true,
+    "returncode": 0,
+    "stdout_tail": "[ok] c_train_15\n",
+    "stderr_tail": ""
+  },
+  {
+    "dataset_dir": "c_train_16",
+    "ok": true,
+    "returncode": 0,
+    "stdout_tail": "[ok] c_train_16\n",
+    "stderr_tail": ""
+  },
+  {
+    "dataset_dir": "c_train_17",
+    "ok": true,
+    "returncode": 0,
+    "stdout_tail": "[ok] c_train_17\n",
+    "stderr_tail": ""
+  },
+  {
+    "dataset_dir": "c_train_18",
+    "ok": true,
+    "returncode": 0,
+    "stdout_tail": "[ok] c_train_18\n",
+    "stderr_tail": ""
+  },
+  {
+    "dataset_dir": "c_train_19",
+    "ok": true,
+    "returncode": 0,
+    "stdout_tail": "[ok] c_train_19\n",
+    "stderr_tail": ""
+  },
+  {
+    "dataset_dir": "c_train_20",
+    "ok": true,
+    "returncode": 0,
+    "stdout_tail": "[ok] c_train_20\n",
+    "stderr_tail": ""
+  },
+  {
+    "dataset_dir": "c_train_21",
+    "ok": true,
+    "returncode": 0,
+    "stdout_tail": "[ok] c_train_21\n",
+    "stderr_tail": ""
+  },
+  {
+    "dataset_dir": "c_train_22",
+    "ok": true,
+    "returncode": 0,
+    "stdout_tail": "[ok] c_train_22\n",
+    "stderr_tail": ""
+  },
+  {
+    "dataset_dir": "c_train_23",
+    "ok": true,
+    "returncode": 0,
+    "stdout_tail": "[ok] c_train_23\n",
+    "stderr_tail": ""
+  },
+  {
+    "dataset_dir": "c_train_24",
+    "ok": true,
+    "returncode": 0,
+    "stdout_tail": "[ok] c_train_24\n",
+    "stderr_tail": ""
+  }
+]

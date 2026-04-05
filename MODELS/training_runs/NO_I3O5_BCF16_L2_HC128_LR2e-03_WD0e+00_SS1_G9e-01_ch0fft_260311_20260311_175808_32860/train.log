@@ -1,0 +1,16 @@
+2026-03-11 17:58:27,648 | INFO | Run started | run_name=NO_I3O5_BCF16_L2_HC128_LR2e-03_WD0e+00_SS1_G9e-01_260311 run_id=20260311_175808_32860 device=cuda train_samples=18720000 test_samples=780000
+2026-03-11 17:58:27,649 | INFO | Fault diagnostics | main_fault_log=D:\Research\NO-2D-Metamaterials\MODELS\training_runs\NO_I3O5_BCF16_L2_HC128_LR2e-03_WD0e+00_SS1_G9e-01_260311_20260311_175808_32860\main_process_fault.log
+2026-03-11 21:27:08,597 | INFO | epoch=1/12 train_loss=1.257211e-02 val_loss=1.395463e-02 lr=1.800e-03 train_sps=1516.9
+2026-03-12 01:16:45,827 | INFO | epoch=2/12 train_loss=9.956055e-03 val_loss=1.284592e-02 lr=1.620e-03 train_sps=1378.6
+2026-03-12 04:45:07,172 | INFO | epoch=3/12 train_loss=8.326474e-03 val_loss=1.312113e-02 lr=1.458e-03 train_sps=1519.0
+2026-03-12 08:11:06,452 | INFO | epoch=4/12 train_loss=7.355618e-03 val_loss=1.279751e-02 lr=1.312e-03 train_sps=1536.7
+2026-03-12 11:37:28,211 | INFO | epoch=5/12 train_loss=6.656796e-03 val_loss=1.290553e-02 lr=1.181e-03 train_sps=1535.3
+2026-03-12 15:27:31,339 | INFO | epoch=6/12 train_loss=6.065702e-03 val_loss=1.291824e-02 lr=1.063e-03 train_sps=1381.0
+2026-03-12 19:35:03,655 | INFO | epoch=7/12 train_loss=5.544593e-03 val_loss=1.270868e-02 lr=9.566e-04 train_sps=1277.6
+2026-03-12 23:27:00,013 | INFO | epoch=8/12 train_loss=5.074442e-03 val_loss=1.286310e-02 lr=8.609e-04 train_sps=1365.1
+2026-03-13 03:18:41,140 | INFO | epoch=9/12 train_loss=4.664073e-03 val_loss=1.288266e-02 lr=7.748e-04 train_sps=1366.5
+2026-03-13 07:07:56,402 | INFO | epoch=10/12 train_loss=4.291937e-03 val_loss=1.243470e-02 lr=6.974e-04 train_sps=1381.2
+2026-03-13 10:57:06,046 | INFO | epoch=11/12 train_loss=3.957065e-03 val_loss=1.258214e-02 lr=6.276e-04 train_sps=1381.7
+2026-03-13 14:34:10,128 | INFO | epoch=12/12 train_loss=3.659044e-03 val_loss=1.267316e-02 lr=5.649e-04 train_sps=1457.2
+2026-03-13 14:34:10,410 | INFO | Run complete | run_name=NO_I3O5_BCF16_L2_HC128_LR2e-03_WD0e+00_SS1_G9e-01_260311 run_id=20260311_175808_32860 best_val_loss=1.243470e-02
+2026-03-13 14:34:10,411 | INFO | Artifacts saved to: D:\Research\NO-2D-Metamaterials\MODELS\training_runs\NO_I3O5_BCF16_L2_HC128_LR2e-03_WD0e+00_SS1_G9e-01_260311_20260311_175808_32860

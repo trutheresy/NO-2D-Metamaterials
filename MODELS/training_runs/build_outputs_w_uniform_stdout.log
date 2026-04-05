@@ -1,0 +1,401 @@
+BUILD b_test -> binarized_2026-03-08_16-34-27_pt
+    load reduced_indices
+    load geometry/waveform/band/eigenfrequency_uniform_full.pt
+    skip inputs.pt (--outputs-only)
+    load displacements
+    build outputs
+    save outputs_w_uniform.pt
+  STATUS=ok N=390000 ISSUES=0
+BUILD b_train_01 -> binarized_2026-03-06_17-18-57_pt
+    load reduced_indices
+    load geometry/waveform/band/eigenfrequency_uniform_full.pt
+    skip inputs.pt (--outputs-only)
+    load displacements
+    build outputs
+    save outputs_w_uniform.pt
+  STATUS=ok N=390000 ISSUES=0
+BUILD b_train_02 -> binarized_2026-03-06_19-15-56_pt
+    load reduced_indices
+    load geometry/waveform/band/eigenfrequency_uniform_full.pt
+    skip inputs.pt (--outputs-only)
+    load displacements
+    build outputs
+    save outputs_w_uniform.pt
+  STATUS=ok N=390000 ISSUES=0
+BUILD b_train_03 -> binarized_2026-03-06_21-30-46_pt
+    load reduced_indices
+    load geometry/waveform/band/eigenfrequency_uniform_full.pt
+    skip inputs.pt (--outputs-only)
+    load displacements
+    build outputs
+    save outputs_w_uniform.pt
+  STATUS=ok N=390000 ISSUES=0
+BUILD b_train_04 -> binarized_2026-03-06_23-40-44_pt
+    load reduced_indices
+    load geometry/waveform/band/eigenfrequency_uniform_full.pt
+    skip inputs.pt (--outputs-only)
+    load displacements
+    build outputs
+    save outputs_w_uniform.pt
+  STATUS=ok N=390000 ISSUES=0
+BUILD b_train_05 -> binarized_2026-03-07_01-33-10_pt
+    load reduced_indices
+    load geometry/waveform/band/eigenfrequency_uniform_full.pt
+    skip inputs.pt (--outputs-only)
+    load displacements
+    build outputs
+    save outputs_w_uniform.pt
+  STATUS=ok N=390000 ISSUES=0
+BUILD b_train_06 -> binarized_2026-03-07_03-24-41_pt
+    load reduced_indices
+    load geometry/waveform/band/eigenfrequency_uniform_full.pt
+    skip inputs.pt (--outputs-only)
+    load displacements
+    build outputs
+    save outputs_w_uniform.pt
+  STATUS=ok N=390000 ISSUES=0
+BUILD b_train_07 -> binarized_2026-03-07_05-16-12_pt
+    load reduced_indices
+    load geometry/waveform/band/eigenfrequency_uniform_full.pt
+    skip inputs.pt (--outputs-only)
+    load displacements
+    build outputs
+    save outputs_w_uniform.pt
+  STATUS=ok N=390000 ISSUES=0
+BUILD b_train_08 -> binarized_2026-03-07_07-07-00_pt
+    load reduced_indices
+    load geometry/waveform/band/eigenfrequency_uniform_full.pt
+    skip inputs.pt (--outputs-only)
+    load displacements
+    build outputs
+    save outputs_w_uniform.pt
+  STATUS=ok N=390000 ISSUES=0
+BUILD b_train_09 -> binarized_2026-03-07_08-57-43_pt
+    load reduced_indices
+    load geometry/waveform/band/eigenfrequency_uniform_full.pt
+    skip inputs.pt (--outputs-only)
+    load displacements
+    build outputs
+    save outputs_w_uniform.pt
+  STATUS=ok N=390000 ISSUES=0
+BUILD b_train_10 -> binarized_2026-03-07_10-49-52_pt
+    load reduced_indices
+    load geometry/waveform/band/eigenfrequency_uniform_full.pt
+    skip inputs.pt (--outputs-only)
+    load displacements
+    build outputs
+    save outputs_w_uniform.pt
+  STATUS=ok N=390000 ISSUES=0
+BUILD b_train_11 -> binarized_2026-03-07_12-44-57_pt
+    load reduced_indices
+    load geometry/waveform/band/eigenfrequency_uniform_full.pt
+    skip inputs.pt (--outputs-only)
+    load displacements
+    build outputs
+    save outputs_w_uniform.pt
+  STATUS=ok N=390000 ISSUES=0
+BUILD b_train_12 -> binarized_2026-03-07_14-38-46_pt
+    load reduced_indices
+    load geometry/waveform/band/eigenfrequency_uniform_full.pt
+    skip inputs.pt (--outputs-only)
+    load displacements
+    build outputs
+    save outputs_w_uniform.pt
+  STATUS=ok N=390000 ISSUES=0
+BUILD b_train_13 -> binarized_2026-03-07_16-34-04_pt
+    load reduced_indices
+    load geometry/waveform/band/eigenfrequency_uniform_full.pt
+    skip inputs.pt (--outputs-only)
+    load displacements
+    build outputs
+    save outputs_w_uniform.pt
+  STATUS=ok N=390000 ISSUES=0
+BUILD b_train_14 -> binarized_2026-03-07_18-26-33_pt
+    load reduced_indices
+    load geometry/waveform/band/eigenfrequency_uniform_full.pt
+    skip inputs.pt (--outputs-only)
+    load displacements
+    build outputs
+    save outputs_w_uniform.pt
+  STATUS=ok N=390000 ISSUES=0
+BUILD b_train_15 -> binarized_2026-03-07_20-18-48_pt
+    load reduced_indices
+    load geometry/waveform/band/eigenfrequency_uniform_full.pt
+    skip inputs.pt (--outputs-only)
+    load displacements
+    build outputs
+    save outputs_w_uniform.pt
+  STATUS=ok N=390000 ISSUES=0
+BUILD b_train_16 -> binarized_2026-03-07_22-13-38_pt
+    load reduced_indices
+    load geometry/waveform/band/eigenfrequency_uniform_full.pt
+    skip inputs.pt (--outputs-only)
+    load displacements
+    build outputs
+    save outputs_w_uniform.pt
+  STATUS=ok N=390000 ISSUES=0
+BUILD b_train_17 -> binarized_2026-03-08_00-07-45_pt
+    load reduced_indices
+    load geometry/waveform/band/eigenfrequency_uniform_full.pt
+    skip inputs.pt (--outputs-only)
+    load displacements
+    build outputs
+    save outputs_w_uniform.pt
+  STATUS=ok N=390000 ISSUES=0
+BUILD b_train_18 -> binarized_2026-03-08_03-03-52_pt
+    load reduced_indices
+    load geometry/waveform/band/eigenfrequency_uniform_full.pt
+    skip inputs.pt (--outputs-only)
+    load displacements
+    build outputs
+    save outputs_w_uniform.pt
+  STATUS=ok N=390000 ISSUES=0
+BUILD b_train_19 -> binarized_2026-03-08_05-00-31_pt
+    load reduced_indices
+    load geometry/waveform/band/eigenfrequency_uniform_full.pt
+    skip inputs.pt (--outputs-only)
+    load displacements
+    build outputs
+    save outputs_w_uniform.pt
+  STATUS=ok N=390000 ISSUES=0
+BUILD b_train_20 -> binarized_2026-03-08_06-56-22_pt
+    load reduced_indices
+    load geometry/waveform/band/eigenfrequency_uniform_full.pt
+    skip inputs.pt (--outputs-only)
+    load displacements
+    build outputs
+    save outputs_w_uniform.pt
+  STATUS=ok N=390000 ISSUES=0
+BUILD b_train_21 -> binarized_2026-03-08_08-52-01_pt
+    load reduced_indices
+    load geometry/waveform/band/eigenfrequency_uniform_full.pt
+    skip inputs.pt (--outputs-only)
+    load displacements
+    build outputs
+    save outputs_w_uniform.pt
+  STATUS=ok N=390000 ISSUES=0
+BUILD b_train_22 -> binarized_2026-03-08_10-48-10_pt
+    load reduced_indices
+    load geometry/waveform/band/eigenfrequency_uniform_full.pt
+    skip inputs.pt (--outputs-only)
+    load displacements
+    build outputs
+    save outputs_w_uniform.pt
+  STATUS=ok N=390000 ISSUES=0
+BUILD b_train_23 -> binarized_2026-03-08_12-43-59_pt
+    load reduced_indices
+    load geometry/waveform/band/eigenfrequency_uniform_full.pt
+    skip inputs.pt (--outputs-only)
+    load displacements
+    build outputs
+    save outputs_w_uniform.pt
+  STATUS=ok N=390000 ISSUES=0
+BUILD b_train_24 -> binarized_2026-03-08_14-39-04_pt
+    load reduced_indices
+    load geometry/waveform/band/eigenfrequency_uniform_full.pt
+    skip inputs.pt (--outputs-only)
+    load displacements
+    build outputs
+    save outputs_w_uniform.pt
+  STATUS=ok N=390000 ISSUES=0
+BUILD c_test -> continuous_2026-03-05_20-07-34_pt
+    load reduced_indices
+    load geometry/waveform/band/eigenfrequency_uniform_full.pt
+    skip inputs.pt (--outputs-only)
+    load displacements
+    build outputs
+    save outputs_w_uniform.pt
+  STATUS=ok N=390000 ISSUES=0
+BUILD c_train_01 -> continuous_2026-03-03_19-21-24_pt
+    load reduced_indices
+    load geometry/waveform/band/eigenfrequency_uniform_full.pt
+    skip inputs.pt (--outputs-only)
+    load displacements
+    build outputs
+    save outputs_w_uniform.pt
+  STATUS=ok N=390000 ISSUES=0
+BUILD c_train_02 -> continuous_2026-03-03_21-20-16_pt
+    load reduced_indices
+    load geometry/waveform/band/eigenfrequency_uniform_full.pt
+    skip inputs.pt (--outputs-only)
+    load displacements
+    build outputs
+    save outputs_w_uniform.pt
+  STATUS=ok N=390000 ISSUES=0
+BUILD c_train_03 -> continuous_2026-03-03_23-13-09_pt
+    load reduced_indices
+    load geometry/waveform/band/eigenfrequency_uniform_full.pt
+    skip inputs.pt (--outputs-only)
+    load displacements
+    build outputs
+    save outputs_w_uniform.pt
+  STATUS=ok N=390000 ISSUES=0
+BUILD c_train_04 -> continuous_2026-03-04_01-06-32_pt
+    load reduced_indices
+    load geometry/waveform/band/eigenfrequency_uniform_full.pt
+    skip inputs.pt (--outputs-only)
+    load displacements
+    build outputs
+    save outputs_w_uniform.pt
+  STATUS=ok N=390000 ISSUES=0
+BUILD c_train_05 -> continuous_2026-03-04_02-58-19_pt
+    load reduced_indices
+    load geometry/waveform/band/eigenfrequency_uniform_full.pt
+    skip inputs.pt (--outputs-only)
+    load displacements
+    build outputs
+    save outputs_w_uniform.pt
+  STATUS=ok N=390000 ISSUES=0
+BUILD c_train_06 -> continuous_2026-03-04_04-43-32_pt
+    load reduced_indices
+    load geometry/waveform/band/eigenfrequency_uniform_full.pt
+    skip inputs.pt (--outputs-only)
+    load displacements
+    build outputs
+    save outputs_w_uniform.pt
+  STATUS=ok N=390000 ISSUES=0
+BUILD c_train_07 -> continuous_2026-03-04_06-22-22_pt
+    load reduced_indices
+    load geometry/waveform/band/eigenfrequency_uniform_full.pt
+    skip inputs.pt (--outputs-only)
+    load displacements
+    build outputs
+    save outputs_w_uniform.pt
+  STATUS=ok N=390000 ISSUES=0
+BUILD c_train_08 -> continuous_2026-03-04_08-01-35_pt
+    load reduced_indices
+    load geometry/waveform/band/eigenfrequency_uniform_full.pt
+    skip inputs.pt (--outputs-only)
+    load displacements
+    build outputs
+    save outputs_w_uniform.pt
+  STATUS=ok N=390000 ISSUES=0
+BUILD c_train_09 -> continuous_2026-03-04_09-41-10_pt
+    load reduced_indices
+    load geometry/waveform/band/eigenfrequency_uniform_full.pt
+    skip inputs.pt (--outputs-only)
+    load displacements
+    build outputs
+    save outputs_w_uniform.pt
+  STATUS=ok N=390000 ISSUES=0
+BUILD c_train_10 -> continuous_2026-03-04_11-20-10_pt
+    load reduced_indices
+    load geometry/waveform/band/eigenfrequency_uniform_full.pt
+    skip inputs.pt (--outputs-only)
+    load displacements
+    build outputs
+    save outputs_w_uniform.pt
+  STATUS=ok N=390000 ISSUES=0
+BUILD c_train_11 -> continuous_2026-03-04_12-58-48_pt
+    load reduced_indices
+    load geometry/waveform/band/eigenfrequency_uniform_full.pt
+    skip inputs.pt (--outputs-only)
+    load displacements
+    build outputs
+    save outputs_w_uniform.pt
+  STATUS=ok N=390000 ISSUES=0
+BUILD c_train_12 -> continuous_2026-03-04_14-48-44_pt
+    load reduced_indices
+    load geometry/waveform/band/eigenfrequency_uniform_full.pt
+    skip inputs.pt (--outputs-only)
+    load displacements
+    build outputs
+    save outputs_w_uniform.pt
+  STATUS=ok N=390000 ISSUES=0
+BUILD c_train_13 -> continuous_2026-03-04_17-09-04_pt
+    load reduced_indices
+    load geometry/waveform/band/eigenfrequency_uniform_full.pt
+    skip inputs.pt (--outputs-only)
+    load displacements
+    build outputs
+    save outputs_w_uniform.pt
+  STATUS=ok N=390000 ISSUES=0
+BUILD c_train_14 -> continuous_2026-03-04_19-42-01_pt
+    load reduced_indices
+    load geometry/waveform/band/eigenfrequency_uniform_full.pt
+    skip inputs.pt (--outputs-only)
+    load displacements
+    build outputs
+    save outputs_w_uniform.pt
+  STATUS=ok N=390000 ISSUES=0
+BUILD c_train_15 -> continuous_2026-03-04_22-12-40_pt
+    load reduced_indices
+    load geometry/waveform/band/eigenfrequency_uniform_full.pt
+    skip inputs.pt (--outputs-only)
+    load displacements
+    build outputs
+    save outputs_w_uniform.pt
+  STATUS=ok N=390000 ISSUES=0
+BUILD c_train_16 -> continuous_2026-03-05_00-47-05_pt
+    load reduced_indices
+    load geometry/waveform/band/eigenfrequency_uniform_full.pt
+    skip inputs.pt (--outputs-only)
+    load displacements
+    build outputs
+    save outputs_w_uniform.pt
+  STATUS=ok N=390000 ISSUES=0
+BUILD c_train_17 -> continuous_2026-03-05_03-19-52_pt
+    load reduced_indices
+    load geometry/waveform/band/eigenfrequency_uniform_full.pt
+    skip inputs.pt (--outputs-only)
+    load displacements
+    build outputs
+    save outputs_w_uniform.pt
+  STATUS=ok N=390000 ISSUES=0
+BUILD c_train_18 -> continuous_2026-03-05_05-53-06_pt
+    load reduced_indices
+    load geometry/waveform/band/eigenfrequency_uniform_full.pt
+    skip inputs.pt (--outputs-only)
+    load displacements
+    build outputs
+    save outputs_w_uniform.pt
+  STATUS=ok N=390000 ISSUES=0
+BUILD c_train_19 -> continuous_2026-03-05_08-24-48_pt
+    load reduced_indices
+    load geometry/waveform/band/eigenfrequency_uniform_full.pt
+    skip inputs.pt (--outputs-only)
+    load displacements
+    build outputs
+    save outputs_w_uniform.pt
+  STATUS=ok N=390000 ISSUES=0
+BUILD c_train_20 -> continuous_2026-03-05_10-55-07_pt
+    load reduced_indices
+    load geometry/waveform/band/eigenfrequency_uniform_full.pt
+    skip inputs.pt (--outputs-only)
+    load displacements
+    build outputs
+    save outputs_w_uniform.pt
+  STATUS=ok N=390000 ISSUES=0
+BUILD c_train_21 -> continuous_2026-03-05_13-23-20_pt
+    load reduced_indices
+    load geometry/waveform/band/eigenfrequency_uniform_full.pt
+    skip inputs.pt (--outputs-only)
+    load displacements
+    build outputs
+    save outputs_w_uniform.pt
+  STATUS=ok N=390000 ISSUES=0
+BUILD c_train_22 -> continuous_2026-03-05_15-03-27_pt
+    load reduced_indices
+    load geometry/waveform/band/eigenfrequency_uniform_full.pt
+    skip inputs.pt (--outputs-only)
+    load displacements
+    build outputs
+    save outputs_w_uniform.pt
+  STATUS=ok N=390000 ISSUES=0
+BUILD c_train_23 -> continuous_2026-03-05_16-48-57_pt
+    load reduced_indices
+    load geometry/waveform/band/eigenfrequency_uniform_full.pt
+    skip inputs.pt (--outputs-only)
+    load displacements
+    build outputs
+    save outputs_w_uniform.pt
+  STATUS=ok N=390000 ISSUES=0
+BUILD c_train_24 -> continuous_2026-03-05_18-27-44_pt
+    load reduced_indices
+    load geometry/waveform/band/eigenfrequency_uniform_full.pt
+    skip inputs.pt (--outputs-only)
+    load displacements
+    build outputs
+    save outputs_w_uniform.pt
+  STATUS=ok N=390000 ISSUES=0
+DONE ok=50 skipped=0 bad=0 report=D:\Research\NO-2D-Metamaterials\DATASETS\inputs_outputs_w_uniform_report.json
