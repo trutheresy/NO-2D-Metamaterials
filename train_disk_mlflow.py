@@ -17,6 +17,7 @@ import mlflow
 import numpy as np
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 from torch.utils.data import DataLoader, Dataset
 from tqdm import tqdm
 
@@ -111,7 +112,7 @@ class FourierNeuralOperator(nn.Module):
                 "This environment likely has a broken neuralop/wandb dependency chain. "
                 "Fix env packages and retry."
             ) from e
-        self.fno = FNO2d(
+        self.model = FNO2d(
             in_channels=3,
             out_channels=5,
             n_modes_height=modes_height,
@@ -121,15 +122,27 @@ class FourierNeuralOperator(nn.Module):
         )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        return self.fno(x)
+        return self.model(x)
+
+    # Preserve unwrapped FNO2d checkpoint keys by delegating state_dict I/O to the inner model.
+    def state_dict(self, *args, **kwargs):  # type: ignore[override]
+        return self.model.state_dict(*args, **kwargs)
+
+    def load_state_dict(self, state_dict, strict: bool = True):  # type: ignore[override]
+        return self.model.load_state_dict(state_dict, strict=strict)
 
 
 def parse_args() -> argparse.Namespace:
     p = argparse.ArgumentParser(description="Disk-backed training pipeline with MLflow logging.")
-    p.add_argument("--output-root", default="D:/Research/NO-2D-Metamaterials/MODELS")
+    p.add_argument("--output-root", default="D:/Research/NO-2D-Metamaterials/DATASETS")
     p.add_argument("--experiment-name", default="NO_I3O5_BCF16_disk")
     p.add_argument("--tracking-uri", default="file:./mlruns")
     p.add_argument("--save-dir", default="D:/Research/NO-2D-Metamaterials/training_runs")
+    p.add_argument(
+        "--output-run-dir",
+        default="",
+        help="Optional run output directory. When provided, artifacts are written here instead of an auto-generated run folder name.",
+    )
     p.add_argument("--epochs", type=int, default=8)
     p.add_argument("--batch-size", type=int, default=260)
     p.add_argument("--train-shuffle", action="store_true", help="Enable global shuffle across shards (can be heavy).")
@@ -343,7 +356,21 @@ def build_criterion(loss_name: str) -> nn.Module:
         return nn.MSELoss()
     if loss_name == "l1":
         return nn.L1Loss()
-    return nn.SmoothL1Loss()
+    return nn.SmoothL1Loss(beta=1e-5)
+
+
+def per_channel_loss_mean(pred: torch.Tensor, yb: torch.Tensor, loss_name: str) -> torch.Tensor:
+    """Per-channel mean of the active --loss, shape [C]; mean over (N, H, W) per channel."""
+    with torch.no_grad():
+        pf = pred.detach().float()
+        yf = yb.float()
+        if loss_name == "mse":
+            return (pf - yf).square().mean(dim=(0, 2, 3)).cpu().to(torch.float64)
+        if loss_name == "l1":
+            return (pf - yf).abs().mean(dim=(0, 2, 3)).cpu().to(torch.float64)
+        if loss_name == "smoothl1":
+            return F.smooth_l1_loss(pf, yf, reduction="none", beta=1e-5).mean(dim=(0, 2, 3)).cpu().to(torch.float64)
+        raise ValueError(f"Unknown loss_name: {loss_name!r}")
 
 
 def build_optimizer(args: argparse.Namespace, model: nn.Module) -> torch.optim.Optimizer:
@@ -374,6 +401,7 @@ def evaluate(
     device: torch.device,
     amp_mode: str,
     criterion: nn.Module,
+    loss_name: str,
 ) -> tuple[float, list[float], float]:
     model.eval()
     running_loss = 0.0
@@ -389,7 +417,7 @@ def evaluate(
                 loss = criterion(pred, yb)
             bs = xb.shape[0]
             running_loss += float(loss.item()) * bs
-            per_ch = ((pred - yb) ** 2).mean(dim=(0, 2, 3)).detach().cpu().to(torch.float64)
+            per_ch = per_channel_loss_mean(pred, yb, loss_name)
             running_per_ch += per_ch * bs
             n_samples += bs
     elapsed = max(time.time() - start, 1e-9)
@@ -450,6 +478,7 @@ def main() -> None:
     run_name = build_run_name(args)
     save_root = Path(args.save_dir)
     save_root.mkdir(parents=True, exist_ok=True)
+    output_run_dir = Path(args.output_run_dir).resolve() if args.output_run_dir.strip() else None
 
     mlflow.set_tracking_uri(args.tracking_uri)
     mlflow.set_experiment(args.experiment_name)
@@ -459,8 +488,14 @@ def main() -> None:
 
     with mlflow.start_run(run_name=run_name) as run:
         run_id = run.info.run_id
-        run_dir = save_root / f"{run_name}_{run_id[:8]}"
-        run_dir.mkdir(parents=True, exist_ok=True)
+        if output_run_dir is not None:
+            run_dir = output_run_dir
+            if run_dir.exists():
+                raise FileExistsError(f"--output-run-dir already exists: {run_dir}")
+            run_dir.mkdir(parents=True, exist_ok=False)
+        else:
+            run_dir = save_root / f"{run_name}_{run_id[:8]}"
+            run_dir.mkdir(parents=True, exist_ok=True)
 
         params: dict[str, Any] = {
             "model_name": "FNO2d",
@@ -525,6 +560,11 @@ def main() -> None:
                 [
                     "epoch",
                     "train_loss",
+                    "train_loss_ch0",
+                    "train_loss_ch1",
+                    "train_loss_ch2",
+                    "train_loss_ch3",
+                    "train_loss_ch4",
                     "val_loss",
                     "lr",
                     "epoch_time_sec",
@@ -550,6 +590,7 @@ def main() -> None:
                 model.train()
                 start_epoch = time.time()
                 running = 0.0
+                running_train_per_ch = torch.zeros(5, dtype=torch.float64)
                 n_seen = 0
                 data_time = 0.0
                 last = time.time()
@@ -583,6 +624,7 @@ def main() -> None:
 
                     bs = xb.shape[0]
                     running += float(loss.item()) * bs
+                    running_train_per_ch += per_channel_loss_mean(pred, yb, args.loss) * bs
                     n_seen += bs
                     last = time.time()
                     train_iter.set_postfix(batch_loss=f"{float(loss.item()):.4e}")
@@ -591,32 +633,34 @@ def main() -> None:
                     scheduler.step()
                 epoch_time = max(time.time() - start_epoch, 1e-9)
                 train_loss = running / max(n_seen, 1)
+                train_ch = (running_train_per_ch / max(n_seen, 1)).tolist()
                 train_sps = n_seen / epoch_time
-                val_loss, val_ch, val_sps = evaluate(model, test_loader, device, args.amp, criterion)
+                val_loss, val_ch, val_sps = evaluate(model, test_loader, device, args.amp, criterion, args.loss)
                 lr_now = float(optimizer.param_groups[0]["lr"])
 
-                mlflow.log_metrics(
-                    {
-                        "train_loss": train_loss,
-                        "val_loss": val_loss,
-                        "lr": lr_now,
-                        "epoch_time_sec": epoch_time,
-                        "data_time_sec": data_time,
-                        "train_samples_per_sec": train_sps,
-                        "val_samples_per_sec": val_sps,
-                        "val_loss_ch0": val_ch[0],
-                        "val_loss_ch1": val_ch[1],
-                        "val_loss_ch2": val_ch[2],
-                        "val_loss_ch3": val_ch[3],
-                        "val_loss_ch4": val_ch[4],
-                    },
-                    step=epoch,
-                )
+                mlflow_metrics: dict[str, float] = {
+                    "train_loss": train_loss,
+                    "val_loss": val_loss,
+                    "lr": lr_now,
+                    "epoch_time_sec": epoch_time,
+                    "data_time_sec": data_time,
+                    "train_samples_per_sec": train_sps,
+                    "val_samples_per_sec": val_sps,
+                }
+                for i in range(5):
+                    mlflow_metrics[f"train_loss_ch{i}"] = float(train_ch[i])
+                    mlflow_metrics[f"val_loss_ch{i}"] = float(val_ch[i])
+                mlflow.log_metrics(mlflow_metrics, step=epoch)
 
                 writer.writerow(
                     [
                         epoch,
                         train_loss,
+                        train_ch[0],
+                        train_ch[1],
+                        train_ch[2],
+                        train_ch[3],
+                        train_ch[4],
                         val_loss,
                         lr_now,
                         epoch_time,
@@ -637,9 +681,12 @@ def main() -> None:
                     best_val = val_loss
                     torch.save(model.state_dict(), best_path)
 
+                ch_t = " ".join(f"{x:.3e}" for x in train_ch)
+                ch_v = " ".join(f"{x:.3e}" for x in val_ch)
                 print(
-                    f"epoch={epoch}/{args.epochs} train_loss={train_loss:.6e} "
-                    f"val_loss={val_loss:.6e} lr={lr_now:.3e} train_sps={train_sps:.1f}"
+                    f"epoch={epoch}/{args.epochs} loss={args.loss} train_ch_{args.loss}={ch_t} "
+                    f"val_ch_{args.loss}={ch_v} train_loss={train_loss:.6e} val_loss={val_loss:.6e} "
+                    f"lr={lr_now:.3e} train_sps={train_sps:.1f}"
                 )
                 epoch_bar.set_postfix(train_loss=f"{train_loss:.4e}", val_loss=f"{val_loss:.4e}", lr=f"{lr_now:.2e}")
 

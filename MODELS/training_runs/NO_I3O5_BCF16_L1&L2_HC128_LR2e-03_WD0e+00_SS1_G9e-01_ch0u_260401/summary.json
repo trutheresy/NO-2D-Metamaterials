@@ -1,0 +1,23 @@
+{
+  "status": "completed",
+  "run_name": "NO_I3O5_BCF16_L1&L2_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_260401",
+  "run_id": "NO_I3O5_BCF16_L1&L2_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_260401",
+  "started_at_utc": "2026-04-13T21:25:09.040546+00:00",
+  "ended_at_utc": "2026-04-14T04:23:19.610781+00:00",
+  "duration_sec": 25090.570235,
+  "best_val_loss": 0.002665346181873853,
+  "best_epoch": 32,
+  "checkpoints": {
+    "best": "D:\\Research\\NO-2D-Metamaterials\\MODELS\\training_runs\\NO_I3O5_BCF16_L1&L2_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_260401\\NO_I3O5_BCF16_L1&L2_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_260401_best.pth",
+    "final": "D:\\Research\\NO-2D-Metamaterials\\MODELS\\training_runs\\NO_I3O5_BCF16_L1&L2_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_260401\\NO_I3O5_BCF16_L1&L2_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_260401_final.pth",
+    "epoch_pattern": "D:\\Research\\NO-2D-Metamaterials\\MODELS\\training_runs\\NO_I3O5_BCF16_L1&L2_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_260401\\NO_I3O5_BCF16_L1&L2_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_260401_E{epoch}.pth"
+  },
+  "artifacts": {
+    "train_log": "D:\\Research\\NO-2D-Metamaterials\\MODELS\\training_runs\\NO_I3O5_BCF16_L1&L2_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_260401\\train.log",
+    "resolved_config": "D:\\Research\\NO-2D-Metamaterials\\MODELS\\training_runs\\NO_I3O5_BCF16_L1&L2_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_260401\\resolved_config.json",
+    "run_metadata": "D:\\Research\\NO-2D-Metamaterials\\MODELS\\training_runs\\NO_I3O5_BCF16_L1&L2_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_260401\\run_metadata.json",
+    "metrics_csv": "D:\\Research\\NO-2D-Metamaterials\\MODELS\\training_runs\\NO_I3O5_BCF16_L1&L2_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_260401\\metrics.csv",
+    "metrics_jsonl": "D:\\Research\\NO-2D-Metamaterials\\MODELS\\training_runs\\NO_I3O5_BCF16_L1&L2_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_260401\\metrics.jsonl",
+    "diagnostics": "D:\\Research\\NO-2D-Metamaterials\\MODELS\\training_runs\\NO_I3O5_BCF16_L1&L2_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_260401\\diagnostics"
+  }
+}

@@ -1,7 +1,7 @@
 {
   "run_name": "NO_I3O4_DISP_BCF16_L1_HC128_LR2e-03_WD0e+00_SS1_G9e-01_260404",
   "run_id": "NO_I3O4_DISP_BCF16_L1_HC128_LR2e-03_WD0e+00_SS1_G9e-01_260404",
-  "status": "running",
+  "status": "completed",
   "started_at_utc": "2026-04-05T00:38:36.842736+00:00",
   "git": {
     "git_commit": "274c8b861f1cb2ac5ab8d8b9cd6b7bfffebb2564",
@@ -16,5 +16,15 @@
     "cudnn_version": 90100,
     "device_count": 1,
     "device_name_0": "NVIDIA GeForce RTX 4080 SUPER"
-  }
+  },
+  "ended_at_utc": "2026-04-08T00:25:16.000587+00:00",
+  "duration_sec": 64454.269389,
+  "best_val_loss": 0.0024643585981490713,
+  "best_epoch": 12,
+  "resumed_at_utc": "2026-04-07T06:31:01.731198+00:00",
+  "resume_extend_epochs": 4,
+  "resume_from_epoch": 8,
+  "resume_target_total_epochs": 12,
+  "error_type": "FileNotFoundError",
+  "error_message": "No dataset shards found with prefixes=('c_train', 'b_train') under D:\\Research\\NO-2D-Metamaterials\\MODELS"
 }

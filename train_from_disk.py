@@ -11,6 +11,8 @@ import logging
 import multiprocessing as mp
 import os
 import platform
+import re
+import shutil
 import subprocess
 import sys
 import time
@@ -23,6 +25,7 @@ from typing import Any
 import numpy as np
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 from torch.utils.data import DataLoader, Dataset, Sampler
 from tqdm import tqdm
 
@@ -211,7 +214,7 @@ class FourierNeuralOperator(nn.Module):
                 "This environment likely has a broken neuralop/wandb dependency chain. "
                 "Fix env packages and retry."
             ) from e
-        self.fno = FNO2d(
+        self.model = FNO2d(
             in_channels=3,
             out_channels=OUT_CHANNELS,
             n_modes_height=modes_height,
@@ -221,15 +224,27 @@ class FourierNeuralOperator(nn.Module):
         )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        return self.fno(x)
+        return self.model(x)
+
+    # Preserve unwrapped FNO2d checkpoint keys by delegating state_dict I/O to the inner model.
+    def state_dict(self, *args, **kwargs):  # type: ignore[override]
+        return self.model.state_dict(*args, **kwargs)
+
+    def load_state_dict(self, state_dict, strict: bool = True):  # type: ignore[override]
+        return self.model.load_state_dict(state_dict, strict=strict)
 
 
 def parse_args() -> argparse.Namespace:
     # DataLoader defaults (batch 520, workers 2, prefetch 3, pin_memory) match the stable Windows
     # I3O5 L1 disk run (~12.4 ks/epoch after resume vs ~25 ks/epoch with workers=4 on this machine).
     p = argparse.ArgumentParser(description="Disk-backed training pipeline with local file logging.")
-    p.add_argument("--output-root", default="D:/Research/NO-2D-Metamaterials/MODELS")
+    p.add_argument("--output-root", default="D:/Research/NO-2D-Metamaterials/DATASETS")
     p.add_argument("--save-dir", default="D:/Research/NO-2D-Metamaterials/MODELS/training_runs")
+    p.add_argument(
+        "--output-run-dir",
+        default="",
+        help="Optional run output directory. New runs write directly here; resumed runs copy --resume-run-dir here and continue in the copied directory.",
+    )
     p.add_argument("--epochs", type=int, default=12)
     p.add_argument(
         "--resume-run-dir",
@@ -488,7 +503,7 @@ def build_criterion(loss_name: str) -> nn.Module:
         return nn.MSELoss()
     if loss_name == "l1":
         return nn.L1Loss()
-    return nn.SmoothL1Loss()
+    return nn.SmoothL1Loss(beta=1e-5)
 
 
 def build_optimizer(args: argparse.Namespace, model: nn.Module) -> torch.optim.Optimizer:
@@ -504,15 +519,25 @@ def build_scheduler(args: argparse.Namespace, optimizer: torch.optim.Optimizer):
     return torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=t_max)
 
 
-def per_channel_squared_error_mean(pred: torch.Tensor, yb: torch.Tensor) -> torch.Tensor:
-    """Per-channel mean squared error, shape [C]; same reduction as val_loss_ch* (independent of --loss)."""
+def per_channel_loss_mean(pred: torch.Tensor, yb: torch.Tensor, loss_name: str) -> torch.Tensor:
+    """
+    Per-channel mean of the given loss, shape [C]: mean over (N, H, W) per channel.
+    Matches the per-channel breakdown implied by nn.MSELoss / L1Loss / SmoothL1Loss with default reduction.
+    """
     with torch.no_grad():
-        d = pred.detach().float() - yb.float()
-        return d.square().mean(dim=(0, 2, 3)).cpu().to(torch.float64)
+        pf = pred.detach().float()
+        yf = yb.float()
+        if loss_name == "mse":
+            return (pf - yf).square().mean(dim=(0, 2, 3)).cpu().to(torch.float64)
+        if loss_name == "l1":
+            return (pf - yf).abs().mean(dim=(0, 2, 3)).cpu().to(torch.float64)
+        if loss_name == "smoothl1":
+            return F.smooth_l1_loss(pf, yf, reduction="none", beta=1e-5).mean(dim=(0, 2, 3)).cpu().to(torch.float64)
+        raise ValueError(f"Unknown loss_name: {loss_name!r}")
 
 
-def metrics_csv_fieldnames(out_channels: int) -> list[str]:
-    return [
+def metrics_csv_fieldnames(out_channels: int, *, dual_compare: bool) -> list[str]:
+    cols = [
         "epoch",
         "train_loss",
         *[f"train_loss_ch{i}" for i in range(out_channels)],
@@ -524,6 +549,77 @@ def metrics_csv_fieldnames(out_channels: int) -> list[str]:
         "val_samples_per_sec",
         *[f"val_loss_ch{i}" for i in range(out_channels)],
     ]
+    if dual_compare:
+        cols += [
+            "train_compare_loss",
+            "val_compare_loss",
+            *[f"train_compare_loss_ch{i}" for i in range(out_channels)],
+            *[f"val_compare_loss_ch{i}" for i in range(out_channels)],
+        ]
+    return cols
+
+
+def _to_float_or_nan(v: str | None) -> float:
+    if v is None:
+        return float("nan")
+    try:
+        return float(v)
+    except Exception:
+        return float("nan")
+
+
+def _migrate_metrics_to_dual_header(metrics_csv: Path, out_channels: int) -> None:
+    """
+    Upgrade single-loss metrics.csv to dual-loss header in-place by seeding compare columns
+    from the active loss columns. This preserves CSV append compatibility for resumed runs
+    that switch active loss and need compare-loss tracking.
+    """
+    dual_header = metrics_csv_fieldnames(out_channels, dual_compare=True)
+    single_header = metrics_csv_fieldnames(out_channels, dual_compare=False)
+    with metrics_csv.open("r", newline="", encoding="utf-8") as rf:
+        rows = list(csv.DictReader(rf))
+        existing_header = rows[0].keys() if rows else single_header
+    if list(existing_header) != single_header:
+        return
+
+    tmp_path = metrics_csv.with_suffix(".csv.tmp")
+    with tmp_path.open("w", newline="", encoding="utf-8") as wf:
+        writer = csv.DictWriter(wf, fieldnames=dual_header)
+        writer.writeheader()
+        for row in rows:
+            # For historical rows we only have one loss family in CSV; copy it into compare
+            # columns as the best available apples-to-apples baseline.
+            merged = {k: row.get(k, "") for k in single_header}
+            merged["train_compare_loss"] = row.get("train_loss", "")
+            merged["val_compare_loss"] = row.get("val_loss", "")
+            for i in range(out_channels):
+                merged[f"train_compare_loss_ch{i}"] = row.get(f"train_loss_ch{i}", "")
+                merged[f"val_compare_loss_ch{i}"] = row.get(f"val_loss_ch{i}", "")
+            writer.writerow(merged)
+    tmp_path.replace(metrics_csv)
+
+
+def _best_from_metrics_csv(metrics_csv: Path, metric_col: str) -> tuple[int, float]:
+    if not metrics_csv.is_file():
+        return -1, float("inf")
+    best_epoch = -1
+    best_val = float("inf")
+    with metrics_csv.open("r", newline="", encoding="utf-8") as rf:
+        for row in csv.DictReader(rf):
+            val = _to_float_or_nan(row.get(metric_col))
+            epoch = int(_to_float_or_nan(row.get("epoch")))
+            if np.isfinite(val) and val < best_val:
+                best_val = float(val)
+                best_epoch = epoch
+    return best_epoch, best_val
+
+
+def _sync_best_weights_from_epoch(run_dir: Path, run_name: str, best_epoch: int, best_path: Path) -> None:
+    if best_epoch < 0:
+        return
+    src = run_dir / f"{run_name}_E{best_epoch}.pth"
+    if src.is_file():
+        shutil.copyfile(src, best_path)
 
 
 def evaluate(
@@ -532,10 +628,17 @@ def evaluate(
     device: torch.device,
     amp_mode: str,
     criterion: nn.Module,
-) -> tuple[float, list[float], float]:
+    criterion_compare: nn.Module | None,
+    active_loss_name: str,
+    compare_loss_name: str | None,
+) -> tuple[float, float | None, list[float], list[float] | None, float]:
     model.eval()
     running_loss = 0.0
+    running_loss_compare = 0.0 if criterion_compare is not None else None
     running_per_ch = torch.zeros(OUT_CHANNELS, dtype=torch.float64)
+    running_per_ch_cmp = (
+        torch.zeros(OUT_CHANNELS, dtype=torch.float64) if compare_loss_name is not None else None
+    )
     n_samples = 0
     start = time.time()
     with torch.no_grad():
@@ -545,16 +648,24 @@ def evaluate(
             with amp_context(device, amp_mode):
                 pred = model(xb)
                 loss = criterion(pred, yb)
+                loss_compare = criterion_compare(pred, yb) if criterion_compare is not None else None
             bs = xb.shape[0]
             running_loss += float(loss.item()) * bs
-            per_ch = per_channel_squared_error_mean(pred, yb)
-            running_per_ch += per_ch * bs
+            if running_loss_compare is not None and loss_compare is not None:
+                running_loss_compare += float(loss_compare.item()) * bs
+            running_per_ch += per_channel_loss_mean(pred, yb, active_loss_name) * bs
+            if running_per_ch_cmp is not None and compare_loss_name is not None:
+                running_per_ch_cmp += per_channel_loss_mean(pred, yb, compare_loss_name) * bs
             n_samples += bs
     elapsed = max(time.time() - start, 1e-9)
     mean_loss = running_loss / max(n_samples, 1)
+    mean_loss_compare = (running_loss_compare / max(n_samples, 1)) if running_loss_compare is not None else None
     mean_ch = (running_per_ch / max(n_samples, 1)).tolist()
+    mean_ch_cmp = (
+        (running_per_ch_cmp / max(n_samples, 1)).tolist() if running_per_ch_cmp is not None else None
+    )
     sps = n_samples / elapsed
-    return mean_loss, mean_ch, sps
+    return mean_loss, mean_loss_compare, mean_ch, mean_ch_cmp, sps
 
 
 def setup_logger(log_path: Path) -> logging.Logger:
@@ -649,30 +760,118 @@ def save_training_state(
     torch.save(payload, path)
 
 
+def _latest_epoch_from_ckpts(run_dir: Path) -> int:
+    max_epoch = -1
+    for ckpt in run_dir.glob("*_E*.pth"):
+        stem = ckpt.stem
+        if "_E" not in stem:
+            continue
+        try:
+            n = int(stem.rsplit("_E", 1)[-1])
+        except ValueError:
+            continue
+        max_epoch = max(max_epoch, n)
+    return max_epoch
+
+
+def _try_load_model_state_with_compat_fallback(
+    model: nn.Module,
+    state_dict: Any,
+    run_dir: Path,
+) -> tuple[bool, Path | None]:
+    if isinstance(state_dict, dict) and "_metadata" in state_dict:
+        state_dict = dict(state_dict)
+        state_dict.pop("_metadata", None)
+    try:
+        model.load_state_dict(state_dict)
+        return True, None
+    except RuntimeError:
+        compat_ckpts = sorted(run_dir.glob("*best_fno2d_compat*.pth"))
+        if not compat_ckpts:
+            raise
+        compat_path = compat_ckpts[-1]
+        compat_blob = torch.load(compat_path, map_location="cpu", weights_only=False)
+        compat_state = compat_blob["model_state_dict"] if isinstance(compat_blob, dict) and "model_state_dict" in compat_blob else compat_blob
+        if isinstance(compat_state, dict) and "_metadata" in compat_state:
+            compat_state = dict(compat_state)
+            compat_state.pop("_metadata", None)
+        model.load_state_dict(compat_state)
+        return False, compat_path
+
+
+def _infer_previous_loss_from_run(run_dir: Path) -> str | None:
+    train_log = run_dir / "train.log"
+    if train_log.is_file():
+        loss_pat = re.compile(r"\bloss=([a-zA-Z0-9_]+)")
+        try:
+            last_match: str | None = None
+            with train_log.open("r", encoding="utf-8", errors="ignore") as fh:
+                for line in fh:
+                    m = loss_pat.search(line)
+                    if m:
+                        last_match = m.group(1).lower()
+            if last_match in {"mse", "l1", "smoothl1"}:
+                return last_match
+            if last_match == "l2":
+                return "mse"
+        except Exception:
+            pass
+    rc_path = run_dir / "resolved_config.json"
+    if rc_path.is_file():
+        try:
+            rc = json.loads(rc_path.read_text(encoding="utf-8"))
+            loss = str(rc.get("args", {}).get("loss", "")).lower()
+            if loss in {"mse", "l1", "smoothl1"}:
+                return loss
+        except Exception:
+            pass
+    return None
+
+
 def main() -> None:
     args = parse_args()
     seed_everything(args.seed)
 
     save_root = Path(args.save_dir)
     save_root.mkdir(parents=True, exist_ok=True)
+    output_run_dir = Path(args.output_run_dir).resolve() if args.output_run_dir.strip() else None
     resume_mode = bool(args.resume_run_dir.strip())
     if resume_mode:
-        run_dir = Path(args.resume_run_dir).resolve()
-        if not run_dir.is_dir():
-            raise FileNotFoundError(f"--resume-run-dir does not exist: {run_dir}")
+        src_run_dir = Path(args.resume_run_dir).resolve()
+        if not src_run_dir.is_dir():
+            raise FileNotFoundError(f"--resume-run-dir does not exist: {src_run_dir}")
+        if output_run_dir is not None:
+            if output_run_dir.exists():
+                raise FileExistsError(f"--output-run-dir already exists: {output_run_dir}")
+            shutil.copytree(src_run_dir, output_run_dir)
+            run_dir = output_run_dir
+        else:
+            run_dir = src_run_dir
         run_metadata_path = run_dir / "run_metadata.json"
         if not run_metadata_path.is_file():
             raise FileNotFoundError(f"Missing run_metadata.json in resume dir: {run_dir}")
         prev_meta = json.loads(run_metadata_path.read_text(encoding="utf-8"))
-        run_name = str(prev_meta.get("run_name", run_dir.name))
-        run_id = str(prev_meta.get("run_id", run_dir.name))
+        if output_run_dir is not None:
+            run_name = run_dir.name
+            run_id = run_name
+        else:
+            run_name = str(prev_meta.get("run_name", run_dir.name))
+            run_id = str(prev_meta.get("run_id", run_dir.name))
         if args.extend_epochs <= 0:
             raise ValueError("--extend-epochs must be > 0 when --resume-run-dir is set.")
     else:
-        run_name = build_run_name(args)
-        run_id = run_name
-        run_dir = save_root / run_name
-        run_dir.mkdir(parents=True, exist_ok=True)
+        if output_run_dir is not None:
+            run_dir = output_run_dir
+            if run_dir.exists():
+                raise FileExistsError(f"--output-run-dir already exists: {run_dir}")
+            run_dir.mkdir(parents=True, exist_ok=False)
+            run_name = run_dir.name
+            run_id = run_name
+        else:
+            run_name = build_run_name(args)
+            run_id = run_name
+            run_dir = save_root / run_name
+            run_dir.mkdir(parents=True, exist_ok=True)
 
     main_fault_path = enable_main_fault_handler(run_dir)
 
@@ -750,7 +949,12 @@ def main() -> None:
             hidden_channels=args.hidden_channels,
             n_layers=args.layers,
         ).to(device)
+        inferred_prev_loss = _infer_previous_loss_from_run(run_dir) if resume_mode else None
         criterion = build_criterion(args.loss)
+        compare_loss_name: str | None = inferred_prev_loss
+        criterion_compare = build_criterion(compare_loss_name) if compare_loss_name and compare_loss_name != args.loss else None
+        if criterion_compare is not None:
+            logger.info("Dual-loss logging enabled | active_loss=%s compare_loss=%s", args.loss, compare_loss_name)
         optimizer = build_optimizer(args, model)
         scheduler = build_scheduler(args, optimizer)
         scaler = torch.cuda.amp.GradScaler(enabled=(device.type == "cuda" and args.amp == "fp16"))
@@ -764,18 +968,28 @@ def main() -> None:
             if state_latest_path.is_file():
                 state_blob = torch.load(state_latest_path, map_location="cpu", weights_only=False)
                 state_dict = state_blob["model_state_dict"]
-                if isinstance(state_dict, dict) and "_metadata" in state_dict:
-                    state_dict = dict(state_dict)
-                    state_dict.pop("_metadata", None)
-                model.load_state_dict(state_dict)
-                optimizer.load_state_dict(state_blob["optimizer_state_dict"])
-                if scheduler is not None and state_blob.get("scheduler_state_dict") is not None:
-                    scheduler.load_state_dict(state_blob["scheduler_state_dict"])
-                scaler.load_state_dict(state_blob.get("scaler_state_dict", {}))
-                start_epoch = int(state_blob["epoch"]) + 1
-                best_val = float(state_blob.get("best_val_loss", best_val))
-                best_epoch = int(state_blob.get("best_epoch", best_epoch))
-                logger.info("Resumed full state from %s at epoch=%d", state_latest_path, start_epoch - 1)
+                resumed_full_state, compat_path = _try_load_model_state_with_compat_fallback(model, state_dict, run_dir)
+                if resumed_full_state:
+                    optimizer.load_state_dict(state_blob["optimizer_state_dict"])
+                    if scheduler is not None and state_blob.get("scheduler_state_dict") is not None:
+                        scheduler.load_state_dict(state_blob["scheduler_state_dict"])
+                    scaler.load_state_dict(state_blob.get("scaler_state_dict", {}))
+                    start_epoch = int(state_blob["epoch"]) + 1
+                    best_val = float(state_blob.get("best_val_loss", best_val))
+                    best_epoch = int(state_blob.get("best_epoch", best_epoch))
+                    logger.info("Resumed full state from %s at epoch=%d", state_latest_path, start_epoch - 1)
+                else:
+                    fallback_epoch = _latest_epoch_from_ckpts(run_dir)
+                    if fallback_epoch >= 0:
+                        start_epoch = fallback_epoch + 1
+                    else:
+                        start_epoch = int(state_blob.get("epoch", 0)) + 1
+                    logger.warning(
+                        "State dict mismatch while loading %s; used compat checkpoint %s and switched to warm-start at epoch=%d.",
+                        state_latest_path,
+                        compat_path,
+                        start_epoch - 1,
+                    )
             else:
                 # Legacy runs may only have model-only checkpoints; warm-start from latest epoch.
                 ckpts = sorted(run_dir.glob(f"{run_name}_E*.pth"))
@@ -793,17 +1007,23 @@ def main() -> None:
                     state_dict = legacy_blob["model_state_dict"]
                 else:
                     state_dict = legacy_blob
-                if isinstance(state_dict, dict) and "_metadata" in state_dict:
-                    state_dict = dict(state_dict)
-                    state_dict.pop("_metadata", None)
-                model.load_state_dict(state_dict)
+                resumed_full_state, compat_path = _try_load_model_state_with_compat_fallback(model, state_dict, run_dir)
                 start_epoch = epoch_n + 1
-                logger.warning(
-                    "Resumed model-only checkpoint %s (epoch=%d). Optimizer/scheduler state unavailable; "
-                    "this is a warm-start, not exact equivalent continuation.",
-                    latest_ckpt,
-                    epoch_n,
-                )
+                if resumed_full_state:
+                    logger.warning(
+                        "Resumed model-only checkpoint %s (epoch=%d). Optimizer/scheduler state unavailable; "
+                        "this is a warm-start, not exact equivalent continuation.",
+                        latest_ckpt,
+                        epoch_n,
+                    )
+                else:
+                    logger.warning(
+                        "State dict mismatch while loading %s; used compat checkpoint %s at epoch=%d. "
+                        "Optimizer/scheduler state unavailable; this is a warm-start.",
+                        latest_ckpt,
+                        compat_path,
+                        epoch_n,
+                    )
             total_epochs = start_epoch + int(args.extend_epochs) - 1
             metadata["resume_from_epoch"] = start_epoch - 1
             metadata["resume_target_total_epochs"] = total_epochs
@@ -868,9 +1088,13 @@ def main() -> None:
         logger.info("Fault diagnostics | main_fault_log=%s", main_fault_path)
         crash_state["phase"] = "train_loop_setup"
 
-        expected_metrics_header = metrics_csv_fieldnames(OUT_CHANNELS)
+        dual_compare = criterion_compare is not None
+        best_metric_col = "val_compare_loss" if dual_compare else "val_loss"
+        expected_metrics_header = metrics_csv_fieldnames(OUT_CHANNELS, dual_compare=dual_compare)
         csv_mode = "a" if (resume_mode and metrics_csv.exists()) else "w"
         if csv_mode == "a" and metrics_csv.exists():
+            if dual_compare:
+                _migrate_metrics_to_dual_header(metrics_csv, OUT_CHANNELS)
             with metrics_csv.open("r", newline="", encoding="utf-8") as rf:
                 existing_header = next(csv.reader(rf))
             if existing_header != expected_metrics_header:
@@ -878,6 +1102,12 @@ def main() -> None:
                     "metrics.csv header does not match this trainer (expected per-channel train columns). "
                     "Use a new run directory or delete/rename metrics.csv and metrics.jsonl before resuming."
                 )
+            # Always derive best checkpoint score from CSV across all completed epochs.
+            csv_best_epoch, csv_best_val = _best_from_metrics_csv(metrics_csv, best_metric_col)
+            if csv_best_epoch >= 0:
+                best_epoch = csv_best_epoch
+                best_val = csv_best_val
+                _sync_best_weights_from_epoch(run_dir, run_name, best_epoch, best_path)
 
         with metrics_csv.open(csv_mode, newline="", encoding="utf-8") as csv_f, metrics_jsonl.open("a", encoding="utf-8") as jsonl_f:
             writer = csv.writer(csv_f)
@@ -892,7 +1122,11 @@ def main() -> None:
                 model.train()
                 t_epoch0 = time.time()
                 running = 0.0
+                running_compare = 0.0 if criterion_compare is not None else None
                 running_train_per_ch = torch.zeros(OUT_CHANNELS, dtype=torch.float64)
+                running_train_per_ch_cmp = (
+                    torch.zeros(OUT_CHANNELS, dtype=torch.float64) if criterion_compare is not None else None
+                )
                 n_seen = 0
                 data_time = 0.0
                 last = time.time()
@@ -923,6 +1157,7 @@ def main() -> None:
                             with amp_context(device, args.amp):
                                 pred = model(xb)
                                 loss = criterion(pred, yb)
+                                loss_compare = criterion_compare(pred, yb) if criterion_compare is not None else None
 
                             if scaler.is_enabled():
                                 scaler.scale(loss).backward()
@@ -934,7 +1169,11 @@ def main() -> None:
 
                             bs = xb.shape[0]
                             running += float(loss.item()) * bs
-                            running_train_per_ch += per_channel_squared_error_mean(pred, yb) * bs
+                            if running_compare is not None and loss_compare is not None:
+                                running_compare += float(loss_compare.item()) * bs
+                            running_train_per_ch += per_channel_loss_mean(pred, yb, args.loss) * bs
+                            if running_train_per_ch_cmp is not None and compare_loss_name is not None:
+                                running_train_per_ch_cmp += per_channel_loss_mean(pred, yb, compare_loss_name) * bs
                             n_seen += bs
                             last = time.time()
                             train_bar.update(1)
@@ -959,6 +1198,7 @@ def main() -> None:
                         with amp_context(device, args.amp):
                             pred = model(xb)
                             loss = criterion(pred, yb)
+                            loss_compare = criterion_compare(pred, yb) if criterion_compare is not None else None
 
                         if scaler.is_enabled():
                             scaler.scale(loss).backward()
@@ -970,7 +1210,11 @@ def main() -> None:
 
                         bs = xb.shape[0]
                         running += float(loss.item()) * bs
-                        running_train_per_ch += per_channel_squared_error_mean(pred, yb) * bs
+                        if running_compare is not None and loss_compare is not None:
+                            running_compare += float(loss_compare.item()) * bs
+                        running_train_per_ch += per_channel_loss_mean(pred, yb, args.loss) * bs
+                        if running_train_per_ch_cmp is not None and compare_loss_name is not None:
+                            running_train_per_ch_cmp += per_channel_loss_mean(pred, yb, compare_loss_name) * bs
                         n_seen += bs
                         last = time.time()
 
@@ -987,10 +1231,25 @@ def main() -> None:
                     scheduler.step()
                 epoch_time = max(time.time() - t_epoch0, 1e-9)
                 train_loss = running / max(n_seen, 1)
+                train_loss_compare = (running_compare / max(n_seen, 1)) if running_compare is not None else None
                 train_ch = (running_train_per_ch / max(n_seen, 1)).tolist()
+                train_ch_cmp = (
+                    (running_train_per_ch_cmp / max(n_seen, 1)).tolist()
+                    if running_train_per_ch_cmp is not None
+                    else None
+                )
                 train_sps = n_seen / epoch_time
                 crash_state["phase"] = "eval_epoch"
-                val_loss, val_ch, val_sps = evaluate(model, test_loader, device, args.amp, criterion)
+                val_loss, val_loss_compare, val_ch, val_ch_cmp, val_sps = evaluate(
+                    model,
+                    test_loader,
+                    device,
+                    args.amp,
+                    criterion,
+                    criterion_compare,
+                    args.loss,
+                    compare_loss_name,
+                )
                 lr_now = float(optimizer.param_groups[0]["lr"])
 
                 if args.diagnostic_panels:
@@ -1026,6 +1285,17 @@ def main() -> None:
                     val_sps,
                     *val_ch,
                 ]
+                row_compare_metric: float | None = None
+                if train_ch_cmp is not None and val_ch_cmp is not None:
+                    row_compare_metric = float(val_loss_compare) if val_loss_compare is not None else None
+                    row.extend(
+                        [
+                            float(train_loss_compare) if train_loss_compare is not None else float("nan"),
+                            row_compare_metric if row_compare_metric is not None else float("nan"),
+                            *train_ch_cmp,
+                            *val_ch_cmp,
+                        ]
+                    )
                 writer.writerow(row)
                 csv_f.flush()
 
@@ -1042,13 +1312,20 @@ def main() -> None:
                 for i in range(OUT_CHANNELS):
                     epoch_metrics[f"train_loss_ch{i}"] = train_ch[i]
                     epoch_metrics[f"val_loss_ch{i}"] = val_ch[i]
+                if train_ch_cmp is not None and val_ch_cmp is not None:
+                    epoch_metrics["train_compare_loss"] = float(train_loss_compare) if train_loss_compare is not None else None
+                    epoch_metrics["val_compare_loss"] = float(val_loss_compare) if val_loss_compare is not None else None
+                    for i in range(OUT_CHANNELS):
+                        epoch_metrics[f"train_compare_loss_ch{i}"] = train_ch_cmp[i]
+                        epoch_metrics[f"val_compare_loss_ch{i}"] = val_ch_cmp[i]
                 jsonl_f.write(json.dumps(epoch_metrics) + "\n")
                 jsonl_f.flush()
 
                 epoch_ckpt = run_dir / f"{run_name}_E{epoch}.pth"
                 torch.save(model.state_dict(), epoch_ckpt)
-                if val_loss < best_val:
-                    best_val = val_loss
+                tracked_val = row_compare_metric if best_metric_col == "val_compare_loss" else val_loss
+                if tracked_val < best_val:
+                    best_val = tracked_val
                     best_epoch = epoch
                     torch.save(model.state_dict(), best_path)
                 save_training_state(
@@ -1067,17 +1344,45 @@ def main() -> None:
                     f"val_loss={val_loss:.6e} lr={lr_now:.3e} train_sps={train_sps:.1f}",
                     use_tqdm=use_tqdm,
                 )
+                if train_loss_compare is not None and val_loss_compare is not None and compare_loss_name is not None:
+                    emit_progress(
+                        f"epoch={epoch}/{total_epochs} compare_loss({compare_loss_name}) "
+                        f"train={train_loss_compare:.6e} val={val_loss_compare:.6e}",
+                        use_tqdm=use_tqdm,
+                    )
                 logger.info(
-                    "epoch=%d/%d train_loss=%.6e val_loss=%.6e train_ch_mse=%s val_ch_mse=%s lr=%.3e train_sps=%.1f",
+                    "epoch=%d/%d loss=%s train_ch_%s=%s val_ch_%s=%s train_loss=%.6e val_loss=%.6e lr=%.3e train_sps=%.1f",
                     epoch,
                     total_epochs,
+                    args.loss,
+                    args.loss,
+                    " ".join(f"{x:.3e}" for x in train_ch),
+                    args.loss,
+                    " ".join(f"{x:.3e}" for x in val_ch),
                     train_loss,
                     val_loss,
-                    " ".join(f"{x:.3e}" for x in train_ch),
-                    " ".join(f"{x:.3e}" for x in val_ch),
                     lr_now,
                     train_sps,
                 )
+                if (
+                    train_loss_compare is not None
+                    and val_loss_compare is not None
+                    and compare_loss_name is not None
+                    and train_ch_cmp is not None
+                    and val_ch_cmp is not None
+                ):
+                    logger.info(
+                        "epoch=%d/%d compare_loss=%s train_ch_%s=%s val_ch_%s=%s train_loss=%.6e val_loss=%.6e",
+                        epoch,
+                        total_epochs,
+                        compare_loss_name,
+                        compare_loss_name,
+                        " ".join(f"{x:.3e}" for x in train_ch_cmp),
+                        compare_loss_name,
+                        " ".join(f"{x:.3e}" for x in val_ch_cmp),
+                        train_loss_compare,
+                        val_loss_compare,
+                    )
                 emit_progress(
                     f"Epoch {epoch}/{total_epochs} done | train_loss={train_loss:.4e} "
                     f"val_loss={val_loss:.4e} lr={lr_now:.2e}",

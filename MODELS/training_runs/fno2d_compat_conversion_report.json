@@ -3,64 +3,75 @@
   "suffix": "_fno2d_compat",
   "runs": [
     {
-      "run_dir": "D:\\Research\\NO-2D-Metamaterials\\MODELS\\training_runs\\NO_I3O1_EIG_BCF16_L2_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0fft_260319_20260319_024731_35204",
-      "selected_by": "highest_epoch_E12",
-      "source_checkpoint": "D:\\Research\\NO-2D-Metamaterials\\MODELS\\training_runs\\NO_I3O1_EIG_BCF16_L2_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0fft_260319_20260319_024731_35204\\NO_I3O1_EIG_BCF16_L2_HC128_LR2e-03_WD0e+00_SS1_G9e-01_260319_E12.pth",
+      "run_dir": "D:\\Research\\NO-2D-Metamaterials\\MODELS\\training_runs\\NO_I3O1_EIG_BCF16_L2_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0fft_260319",
+      "selected_by": "glob.best",
+      "source_checkpoint": "D:\\Research\\NO-2D-Metamaterials\\MODELS\\training_runs\\NO_I3O1_EIG_BCF16_L2_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0fft_260319\\NO_I3O1_EIG_BCF16_L2_HC128_LR2e-03_WD0e+00_SS1_G9e-01_260319_best.pth",
       "status": "converted",
-      "output_checkpoint": "D:\\Research\\NO-2D-Metamaterials\\MODELS\\training_runs\\NO_I3O1_EIG_BCF16_L2_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0fft_260319_20260319_024731_35204\\NO_I3O1_EIG_BCF16_L2_HC128_LR2e-03_WD0e+00_SS1_G9e-01_260319_E12_fno2d_compat.pth",
+      "output_checkpoint": "D:\\Research\\NO-2D-Metamaterials\\MODELS\\training_runs\\NO_I3O1_EIG_BCF16_L2_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0fft_260319\\NO_I3O1_EIG_BCF16_L2_HC128_LR2e-03_WD0e+00_SS1_G9e-01_260319_best_fno2d_compat.pth",
       "n_keys_in": 41,
       "n_keys_out": 40,
       "prefixed_keys_in": 40
     },
     {
-      "run_dir": "D:\\Research\\NO-2D-Metamaterials\\MODELS\\training_runs\\NO_I3O1_EIG_BCF16_L2_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_260326_20260326_142801_51824",
-      "selected_by": "summary.best",
-      "source_checkpoint": "D:\\Research\\NO-2D-Metamaterials\\MODELS\\training_runs\\NO_I3O1_EIG_BCF16_L2_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_260326_20260326_142801_51824\\NO_I3O1_EIG_BCF16_L2_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_260326_best.pth",
+      "run_dir": "D:\\Research\\NO-2D-Metamaterials\\MODELS\\training_runs\\NO_I3O1_EIG_BCF16_L2_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_260326",
+      "selected_by": "glob.best",
+      "source_checkpoint": "D:\\Research\\NO-2D-Metamaterials\\MODELS\\training_runs\\NO_I3O1_EIG_BCF16_L2_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_260326\\NO_I3O1_EIG_BCF16_L2_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_260326_best.pth",
+      "status": "exists_skip",
+      "output_checkpoint": "D:\\Research\\NO-2D-Metamaterials\\MODELS\\training_runs\\NO_I3O1_EIG_BCF16_L2_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_260326\\NO_I3O1_EIG_BCF16_L2_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_260326_best_fno2d_compat.pth"
+    },
+    {
+      "run_dir": "D:\\Research\\NO-2D-Metamaterials\\MODELS\\training_runs\\NO_I3O4_DISP_BCF16_L1_HC128_LR2e-03_WD0e+00_SS1_G9e-01_260404",
+      "selected_by": "glob.best",
+      "source_checkpoint": "D:\\Research\\NO-2D-Metamaterials\\MODELS\\training_runs\\NO_I3O4_DISP_BCF16_L1_HC128_LR2e-03_WD0e+00_SS1_G9e-01_260404\\NO_I3O4_DISP_BCF16_L1_HC128_LR2e-03_WD0e+00_SS1_G9e-01_260404_best.pth",
       "status": "converted",
-      "output_checkpoint": "D:\\Research\\NO-2D-Metamaterials\\MODELS\\training_runs\\NO_I3O1_EIG_BCF16_L2_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_260326_20260326_142801_51824\\NO_I3O1_EIG_BCF16_L2_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_260326_best_fno2d_compat.pth",
+      "output_checkpoint": "D:\\Research\\NO-2D-Metamaterials\\MODELS\\training_runs\\NO_I3O4_DISP_BCF16_L1_HC128_LR2e-03_WD0e+00_SS1_G9e-01_260404\\NO_I3O4_DISP_BCF16_L1_HC128_LR2e-03_WD0e+00_SS1_G9e-01_260404_best_fno2d_compat.pth",
       "n_keys_in": 41,
       "n_keys_out": 40,
       "prefixed_keys_in": 40
     },
     {
-      "run_dir": "D:\\Research\\NO-2D-Metamaterials\\MODELS\\training_runs\\NO_I3O4_DISP_BCF16_L2_HC128_LR2e-03_WD0e+00_SS1_G9e-01_260329_20260329_150149_109040",
-      "selected_by": "summary.best",
-      "source_checkpoint": "D:\\Research\\NO-2D-Metamaterials\\MODELS\\training_runs\\NO_I3O4_DISP_BCF16_L2_HC128_LR2e-03_WD0e+00_SS1_G9e-01_260329_20260329_150149_109040\\NO_I3O4_DISP_BCF16_L2_HC128_LR2e-03_WD0e+00_SS1_G9e-01_260329_best.pth",
+      "run_dir": "D:\\Research\\NO-2D-Metamaterials\\MODELS\\training_runs\\NO_I3O4_DISP_BCF16_L2_HC128_LR2e-03_WD0e+00_SS1_G9e-01_260329",
+      "selected_by": "glob.best",
+      "source_checkpoint": "D:\\Research\\NO-2D-Metamaterials\\MODELS\\training_runs\\NO_I3O4_DISP_BCF16_L2_HC128_LR2e-03_WD0e+00_SS1_G9e-01_260329\\NO_I3O4_DISP_BCF16_L2_HC128_LR2e-03_WD0e+00_SS1_G9e-01_260329_best.pth",
+      "status": "exists_skip",
+      "output_checkpoint": "D:\\Research\\NO-2D-Metamaterials\\MODELS\\training_runs\\NO_I3O4_DISP_BCF16_L2_HC128_LR2e-03_WD0e+00_SS1_G9e-01_260329\\NO_I3O4_DISP_BCF16_L2_HC128_LR2e-03_WD0e+00_SS1_G9e-01_260329_best_fno2d_compat.pth"
+    },
+    {
+      "run_dir": "D:\\Research\\NO-2D-Metamaterials\\MODELS\\training_runs\\NO_I3O4_DISP_BCF16_L2_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0fft_260316",
+      "selected_by": "glob.best",
+      "source_checkpoint": "D:\\Research\\NO-2D-Metamaterials\\MODELS\\training_runs\\NO_I3O4_DISP_BCF16_L2_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0fft_260316\\NO_I3O4_DISP_BCF16_L2_HC128_LR2e-03_WD0e+00_SS1_G9e-01_260316_best.pth",
       "status": "converted",
-      "output_checkpoint": "D:\\Research\\NO-2D-Metamaterials\\MODELS\\training_runs\\NO_I3O4_DISP_BCF16_L2_HC128_LR2e-03_WD0e+00_SS1_G9e-01_260329_20260329_150149_109040\\NO_I3O4_DISP_BCF16_L2_HC128_LR2e-03_WD0e+00_SS1_G9e-01_260329_best_fno2d_compat.pth",
+      "output_checkpoint": "D:\\Research\\NO-2D-Metamaterials\\MODELS\\training_runs\\NO_I3O4_DISP_BCF16_L2_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0fft_260316\\NO_I3O4_DISP_BCF16_L2_HC128_LR2e-03_WD0e+00_SS1_G9e-01_260316_best_fno2d_compat.pth",
       "n_keys_in": 41,
       "n_keys_out": 40,
       "prefixed_keys_in": 40
     },
     {
-      "run_dir": "D:\\Research\\NO-2D-Metamaterials\\MODELS\\training_runs\\NO_I3O4_DISP_BCF16_L2_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0fft_260316_20260316_212848_163424",
-      "selected_by": "highest_epoch_E1",
-      "source_checkpoint": "D:\\Research\\NO-2D-Metamaterials\\MODELS\\training_runs\\NO_I3O4_DISP_BCF16_L2_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0fft_260316_20260316_212848_163424\\NO_I3O4_DISP_BCF16_L2_HC128_LR2e-03_WD0e+00_SS1_G9e-01_260316_E1.pth",
+      "run_dir": "D:\\Research\\NO-2D-Metamaterials\\MODELS\\training_runs\\NO_I3O5_BCF16_L1_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_260401",
+      "selected_by": "glob.best",
+      "source_checkpoint": "D:\\Research\\NO-2D-Metamaterials\\MODELS\\training_runs\\NO_I3O5_BCF16_L1_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_260401\\NO_I3O5_BCF16_L1_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_260401_best.pth",
       "status": "converted",
-      "output_checkpoint": "D:\\Research\\NO-2D-Metamaterials\\MODELS\\training_runs\\NO_I3O4_DISP_BCF16_L2_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0fft_260316_20260316_212848_163424\\NO_I3O4_DISP_BCF16_L2_HC128_LR2e-03_WD0e+00_SS1_G9e-01_260316_E1_fno2d_compat.pth",
+      "output_checkpoint": "D:\\Research\\NO-2D-Metamaterials\\MODELS\\training_runs\\NO_I3O5_BCF16_L1_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_260401\\NO_I3O5_BCF16_L1_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_260401_best_fno2d_compat.pth",
       "n_keys_in": 41,
       "n_keys_out": 40,
       "prefixed_keys_in": 40
     },
     {
-      "run_dir": "D:\\Research\\NO-2D-Metamaterials\\MODELS\\training_runs\\NO_I3O5_BCF16_L2_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0fft_260311_20260311_175808_32860",
-      "selected_by": "highest_epoch_E12",
-      "source_checkpoint": "D:\\Research\\NO-2D-Metamaterials\\MODELS\\training_runs\\NO_I3O5_BCF16_L2_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0fft_260311_20260311_175808_32860\\NO_I3O5_BCF16_L2_HC128_LR2e-03_WD0e+00_SS1_G9e-01_260311_E12.pth",
+      "run_dir": "D:\\Research\\NO-2D-Metamaterials\\MODELS\\training_runs\\NO_I3O5_BCF16_L2_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0fft_260311",
+      "selected_by": "glob.best",
+      "source_checkpoint": "D:\\Research\\NO-2D-Metamaterials\\MODELS\\training_runs\\NO_I3O5_BCF16_L2_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0fft_260311\\NO_I3O5_BCF16_L2_HC128_LR2e-03_WD0e+00_SS1_G9e-01_260311_best.pth",
       "status": "converted",
-      "output_checkpoint": "D:\\Research\\NO-2D-Metamaterials\\MODELS\\training_runs\\NO_I3O5_BCF16_L2_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0fft_260311_20260311_175808_32860\\NO_I3O5_BCF16_L2_HC128_LR2e-03_WD0e+00_SS1_G9e-01_260311_E12_fno2d_compat.pth",
+      "output_checkpoint": "D:\\Research\\NO-2D-Metamaterials\\MODELS\\training_runs\\NO_I3O5_BCF16_L2_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0fft_260311\\NO_I3O5_BCF16_L2_HC128_LR2e-03_WD0e+00_SS1_G9e-01_260311_best_fno2d_compat.pth",
       "n_keys_in": 41,
       "n_keys_out": 40,
       "prefixed_keys_in": 40
     },
     {
-      "run_dir": "D:\\Research\\NO-2D-Metamaterials\\MODELS\\training_runs\\NO_I3O5_BCF16_L2_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_260323_20260323_122907_19312",
-      "selected_by": "summary.best",
-      "source_checkpoint": "D:\\Research\\NO-2D-Metamaterials\\MODELS\\training_runs\\NO_I3O5_BCF16_L2_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_260323_20260323_122907_19312\\NO_I3O5_BCF16_L2_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_260323_best.pth",
-      "status": "converted",
-      "output_checkpoint": "D:\\Research\\NO-2D-Metamaterials\\MODELS\\training_runs\\NO_I3O5_BCF16_L2_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_260323_20260323_122907_19312\\NO_I3O5_BCF16_L2_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_260323_best_fno2d_compat.pth",
-      "n_keys_in": 41,
-      "n_keys_out": 40,
-      "prefixed_keys_in": 40
+      "run_dir": "D:\\Research\\NO-2D-Metamaterials\\MODELS\\training_runs\\NO_I3O5_BCF16_L2_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_260323",
+      "selected_by": "glob.best",
+      "source_checkpoint": "D:\\Research\\NO-2D-Metamaterials\\MODELS\\training_runs\\NO_I3O5_BCF16_L2_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_260323\\NO_I3O5_BCF16_L2_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_260323_best.pth",
+      "status": "exists_skip",
+      "output_checkpoint": "D:\\Research\\NO-2D-Metamaterials\\MODELS\\training_runs\\NO_I3O5_BCF16_L2_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_260323\\NO_I3O5_BCF16_L2_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_260323_best_fno2d_compat.pth"
     }
   ]
 }

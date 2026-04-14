@@ -1,0 +1,30 @@
+{
+  "run_name": "NO_I3O5_BCF16_L1&L2_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_260401",
+  "run_id": "NO_I3O5_BCF16_L1&L2_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_260401",
+  "status": "completed",
+  "started_at_utc": "2026-04-01T07:21:35.576455+00:00",
+  "git": {
+    "git_commit": "274c8b861f1cb2ac5ab8d8b9cd6b7bfffebb2564",
+    "git_dirty": "true"
+  },
+  "environment": {
+    "python_version": "3.12.3",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "torch_version": "2.5.1",
+    "cuda_available": true,
+    "cuda_version": "11.8",
+    "cudnn_version": 90100,
+    "device_count": 1,
+    "device_name_0": "NVIDIA GeForce RTX 4080 SUPER"
+  },
+  "resumed_at_utc": "2026-04-13T21:25:09.040546+00:00",
+  "resume_extend_epochs": 2,
+  "ended_at_utc": "2026-04-14T04:23:19.610781+00:00",
+  "duration_sec": 25090.570235,
+  "error_type": "RuntimeError",
+  "error_message": "Error(s) in loading state_dict for FourierNeuralOperator:\n\tUnexpected key(s) in state_dict: \"_metadata\". ",
+  "resume_from_epoch": 30,
+  "resume_target_total_epochs": 32,
+  "best_val_loss": 0.002665346181873853,
+  "best_epoch": 32
+}

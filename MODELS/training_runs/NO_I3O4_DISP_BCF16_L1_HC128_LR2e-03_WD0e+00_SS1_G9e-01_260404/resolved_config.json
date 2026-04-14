@@ -2,9 +2,9 @@
   "args": {
     "output_root": "D:/Research/NO-2D-Metamaterials/DATASETS",
     "save_dir": "D:/Research/NO-2D-Metamaterials/MODELS/training_runs",
-    "epochs": 6,
-    "resume_run_dir": "",
-    "extend_epochs": 0,
+    "epochs": 12,
+    "resume_run_dir": "D:/Research/NO-2D-Metamaterials/MODELS/training_runs/NO_I3O4_DISP_BCF16_L1_HC128_LR2e-03_WD0e+00_SS1_G9e-01_260404",
+    "extend_epochs": 4,
     "batch_size": 520,
     "train_shuffle": true,
     "num_workers": 2,
@@ -47,9 +47,9 @@
     "weight_decay": 0.0,
     "step_size": 1,
     "gamma": 0.9,
-    "t_max": 6,
-    "epochs": 6,
-    "start_epoch": 1,
+    "t_max": 12,
+    "epochs": 12,
+    "start_epoch": 9,
     "batch_size": 520,
     "num_workers": 2,
     "prefetch_factor": 3,
@@ -64,7 +64,7 @@
     "dataset_version": "0cb8a0eeee9d",
     "train_sampler": "shard_aware"
   },
-  "resume_mode": false,
+  "resume_mode": true,
   "train_shards": [
     {
       "name": "b_train_01",

@@ -2,41 +2,21 @@ from __future__ import annotations
 
 import argparse
 import json
-import re
 from pathlib import Path
 from typing import Dict, Tuple
 
 import torch
 
 
-EPOCH_RE = re.compile(r"_E(\d+)\.pth$", re.IGNORECASE)
-
-
 def _choose_checkpoint(run_dir: Path) -> Tuple[Path | None, str]:
-    summary_path = run_dir / "summary.json"
-    if summary_path.is_file():
-        try:
-            summary = json.loads(summary_path.read_text(encoding="utf-8"))
-            best = summary.get("checkpoints", {}).get("best")
-            if best:
-                best_path = Path(best)
-                if not best_path.is_absolute():
-                    best_path = run_dir / best_path
-                if best_path.is_file():
-                    return best_path, "summary.best"
-        except Exception:
-            pass
-
-    epoch_files = []
-    for p in run_dir.glob("*.pth"):
-        m = EPOCH_RE.search(p.name)
-        if m:
-            epoch_files.append((int(m.group(1)), p))
-    if epoch_files:
-        epoch_files.sort(key=lambda x: x[0], reverse=True)
-        return epoch_files[0][1], f"highest_epoch_E{epoch_files[0][0]}"
-
-    return None, "none_found"
+    best_files = sorted(p for p in run_dir.glob("*best.pth") if p.is_file())
+    if not best_files:
+        return None, "best_file_missing"
+    if len(best_files) == 1:
+        return best_files[0], "glob.best"
+    # If multiple best checkpoints exist, pick the most recently modified one.
+    best_files.sort(key=lambda p: p.stat().st_mtime, reverse=True)
+    return best_files[0], "glob.best_latest_mtime"
 
 
 def _extract_state_dict(obj) -> Dict[str, torch.Tensor]:
