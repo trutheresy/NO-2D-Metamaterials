@@ -3,6 +3,9 @@ import h5py
 import numpy as np
 import torch
 import matplotlib.pyplot as plt
+from matplotlib.colors import TwoSlopeNorm
+from matplotlib.gridspec import GridSpec
+from matplotlib.ticker import MaxNLocator
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 import time
 import random
@@ -207,7 +210,80 @@ def plot_geometry(sample_geometry, sample_index):
     plt.show()
 
 
-def visualize_sample(input_tensor, output_tensor, target_tensor, diffs=True):
+def _colorbar_tick_dense_nice(cb):
+    cb.locator = MaxNLocator(nbins=10, steps=[1, 1.5, 2, 2.5, 3, 4, 5, 6, 8, 10])
+    cb.update_ticks()
+
+
+def _colorbar_dense_nice(im, ax=None, shrink=0.8):
+    """Colorbar with denser tick marks while keeping Matplotlib's 'nice' step choices."""
+    cb = plt.colorbar(im, ax=ax, shrink=shrink)
+    _colorbar_tick_dense_nice(cb)
+
+
+def _symmetrize_vlim_around(vmin, vmax, center):
+    """Expand vmin/vmax so |center - vmin| == |vmax - center| (TwoSlopeNorm then maps linearly in colormap space)."""
+    half = max(vmax - center, center - vmin)
+    return center - half, center + half
+
+
+def _imshow_comparison(ax, arr, vmin=None, vmax=None, cmap=None, diverge_center=0.0):
+    """
+    Scalar imshow for target/output/diff panels.
+
+    If *cmap* is set and diverge_center lies strictly between effective vmin/vmax,
+    uses TwoSlopeNorm so that value maps to the colormap center (neutral for RdBu, coolwarm, etc.).
+    Limits are symmetrized around *diverge_center* so positive and negative ranges occupy equal
+    length on the colorbar (avoids +c sitting closer to 0 than −c along the strip).
+    """
+    arr = np.asarray(arr)
+    eff_vmin = float(arr.min()) if vmin is None else float(vmin)
+    eff_vmax = float(arr.max()) if vmax is None else float(vmax)
+    if cmap is not None and eff_vmin < diverge_center < eff_vmax:
+        eff_vmin, eff_vmax = _symmetrize_vlim_around(eff_vmin, eff_vmax, diverge_center)
+        norm = TwoSlopeNorm(diverge_center, eff_vmin, eff_vmax)
+        return ax.imshow(arr, cmap=cmap, norm=norm)
+    if cmap is not None and vmin is not None and vmax is not None:
+        return ax.imshow(arr, cmap=cmap, vmin=vmin, vmax=vmax)
+    if cmap is not None:
+        return ax.imshow(arr, cmap=cmap)
+    if vmin is not None and vmax is not None:
+        return ax.imshow(arr, vmin=vmin, vmax=vmax)
+    return ax.imshow(arr)
+
+
+def _colorbar_dense_nice_cax(fig, mappable, cax, uniform_ticks=11):
+    """Colorbar in a dedicated axes (figure / GridSpec slot).
+
+    Tick positions are *uniformly spaced in data value* (``np.linspace`` from clim), so ticks
+    are evenly distributed along the colorbar for linear / symmetric TwoSlope norms.
+    """
+    cb = fig.colorbar(mappable, cax=cax, aspect=6)
+    vmin, vmax = mappable.get_clim()
+    if (
+        uniform_ticks >= 2
+        and vmin is not None
+        and vmax is not None
+        and np.isfinite(vmin)
+        and np.isfinite(vmax)
+        and vmax > vmin
+    ):
+        cb.set_ticks(np.linspace(vmin, vmax, int(uniform_ticks)))
+    else:
+        _colorbar_tick_dense_nice(cb)
+    cb.ax.yaxis.set_ticks_position("left")
+    cb.ax.yaxis.set_label_position("left")
+
+
+def visualize_sample(
+    input_tensor,
+    output_tensor,
+    target_tensor,
+    diffs=True,
+    unified_colorbar=False,
+    field_cmap=None,
+    diverge_center=0.0,
+):
     """
     Visualize input and output tensors from a single sample.
 
@@ -215,18 +291,45 @@ def visualize_sample(input_tensor, output_tensor, target_tensor, diffs=True):
         input_tensor: Tensor of shape (3, H, W) containing input components
         output_tensor: Tensor of shape (C, H, W) containing output components
         (optional) target_tensor: Tensor of shape (C, H, W) containing target components
+        unified_colorbar: If True (only when target_tensor is plotted), one colorbar per
+            column spanning target, output, and (if diffs) difference rows; limits are the
+            min/max over those arrays in that column.
+        field_cmap: Colormap name for the three input panels and the target/output/(diff) grid
+            (default: rcParams image cmap, usually viridis). For signed fields with a clear neutral,
+            use a diverging map such as ``"RdBu_r"``, ``"coolwarm"``, ``"seismic"``, or ``"bwr"``.
+        diverge_center: When ``field_cmap`` is set, if this value lies strictly between the panel's
+            vmin and vmax, colors use TwoSlopeNorm with limits **symmetrized** around
+            *diverge_center* so the neutral color sits at the bar midpoint and ± ranges span equal
+            physical length on the colorbar. Per-column unified colorbars use evenly spaced tick
+            positions (``np.linspace`` over clim) along the bar.
     """
     input_titles = ["Geometry", "Wavevector (Encoded)", "Band (Encoded)"]
 
     # Create figure for input components
     fig1 = plt.figure(figsize=(12, 4))
+    input_arrays = []
     for i in range(3):
-        plt.subplot(1, 3, i + 1)
         tensor_data = input_tensor[i].abs()
         if tensor_data.dtype in [torch.float8_e4m3fn, torch.float16]:
             tensor_data = tensor_data.float()
-        im = plt.imshow(tensor_data.numpy())
-        plt.colorbar(im)
+        input_arrays.append(tensor_data.numpy())
+    if field_cmap is not None:
+        input_vmin = min(float(np.min(a)) for a in input_arrays)
+        input_vmax = max(float(np.max(a)) for a in input_arrays)
+    for i in range(3):
+        plt.subplot(1, 3, i + 1)
+        if field_cmap is not None:
+            im = _imshow_comparison(
+                plt.gca(),
+                input_arrays[i],
+                vmin=input_vmin,
+                vmax=input_vmax,
+                cmap=field_cmap,
+                diverge_center=diverge_center,
+            )
+        else:
+            im = plt.imshow(input_arrays[i])
+        _colorbar_dense_nice(im)
         plt.title(input_titles[i])
     plt.tight_layout()
     plt.show()
@@ -246,11 +349,37 @@ def visualize_sample(input_tensor, output_tensor, target_tensor, diffs=True):
             raise ValueError("Target and output tensors must have the same number of channels for matched plotting.")
 
         n_rows = 3 if diffs else 2
-        fig, axs = plt.subplots(n_rows, num_targets, figsize=(4 * num_targets, 4 * n_rows))
-        if num_targets == 1:
-            axs = np.expand_dims(axs, axis=1)
-            if n_rows == 1:
-                axs = np.expand_dims(axs, axis=0)
+        if unified_colorbar:
+            # Interleave image columns and narrow colorbar columns (like fig.add_axes + cax in
+            # figures_continuous_* notebooks): colorbars do not steal space from image axes.
+            fig = plt.figure(figsize=(4 * num_targets + 0.75 * num_targets, 4 * n_rows))
+            width_ratios = []
+            for _ in range(num_targets):
+                width_ratios.extend([20, 1.55])
+            gs = GridSpec(
+                n_rows,
+                2 * num_targets,
+                figure=fig,
+                width_ratios=width_ratios,
+                wspace=0.38,
+                hspace=0.30,
+                left=0.06,
+                right=0.98,
+                top=0.90,
+                bottom=0.07,
+            )
+            axs = np.empty((n_rows, num_targets), dtype=object)
+            unified_caxes = []
+            for i in range(num_targets):
+                for r in range(n_rows):
+                    axs[r, i] = fig.add_subplot(gs[r, 2 * i])
+                unified_caxes.append(fig.add_subplot(gs[:, 2 * i + 1]))
+        else:
+            fig, axs = plt.subplots(n_rows, num_targets, figsize=(4 * num_targets, 4 * n_rows))
+            if num_targets == 1:
+                axs = np.expand_dims(axs, axis=1)
+                if n_rows == 1:
+                    axs = np.expand_dims(axs, axis=0)
 
         channel_titles = channel_titles_default[:num_targets]
         if num_targets > len(channel_titles_default):
@@ -269,14 +398,46 @@ def visualize_sample(input_tensor, output_tensor, target_tensor, diffs=True):
             vmins.append(min(tgt_data.min().item(), out_data.min().item()))
             vmaxs.append(max(tgt_data.max().item(), out_data.max().item()))
 
+        if unified_colorbar:
+            vmins_plot = []
+            vmaxs_plot = []
+            for i in range(num_targets):
+                tgt_data = target_tensor[i]
+                out_data = output_tensor[i]
+                if tgt_data.dtype in [torch.float8_e4m3fn, torch.float16]:
+                    tgt_data = tgt_data.float()
+                if out_data.dtype in [torch.float8_e4m3fn, torch.float16]:
+                    out_data = out_data.float()
+                vmin = min(tgt_data.min().item(), out_data.min().item())
+                vmax = max(tgt_data.max().item(), out_data.max().item())
+                if diffs:
+                    diff_data = torch.abs(out_data - tgt_data)
+                    vmin = min(vmin, diff_data.min().item())
+                    vmax = max(vmax, diff_data.max().item())
+                vmins_plot.append(vmin)
+                vmaxs_plot.append(vmax)
+        else:
+            vmins_plot, vmaxs_plot = vmins, vmaxs
+
+        column_mappable = [None] * num_targets
+
         # Row 1: targets
         for i in range(num_targets):
             ax = axs[0, i]
             tensor_data = target_tensor[i]
             if tensor_data.dtype in [torch.float8_e4m3fn, torch.float16]:
                 tensor_data = tensor_data.float()
-            im = ax.imshow(tensor_data.numpy(), vmin=vmins[i], vmax=vmaxs[i])
-            plt.colorbar(im, ax=ax)
+            im = _imshow_comparison(
+                ax,
+                tensor_data.numpy(),
+                vmin=vmins_plot[i],
+                vmax=vmaxs_plot[i],
+                cmap=field_cmap,
+                diverge_center=diverge_center,
+            )
+            column_mappable[i] = im
+            if not unified_colorbar:
+                _colorbar_dense_nice(im, ax=ax)
             ax.set_title(f"Target {channel_titles[i]}")
 
         # Row 2: outputs
@@ -285,8 +446,17 @@ def visualize_sample(input_tensor, output_tensor, target_tensor, diffs=True):
             tensor_data = output_tensor[i]
             if tensor_data.dtype in [torch.float8_e4m3fn, torch.float16]:
                 tensor_data = tensor_data.float()
-            im = ax.imshow(tensor_data.numpy(), vmin=vmins[i], vmax=vmaxs[i])
-            plt.colorbar(im, ax=ax)
+            im = _imshow_comparison(
+                ax,
+                tensor_data.numpy(),
+                vmin=vmins_plot[i],
+                vmax=vmaxs_plot[i],
+                cmap=field_cmap,
+                diverge_center=diverge_center,
+            )
+            column_mappable[i] = im
+            if not unified_colorbar:
+                _colorbar_dense_nice(im, ax=ax)
             ax.set_title(f"Output {channel_titles[i]}")
 
         # Row 3: absolute differences (with same per-channel scales as rows 1-2)
@@ -300,11 +470,32 @@ def visualize_sample(input_tensor, output_tensor, target_tensor, diffs=True):
                 if out_data.dtype in [torch.float8_e4m3fn, torch.float16]:
                     out_data = out_data.float()
                 diff_data = torch.abs(out_data - tgt_data)
-                im = ax.imshow(diff_data.numpy())
-                plt.colorbar(im, ax=ax)
+                if unified_colorbar:
+                    im = _imshow_comparison(
+                        ax,
+                        diff_data.numpy(),
+                        vmin=vmins_plot[i],
+                        vmax=vmaxs_plot[i],
+                        cmap=field_cmap,
+                        diverge_center=diverge_center,
+                    )
+                else:
+                    im = _imshow_comparison(
+                        ax,
+                        diff_data.numpy(),
+                        cmap=field_cmap,
+                        diverge_center=diverge_center,
+                    )
+                column_mappable[i] = im
+                if not unified_colorbar:
+                    _colorbar_dense_nice(im, ax=ax)
                 ax.set_title(f"Diff {channel_titles[i]}")
 
-        plt.tight_layout()
+        if unified_colorbar:
+            for i in range(num_targets):
+                _colorbar_dense_nice_cax(fig, column_mappable[i], unified_caxes[i])
+        else:
+            plt.tight_layout()
         plt.show()
     else:
         # Fallback: outputs-only view
@@ -318,8 +509,13 @@ def visualize_sample(input_tensor, output_tensor, target_tensor, diffs=True):
             tensor_data = output_tensor[i].abs()
             if tensor_data.dtype in [torch.float8_e4m3fn, torch.float16]:
                 tensor_data = tensor_data.float()
-            im = plt.imshow(tensor_data.numpy())
-            plt.colorbar(im)
+            im = _imshow_comparison(
+                plt.gca(),
+                tensor_data.numpy(),
+                cmap=field_cmap,
+                diverge_center=diverge_center,
+            )
+            _colorbar_dense_nice(im)
             plt.title(f"Output {channel_titles[i]}")
         plt.tight_layout()
         plt.show()

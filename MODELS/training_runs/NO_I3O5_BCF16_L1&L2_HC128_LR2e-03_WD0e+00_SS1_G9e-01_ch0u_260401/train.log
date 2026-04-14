@@ -133,3 +133,9 @@ RuntimeError: Error(s) in loading state_dict for FourierNeuralOperator:
 2026-04-14 00:23:19,319 | INFO | epoch=32/32 loss=l1 train_ch_l1=5.233e-04 2.630e-03 2.523e-03 3.198e-03 3.008e-03 val_ch_l1=7.601e-04 2.918e-03 2.811e-03 3.519e-03 3.318e-03 train_loss=2.376321e-03 val_loss=2.665346e-03 lr=1.970e-04 train_sps=1527.4
 2026-04-14 00:23:19,612 | INFO | Run complete | run_name=NO_I3O5_BCF16_L1&L2_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_260401 run_id=NO_I3O5_BCF16_L1&L2_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_260401 best_val_loss=2.665346e-03
 2026-04-14 00:23:19,613 | INFO | Artifacts saved to: D:\Research\NO-2D-Metamaterials\MODELS\training_runs\NO_I3O5_BCF16_L1&L2_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_260401
+2026-04-14 13:54:02,352 | INFO | evaluation_from_disk | epoch=31 checkpoint=NO_I3O5_BCF16_L1&L2_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_260401_E31.pth num_test_samples=780000 trained_loss='l1'
+2026-04-14 13:54:02,353 | INFO | evaluation_from_disk | epoch=31 loss=mse avg_pixel_loss=6.421333e-05 avg_sample_loss=6.421333e-05
+2026-04-14 13:54:02,359 | INFO | evaluation_from_disk | epoch=31 metrics_csv rows_updated=1 migrated_to_dual_header=True
+2026-04-14 13:58:35,270 | INFO | evaluation_from_disk | epoch=32 checkpoint=NO_I3O5_BCF16_L1&L2_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_260401_E32.pth num_test_samples=780000 trained_loss='l1'
+2026-04-14 13:58:35,271 | INFO | evaluation_from_disk | epoch=32 loss=mse avg_pixel_loss=6.358959e-05 avg_sample_loss=6.358959e-05
+2026-04-14 13:58:35,276 | INFO | evaluation_from_disk | epoch=32 metrics_csv rows_updated=1 migrated_to_dual_header=False
