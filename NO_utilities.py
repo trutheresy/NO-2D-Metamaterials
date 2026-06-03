@@ -10,6 +10,10 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 import time
 import random
 
+# Default diverging colormap for field plots: blue / white / red with neutral at diverge_center.
+DEFAULT_FIELD_CMAP = "RdBu_r"
+DEFAULT_DIVERGE_CENTER = 0.0
+
 
 def load_mat_data(folder_path, multiple_datafiles=False):
     """
@@ -233,7 +237,9 @@ def _symmetrize_vlim_around(vmin, vmax, center):
     return center - half, center + half
 
 
-def _imshow_comparison(ax, arr, vmin=None, vmax=None, cmap=None, diverge_center=0.0):
+def _imshow_comparison(
+    ax, arr, vmin=None, vmax=None, cmap=DEFAULT_FIELD_CMAP, diverge_center=DEFAULT_DIVERGE_CENTER
+):
     """
     Scalar imshow for target/output/diff panels.
 
@@ -289,8 +295,8 @@ def visualize_sample(
     target_tensor,
     diffs=True,
     unified_colorbar=False,
-    field_cmap=None,
-    diverge_center=0.0,
+    field_cmap=DEFAULT_FIELD_CMAP,
+    diverge_center=DEFAULT_DIVERGE_CENTER,
 ):
     """
     Visualize input and output tensors from a single sample.
@@ -303,8 +309,8 @@ def visualize_sample(
             column spanning target, output, and (if diffs) difference rows; limits are the
             min/max over those arrays in that column.
         field_cmap: Colormap name for the three input panels and the target/output/(diff) grid
-            (default: rcParams image cmap, usually viridis). For signed fields with a clear neutral,
-            use a diverging map such as ``"RdBu_r"``, ``"coolwarm"``, ``"seismic"``, or ``"bwr"``.
+            (default: ``DEFAULT_FIELD_CMAP``, ``"RdBu_r"``). Other diverging options include
+            ``"coolwarm"``, ``"seismic"``, or ``"bwr"``. Pass ``None`` to use Matplotlib's default.
         diverge_center: When ``field_cmap`` is set, if this value lies strictly between the panel's
             vmin and vmax, colors use TwoSlopeNorm with limits **symmetrized** around
             *diverge_center* so the neutral color sits at the bar midpoint and ± ranges span equal
@@ -529,20 +535,28 @@ def visualize_sample(
         plt.show()
 
 
-def plot_eigenvectors(sample_eigenvector_x, sample_eigenvector_y, unify_scales=True):
+def plot_eigenvectors(
+    sample_eigenvector_x,
+    sample_eigenvector_y,
+    unify_scales=True,
+    field_cmap=DEFAULT_FIELD_CMAP,
+    diverge_center=DEFAULT_DIVERGE_CENTER,
+):
     fig, axs = plt.subplots(2, 2, figsize=(10, 8))
-    im00 = axs[0, 0].imshow(np.real(sample_eigenvector_x), cmap="viridis")
-    axs[0, 0].set_title("x displacement field real", pad=1)
-    axs[0, 0].axis("off")
-    im10 = axs[1, 0].imshow(np.imag(sample_eigenvector_x), cmap="viridis")
-    axs[1, 0].set_title("x displacement field imag", pad=1)
-    axs[1, 0].axis("off")
-    im01 = axs[0, 1].imshow(np.real(sample_eigenvector_y), cmap="viridis")
-    axs[0, 1].set_title("y displacement field real", pad=1)
-    axs[0, 1].axis("off")
-    im11 = axs[1, 1].imshow(np.imag(sample_eigenvector_y), cmap="viridis")
-    axs[1, 1].set_title("y displacement field imag", pad=1)
-    axs[1, 1].axis("off")
+    panels = [
+        (0, 0, np.real(sample_eigenvector_x), "x displacement field real"),
+        (1, 0, np.imag(sample_eigenvector_x), "x displacement field imag"),
+        (0, 1, np.real(sample_eigenvector_y), "y displacement field real"),
+        (1, 1, np.imag(sample_eigenvector_y), "y displacement field imag"),
+    ]
+    ims = []
+    for row, col, arr, title in panels:
+        ax = axs[row, col]
+        im = _imshow_comparison(ax, arr, cmap=field_cmap, diverge_center=diverge_center)
+        ax.set_title(title, pad=1)
+        ax.axis("off")
+        ims.append(im)
+    im00, im10, im01, im11 = ims
 
     if unify_scales:
         vmin = min(im.get_array().min() for im in [im00, im10, im01, im11])
@@ -580,7 +594,7 @@ def wavevectors_to_spatial(wavevectors, design_res, length_scale, amplitude=1.0,
         sample_n = random.randint(0, N - 1)
         sample_w = random.randint(0, W - 1)
         plt.figure(figsize=(6, 6))
-        plt.contourf(spatial_waves[sample_n], cmap="viridis")
+        plt.contourf(spatial_waves[sample_n], cmap=DEFAULT_FIELD_CMAP)
         plt.colorbar(label="Wave Amplitude")
         plt.xlabel("x (m)")
         plt.ylabel("y (m)")
@@ -606,13 +620,13 @@ def const_to_spatial(test_band, design_res, plot_result=True, scaling_factor=1.0
     if plot_result:
         plt.figure(figsize=(12, 6))
         plt.subplot(1, 2, 1)
-        plt.imshow(constant_array, cmap="viridis")
+        plt.imshow(constant_array, cmap=DEFAULT_FIELD_CMAP)
         plt.colorbar(label="Magnitude")
         plt.title(f"Spatial Representation of {test_band}")
         plt.xlabel("x")
         plt.ylabel("y")
         plt.subplot(1, 2, 2)
-        plt.imshow(magnitude_spectrum, cmap="viridis")
+        plt.imshow(magnitude_spectrum, cmap=DEFAULT_FIELD_CMAP)
         plt.colorbar(label="Magnitude")
         plt.title(f"2D FFT Magnitude Spectrum of {test_band}")
         plt.xlabel("Frequency X")
