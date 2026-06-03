@@ -1,9 +1,28 @@
 """
 Script to run a specified model on a specified input dataset and save outputs efficiently.
 
-The outputs are saved as a 4D tensor where each index maps to a (4, 32, 32) displacement field.
-The mapping is: index = geometry_idx * 91 * 6 + waveform_idx * 6 + band_idx
-This avoids storing redundant wavevector and band data for each geometry.
+Supports three I/O cases that mirror the training scripts (all share 3 input channels:
+geometry, wavevector embedding, band embedding):
+
+- ``I3O1`` -> 1 output channel (eigenfrequency); see ``train_from_disk_eigenfrequency.py``.
+- ``I3O4`` -> 4 output channels (displacements x_real, x_imag, y_real, y_imag);
+  see ``train_from_disk_displacement.py``.
+- ``I3O5`` -> 5 output channels (eigenfrequency + 4 displacements);
+  see ``train_from_disk.py``.
+
+Outputs are saved as a single stacked tensor of shape ``(n_samples, out_channels, 32, 32)``.
+The sample index maps as: ``index = geometry_idx * n_waveforms * n_bands + waveform_idx * n_bands + band_idx``
+where ``n_waveforms`` and ``n_bands`` are inferred from the dataset (current data: 325 wavevectors, 6 bands).
+
+By default, each run creates a folder ``INFERENCE/<model_name>_<YYMMDD-HHMMSS>/`` containing the
+output tensor and an ``inference_info_*.txt`` record of the model used and the dataset files
+inferred on. Pass ``--output_path`` to save the tensor to an explicit location instead.
+
+Use ``--geometries`` to restrict inference to a subset of geometries: pass multiple indices to
+run only those geometry indices, or a single integer N to randomly pick N geometries
+(seeded by ``--geometry-seed``). When a subset is used, the selected indices are saved to
+``selected_geometry_indices.pt`` and the output is compacted to those geometries (sample index
+becomes ``subset_position * n_waveforms * n_bands + waveform_idx * n_bands + band_idx``).
 """
 
 import os
@@ -15,39 +34,210 @@ from tqdm import tqdm
 import gc
 from collections import Counter
 
-# Import model architecture (assuming it's defined in the same directory or available)
-# You may need to adjust this import based on your project structure
+import json
+import random
+import re
+from datetime import datetime
+from pathlib import Path
+
+# Match the training scripts (train_from_disk*.py), which build neuralop FNO2d.
 try:
-    from neuralop.models import FNO
+    from neuralop.models import FNO2d
 except ImportError as e:
-    print(f"Error: neuralop not found. Please install it with: pip install neuraloperator")
+    print("Error: neuralop not found. Please install it with: pip install neuraloperator")
     print(f"Import error: {e}")
     sys.exit(1)
 
 
+# Output-channel contract per I/O case, matching the training scripts:
+#   I3O1 -> train_from_disk_eigenfrequency.py (eigenfrequency only)
+#   I3O4 -> train_from_disk_displacement.py   (4 displacement channels)
+#   I3O5 -> train_from_disk.py                (eigenfrequency + 4 displacements)
+CASE_OUT_CHANNELS = {"I3O1": 1, "I3O4": 4, "I3O5": 5}
+OUT_CHANNELS_TO_CASE = {v: k for k, v in CASE_OUT_CHANNELS.items()}
+CASE_CHANNEL_LABELS = {
+    "I3O1": ["eigenfrequency"],
+    "I3O4": ["disp_x_real", "disp_x_imag", "disp_y_real", "disp_y_imag"],
+    "I3O5": ["eigenfrequency", "disp_x_real", "disp_x_imag", "disp_y_real", "disp_y_imag"],
+}
+
+
+def load_raw_state_dict(model_path, map_location="cpu"):
+    """Load a checkpoint and return a plain key->tensor state_dict.
+
+    Handles both raw state_dict files and pickled module objects.
+    """
+    obj = torch.load(model_path, map_location=map_location, weights_only=False)
+    if hasattr(obj, "state_dict") and not isinstance(obj, dict):
+        return obj.state_dict()
+    return obj
+
+
+def normalize_fno_state_dict(state_dict):
+    """Strip a common wrapper prefix so keys match the inner neuralop FNO2d.
+
+    Different training-script versions saved checkpoints either as bare FNO2d
+    keys (e.g. ``projection.fcs.1.weight``) or under a wrapper prefix
+    (e.g. ``fno.projection...`` or ``model.projection...``). The inference model
+    delegates state_dict I/O to its inner FNO2d, which expects bare keys.
+    """
+    keys = list(state_dict.keys())
+    if not keys:
+        return state_dict
+    for prefix in ("fno.", "model."):
+        if all(k.startswith(prefix) for k in keys):
+            return {k[len(prefix):]: v for k, v in state_dict.items()}
+    return state_dict
+
+
+def infer_out_channels_from_state_dict(state_dict):
+    """Infer model output-channel count from the FNO2d output projection weight.
+
+    The output projection is a small MLP whose final linear layer
+    (``...projection.fcs.<max_idx>.weight``) has first dimension == out_channels.
+    Returns the integer out_channels.
+    """
+    proj_pat = re.compile(r"(?:^|\.)projection\.fcs\.(\d+)\.weight$")
+    best_idx, best_oc = -1, None
+    for k, v in state_dict.items():
+        if not hasattr(v, "shape") or len(v.shape) < 1:
+            continue
+        m = proj_pat.search(k)
+        if m and int(m.group(1)) > best_idx:
+            best_idx = int(m.group(1))
+            best_oc = int(v.shape[0])
+    if best_oc is None:
+        # Fallback: any "...fcs.<max_idx>.weight" (last MLP layer in the network).
+        fcs_pat = re.compile(r"\.fcs\.(\d+)\.weight$")
+        for k, v in state_dict.items():
+            if not hasattr(v, "shape") or len(v.shape) < 1:
+                continue
+            m = fcs_pat.search(k)
+            if m and int(m.group(1)) > best_idx:
+                best_idx = int(m.group(1))
+                best_oc = int(v.shape[0])
+    if best_oc is None:
+        raise ValueError(
+            "Could not locate an FNO output projection weight in the checkpoint "
+            "to infer out_channels. Pass --case explicitly."
+        )
+    return best_oc
+
+
+def infer_case_from_state_dict(state_dict):
+    """Infer the I/O case (I3O1/I3O4/I3O5) from the checkpoint's output channels."""
+    out_channels = infer_out_channels_from_state_dict(state_dict)
+    case = OUT_CHANNELS_TO_CASE.get(out_channels)
+    if case is None:
+        raise ValueError(
+            f"Inferred out_channels={out_channels}, which does not match a supported "
+            f"case (expected one of {sorted(OUT_CHANNELS_TO_CASE)} -> "
+            f"{list(CASE_OUT_CHANNELS)}). Pass --case explicitly."
+        )
+    return case, out_channels
+
+
+def select_geometry_subset(geometries_arg, geometry_seed, total_geometries):
+    """Resolve the --geometries argument into a list of geometry indices.
+
+    Rules (per the requested behavior):
+      - None / empty        -> run on all geometries (returns (None, 'all')).
+      - a single integer N  -> randomly pick N geometries (returns (sorted idx, 'random')).
+      - two or more values  -> treat as an explicit list of geometry indices.
+
+    Indices refer to the combined geometry ordering across the provided datasets
+    (dataset 0 first, then dataset 1, ...). Returns (indices_or_None, mode).
+    """
+    if not geometries_arg:
+        return None, "all"
+
+    if len(geometries_arg) == 1:
+        n = int(geometries_arg[0])
+        if n <= 0:
+            raise ValueError(f"--geometries single integer N must be positive (got {n}).")
+        if n > total_geometries:
+            print(
+                f"Warning: requested {n} random geometries but only {total_geometries} "
+                f"available; using all {total_geometries}."
+            )
+            n = total_geometries
+        rng = random.Random(int(geometry_seed))
+        idx = sorted(rng.sample(range(total_geometries), n))
+        return idx, "random"
+
+    # Explicit list of indices: validate range and de-duplicate (preserve order).
+    idx_raw = [int(i) for i in geometries_arg]
+    out_of_range = [i for i in idx_raw if i < 0 or i >= total_geometries]
+    if out_of_range:
+        raise ValueError(
+            f"--geometries indices out of range [0, {total_geometries}): {out_of_range[:10]}"
+            + (" ..." if len(out_of_range) > 10 else "")
+        )
+    seen = set()
+    idx = []
+    for i in idx_raw:
+        if i not in seen:
+            seen.add(i)
+            idx.append(i)
+    return idx, "indices"
+
+
 class FourierNeuralOperator(nn.Module):
-    """Fourier Neural Operator model architecture."""
-    def __init__(self, modes_height, modes_width, in_channels, out_channels, hidden, num_layers):
-        super(FourierNeuralOperator, self).__init__()
+    """neuralop FNO2d wrapper matching the training scripts (train_from_disk*.py).
+
+    state_dict I/O is delegated to the inner FNO2d so checkpoints saved by the
+    trainers load here with strict=True.
+    """
+
+    def __init__(self, modes_height, modes_width, hidden_channels, n_layers, out_channels, in_channels=3):
+        super().__init__()
         self.modes_height = modes_height
         self.modes_width = modes_width
-        self.hidden = hidden
+        self.hidden_channels = hidden_channels
+        self.n_layers = n_layers
         self.in_channels = in_channels
         self.out_channels = out_channels
-        self.num_layers = num_layers
-
-        # FNO layer (2D: n_modes is a tuple for 2D spatial dimensions)
-        self.fno = FNO(
-            n_modes=(self.modes_height, self.modes_width),
-            in_channels=self.in_channels,
-            out_channels=self.out_channels,
-            hidden_channels=self.hidden,
-            n_layers=self.num_layers
+        self.model = FNO2d(
+            in_channels=in_channels,
+            out_channels=out_channels,
+            n_modes_height=modes_height,
+            n_modes_width=modes_width,
+            hidden_channels=hidden_channels,
+            n_layers=n_layers,
         )
 
     def forward(self, x):
-        x = self.fno(x)
-        return x
+        return self.model(x)
+
+    # Preserve unwrapped FNO2d checkpoint keys by delegating state_dict I/O to the inner model.
+    def state_dict(self, *args, **kwargs):
+        return self.model.state_dict(*args, **kwargs)
+
+    def load_state_dict(self, state_dict, strict: bool = True):
+        return self.model.load_state_dict(state_dict, strict=strict)
+
+
+def hparams_from_resolved_config(run_dir):
+    """Read hidden_channels/layers/modes/out_channels from resolved_config.json if present.
+
+    Returns an empty dict when the file is missing or unreadable.
+    """
+    rc = Path(run_dir) / "resolved_config.json"
+    if not rc.is_file():
+        return {}
+    try:
+        data = json.loads(rc.read_text(encoding="utf-8"))
+    except (json.JSONDecodeError, OSError):
+        return {}
+    params = data.get("params") or {}
+    args_ = data.get("args") or {}
+    out = {}
+    for key in ("out_channels", "hidden_channels", "layers", "modes_height", "modes_width"):
+        if params.get(key) is not None:
+            out[key] = params[key]
+        elif args_.get(key) is not None:
+            out[key] = args_[key]
+    return out
 
 
 def infer_num_geometries_per_dataset(dataset_paths):
@@ -78,19 +268,19 @@ def infer_num_geometries_per_dataset(dataset_paths):
     return num_geometries
 
 
-def infer_model_architecture(model_path):
+def infer_model_architecture(state_dict, out_channels=5):
     """
     Infer model architecture parameters (hidden, num_layers) from the state_dict.
     Uses a trial-and-error approach: try common configurations and see which one works.
     
     Args:
-        model_path: Path to the model weights file
+        state_dict: Already-loaded (and prefix-normalized) model state_dict
+        out_channels: Output channel count for the I/O case (used when building
+            trial models for key matching)
     
     Returns:
         Tuple of (hidden_channels, num_layers)
     """
-    state_dict = torch.load(model_path, map_location='cpu', weights_only=False)
-    
     # Common configurations to try
     common_hidden = [128, 256, 512, 64, 32]
     common_layers = [2, 3, 4, 5, 6]
@@ -165,10 +355,9 @@ def infer_model_architecture(model_path):
                     model = FourierNeuralOperator(
                         modes_height=32,
                         modes_width=32,
-                        in_channels=3,
-                        out_channels=4,
-                        hidden=hidden,
-                        num_layers=layers
+                        hidden_channels=hidden,
+                        n_layers=layers,
+                        out_channels=out_channels,
                     )
                     model_keys = set(model.state_dict().keys())
                     
@@ -272,7 +461,7 @@ def load_input_data(dataset_paths, num_geometries_per_dataset):
     return combined_geometries, waveforms, band_ffts
 
 
-def compute_output_index(geometry_idx, waveform_idx, band_idx, num_waveforms=91, num_bands=6):
+def compute_output_index(geometry_idx, waveform_idx, band_idx, num_waveforms, num_bands):
     """
     Compute the 1D index for a given (geometry, waveform, band) combination.
     
@@ -281,10 +470,10 @@ def compute_output_index(geometry_idx, waveform_idx, band_idx, num_waveforms=91,
     
     Args:
         geometry_idx: Geometry index
-        waveform_idx: Waveform/wavevector index (0-90)
-        band_idx: Band index (0-5)
-        num_waveforms: Number of waveforms (default: 91)
-        num_bands: Number of bands (default: 6)
+        waveform_idx: Waveform/wavevector index (0 .. num_waveforms-1)
+        band_idx: Band index (0 .. num_bands-1)
+        num_waveforms: Number of waveforms (must match the dataset; current data: 325)
+        num_bands: Number of bands (must match the dataset; current data: 6)
     
     Returns:
         Linear index for the output tensor
@@ -292,26 +481,26 @@ def compute_output_index(geometry_idx, waveform_idx, band_idx, num_waveforms=91,
     return geometry_idx * num_waveforms * num_bands + waveform_idx * num_bands + band_idx
 
 
-def get_output_by_indices(outputs, geometry_idx, waveform_idx, band_idx, num_waveforms=91, num_bands=6):
+def get_output_by_indices(outputs, geometry_idx, waveform_idx, band_idx, num_waveforms, num_bands):
     """
-    Retrieve a specific output tensor by geometry, waveform, and band indices.
+    Retrieve a specific output sample by geometry, waveform, and band indices.
     
     Args:
-        outputs: Output tensor of shape (n_geometries * 91 * 6, 4, 32, 32)
+        outputs: Output tensor of shape (n_geometries * num_waveforms * num_bands, out_channels, 32, 32)
         geometry_idx: Geometry index
-        waveform_idx: Waveform/wavevector index (0-90)
-        band_idx: Band index (0-5)
-        num_waveforms: Number of waveforms (default: 91)
-        num_bands: Number of bands (default: 6)
+        waveform_idx: Waveform/wavevector index (0 .. num_waveforms-1)
+        band_idx: Band index (0 .. num_bands-1)
+        num_waveforms: Number of waveforms (must match the dataset; current data: 325)
+        num_bands: Number of bands (must match the dataset; current data: 6)
     
     Returns:
-        Output tensor of shape (4, 32, 32)
+        Output tensor of shape (out_channels, 32, 32)
     """
     index = compute_output_index(geometry_idx, waveform_idx, band_idx, num_waveforms, num_bands)
     return outputs[index]
 
 
-def run_inference(model, geometries, waveforms, band_ffts, device, batch_size=256):
+def run_inference(model, geometries, waveforms, band_ffts, device, batch_size=256, out_channels=5):
     """
     Run model inference on all combinations of geometries, waveforms, and bands.
     Optimized for compute efficiency with preallocated tensors and vectorized operations.
@@ -319,13 +508,14 @@ def run_inference(model, geometries, waveforms, band_ffts, device, batch_size=25
     Args:
         model: The trained model
         geometries: Tensor of shape (n_geometries, 32, 32)
-        waveforms: Tensor of shape (91, 32, 32)
-        band_ffts: Tensor of shape (6, 32, 32)
+        waveforms: Tensor of shape (n_waveforms, 32, 32)
+        band_ffts: Tensor of shape (n_bands, 32, 32)
         device: Device to run inference on
         batch_size: Batch size for inference
+        out_channels: Number of model output channels (1 for I3O1, 4 for I3O4, 5 for I3O5)
     
     Returns:
-        outputs: Tensor of shape (n_geometries * 91 * 6, 4, 32, 32)
+        outputs: Tensor of shape (n_geometries * n_waveforms * n_bands, out_channels, 32, 32)
     """
     model.eval()
     
@@ -360,7 +550,7 @@ def run_inference(model, geometries, waveforms, band_ffts, device, batch_size=25
     print(f"  - Saving outputs as: {output_dtype} (for storage efficiency)")
     
     # Preallocate output tensor with desired output dtype
-    outputs = torch.empty((total_samples, 4, 32, 32), dtype=output_dtype)
+    outputs = torch.empty((total_samples, out_channels, 32, 32), dtype=output_dtype)
     
     # Move waveforms and band_ffts to device once (they're reused)
     # Convert to float32 to match model weights
@@ -395,7 +585,7 @@ def run_inference(model, geometries, waveforms, band_ffts, device, batch_size=25
                     # Process batch when it's full
                     if batch_idx >= batch_size:
                         # Run inference on preallocated batch tensor
-                        batch_outputs = model(batch_tensor)  # Shape: (batch_size, 4, 32, 32)
+                        batch_outputs = model(batch_tensor)  # Shape: (batch_size, out_channels, 32, 32)
                         
                         # Convert to CPU and dtype in one operation, then use advanced indexing
                         batch_outputs_cpu = batch_outputs.cpu().to(output_dtype)
@@ -436,38 +626,114 @@ def run_inference(model, geometries, waveforms, band_ffts, device, batch_size=25
     return outputs
 
 
-def save_outputs(outputs, output_path, num_waveforms=91, num_bands=6):
+def save_outputs(outputs, output_path, channel_labels, num_waveforms, num_bands):
     """
-    Save outputs to the specified path in the same format as displacements_dataset.pt.
-    
+    Save outputs as a single stacked tensor of shape (n_samples, out_channels, 32, 32).
+
+    This stacked-tensor format matches the training target convention (outputs_w_*.pt)
+    and generalizes across the I3O1/I3O4/I3O5 cases.
+
     Args:
-        outputs: Tensor of shape (n_geometries * 91 * 6, 4, 32, 32)
+        outputs: Tensor of shape (n_samples, out_channels, 32, 32)
         output_path: Path to save the outputs
-        num_waveforms: Number of waveforms (for metadata, default: 91)
-        num_bands: Number of bands (for metadata, default: 6)
+        channel_labels: List of per-channel names for the selected case
+        num_waveforms: Number of waveforms (for metadata / index map)
+        num_bands: Number of bands (for metadata / index map)
     """
     print(f"Saving outputs to {output_path}...")
-    os.makedirs(os.path.dirname(output_path) if os.path.dirname(output_path) else '.', exist_ok=True)
-    
-    # Split the outputs into 4 separate tensors (matching displacements_dataset.pt format)
-    # outputs shape: (n_samples, 4, 32, 32)
-    # Split into 4 tensors of shape (n_samples, 32, 32) each
-    tensor_0 = outputs[:, 0, :, :]  # First component
-    tensor_1 = outputs[:, 1, :, :]  # Second component
-    tensor_2 = outputs[:, 2, :, :]  # Third component
-    tensor_3 = outputs[:, 3, :, :]  # Fourth component
-    
-    # Create TensorDataset matching the format of displacements_dataset.pt
-    from torch.utils.data import TensorDataset
-    dataset = TensorDataset(tensor_0, tensor_1, tensor_2, tensor_3)
-    
-    torch.save(dataset, output_path)
-    print(f"Outputs saved successfully!")
-    print(f"  - Format: TensorDataset with 4 tensors")
-    print(f"  - Each tensor shape: {tensor_0.shape}")
-    print(f"  - Dtype: {tensor_0.dtype}")
+    out_dir = os.path.dirname(output_path)
+    if out_dir:
+        os.makedirs(out_dir, exist_ok=True)
+
+    torch.save(outputs, output_path)
+
+    combos = num_waveforms * num_bands
+    n_geometries = outputs.shape[0] // combos if combos else 0
+    print("Outputs saved successfully!")
+    print(f"  - Format: single stacked tensor (n_samples, {outputs.shape[1]}, 32, 32)")
+    print(f"  - Channels: {channel_labels}")
+    print(f"  - Shape: {tuple(outputs.shape)}  dtype: {outputs.dtype}")
     print(f"  - Total size: {outputs.numel() * outputs.element_size() / (1024**3):.2f} GB")
-    print(f"  - Metadata: {num_waveforms} waveforms, {num_bands} bands, {outputs.shape[0] // (num_waveforms * num_bands)} geometries")
+    print(f"  - Metadata: {num_waveforms} waveforms, {num_bands} bands, {n_geometries} geometries")
+    print(f"  - Index map: idx = geom*({num_waveforms}*{num_bands}) + wave*{num_bands} + band")
+
+
+def write_inference_doc(doc_path, info):
+    """Write a human-readable text record of an inference run.
+
+    Records the model used, the resolved I/O case and architecture, the device,
+    and the dataset folders + per-dataset input files the model was run on.
+    """
+    lines = []
+    lines.append("INFERENCE RUN RECORD")
+    lines.append("=" * 60)
+    lines.append(f"timestamp           : {info.get('timestamp')}")
+    lines.append("")
+    lines.append("MODEL")
+    lines.append("-" * 60)
+    lines.append(f"checkpoint_path     : {info.get('model_path')}")
+    lines.append(f"model_name          : {info.get('model_name')}")
+    lines.append(f"io_case             : {info.get('case')}")
+    lines.append(f"in_channels         : 3")
+    lines.append(f"out_channels        : {info.get('out_channels')}")
+    lines.append(f"output_channels     : {info.get('channel_labels')}")
+    lines.append(f"hidden_channels     : {info.get('hidden_channels')}")
+    lines.append(f"n_layers            : {info.get('n_layers')}")
+    lines.append(f"modes (h x w)       : {info.get('modes_height')} x {info.get('modes_width')}")
+    lines.append(f"arch_source         : {info.get('arch_source')}")
+    lines.append(f"device              : {info.get('device')}")
+    lines.append("")
+    lines.append("DATASETS INFERRED ON")
+    lines.append("-" * 60)
+    lines.append(f"dataset_structure   : {info.get('dataset_structure')}")
+    lines.append(f"input_dataset_path  : {info.get('input_dataset_path')}")
+    lines.append(f"num_datasets        : {len(info.get('dataset_paths', []))}")
+    lines.append(f"geometries/dataset  : {info.get('num_geometries_per_dataset')}")
+    lines.append("dataset_folders     :")
+    for p in info.get('dataset_paths', []):
+        lines.append(f"  - {p}")
+        lines.append(f"      geometries_full.pt")
+    lines.append("shared_input_files (from first dataset):")
+    lines.append(f"  - waveforms_full.pt  (n_waveforms={info.get('n_waveforms')})")
+    lines.append(f"  - band_fft_full.pt   (n_bands={info.get('n_bands')})")
+    lines.append("")
+    lines.append("GEOMETRY SELECTION")
+    lines.append("-" * 60)
+    geom_mode = info.get("geometry_mode", "all")
+    lines.append(f"mode                : {geom_mode}")
+    lines.append(f"total_available     : {info.get('total_geometries_available')}")
+    selected = info.get("selected_indices")
+    if selected is None:
+        lines.append(f"num_selected        : {info.get('total_geometries_available')} (all)")
+    else:
+        lines.append(f"num_selected        : {len(selected)}")
+        if geom_mode == "random":
+            lines.append(f"random_seed         : {info.get('geometry_seed')}")
+        if len(selected) <= 50:
+            shown = ", ".join(str(i) for i in selected)
+        else:
+            head = ", ".join(str(i) for i in selected[:25])
+            tail = ", ".join(str(i) for i in selected[-25:])
+            shown = f"{head}, ... , {tail}"
+        lines.append(f"selected_indices    : [{shown}]")
+        lines.append("(full list saved to selected_geometry_indices.pt)")
+    lines.append("")
+    lines.append("OUTPUT")
+    lines.append("-" * 60)
+    lines.append(f"output_tensor       : {info.get('output_filename')}")
+    lines.append(f"output_shape        : {info.get('output_shape')}")
+    lines.append(f"output_dtype        : {info.get('output_dtype')}")
+    lines.append(f"n_geometries_total  : {info.get('n_geometries_total')}")
+    lines.append(f"total_samples       : {info.get('total_samples')}")
+    lines.append(
+        f"index_map           : idx = geom*({info.get('n_waveforms')}*{info.get('n_bands')}) "
+        f"+ wave*{info.get('n_bands')} + band"
+    )
+    lines.append("")
+
+    with open(doc_path, "w", encoding="utf-8") as f:
+        f.write("\n".join(lines))
+    print(f"Wrote inference documentation: {doc_path}")
 
 
 def main():
@@ -490,7 +756,16 @@ def main():
         '--output_path',
         type=str,
         default=None,
-        help='Path to save the output tensor (.pt file). If not provided, will auto-generate as predictions_[model_name].pt in the input dataset directory'
+        help='Explicit path to save the output tensor (.pt file). If not provided, a run '
+             'folder is created under --inference-root and outputs + a documentation text '
+             'file are saved there.'
+    )
+    parser.add_argument(
+        '--inference-root',
+        type=str,
+        default=None,
+        help='Root directory for default inference outputs (default: <repo>/INFERENCE). '
+             'A subfolder named <model_name>_<YYMMDD-HHMMSS> is created for each run.'
     )
     parser.add_argument(
         '--batch_size',
@@ -511,6 +786,31 @@ def main():
         default='single',
         choices=['single', 'multiple'],
         help='Dataset structure: single directory or multiple set directories (default: single)'
+    )
+    parser.add_argument(
+        '--case',
+        type=str,
+        default='auto',
+        choices=['auto', 'I3O1', 'I3O4', 'I3O5'],
+        help='Model I/O case (output channels): auto=infer from checkpoint (default), '
+             'I3O1=eigenfrequency, I3O4=displacements, I3O5=eigenfrequency+displacements'
+    )
+    parser.add_argument(
+        '--geometries',
+        nargs='+',
+        type=int,
+        default=None,
+        help='Geometry subset to run inference on. Provide MULTIPLE indices (e.g. '
+             '--geometries 3 7 12) to run only those geometry indices; provide a SINGLE '
+             'integer N (e.g. --geometries 100) to randomly pick N geometries. '
+             'Indices refer to the combined geometry ordering across datasets. '
+             'Default: all geometries.'
+    )
+    parser.add_argument(
+        '--geometry-seed',
+        type=int,
+        default=0,
+        help='RNG seed used when --geometries is a single integer N (random subset). Default: 0.'
     )
     
     args = parser.parse_args()
@@ -562,37 +862,80 @@ def main():
         raise ValueError(f"No valid dataset paths found. Check --input_dataset_path: {args.input_dataset_path}")
     
     print(f"Found {len(dataset_paths)} dataset(s)")
-    
+
+    # Load checkpoint once (CPU), normalize wrapper prefixes to inner FNO2d keys.
+    print(f"Loading checkpoint from {args.model_path}...")
+    state_dict = normalize_fno_state_dict(load_raw_state_dict(args.model_path, map_location='cpu'))
+
+    # Resolve the I/O case -> output channels and channel semantics.
+    if args.case == 'auto':
+        case, out_channels = infer_case_from_state_dict(state_dict)
+        print(f"Auto-inferred I/O case: {case} (out_channels={out_channels}) from checkpoint output projection")
+    else:
+        case = args.case
+        out_channels = CASE_OUT_CHANNELS[case]
+    channel_labels = CASE_CHANNEL_LABELS[case]
+    print(f"I/O case: {case} (in_channels=3, out_channels={out_channels}; channels={channel_labels})")
+
+    # Prefer architecture from the run's resolved_config.json (next to the checkpoint).
+    run_dir = os.path.dirname(os.path.abspath(args.model_path))
+    hp = hparams_from_resolved_config(run_dir)
+    if hp.get('out_channels') is not None and int(hp['out_channels']) != out_channels:
+        print(
+            f"Warning: resolved_config.json out_channels={hp['out_channels']} does not match "
+            f"resolved case {case} (out_channels={out_channels})."
+        )
+
     # Infer num_geometries_per_dataset from dataset
     num_geometries_per_dataset = infer_num_geometries_per_dataset(dataset_paths)
     
-    # Infer model architecture from state_dict
-    print("Inferring model architecture from state_dict...")
-    model_hidden, model_layers = infer_model_architecture(args.model_path)
+    # Determine model architecture: resolved_config if available, else infer from state_dict.
+    if hp.get('hidden_channels') is not None and hp.get('layers') is not None:
+        model_hidden = int(hp['hidden_channels'])
+        model_layers = int(hp['layers'])
+        arch_source = "resolved_config.json"
+        print(f"Using architecture from resolved_config.json: hidden_channels={model_hidden}, num_layers={model_layers}")
+    else:
+        print("Inferring model architecture from state_dict...")
+        model_hidden, model_layers = infer_model_architecture(state_dict, out_channels=out_channels)
+        arch_source = "state_dict inference"
+    modes_h = int(hp.get('modes_height', 32))
+    modes_w = int(hp.get('modes_width', 32))
     
     # Load input data
     geometries, waveforms, band_ffts = load_input_data(dataset_paths, num_geometries_per_dataset)
+
+    # Optionally restrict to a subset of geometries (explicit indices or random N).
+    total_geometries = int(geometries.shape[0])
+    selected_indices, geom_mode = select_geometry_subset(
+        args.geometries, args.geometry_seed, total_geometries
+    )
+    if selected_indices is not None:
+        print(
+            f"Geometry selection: mode={geom_mode}, running on "
+            f"{len(selected_indices)}/{total_geometries} geometries"
+        )
+        geometries = geometries[torch.as_tensor(selected_indices, dtype=torch.long)]
+        gc.collect()
+    else:
+        print(f"Geometry selection: mode=all, running on all {total_geometries} geometries")
     
-    # Load model
-    print(f"Loading model from {args.model_path}...")
+    # Build model and load the (already normalized) state dict.
+    print("Building model and loading weights...")
     model = FourierNeuralOperator(
-        modes_height=32,
-        modes_width=32,
-        in_channels=3,
-        out_channels=4,
-        hidden=model_hidden,
-        num_layers=model_layers
+        modes_height=modes_h,
+        modes_width=modes_w,
+        hidden_channels=model_hidden,
+        n_layers=model_layers,
+        out_channels=out_channels,
     ).to(device)
-    
-    # Load state dict directly to device (more efficient)
-    state_dict = torch.load(args.model_path, map_location=device, weights_only=False)
     
     # Try loading with strict=True first (faster if it works)
     try:
         model.load_state_dict(state_dict, strict=True)
         print("Model loaded successfully!")
-    except RuntimeError as e:
-        print(f"Warning: Could not load with strict=True, trying strict=False...")
+    except RuntimeError:
+        print("Warning: Could not load with strict=True, trying strict=False...")
         missing_keys, unexpected_keys = model.load_state_dict(state_dict, strict=False)
         if missing_keys:
             print(f"  Missing keys: {missing_keys[:5]}..." if len(missing_keys) > 5 else f"  Missing keys: {missing_keys}")
@@ -605,16 +948,26 @@ def main():
     if device.type == 'cuda':
         torch.cuda.empty_cache()
     
-    # Auto-generate output path if not provided
-    if args.output_path is None:
-        # Extract model name without extension
-        model_basename = os.path.basename(args.model_path)
-        model_name = os.path.splitext(model_basename)[0]  # Remove extension
-        # Save in the first dataset directory
-        output_path = os.path.join(dataset_paths[0], f'predictions_{model_name}.pt')
-        print(f"Auto-generated output path: {output_path}")
-    else:
+    # Model name (without extension) used for the run-folder and output filename.
+    model_name = os.path.splitext(os.path.basename(args.model_path))[0]
+
+    # Determine output location.
+    #  - If --output_path is given, save the tensor there (doc written alongside it).
+    #  - Otherwise create <inference_root>/<model_name>_<YYMMDD-HHMMSS>/ and save everything there.
+    timestamp = datetime.now().strftime("%y%m%d-%H%M%S")
+    if args.output_path is not None:
         output_path = args.output_path
+        run_out_dir = os.path.dirname(os.path.abspath(output_path))
+        os.makedirs(run_out_dir, exist_ok=True)
+    else:
+        if args.inference_root is not None:
+            inference_root = args.inference_root
+        else:
+            inference_root = os.path.join(os.path.dirname(os.path.abspath(__file__)), "INFERENCE")
+        run_out_dir = os.path.join(inference_root, f"{model_name}_{timestamp}")
+        os.makedirs(run_out_dir, exist_ok=True)
+        output_path = os.path.join(run_out_dir, f"predictions_{case}_{model_name}.pt")
+        print(f"Inference run folder: {run_out_dir}")
     
     # Run inference
     n_waveforms = waveforms.shape[0]
@@ -626,13 +979,56 @@ def main():
         waveforms,
         band_ffts,
         device,
-        batch_size=args.batch_size
+        batch_size=args.batch_size,
+        out_channels=out_channels,
     )
     
     # Save outputs
-    save_outputs(outputs, output_path, n_waveforms, n_bands)
+    save_outputs(outputs, output_path, channel_labels, n_waveforms, n_bands)
+
+    # Persist the selected geometry indices (when a subset was used) for traceability.
+    if selected_indices is not None:
+        idx_path = os.path.join(run_out_dir, "selected_geometry_indices.pt")
+        torch.save(torch.as_tensor(selected_indices, dtype=torch.long), idx_path)
+        print(f"Saved selected geometry indices: {idx_path}")
+
+    # Write a documentation text file recording the model and the datasets inferred on.
+    combos = n_waveforms * n_bands
+    doc_path = os.path.join(run_out_dir, f"inference_info_{model_name}_{timestamp}.txt")
+    write_inference_doc(
+        doc_path,
+        {
+            "timestamp": timestamp,
+            "model_path": os.path.abspath(args.model_path),
+            "model_name": model_name,
+            "case": case,
+            "out_channels": out_channels,
+            "channel_labels": channel_labels,
+            "hidden_channels": model_hidden,
+            "n_layers": model_layers,
+            "modes_height": modes_h,
+            "modes_width": modes_w,
+            "arch_source": arch_source,
+            "device": str(device),
+            "dataset_structure": args.dataset_structure,
+            "input_dataset_path": os.path.abspath(args.input_dataset_path),
+            "dataset_paths": [os.path.abspath(p) for p in dataset_paths],
+            "num_geometries_per_dataset": num_geometries_per_dataset,
+            "geometry_mode": geom_mode,
+            "total_geometries_available": total_geometries,
+            "geometry_seed": (int(args.geometry_seed) if geom_mode == "random" else None),
+            "selected_indices": selected_indices,
+            "n_waveforms": n_waveforms,
+            "n_bands": n_bands,
+            "n_geometries_total": int(outputs.shape[0] // combos) if combos else 0,
+            "total_samples": int(outputs.shape[0]),
+            "output_filename": os.path.basename(output_path),
+            "output_shape": tuple(outputs.shape),
+            "output_dtype": str(outputs.dtype),
+        },
+    )
     
-    print("Done!")
+    print(f"Done! Outputs saved in: {run_out_dir}")
 
 
 if __name__ == '__main__':

@@ -35,7 +35,12 @@ def load_full_pt_dataset(data_dir: Path) -> dict:
     }
 
 
-def main(data_dir: str, n_structs: int | None = None) -> None:
+def main(
+    data_dir: str,
+    n_structs: int | None = None,
+    title: str = "",
+    output_dir: str | None = None,
+) -> None:
     data_path = Path(data_dir)
     if not data_path.exists():
         raise FileNotFoundError(f"Dataset not found: {data_path}")
@@ -48,7 +53,10 @@ def main(data_dir: str, n_structs: int | None = None) -> None:
     n_total = int(designs.shape[0])
     n_plot = n_total if n_structs is None else min(int(n_structs), n_total)
 
-    output_dir = Path.cwd() / "PLOTS" / f"{data_path.name}_full"
+    if output_dir is not None:
+        output_dir = Path(output_dir)
+    else:
+        output_dir = Path.cwd() / "PLOTS" / f"{data_path.name}_full"
     output_dir.mkdir(parents=True, exist_ok=True)
 
     # Keep wavevector/dispersion logic consistent with existing plotting flow.
@@ -108,7 +116,7 @@ def main(data_dir: str, n_structs: int | None = None) -> None:
             contour_info,
             frequencies_contour.astype(np.float32),
             contour_info["wavevector_parameter"],
-            title="Dispersion Relation (Full PT Dataset)",
+            title=title,
             mark_points=True,
         )
         disp_path = output_dir / "dispersion"
@@ -123,5 +131,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Plot dispersion for full PT datasets")
     parser.add_argument("data_dir", help="Path to full PT dataset directory")
     parser.add_argument("-n", "--n-structs", type=int, default=None, help="Number of structures to plot")
+    parser.add_argument("-t", "--title", type=str, default="", help="Custom dispersion plot title (default: blank)")
+    parser.add_argument("-o", "--output-dir", type=str, default=None, help="Output folder for plots (default: <cwd>/PLOTS/<name>_full)")
     args = parser.parse_args()
-    main(args.data_dir, args.n_structs)
+    main(args.data_dir, args.n_structs, args.title, args.output_dir)

@@ -7,6 +7,8 @@ import json
 import logging
 import re
 import sys
+from collections.abc import Callable
+from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -18,6 +20,31 @@ from tqdm import tqdm
 
 
 TEST_PREFIXES = ("c_test", "b_test")
+
+
+@dataclass
+class EvaluationResult:
+    """
+    Return value from run_evaluation for programmatic use (e.g. notebooks).
+
+    per_sample_losses: shape (N,) float64 when a single string loss (or custom criterion) is recorded;
+      index i matches dataset[i] under shuffle=False.
+    per_sample_losses_by_name: optional dict of (N,) tensors when recording every requested loss.
+    """
+
+    model_path: str
+    output_root: str
+    test_prefixes: list[str]
+    num_test_samples: int
+    out_channels: int
+    losses: dict[str, dict[str, float]]
+    eval_by_loss: dict[str, dict[str, object]]
+    per_sample_loss_name: str | None = None
+    per_sample_losses: torch.Tensor | None = None
+    per_sample_losses_by_name: dict[str, torch.Tensor] | None = None
+    used_custom_per_sample_criterion: bool = False
+
+
 EIGEN_CH0_FILES = {
     "uniform": "eigenfrequency_uniform_full.pt",
     "fft": "eigenfrequency_fft_full.pt",
@@ -175,6 +202,37 @@ def parse_args() -> argparse.Namespace:
             "Append evaluation results to train.log / metrics.jsonl / evaluation_metrics.csv when present, "
             "and backfill metrics.csv rows for the inferred epoch (see --epoch)."
         ),
+    )
+    p.add_argument(
+        "--unified-loss",
+        action=argparse.BooleanOptionalAction,
+        default=False,
+        help=(
+            "If set, only aggregate losses are computed (legacy fast path, no per-sample tensor). "
+            "Default is to record per-sample scalar loss for at least one loss name (see --per-sample-loss)."
+        ),
+    )
+    p.add_argument(
+        "--per-sample-loss",
+        default="",
+        help=(
+            "Normalized loss name (mse, l1, smoothl1) for the per-sample vector; must appear in --losses. "
+            "Default: first entry in --losses. Ignored when --unified-loss."
+        ),
+    )
+    p.add_argument(
+        "--per-sample-loss-for-each",
+        action=argparse.BooleanOptionalAction,
+        default=False,
+        help=(
+            "Record a full (N,) vector for every name in --losses. Mutually exclusive with a custom "
+            "per_sample_criterion passed to run_evaluation. Ignored when --unified-loss."
+        ),
+    )
+    p.add_argument(
+        "--per-sample-losses-path",
+        default="",
+        help="If set, torch.save the per-sample tensor(s) to this path (.pt): Tensor (N,) or dict[str, Tensor].",
     )
     return p.parse_args()
 
@@ -624,52 +682,102 @@ def maybe_write_to_model_logs(model_path: Path, payload: dict[str, object]) -> N
             )
 
 
-def main() -> None:
-    args = parse_args()
-    losses = [normalize_loss_name(x) for x in args.losses]
-    device = resolve_device(args.allow_cpu)
-
-    output_root = Path(args.output_root)
-    shards = discover_test_shards(output_root, args.eigen_ch0_encoding)
-    dataset = ShardedTensorPairDataset(shards, out_channels=args.out_channels)
-
+def _build_eval_loader(
+    dataset: Dataset[tuple[torch.Tensor, torch.Tensor]],
+    *,
+    batch_size: int,
+    num_workers: int,
+    prefetch_factor: int,
+    pin_memory: bool,
+) -> DataLoader[tuple[torch.Tensor, torch.Tensor]]:
     loader_kwargs: dict[str, object] = {
-        "batch_size": args.batch_size,
+        "batch_size": batch_size,
         "shuffle": False,
-        "num_workers": args.num_workers,
-        "pin_memory": bool(args.pin_memory),
+        "num_workers": num_workers,
+        "pin_memory": pin_memory,
         "drop_last": False,
     }
-    if args.num_workers > 0:
+    if num_workers > 0:
         loader_kwargs["persistent_workers"] = True
-        loader_kwargs["prefetch_factor"] = args.prefetch_factor
+        loader_kwargs["prefetch_factor"] = prefetch_factor
         loader_kwargs["timeout"] = 180
-    loader = DataLoader(dataset, **loader_kwargs)
+    return DataLoader(dataset, **loader_kwargs)
 
-    model = FourierNeuralOperator(
-        modes_height=args.modes_height,
-        modes_width=args.modes_width,
-        hidden_channels=args.hidden_channels,
-        n_layers=args.layers,
-        out_channels=args.out_channels,
-    ).to(device)
-    load_model_state(model, Path(args.model_path))
-    model.eval()
+
+def run_evaluation(
+    *,
+    dataset: Dataset[tuple[torch.Tensor, torch.Tensor]],
+    model: torch.nn.Module,
+    model_path: Path,
+    device: torch.device,
+    output_root: Path,
+    losses: list[str],
+    out_channels: int,
+    batch_size: int,
+    num_workers: int,
+    prefetch_factor: int,
+    pin_memory: bool,
+    amp: str,
+    unified_loss: bool = False,
+    per_sample_loss: str = "",
+    per_sample_loss_for_each: bool = False,
+    per_sample_criterion: Callable[[torch.Tensor, torch.Tensor], torch.Tensor] | None = None,
+) -> EvaluationResult:
+    """
+    Run batched inference and loss metrics on a disk-backed (x, y) dataset.
+
+    Unless unified_loss is True, preallocates per-sample loss storage (float64 CPU)
+    aligned with global sample index. Optional per_sample_criterion(pred, target) must
+    return shape [B] for each batch (mutually exclusive with per_sample_loss_for_each).
+    """
+    if per_sample_loss_for_each and per_sample_criterion is not None:
+        raise ValueError("per_sample_loss_for_each cannot be combined with per_sample_criterion.")
+
+    loader = _build_eval_loader(
+        dataset,
+        batch_size=batch_size,
+        num_workers=num_workers,
+        prefetch_factor=prefetch_factor,
+        pin_memory=pin_memory,
+    )
+
+    n_total = len(dataset)
+    buf_single: torch.Tensor | None = None
+    buf_by_name: dict[str, torch.Tensor] | None = None
+    per_sample_key: str | None = None
+    used_custom = False
+
+    if not unified_loss:
+        if per_sample_criterion is not None:
+            buf_single = torch.empty(n_total, dtype=torch.float64)
+            used_custom = True
+        elif per_sample_loss_for_each:
+            buf_by_name = {ln: torch.empty(n_total, dtype=torch.float64) for ln in losses}
+        else:
+            key = normalize_loss_name(per_sample_loss) if per_sample_loss.strip() else losses[0]
+            if key not in losses:
+                raise ValueError(
+                    f"--per-sample-loss {key!r} must be one of the normalized --losses entries: {losses}."
+                )
+            buf_single = torch.empty(n_total, dtype=torch.float64)
+            per_sample_key = key
 
     stats: dict[str, dict[str, float]] = {
         loss_name: {"pixel_sum": 0.0, "sample_sum": 0.0} for loss_name in losses
     }
     stats_per_ch: dict[str, torch.Tensor] = {
-        loss_name: torch.zeros(args.out_channels, dtype=torch.float64) for loss_name in losses
+        loss_name: torch.zeros(out_channels, dtype=torch.float64) for loss_name in losses
     }
     total_pixels = 0
     total_samples = 0
+    offset = 0
 
-    with torch.no_grad():
+    model.eval()
+    with torch.inference_mode():
         for xb, yb in tqdm(loader, desc="Evaluating", unit="batch", ascii=True):
             xb = xb.to(device, dtype=torch.float32, non_blocking=True)
             yb = yb.to(device, dtype=torch.float32, non_blocking=True)
-            with amp_context(device, args.amp):
+            with amp_context(device, amp):
                 pred = model(xb)
 
             bs = int(xb.shape[0])
@@ -680,9 +788,33 @@ def main() -> None:
             for loss_name in losses:
                 loss_map = loss_tensor(loss_name, pred, yb).float()
                 stats[loss_name]["pixel_sum"] += float(loss_map.sum().item())
-                per_sample = loss_map.view(bs, -1).mean(dim=1)
-                stats[loss_name]["sample_sum"] += float(per_sample.sum().item())
+                per_sample_row = loss_map.view(bs, -1).mean(dim=1)
+                stats[loss_name]["sample_sum"] += float(per_sample_row.sum().item())
                 stats_per_ch[loss_name] += per_channel_loss_mean(pred, yb, loss_name) * bs
+
+            if buf_single is not None:
+                if used_custom:
+                    custom_row = per_sample_criterion(pred, yb)
+                    if not isinstance(custom_row, torch.Tensor) or custom_row.shape != (bs,):
+                        raise ValueError(
+                            "per_sample_criterion(pred, target) must return a torch.Tensor of shape [B]."
+                        )
+                    buf_single[offset : offset + bs] = custom_row.detach().float().cpu().to(torch.float64)
+                else:
+                    assert per_sample_key is not None
+                    lm = loss_tensor(per_sample_key, pred, yb).float()
+                    buf_single[offset : offset + bs] = lm.view(bs, -1).mean(dim=1).cpu().to(torch.float64)
+            elif buf_by_name is not None:
+                for loss_name in losses:
+                    lm = loss_tensor(loss_name, pred, yb).float()
+                    buf_by_name[loss_name][offset : offset + bs] = (
+                        lm.view(bs, -1).mean(dim=1).cpu().to(torch.float64)
+                    )
+
+            offset += bs
+
+    if offset != n_total:
+        raise RuntimeError(f"Sample count mismatch: expected {n_total} rows, wrote {offset}.")
 
     results: dict[str, dict[str, float]] = {}
     eval_by_loss: dict[str, dict[str, object]] = {}
@@ -700,7 +832,59 @@ def main() -> None:
             "val_ch": val_ch,
         }
 
+    return EvaluationResult(
+        model_path=str(model_path.resolve()),
+        output_root=str(output_root.resolve()),
+        test_prefixes=list(TEST_PREFIXES),
+        num_test_samples=total_samples,
+        out_channels=out_channels,
+        losses=results,
+        eval_by_loss=eval_by_loss,
+        per_sample_loss_name=None if unified_loss or used_custom or buf_by_name is not None else per_sample_key,
+        per_sample_losses=buf_single,
+        per_sample_losses_by_name=buf_by_name,
+        used_custom_per_sample_criterion=used_custom,
+    )
+
+
+def main() -> None:
+    args = parse_args()
+    losses = [normalize_loss_name(x) for x in args.losses]
+    device = resolve_device(args.allow_cpu)
+
+    output_root = Path(args.output_root)
+    shards = discover_test_shards(output_root, args.eigen_ch0_encoding)
+    dataset = ShardedTensorPairDataset(shards, out_channels=args.out_channels)
+
+    model = FourierNeuralOperator(
+        modes_height=args.modes_height,
+        modes_width=args.modes_width,
+        hidden_channels=args.hidden_channels,
+        n_layers=args.layers,
+        out_channels=args.out_channels,
+    ).to(device)
     model_path = Path(args.model_path)
+    load_model_state(model, model_path)
+
+    ev = run_evaluation(
+        dataset=dataset,
+        model=model,
+        model_path=model_path,
+        device=device,
+        output_root=output_root,
+        losses=losses,
+        out_channels=args.out_channels,
+        batch_size=args.batch_size,
+        num_workers=args.num_workers,
+        prefetch_factor=args.prefetch_factor,
+        pin_memory=bool(args.pin_memory),
+        amp=args.amp,
+        unified_loss=bool(args.unified_loss),
+        per_sample_loss=args.per_sample_loss,
+        per_sample_loss_for_each=bool(args.per_sample_loss_for_each),
+        per_sample_criterion=None,
+    )
+
     run_dir = model_path.resolve().parent
     epoch: int | None = None
     trained_loss: str | None = None
@@ -709,22 +893,46 @@ def main() -> None:
         trained_loss = read_trained_loss_from_run_dir(run_dir)
 
     payload: dict[str, object] = {
-        "model_path": str(model_path.resolve()),
-        "output_root": str(output_root.resolve()),
-        "test_prefixes": list(TEST_PREFIXES),
-        "num_test_samples": total_samples,
-        "out_channels": args.out_channels,
-        "losses": results,
+        "model_path": ev.model_path,
+        "output_root": ev.output_root,
+        "test_prefixes": ev.test_prefixes,
+        "num_test_samples": ev.num_test_samples,
+        "out_channels": ev.out_channels,
+        "losses": ev.losses,
+        "unified_loss": bool(args.unified_loss),
+        "per_sample_loss_name": ev.per_sample_loss_name,
+        "per_sample_used_custom_criterion": ev.used_custom_per_sample_criterion,
     }
+    if ev.per_sample_losses is not None:
+        payload["per_sample_losses_shape"] = list(ev.per_sample_losses.shape)
+        payload["per_sample_losses_dtype"] = str(ev.per_sample_losses.dtype)
+    if ev.per_sample_losses_by_name is not None:
+        payload["per_sample_losses_by_name"] = {
+            k: {"shape": list(v.shape), "dtype": str(v.dtype)} for k, v in ev.per_sample_losses_by_name.items()
+        }
     if epoch is not None:
         payload["epoch"] = epoch
     if trained_loss is not None:
         payload["trained_loss"] = trained_loss
     if args.write_to_logs:
         payload["requested_losses"] = losses
-        payload["eval_by_loss"] = eval_by_loss
+        payload["eval_by_loss"] = ev.eval_by_loss
+
+    save_ps = args.per_sample_losses_path.strip()
+    if save_ps:
+        out_ps = Path(save_ps)
+        out_ps.parent.mkdir(parents=True, exist_ok=True)
+        if ev.per_sample_losses_by_name is not None:
+            torch.save(ev.per_sample_losses_by_name, out_ps)
+        elif ev.per_sample_losses is not None:
+            torch.save(ev.per_sample_losses, out_ps)
+        else:
+            raise RuntimeError("--per-sample-losses-path was set but no per-sample tensors were recorded.")
+        payload["per_sample_losses_saved"] = str(out_ps.resolve())
 
     print(json.dumps(payload, indent=2))
+    if save_ps:
+        print(f"Saved per-sample losses: {Path(save_ps).resolve()}")
 
     if args.write_to_logs:
         maybe_write_to_model_logs(model_path, payload)

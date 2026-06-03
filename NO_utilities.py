@@ -5,7 +5,7 @@ import torch
 import matplotlib.pyplot as plt
 from matplotlib.colors import TwoSlopeNorm
 from matplotlib.gridspec import GridSpec
-from matplotlib.ticker import MaxNLocator
+from matplotlib.ticker import MaxNLocator, FuncFormatter
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 import time
 import random
@@ -210,8 +210,14 @@ def plot_geometry(sample_geometry, sample_index):
     plt.show()
 
 
+def _sci_formatter():
+    """Tick formatter: scientific notation with 3 significant digits (e.g. 1.23e-04)."""
+    return FuncFormatter(lambda x, _pos=None: f"{x:.2e}")
+
+
 def _colorbar_tick_dense_nice(cb):
     cb.locator = MaxNLocator(nbins=10, steps=[1, 1.5, 2, 2.5, 3, 4, 5, 6, 8, 10])
+    cb.formatter = _sci_formatter()
     cb.update_ticks()
 
 
@@ -271,6 +277,8 @@ def _colorbar_dense_nice_cax(fig, mappable, cax, uniform_ticks=11):
         cb.set_ticks(np.linspace(vmin, vmax, int(uniform_ticks)))
     else:
         _colorbar_tick_dense_nice(cb)
+    cb.formatter = _sci_formatter()
+    cb.update_ticks()
     cb.ax.yaxis.set_ticks_position("left")
     cb.ax.yaxis.set_label_position("left")
 
