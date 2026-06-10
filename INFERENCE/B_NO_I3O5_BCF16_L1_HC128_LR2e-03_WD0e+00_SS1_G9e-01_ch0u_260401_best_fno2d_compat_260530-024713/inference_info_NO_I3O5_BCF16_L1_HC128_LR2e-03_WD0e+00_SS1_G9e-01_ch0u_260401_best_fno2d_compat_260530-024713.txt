@@ -1,0 +1,45 @@
+INFERENCE RUN RECORD
+============================================================
+timestamp           : 260530-024713
+
+MODEL
+------------------------------------------------------------
+checkpoint_path     : D:\Research\NO-2D-Metamaterials\MODELS\training_runs\NO_I3O5_BCF16_L1_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_260401\NO_I3O5_BCF16_L1_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_260401_best_fno2d_compat.pth
+model_name          : NO_I3O5_BCF16_L1_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_260401_best_fno2d_compat
+io_case             : I3O5
+in_channels         : 3
+out_channels        : 5
+output_channels     : ['eigenfrequency', 'disp_x_real', 'disp_x_imag', 'disp_y_real', 'disp_y_imag']
+hidden_channels     : 128
+n_layers            : 4
+modes (h x w)       : 32 x 32
+arch_source         : resolved_config.json
+device              : cuda
+
+DATASETS INFERRED ON
+------------------------------------------------------------
+dataset_structure   : single
+input_dataset_path  : D:\Research\NO-2D-Metamaterials\DATASETS\b_test\binarized_2026-03-08_16-34-27_pt
+num_datasets        : 1
+geometries/dataset  : 1000
+dataset_folders     :
+  - D:\Research\NO-2D-Metamaterials\DATASETS\b_test\binarized_2026-03-08_16-34-27_pt
+      geometries_full.pt
+shared_input_files (from first dataset):
+  - waveforms_full.pt  (n_waveforms=325)
+  - band_fft_full.pt   (n_bands=6)
+
+GEOMETRY SELECTION
+------------------------------------------------------------
+mode                : all
+total_available     : 1000
+num_selected        : 1000 (all)
+
+OUTPUT
+------------------------------------------------------------
+output_tensor       : predictions_I3O5_NO_I3O5_BCF16_L1_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_260401_best_fno2d_compat.pt
+output_shape        : (1950000, 5, 32, 32)
+output_dtype        : torch.float16
+n_geometries_total  : 1000
+total_samples       : 1950000
+index_map           : idx = geom*(325*6) + wave*6 + band

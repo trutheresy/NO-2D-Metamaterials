@@ -297,6 +297,7 @@ def visualize_sample(
     unified_colorbar=False,
     field_cmap=DEFAULT_FIELD_CMAP,
     diverge_center=DEFAULT_DIVERGE_CENTER,
+    show_eigfreq=True,
 ):
     """
     Visualize input and output tensors from a single sample.
@@ -316,6 +317,9 @@ def visualize_sample(
             *diverge_center* so the neutral color sits at the bar midpoint and ± ranges span equal
             physical length on the colorbar. Per-column unified colorbars use evenly spaced tick
             positions (``np.linspace`` over clim) along the bar.
+        show_eigfreq: If True (default), plot the eigenfrequency channel (channel 0) as the first
+            column. If False, channel 0 is dropped from the target/output/diff grid (and from the
+            outputs-only fallback), so only the remaining channels are shown.
     """
     input_titles = ["Geometry", "Wavevector (Encoded)", "Band (Encoded)"]
 
@@ -362,17 +366,27 @@ def visualize_sample(
         if num_targets != num_outputs:
             raise ValueError("Target and output tensors must have the same number of channels for matched plotting.")
 
+        channel_titles = list(channel_titles_default[:num_targets])
+        if num_targets > len(channel_titles_default):
+            channel_titles.extend([f"Channel {i + 1}" for i in range(len(channel_titles_default), num_targets)])
+
+        # Columns to display: optionally drop the eigenfrequency channel (channel 0).
+        channel_indices = list(range(num_targets)) if show_eigfreq else [c for c in range(num_targets) if c != 0]
+        if len(channel_indices) == 0:
+            raise ValueError("No channels to plot (show_eigfreq=False removed the only channel).")
+        num_cols = len(channel_indices)
+
         n_rows = 3 if diffs else 2
         if unified_colorbar:
             # Interleave image columns and narrow colorbar columns (like fig.add_axes + cax in
             # figures_continuous_* notebooks): colorbars do not steal space from image axes.
-            fig = plt.figure(figsize=(4 * num_targets + 0.75 * num_targets, 4 * n_rows))
+            fig = plt.figure(figsize=(4 * num_cols + 0.75 * num_cols, 4 * n_rows))
             width_ratios = []
-            for _ in range(num_targets):
+            for _ in range(num_cols):
                 width_ratios.extend([20, 1.55])
             gs = GridSpec(
                 n_rows,
-                2 * num_targets,
+                2 * num_cols,
                 figure=fig,
                 width_ratios=width_ratios,
                 wspace=0.38,
@@ -382,29 +396,25 @@ def visualize_sample(
                 top=0.90,
                 bottom=0.07,
             )
-            axs = np.empty((n_rows, num_targets), dtype=object)
+            axs = np.empty((n_rows, num_cols), dtype=object)
             unified_caxes = []
-            for i in range(num_targets):
+            for c in range(num_cols):
                 for r in range(n_rows):
-                    axs[r, i] = fig.add_subplot(gs[r, 2 * i])
-                unified_caxes.append(fig.add_subplot(gs[:, 2 * i + 1]))
+                    axs[r, c] = fig.add_subplot(gs[r, 2 * c])
+                unified_caxes.append(fig.add_subplot(gs[:, 2 * c + 1]))
         else:
-            fig, axs = plt.subplots(n_rows, num_targets, figsize=(4 * num_targets, 4 * n_rows))
-            if num_targets == 1:
+            fig, axs = plt.subplots(n_rows, num_cols, figsize=(4 * num_cols, 4 * n_rows))
+            if num_cols == 1:
                 axs = np.expand_dims(axs, axis=1)
                 if n_rows == 1:
                     axs = np.expand_dims(axs, axis=0)
 
-        channel_titles = channel_titles_default[:num_targets]
-        if num_targets > len(channel_titles_default):
-            channel_titles.extend([f"Channel {i + 1}" for i in range(len(channel_titles_default), num_targets)])
-
-        # Shared min/max per channel between target and output rows.
+        # Shared min/max per displayed channel between target and output rows.
         vmins = []
         vmaxs = []
-        for i in range(num_targets):
-            tgt_data = target_tensor[i]
-            out_data = output_tensor[i]
+        for ch in channel_indices:
+            tgt_data = target_tensor[ch]
+            out_data = output_tensor[ch]
             if tgt_data.dtype in [torch.float8_e4m3fn, torch.float16]:
                 tgt_data = tgt_data.float()
             if out_data.dtype in [torch.float8_e4m3fn, torch.float16]:
@@ -415,9 +425,9 @@ def visualize_sample(
         if unified_colorbar:
             vmins_plot = []
             vmaxs_plot = []
-            for i in range(num_targets):
-                tgt_data = target_tensor[i]
-                out_data = output_tensor[i]
+            for ch in channel_indices:
+                tgt_data = target_tensor[ch]
+                out_data = output_tensor[ch]
                 if tgt_data.dtype in [torch.float8_e4m3fn, torch.float16]:
                     tgt_data = tgt_data.float()
                 if out_data.dtype in [torch.float8_e4m3fn, torch.float16]:
@@ -433,52 +443,52 @@ def visualize_sample(
         else:
             vmins_plot, vmaxs_plot = vmins, vmaxs
 
-        column_mappable = [None] * num_targets
+        column_mappable = [None] * num_cols
 
         # Row 1: targets
-        for i in range(num_targets):
-            ax = axs[0, i]
-            tensor_data = target_tensor[i]
+        for col, ch in enumerate(channel_indices):
+            ax = axs[0, col]
+            tensor_data = target_tensor[ch]
             if tensor_data.dtype in [torch.float8_e4m3fn, torch.float16]:
                 tensor_data = tensor_data.float()
             im = _imshow_comparison(
                 ax,
                 tensor_data.numpy(),
-                vmin=vmins_plot[i],
-                vmax=vmaxs_plot[i],
+                vmin=vmins_plot[col],
+                vmax=vmaxs_plot[col],
                 cmap=field_cmap,
                 diverge_center=diverge_center,
             )
-            column_mappable[i] = im
+            column_mappable[col] = im
             if not unified_colorbar:
                 _colorbar_dense_nice(im, ax=ax)
-            ax.set_title(f"Target {channel_titles[i]}")
+            ax.set_title(f"Target {channel_titles[ch]}")
 
         # Row 2: outputs
-        for i in range(num_outputs):
-            ax = axs[1, i]
-            tensor_data = output_tensor[i]
+        for col, ch in enumerate(channel_indices):
+            ax = axs[1, col]
+            tensor_data = output_tensor[ch]
             if tensor_data.dtype in [torch.float8_e4m3fn, torch.float16]:
                 tensor_data = tensor_data.float()
             im = _imshow_comparison(
                 ax,
                 tensor_data.numpy(),
-                vmin=vmins_plot[i],
-                vmax=vmaxs_plot[i],
+                vmin=vmins_plot[col],
+                vmax=vmaxs_plot[col],
                 cmap=field_cmap,
                 diverge_center=diverge_center,
             )
-            column_mappable[i] = im
+            column_mappable[col] = im
             if not unified_colorbar:
                 _colorbar_dense_nice(im, ax=ax)
-            ax.set_title(f"Output {channel_titles[i]}")
+            ax.set_title(f"Output {channel_titles[ch]}")
 
         # Row 3: absolute differences (with same per-channel scales as rows 1-2)
         if diffs:
-            for i in range(num_targets):
-                ax = axs[2, i]
-                tgt_data = target_tensor[i]
-                out_data = output_tensor[i]
+            for col, ch in enumerate(channel_indices):
+                ax = axs[2, col]
+                tgt_data = target_tensor[ch]
+                out_data = output_tensor[ch]
                 if tgt_data.dtype in [torch.float8_e4m3fn, torch.float16]:
                     tgt_data = tgt_data.float()
                 if out_data.dtype in [torch.float8_e4m3fn, torch.float16]:
@@ -488,8 +498,8 @@ def visualize_sample(
                     im = _imshow_comparison(
                         ax,
                         diff_data.numpy(),
-                        vmin=vmins_plot[i],
-                        vmax=vmaxs_plot[i],
+                        vmin=vmins_plot[col],
+                        vmax=vmaxs_plot[col],
                         cmap=field_cmap,
                         diverge_center=diverge_center,
                     )
@@ -500,27 +510,31 @@ def visualize_sample(
                         cmap=field_cmap,
                         diverge_center=diverge_center,
                     )
-                column_mappable[i] = im
+                column_mappable[col] = im
                 if not unified_colorbar:
                     _colorbar_dense_nice(im, ax=ax)
-                ax.set_title(f"Diff {channel_titles[i]}")
+                ax.set_title(f"Diff {channel_titles[ch]}")
 
         if unified_colorbar:
-            for i in range(num_targets):
-                _colorbar_dense_nice_cax(fig, column_mappable[i], unified_caxes[i])
+            for c in range(num_cols):
+                _colorbar_dense_nice_cax(fig, column_mappable[c], unified_caxes[c])
         else:
             plt.tight_layout()
         plt.show()
     else:
         # Fallback: outputs-only view
         num_outputs = output_tensor.shape[0]
-        channel_titles = channel_titles_default[:num_outputs]
+        channel_titles = list(channel_titles_default[:num_outputs])
         if num_outputs > len(channel_titles_default):
             channel_titles.extend([f"Channel {i + 1}" for i in range(len(channel_titles_default), num_outputs)])
-        fig2 = plt.figure(figsize=(4 * num_outputs, 4))
-        for i in range(num_outputs):
-            plt.subplot(1, num_outputs, i + 1)
-            tensor_data = output_tensor[i].abs()
+        channel_indices = list(range(num_outputs)) if show_eigfreq else [c for c in range(num_outputs) if c != 0]
+        if len(channel_indices) == 0:
+            raise ValueError("No channels to plot (show_eigfreq=False removed the only channel).")
+        num_cols = len(channel_indices)
+        fig2 = plt.figure(figsize=(4 * num_cols, 4))
+        for col, ch in enumerate(channel_indices):
+            plt.subplot(1, num_cols, col + 1)
+            tensor_data = output_tensor[ch].abs()
             if tensor_data.dtype in [torch.float8_e4m3fn, torch.float16]:
                 tensor_data = tensor_data.float()
             im = _imshow_comparison(
@@ -530,7 +544,7 @@ def visualize_sample(
                 diverge_center=diverge_center,
             )
             _colorbar_dense_nice(im)
-            plt.title(f"Output {channel_titles[i]}")
+            plt.title(f"Output {channel_titles[ch]}")
         plt.tight_layout()
         plt.show()
 

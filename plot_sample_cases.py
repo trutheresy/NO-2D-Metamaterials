@@ -53,6 +53,10 @@ def main() -> None:
     p.add_argument("--field-cmap", default="RdBu_r")
     p.add_argument("--diverge-center", type=float, default=0.0)
     p.add_argument("--unified-colorbar", action="store_true", default=True)
+    p.add_argument("--show-eigfreq", action=argparse.BooleanOptionalAction, default=False,
+                   help="Show the eigenfrequency channel (channel 0) column. Default: off (4-channel output).")
+    p.add_argument("--title", action=argparse.BooleanOptionalAction, default=False,
+                   help="Add a suptitle to each figure. Default: off (no title).")
     args = p.parse_args()
 
     pt = Path(args.dataset_pt_dir)
@@ -102,16 +106,18 @@ def main() -> None:
                 unified_colorbar=args.unified_colorbar,
                 field_cmap=args.field_cmap,
                 diverge_center=args.diverge_center,
+                show_eigfreq=args.show_eigfreq,
             )
             nums = plt.get_fignums()
             if len(nums) < 2:
                 raise RuntimeError(f"Expected 2 figures from visualize_sample, got {len(nums)}.")
-            suptitle = (f"{tag} | {loss_name.upper()} {case} | combined={comb} "
-                        f"(g={d}, w={w}, b={b}) | loss={val:.6e}")
             input_fig = plt.figure(nums[0])
-            input_fig.suptitle(suptitle + "  [inputs]", y=1.02, fontsize=11)
             fields_fig = plt.figure(nums[1])
-            fields_fig.suptitle(suptitle + "  [target / output / diff]", y=0.965, fontsize=12)
+            if args.title:
+                suptitle = (f"{tag} | {loss_name.upper()} {case} | combined={comb} "
+                            f"(g={d}, w={w}, b={b}) | loss={val:.6e}")
+                input_fig.suptitle(suptitle + "  [inputs]", y=1.02, fontsize=11)
+                fields_fig.suptitle(suptitle + "  [target / output / diff]", y=0.965, fontsize=12)
 
             base = f"{tag}_{loss_name}_{case}_g{d}_w{w}_b{b}"
             input_path = out_dir / f"{base}_input.png"
