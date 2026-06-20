@@ -1,0 +1,113 @@
+{
+  "similarity_metric": "cosine on mean-centered log10|FFT|",
+  "near_duplicate_threshold": 0.95,
+  "per_wave_nearest_neighbor": [
+    {
+      "wave_i": 2,
+      "wave_j": 3,
+      "cosine": 0.9731371998786926,
+      "kx_i": -2.6171875,
+      "ky_i": 0.0,
+      "kx_j": -2.35546875,
+      "ky_j": 0.0
+    },
+    {
+      "wave_i": 3,
+      "wave_j": 2,
+      "cosine": 0.9731371998786926,
+      "kx_i": -2.35546875,
+      "ky_i": 0.0,
+      "kx_j": -2.6171875,
+      "ky_j": 0.0
+    }
+  ],
+  "pairs_above_threshold": [
+    {
+      "wave_i": 2,
+      "wave_j": 3,
+      "cosine": 0.9731371998786926
+    }
+  ],
+  "per_ky_row": [
+    {
+      "i_ky": 0,
+      "ky": 0.0,
+      "mean_max_offdiag_cos": 0.8076187372207642,
+      "max_offdiag_cos": 0.9731371998786926
+    },
+    {
+      "i_ky": 1,
+      "ky": 0.26171875,
+      "mean_max_offdiag_cos": 0.7801544666290283,
+      "max_offdiag_cos": 0.8784089088439941
+    },
+    {
+      "i_ky": 2,
+      "ky": 0.5234375,
+      "mean_max_offdiag_cos": 0.7375472784042358,
+      "max_offdiag_cos": 0.835505485534668
+    },
+    {
+      "i_ky": 3,
+      "ky": 0.78515625,
+      "mean_max_offdiag_cos": 0.728868842124939,
+      "max_offdiag_cos": 0.8544185757637024
+    },
+    {
+      "i_ky": 4,
+      "ky": 1.046875,
+      "mean_max_offdiag_cos": 0.6933209896087646,
+      "max_offdiag_cos": 0.8110877871513367
+    },
+    {
+      "i_ky": 5,
+      "ky": 1.30859375,
+      "mean_max_offdiag_cos": 0.7024410963058472,
+      "max_offdiag_cos": 0.8690924048423767
+    },
+    {
+      "i_ky": 6,
+      "ky": 1.5703125,
+      "mean_max_offdiag_cos": 0.6833944916725159,
+      "max_offdiag_cos": 0.8055106997489929
+    },
+    {
+      "i_ky": 7,
+      "ky": 1.8330078125,
+      "mean_max_offdiag_cos": 0.6730011105537415,
+      "max_offdiag_cos": 0.8102600574493408
+    },
+    {
+      "i_ky": 8,
+      "ky": 2.09375,
+      "mean_max_offdiag_cos": 0.6672310829162598,
+      "max_offdiag_cos": 0.8039097785949707
+    },
+    {
+      "i_ky": 9,
+      "ky": 2.35546875,
+      "mean_max_offdiag_cos": 0.7110037207603455,
+      "max_offdiag_cos": 0.9371126294136047
+    },
+    {
+      "i_ky": 10,
+      "ky": 2.6171875,
+      "mean_max_offdiag_cos": 0.6824468374252319,
+      "max_offdiag_cos": 0.7915395498275757
+    },
+    {
+      "i_ky": 11,
+      "ky": 2.87890625,
+      "mean_max_offdiag_cos": 0.6577877998352051,
+      "max_offdiag_cos": 0.7318796515464783
+    },
+    {
+      "i_ky": 12,
+      "ky": 3.140625,
+      "mean_max_offdiag_cos": 0.638363242149353,
+      "max_offdiag_cos": 0.7630090117454529
+    }
+  ],
+  "global_max_offdiag_cos": 0.9731371998786926,
+  "global_mean_max_offdiag_cos": 0.7776719927787781
+}

@@ -1,0 +1,100 @@
+{
+  "similarity_metric": "cosine on mean-centered log10|FFT|",
+  "avg_similarity": 0.2740110158920288,
+  "near_duplicate_threshold": 0.95,
+  "per_wave_nearest_neighbor": [],
+  "pairs_above_threshold": [],
+  "per_ky_row": [
+    {
+      "i_ky": 0,
+      "ky": 0.0,
+      "mean_max_offdiag_cos": 0.7329791784286499,
+      "max_offdiag_cos": 0.8272765874862671
+    },
+    {
+      "i_ky": 1,
+      "ky": 0.26171875,
+      "mean_max_offdiag_cos": 0.771425187587738,
+      "max_offdiag_cos": 0.8554696440696716
+    },
+    {
+      "i_ky": 2,
+      "ky": 0.5234375,
+      "mean_max_offdiag_cos": 0.7725609540939331,
+      "max_offdiag_cos": 0.8332732319831848
+    },
+    {
+      "i_ky": 3,
+      "ky": 0.78515625,
+      "mean_max_offdiag_cos": 0.7204342484474182,
+      "max_offdiag_cos": 0.8118622899055481
+    },
+    {
+      "i_ky": 4,
+      "ky": 1.046875,
+      "mean_max_offdiag_cos": 0.6842001080513,
+      "max_offdiag_cos": 0.775144636631012
+    },
+    {
+      "i_ky": 5,
+      "ky": 1.30859375,
+      "mean_max_offdiag_cos": 0.6615020632743835,
+      "max_offdiag_cos": 0.8087525367736816
+    },
+    {
+      "i_ky": 6,
+      "ky": 1.5703125,
+      "mean_max_offdiag_cos": 0.6430263519287109,
+      "max_offdiag_cos": 0.7365599870681763
+    },
+    {
+      "i_ky": 7,
+      "ky": 1.8330078125,
+      "mean_max_offdiag_cos": 0.597214937210083,
+      "max_offdiag_cos": 0.7380421161651611
+    },
+    {
+      "i_ky": 8,
+      "ky": 2.09375,
+      "mean_max_offdiag_cos": 0.5881137251853943,
+      "max_offdiag_cos": 0.732261061668396
+    },
+    {
+      "i_ky": 9,
+      "ky": 2.35546875,
+      "mean_max_offdiag_cos": 0.6254057288169861,
+      "max_offdiag_cos": 0.8223374485969543
+    },
+    {
+      "i_ky": 10,
+      "ky": 2.6171875,
+      "mean_max_offdiag_cos": 0.6045395731925964,
+      "max_offdiag_cos": 0.764549970626831
+    },
+    {
+      "i_ky": 11,
+      "ky": 2.87890625,
+      "mean_max_offdiag_cos": 0.589857816696167,
+      "max_offdiag_cos": 0.716358482837677
+    },
+    {
+      "i_ky": 12,
+      "ky": 3.140625,
+      "mean_max_offdiag_cos": 0.5649875402450562,
+      "max_offdiag_cos": 0.7267683744430542
+    }
+  ],
+  "global_max_offdiag_cos": 0.8953803181648254,
+  "global_mean_max_offdiag_cos": 0.7532834410667419,
+  "embed_config": {
+    "size": 32,
+    "freq_range": 1.0,
+    "freq_scale": 32.0,
+    "freq_offset": 1.01,
+    "sigma_numerator": 0.4,
+    "sigma": 0.4,
+    "kx_cycles": 9,
+    "ky_cycles": 11
+  },
+  "output_dir": "D:\\Research\\NO-2D-Metamaterials\\PLOTS\\wavelet_embedding_inspection\\low_fscale_sweep\\fscale_only\\fscale32_offset1p01_sigma0p4_fr1_kx9_ky11"
+}

@@ -1,0 +1,88 @@
+{
+  "similarity_metric": "cosine on mean-centered log10|FFT|",
+  "near_duplicate_threshold": 0.95,
+  "per_wave_nearest_neighbor": [],
+  "pairs_above_threshold": [],
+  "per_ky_row": [
+    {
+      "i_ky": 0,
+      "ky": 0.0,
+      "mean_max_offdiag_cos": 0.7387391924858093,
+      "max_offdiag_cos": 0.8155168890953064
+    },
+    {
+      "i_ky": 1,
+      "ky": 0.26171875,
+      "mean_max_offdiag_cos": 0.7756322622299194,
+      "max_offdiag_cos": 0.8774566650390625
+    },
+    {
+      "i_ky": 2,
+      "ky": 0.5234375,
+      "mean_max_offdiag_cos": 0.7242038249969482,
+      "max_offdiag_cos": 0.8780330419540405
+    },
+    {
+      "i_ky": 3,
+      "ky": 0.78515625,
+      "mean_max_offdiag_cos": 0.6952362656593323,
+      "max_offdiag_cos": 0.7802156209945679
+    },
+    {
+      "i_ky": 4,
+      "ky": 1.046875,
+      "mean_max_offdiag_cos": 0.664503812789917,
+      "max_offdiag_cos": 0.734271228313446
+    },
+    {
+      "i_ky": 5,
+      "ky": 1.30859375,
+      "mean_max_offdiag_cos": 0.6531791687011719,
+      "max_offdiag_cos": 0.7780822515487671
+    },
+    {
+      "i_ky": 6,
+      "ky": 1.5703125,
+      "mean_max_offdiag_cos": 0.6882417798042297,
+      "max_offdiag_cos": 0.8387622833251953
+    },
+    {
+      "i_ky": 7,
+      "ky": 1.8330078125,
+      "mean_max_offdiag_cos": 0.6587812304496765,
+      "max_offdiag_cos": 0.8028444051742554
+    },
+    {
+      "i_ky": 8,
+      "ky": 2.09375,
+      "mean_max_offdiag_cos": 0.5928151607513428,
+      "max_offdiag_cos": 0.7114521861076355
+    },
+    {
+      "i_ky": 9,
+      "ky": 2.35546875,
+      "mean_max_offdiag_cos": 0.5851330757141113,
+      "max_offdiag_cos": 0.7466720938682556
+    },
+    {
+      "i_ky": 10,
+      "ky": 2.6171875,
+      "mean_max_offdiag_cos": 0.6112120151519775,
+      "max_offdiag_cos": 0.7624578475952148
+    },
+    {
+      "i_ky": 11,
+      "ky": 2.87890625,
+      "mean_max_offdiag_cos": 0.5948042869567871,
+      "max_offdiag_cos": 0.6659168601036072
+    },
+    {
+      "i_ky": 12,
+      "ky": 3.140625,
+      "mean_max_offdiag_cos": 0.5901082158088684,
+      "max_offdiag_cos": 0.6509889364242554
+    }
+  ],
+  "global_max_offdiag_cos": 0.8817958831787109,
+  "global_mean_max_offdiag_cos": 0.7367465496063232
+}

@@ -668,28 +668,89 @@ def embed_integer_wavelet(c, size=32, freq_range=2.0):
     return gabor
 
 
-def embed_2const_wavelet(c1, c2, size=32, freq_range=1.0, verbose=True):
+EMBED_2CONST_FREQ_OFFSET = 2.20
+EMBED_2CONST_FREQ_SCALE = 41.0
+EMBED_2CONST_SIGMA_NUMERATOR = 0.5
+EMBED_2CONST_KX_CYCLES = 13
+EMBED_2CONST_KY_CYCLES = 25
+
+
+def embed_2const_wavelet_params(
+    size: int = 32,
+    freq_range: float = 1.0,
+    *,
+    freq_scale: float | None = None,
+    freq_offset: float | None = None,
+    sigma_numerator: float | None = None,
+    kx_cycles: int | None = None,
+    ky_cycles: int | None = None,
+) -> dict[str, float | int]:
+    """Return tunable constants for ``embed_2const_wavelet`` (for paths, logging, etc.)."""
+    sigma_num = EMBED_2CONST_SIGMA_NUMERATOR if sigma_numerator is None else sigma_numerator
+    return {
+        "size": size,
+        "freq_range": freq_range,
+        "freq_scale": EMBED_2CONST_FREQ_SCALE if freq_scale is None else float(freq_scale),
+        "freq_offset": EMBED_2CONST_FREQ_OFFSET if freq_offset is None else float(freq_offset),
+        "sigma_numerator": sigma_num,
+        "sigma": sigma_num / freq_range,
+        "kx_cycles": EMBED_2CONST_KX_CYCLES if kx_cycles is None else int(kx_cycles),
+        "ky_cycles": EMBED_2CONST_KY_CYCLES if ky_cycles is None else int(ky_cycles),
+    }
+
+
+def embed_2const_wavelet(
+    kx,
+    ky,
+    size=32,
+    freq_range=1.0,
+    verbose=True,
+    *,
+    freq_scale=None,
+    freq_offset=None,
+    sigma_numerator=None,
+    kx_cycles=None,
+    ky_cycles=None,
+):
     """
-    Keep NO_utils_multiple mapping (1.01 offset) to match most recent scripts.
+    Embed wavevector components (kx, ky) into 32×32 Gabor-wavelet patches.
+
+    Parameters
+    ----------
+    kx, ky : array_like
+        Wavevector components in radians (same units as ``wavevectors_full.pt``).
+    size : int
+        Output patch side length.
+    freq_range : float
+        Envelope scale; larger values narrow the Gaussian (σ = 0.4 / freq_range).
     """
-    c1 = np.asarray(c1)
-    c2 = np.asarray(c2)
+    kx = np.asarray(kx)
+    ky = np.asarray(ky)
     if verbose:
-        print("c1 shape:", c1.shape, "c2 shape:", c2.shape)
+        print("kx shape:", kx.shape, "ky shape:", ky.shape)
 
     x = np.linspace(-1, 1, size)
     y = np.linspace(-1, 1, size)
     X, Y = np.meshgrid(x, y)
-    freq_x = (1.01 + c1)[:, None, None] * (size / 2)
-    freq_y = (1.01 + c2)[:, None, None] * (size / 2)
-    c1_cycles = 5
-    c2_cycles = 7
-    theta1 = (c1 % c1_cycles)[:, None, None] * (np.pi / c1_cycles)
-    theta2 = (c2 % c2_cycles)[:, None, None] * (np.pi / c2_cycles)
+    cfg = embed_2const_wavelet_params(
+        size=size,
+        freq_range=freq_range,
+        freq_scale=freq_scale,
+        freq_offset=freq_offset,
+        sigma_numerator=sigma_numerator,
+        kx_cycles=kx_cycles,
+        ky_cycles=ky_cycles,
+    )
+    freq_x = (cfg["freq_offset"] + kx)[:, None, None] * cfg["freq_scale"]
+    freq_y = (cfg["freq_offset"] + ky)[:, None, None] * cfg["freq_scale"]
+    kx_cycles = cfg["kx_cycles"]
+    ky_cycles = cfg["ky_cycles"]
+    theta1 = (kx % kx_cycles)[:, None, None] * (np.pi / kx_cycles)
+    theta2 = (ky % ky_cycles)[:, None, None] * (np.pi / ky_cycles)
     X_rot = X[None, :, :] * np.cos(theta1) + Y[None, :, :] * np.sin(theta2)
     Y_rot = -X[None, :, :] * np.sin(theta1) + Y[None, :, :] * np.cos(theta2)
-    sigma_x = 0.4 / freq_range
-    sigma_y = 0.4 / freq_range
+    sigma_x = cfg["sigma"]
+    sigma_y = cfg["sigma"]
     gaussian = np.exp(-(X_rot**2 / (2 * sigma_x**2) + Y_rot**2 / (2 * sigma_y**2)))
     gabor = gaussian * np.sin(freq_x * X_rot) * np.sin(freq_y * Y_rot)
     return gabor
@@ -707,15 +768,16 @@ def extract_2const_from_wavelet(pattern, size=32, freq_range=1.0, verbose=True):
     peak_freq_y = np.argmax(freq_profile_y)
     norm_freq_x = (peak_freq_x - size // 2) / (size // 2)
     norm_freq_y = (peak_freq_y - size // 2) / (size // 2)
-    c1 = int(round((norm_freq_x * (size / 2) - 1.01)))
-    c2 = int(round((norm_freq_y * (size / 2) - 1.01)))
-    c1_cycles = 5
-    c2_cycles = 7
-    c1 = c1 % c1_cycles
-    c2 = c2 % c2_cycles
+    cfg = embed_2const_wavelet_params(size=size, freq_range=freq_range)
+    kx = int(round((norm_freq_x * cfg["freq_scale"] - cfg["freq_offset"])))
+    ky = int(round((norm_freq_y * cfg["freq_scale"] - cfg["freq_offset"])))
+    kx_cycles = cfg["kx_cycles"]
+    ky_cycles = cfg["ky_cycles"]
+    kx = kx % kx_cycles
+    ky = ky % ky_cycles
     if verbose:
-        print("c1:", c1, "c2:", c2)
-    return c1, c2
+        print("kx:", kx, "ky:", ky)
+    return kx, ky
 
 
 def embed_eigenfrequency_wavelet(

@@ -1,12 +1,13 @@
 """
-Plot per-sample-loss cases at performance percentiles p01/p10/.../p90/p99 using the
+Plot per-sample-loss cases at performance percentiles p0/p01/.../p99/p100 using the
 same visualization as ``figures_continuous_I3O5_efUniform.ipynb``
 (NO_utilities.visualize_sample). Performance is the opposite of loss: p99 is the
 best/lowest-loss sample and p01 the worst/highest-loss sample.
 
 For each loss array produced by ``per_sample_loss.py`` (columns:
 combined_idx, geom_idx, wave_idx, band_idx, loss), the percentile samples are
-selected with the same nearest-rank ordering used by that script. For each case:
+selected with the same nearest-rank ordering used by that script. By default the
+loss is averaged over all five prediction channels 0–4 (eigenfrequency + displacements). For each case:
 
     - Inputs  : stack([geometry[d], waveform[w], band_fft[b]])            -> (3, H, W)
     - Output  : saved dense prediction tensor[combined]                   -> (C, H, W)
@@ -35,9 +36,19 @@ import NO_utilities
 # Percentiles are in PERFORMANCE (opposite of loss): higher p = better performance =
 # lower loss. Performance percentile p maps to loss rank round((1 - p/100) * (n-1)) on
 # the ascending-sorted losses (rank 0 = lowest loss = best performance).
-PERFORMANCE_PERCENTILES = [1, 10, 20, 30, 40, 50, 60, 70, 80, 90, 99]
+PERFORMANCE_PERCENTILES = [0, 1, 10, 20, 25, 30, 40, 50, 60, 70, 75, 80, 90, 99, 100]
+
+
+def performance_case_label(p: int) -> str:
+    if p == 0:
+        return "p0"
+    if p == 100:
+        return "p100"
+    return f"p{p:02d}"
+
+
 CASE_RANKS = [
-    (f"p{p:02d}", (lambda n, _p=p: int(round((1.0 - _p / 100.0) * (n - 1)))))
+    (performance_case_label(p), (lambda n, _p=p: int(round((1.0 - _p / 100.0) * (n - 1)))))
     for p in PERFORMANCE_PERCENTILES
 ]
 

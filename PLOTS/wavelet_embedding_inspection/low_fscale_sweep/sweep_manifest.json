@@ -1,0 +1,560 @@
+{
+  "fscale_sweep_fixed_cycles": {
+    "kx": 9,
+    "ky": 11
+  },
+  "fscale_values": [
+    1,
+    2,
+    4,
+    8,
+    12,
+    24
+  ],
+  "fscale_results": [
+    {
+      "phase": "fscale_sweep",
+      "freq_scale": 1,
+      "kx_cycles": 9,
+      "ky_cycles": 11,
+      "max_offdiag": 0.9988084435462952,
+      "mean_max_offdiag": 0.9799979329109192,
+      "pairs_ge_0.95": 2599,
+      "output_dir": "D:\\Research\\NO-2D-Metamaterials\\PLOTS\\wavelet_embedding_inspection\\low_fscale_sweep\\fscale_only\\fscale1_offset1p01_sigma0p4_fr1_kx9_ky11",
+      "avg_similarity": 0.80648273229599
+    },
+    {
+      "phase": "fscale_sweep",
+      "freq_scale": 2,
+      "kx_cycles": 9,
+      "ky_cycles": 11,
+      "max_offdiag": 0.9953071475028992,
+      "mean_max_offdiag": 0.9705864787101746,
+      "pairs_ge_0.95": 967,
+      "output_dir": "D:\\Research\\NO-2D-Metamaterials\\PLOTS\\wavelet_embedding_inspection\\low_fscale_sweep\\fscale_only\\fscale2_offset1p01_sigma0p4_fr1_kx9_ky11",
+      "avg_similarity": 0.7951911091804504
+    },
+    {
+      "phase": "fscale_sweep",
+      "freq_scale": 4,
+      "kx_cycles": 9,
+      "ky_cycles": 11,
+      "max_offdiag": 0.9857286810874939,
+      "mean_max_offdiag": 0.9358207583427429,
+      "pairs_ge_0.95": 122,
+      "output_dir": "D:\\Research\\NO-2D-Metamaterials\\PLOTS\\wavelet_embedding_inspection\\low_fscale_sweep\\fscale_only\\fscale4_offset1p01_sigma0p4_fr1_kx9_ky11",
+      "avg_similarity": 0.6708677411079407
+    },
+    {
+      "phase": "fscale_sweep",
+      "freq_scale": 8,
+      "kx_cycles": 9,
+      "ky_cycles": 11,
+      "max_offdiag": 0.969099760055542,
+      "mean_max_offdiag": 0.8748415112495422,
+      "pairs_ge_0.95": 5,
+      "output_dir": "D:\\Research\\NO-2D-Metamaterials\\PLOTS\\wavelet_embedding_inspection\\low_fscale_sweep\\fscale_only\\fscale8_offset1p01_sigma0p4_fr1_kx9_ky11",
+      "avg_similarity": 0.4238346517086029
+    },
+    {
+      "phase": "fscale_sweep",
+      "freq_scale": 12,
+      "kx_cycles": 9,
+      "ky_cycles": 11,
+      "max_offdiag": 0.948062002658844,
+      "mean_max_offdiag": 0.8400827050209045,
+      "pairs_ge_0.95": 0,
+      "output_dir": "D:\\Research\\NO-2D-Metamaterials\\PLOTS\\wavelet_embedding_inspection\\low_fscale_sweep\\fscale_only\\fscale12_offset1p01_sigma0p4_fr1_kx9_ky11",
+      "avg_similarity": 0.3172960877418518
+    },
+    {
+      "phase": "fscale_sweep",
+      "freq_scale": 24,
+      "kx_cycles": 9,
+      "ky_cycles": 11,
+      "max_offdiag": 0.9259074926376343,
+      "mean_max_offdiag": 0.7949713468551636,
+      "pairs_ge_0.95": 0,
+      "output_dir": "D:\\Research\\NO-2D-Metamaterials\\PLOTS\\wavelet_embedding_inspection\\low_fscale_sweep\\fscale_only\\fscale24_offset1p01_sigma0p4_fr1_kx9_ky11",
+      "avg_similarity": 0.3049164116382599
+    },
+    {
+      "phase": "fscale_extended",
+      "freq_scale": 28,
+      "kx_cycles": 9,
+      "ky_cycles": 11,
+      "max_offdiag": 0.8953205347061157,
+      "avg_similarity": 0.29013514518737793,
+      "mean_max_offdiag": 0.7756264805793762,
+      "pairs_ge_0.95": 0,
+      "ky0_max": 0.8489724397659302,
+      "output_dir": "D:\\Research\\NO-2D-Metamaterials\\PLOTS\\wavelet_embedding_inspection\\low_fscale_sweep\\fscale_only\\fscale28_offset1p01_sigma0p4_fr1_kx9_ky11"
+    },
+    {
+      "phase": "fscale_extended",
+      "freq_scale": 32,
+      "kx_cycles": 9,
+      "ky_cycles": 11,
+      "max_offdiag": 0.8953803181648254,
+      "avg_similarity": 0.2740110158920288,
+      "mean_max_offdiag": 0.7532834410667419,
+      "pairs_ge_0.95": 0,
+      "ky0_max": 0.8272765874862671,
+      "output_dir": "D:\\Research\\NO-2D-Metamaterials\\PLOTS\\wavelet_embedding_inspection\\low_fscale_sweep\\fscale_only\\fscale32_offset1p01_sigma0p4_fr1_kx9_ky11"
+    }
+  ],
+  "best_fscale": {
+    "phase": "fscale_extended",
+    "freq_scale": 28,
+    "kx_cycles": 9,
+    "ky_cycles": 11,
+    "max_offdiag": 0.8953205347061157,
+    "avg_similarity": 0.29013514518737793,
+    "mean_max_offdiag": 0.7756264805793762,
+    "pairs_ge_0.95": 0,
+    "ky0_max": 0.8489724397659302,
+    "output_dir": "D:\\Research\\NO-2D-Metamaterials\\PLOTS\\wavelet_embedding_inspection\\low_fscale_sweep\\fscale_only\\fscale28_offset1p01_sigma0p4_fr1_kx9_ky11"
+  },
+  "odd_close_cycle_pairs": [
+    [
+      5,
+      7
+    ],
+    [
+      7,
+      9
+    ],
+    [
+      7,
+      11
+    ],
+    [
+      9,
+      11
+    ],
+    [
+      9,
+      13
+    ],
+    [
+      11,
+      13
+    ],
+    [
+      11,
+      15
+    ],
+    [
+      13,
+      15
+    ],
+    [
+      13,
+      17
+    ],
+    [
+      15,
+      17
+    ]
+  ],
+  "cycles_results": [
+    {
+      "phase": "cycles_sweep",
+      "freq_scale": 24,
+      "kx_cycles": 5,
+      "ky_cycles": 7,
+      "max_offdiag": 0.9706676602363586,
+      "mean_max_offdiag": 0.7465350031852722,
+      "pairs_ge_0.95": 1,
+      "ky0_max": 0.9706676602363586,
+      "output_dir": "D:\\Research\\NO-2D-Metamaterials\\PLOTS\\wavelet_embedding_inspection\\low_fscale_sweep\\cycles_at_best_fscale\\fscale24_offset1p01_sigma0p4_fr1_kx5_ky7",
+      "avg_similarity": 0.3025173246860504
+    },
+    {
+      "phase": "cycles_sweep",
+      "freq_scale": 24,
+      "kx_cycles": 7,
+      "ky_cycles": 9,
+      "max_offdiag": 0.9214996099472046,
+      "mean_max_offdiag": 0.7837464213371277,
+      "pairs_ge_0.95": 0,
+      "ky0_max": 0.8634149432182312,
+      "output_dir": "D:\\Research\\NO-2D-Metamaterials\\PLOTS\\wavelet_embedding_inspection\\low_fscale_sweep\\cycles_at_best_fscale\\fscale24_offset1p01_sigma0p4_fr1_kx7_ky9",
+      "avg_similarity": 0.30705568194389343
+    },
+    {
+      "phase": "cycles_sweep",
+      "freq_scale": 24,
+      "kx_cycles": 7,
+      "ky_cycles": 11,
+      "max_offdiag": 0.899879515171051,
+      "mean_max_offdiag": 0.7745981812477112,
+      "pairs_ge_0.95": 0,
+      "ky0_max": 0.8634149432182312,
+      "output_dir": "D:\\Research\\NO-2D-Metamaterials\\PLOTS\\wavelet_embedding_inspection\\low_fscale_sweep\\cycles_at_best_fscale\\fscale24_offset1p01_sigma0p4_fr1_kx7_ky11",
+      "avg_similarity": 0.3227202296257019
+    },
+    {
+      "phase": "cycles_sweep",
+      "freq_scale": 24,
+      "kx_cycles": 9,
+      "ky_cycles": 11,
+      "max_offdiag": 0.9259074926376343,
+      "mean_max_offdiag": 0.7949713468551636,
+      "pairs_ge_0.95": 0,
+      "ky0_max": 0.8516618013381958,
+      "output_dir": "D:\\Research\\NO-2D-Metamaterials\\PLOTS\\wavelet_embedding_inspection\\low_fscale_sweep\\cycles_at_best_fscale\\fscale24_offset1p01_sigma0p4_fr1_kx9_ky11",
+      "avg_similarity": 0.3049164116382599
+    },
+    {
+      "phase": "cycles_sweep",
+      "freq_scale": 24,
+      "kx_cycles": 9,
+      "ky_cycles": 13,
+      "max_offdiag": 0.9148002862930298,
+      "mean_max_offdiag": 0.7900687456130981,
+      "pairs_ge_0.95": 0,
+      "ky0_max": 0.8516618013381958,
+      "output_dir": "D:\\Research\\NO-2D-Metamaterials\\PLOTS\\wavelet_embedding_inspection\\low_fscale_sweep\\cycles_at_best_fscale\\fscale24_offset1p01_sigma0p4_fr1_kx9_ky13",
+      "avg_similarity": 0.30506864190101624
+    },
+    {
+      "phase": "cycles_sweep",
+      "freq_scale": 24,
+      "kx_cycles": 11,
+      "ky_cycles": 13,
+      "max_offdiag": 0.9148002862930298,
+      "mean_max_offdiag": 0.787696361541748,
+      "pairs_ge_0.95": 0,
+      "ky0_max": 0.8539745807647705,
+      "output_dir": "D:\\Research\\NO-2D-Metamaterials\\PLOTS\\wavelet_embedding_inspection\\low_fscale_sweep\\cycles_at_best_fscale\\fscale24_offset1p01_sigma0p4_fr1_kx11_ky13",
+      "avg_similarity": 0.28528642654418945
+    },
+    {
+      "phase": "cycles_sweep",
+      "freq_scale": 24,
+      "kx_cycles": 11,
+      "ky_cycles": 15,
+      "max_offdiag": 0.895523726940155,
+      "mean_max_offdiag": 0.7774683833122253,
+      "pairs_ge_0.95": 0,
+      "ky0_max": 0.8539745807647705,
+      "output_dir": "D:\\Research\\NO-2D-Metamaterials\\PLOTS\\wavelet_embedding_inspection\\low_fscale_sweep\\cycles_at_best_fscale\\fscale24_offset1p01_sigma0p4_fr1_kx11_ky15",
+      "avg_similarity": 0.28684762120246887
+    },
+    {
+      "phase": "cycles_sweep",
+      "freq_scale": 24,
+      "kx_cycles": 13,
+      "ky_cycles": 15,
+      "max_offdiag": 0.914800226688385,
+      "mean_max_offdiag": 0.7823680639266968,
+      "pairs_ge_0.95": 0,
+      "ky0_max": 0.914800226688385,
+      "output_dir": "D:\\Research\\NO-2D-Metamaterials\\PLOTS\\wavelet_embedding_inspection\\low_fscale_sweep\\cycles_at_best_fscale\\fscale24_offset1p01_sigma0p4_fr1_kx13_ky15",
+      "avg_similarity": 0.2688635289669037
+    },
+    {
+      "phase": "cycles_sweep",
+      "freq_scale": 24,
+      "kx_cycles": 13,
+      "ky_cycles": 17,
+      "max_offdiag": 0.914800226688385,
+      "mean_max_offdiag": 0.7756034731864929,
+      "pairs_ge_0.95": 0,
+      "ky0_max": 0.914800226688385,
+      "output_dir": "D:\\Research\\NO-2D-Metamaterials\\PLOTS\\wavelet_embedding_inspection\\low_fscale_sweep\\cycles_at_best_fscale\\fscale24_offset1p01_sigma0p4_fr1_kx13_ky17",
+      "avg_similarity": 0.26396405696868896
+    },
+    {
+      "phase": "cycles_sweep",
+      "freq_scale": 24,
+      "kx_cycles": 15,
+      "ky_cycles": 17,
+      "max_offdiag": 0.9043180346488953,
+      "mean_max_offdiag": 0.7711451053619385,
+      "pairs_ge_0.95": 0,
+      "ky0_max": 0.897473156452179,
+      "output_dir": "D:\\Research\\NO-2D-Metamaterials\\PLOTS\\wavelet_embedding_inspection\\low_fscale_sweep\\cycles_at_best_fscale\\fscale24_offset1p01_sigma0p4_fr1_kx15_ky17",
+      "avg_similarity": 0.24490319192409515
+    }
+  ],
+  "best_cycles": {
+    "phase": "cycles_sweep",
+    "freq_scale": 24,
+    "kx_cycles": 11,
+    "ky_cycles": 15,
+    "max_offdiag": 0.895523726940155,
+    "mean_max_offdiag": 0.7774683833122253,
+    "pairs_ge_0.95": 0,
+    "ky0_max": 0.8539745807647705,
+    "output_dir": "D:\\Research\\NO-2D-Metamaterials\\PLOTS\\wavelet_embedding_inspection\\low_fscale_sweep\\cycles_at_best_fscale\\fscale24_offset1p01_sigma0p4_fr1_kx11_ky15",
+    "avg_similarity": 0.28684762120246887
+  },
+  "cycles_results_extended": [
+    {
+      "phase": "cycles_sweep",
+      "freq_scale": 24,
+      "kx_cycles": 5,
+      "ky_cycles": 7,
+      "max_offdiag": 0.9706676602363586,
+      "mean_max_offdiag": 0.7465350031852722,
+      "pairs_ge_0.95": 1,
+      "ky0_max": 0.9706676602363586,
+      "output_dir": "D:\\Research\\NO-2D-Metamaterials\\PLOTS\\wavelet_embedding_inspection\\low_fscale_sweep\\cycles_at_best_fscale\\fscale24_offset1p01_sigma0p4_fr1_kx5_ky7",
+      "avg_similarity": 0.3025173246860504
+    },
+    {
+      "phase": "cycles_sweep",
+      "freq_scale": 24,
+      "kx_cycles": 7,
+      "ky_cycles": 9,
+      "max_offdiag": 0.9214996099472046,
+      "mean_max_offdiag": 0.7837464213371277,
+      "pairs_ge_0.95": 0,
+      "ky0_max": 0.8634149432182312,
+      "output_dir": "D:\\Research\\NO-2D-Metamaterials\\PLOTS\\wavelet_embedding_inspection\\low_fscale_sweep\\cycles_at_best_fscale\\fscale24_offset1p01_sigma0p4_fr1_kx7_ky9",
+      "avg_similarity": 0.30705568194389343
+    },
+    {
+      "phase": "cycles_sweep",
+      "freq_scale": 24,
+      "kx_cycles": 7,
+      "ky_cycles": 11,
+      "max_offdiag": 0.899879515171051,
+      "mean_max_offdiag": 0.7745981812477112,
+      "pairs_ge_0.95": 0,
+      "ky0_max": 0.8634149432182312,
+      "output_dir": "D:\\Research\\NO-2D-Metamaterials\\PLOTS\\wavelet_embedding_inspection\\low_fscale_sweep\\cycles_at_best_fscale\\fscale24_offset1p01_sigma0p4_fr1_kx7_ky11",
+      "avg_similarity": 0.3227202296257019
+    },
+    {
+      "phase": "cycles_sweep",
+      "freq_scale": 24,
+      "kx_cycles": 9,
+      "ky_cycles": 11,
+      "max_offdiag": 0.9259074926376343,
+      "mean_max_offdiag": 0.7949713468551636,
+      "pairs_ge_0.95": 0,
+      "ky0_max": 0.8516618013381958,
+      "output_dir": "D:\\Research\\NO-2D-Metamaterials\\PLOTS\\wavelet_embedding_inspection\\low_fscale_sweep\\cycles_at_best_fscale\\fscale24_offset1p01_sigma0p4_fr1_kx9_ky11",
+      "avg_similarity": 0.3049164116382599
+    },
+    {
+      "phase": "cycles_sweep",
+      "freq_scale": 24,
+      "kx_cycles": 9,
+      "ky_cycles": 13,
+      "max_offdiag": 0.9148002862930298,
+      "mean_max_offdiag": 0.7900687456130981,
+      "pairs_ge_0.95": 0,
+      "ky0_max": 0.8516618013381958,
+      "output_dir": "D:\\Research\\NO-2D-Metamaterials\\PLOTS\\wavelet_embedding_inspection\\low_fscale_sweep\\cycles_at_best_fscale\\fscale24_offset1p01_sigma0p4_fr1_kx9_ky13",
+      "avg_similarity": 0.30506864190101624
+    },
+    {
+      "phase": "cycles_sweep",
+      "freq_scale": 24,
+      "kx_cycles": 11,
+      "ky_cycles": 13,
+      "max_offdiag": 0.9148002862930298,
+      "mean_max_offdiag": 0.787696361541748,
+      "pairs_ge_0.95": 0,
+      "ky0_max": 0.8539745807647705,
+      "output_dir": "D:\\Research\\NO-2D-Metamaterials\\PLOTS\\wavelet_embedding_inspection\\low_fscale_sweep\\cycles_at_best_fscale\\fscale24_offset1p01_sigma0p4_fr1_kx11_ky13",
+      "avg_similarity": 0.28528642654418945
+    },
+    {
+      "phase": "cycles_sweep",
+      "freq_scale": 24,
+      "kx_cycles": 11,
+      "ky_cycles": 15,
+      "max_offdiag": 0.895523726940155,
+      "mean_max_offdiag": 0.7774683833122253,
+      "pairs_ge_0.95": 0,
+      "ky0_max": 0.8539745807647705,
+      "output_dir": "D:\\Research\\NO-2D-Metamaterials\\PLOTS\\wavelet_embedding_inspection\\low_fscale_sweep\\cycles_at_best_fscale\\fscale24_offset1p01_sigma0p4_fr1_kx11_ky15",
+      "avg_similarity": 0.28684762120246887
+    },
+    {
+      "phase": "cycles_sweep",
+      "freq_scale": 24,
+      "kx_cycles": 13,
+      "ky_cycles": 15,
+      "max_offdiag": 0.914800226688385,
+      "mean_max_offdiag": 0.7823680639266968,
+      "pairs_ge_0.95": 0,
+      "ky0_max": 0.914800226688385,
+      "output_dir": "D:\\Research\\NO-2D-Metamaterials\\PLOTS\\wavelet_embedding_inspection\\low_fscale_sweep\\cycles_at_best_fscale\\fscale24_offset1p01_sigma0p4_fr1_kx13_ky15",
+      "avg_similarity": 0.2688635289669037
+    },
+    {
+      "phase": "cycles_sweep",
+      "freq_scale": 24,
+      "kx_cycles": 13,
+      "ky_cycles": 17,
+      "max_offdiag": 0.914800226688385,
+      "mean_max_offdiag": 0.7756034731864929,
+      "pairs_ge_0.95": 0,
+      "ky0_max": 0.914800226688385,
+      "output_dir": "D:\\Research\\NO-2D-Metamaterials\\PLOTS\\wavelet_embedding_inspection\\low_fscale_sweep\\cycles_at_best_fscale\\fscale24_offset1p01_sigma0p4_fr1_kx13_ky17",
+      "avg_similarity": 0.26396405696868896
+    },
+    {
+      "phase": "cycles_sweep",
+      "freq_scale": 24,
+      "kx_cycles": 15,
+      "ky_cycles": 17,
+      "max_offdiag": 0.9043180346488953,
+      "mean_max_offdiag": 0.7711451053619385,
+      "pairs_ge_0.95": 0,
+      "ky0_max": 0.897473156452179,
+      "output_dir": "D:\\Research\\NO-2D-Metamaterials\\PLOTS\\wavelet_embedding_inspection\\low_fscale_sweep\\cycles_at_best_fscale\\fscale24_offset1p01_sigma0p4_fr1_kx15_ky17",
+      "avg_similarity": 0.24490319192409515
+    },
+    {
+      "phase": "cycles_extended",
+      "freq_scale": 28,
+      "kx_cycles": 5,
+      "ky_cycles": 7,
+      "max_offdiag": 0.9595818519592285,
+      "avg_similarity": 0.2997421622276306,
+      "mean_max_offdiag": 0.7616403698921204,
+      "pairs_ge_0.95": 1,
+      "ky0_max": 0.9595818519592285,
+      "output_dir": "D:\\Research\\NO-2D-Metamaterials\\PLOTS\\wavelet_embedding_inspection\\low_fscale_sweep\\cycles_at_best_fscale\\fscale28_offset1p01_sigma0p4_fr1_kx5_ky7"
+    },
+    {
+      "phase": "cycles_extended",
+      "freq_scale": 28,
+      "kx_cycles": 7,
+      "ky_cycles": 9,
+      "max_offdiag": 0.8980404734611511,
+      "avg_similarity": 0.30906450748443604,
+      "mean_max_offdiag": 0.7675430774688721,
+      "pairs_ge_0.95": 0,
+      "ky0_max": 0.8726906776428223,
+      "output_dir": "D:\\Research\\NO-2D-Metamaterials\\PLOTS\\wavelet_embedding_inspection\\low_fscale_sweep\\cycles_at_best_fscale\\fscale28_offset1p01_sigma0p4_fr1_kx7_ky9"
+    },
+    {
+      "phase": "cycles_extended",
+      "freq_scale": 28,
+      "kx_cycles": 7,
+      "ky_cycles": 11,
+      "max_offdiag": 0.8925306797027588,
+      "avg_similarity": 0.3090466558933258,
+      "mean_max_offdiag": 0.7636380195617676,
+      "pairs_ge_0.95": 0,
+      "ky0_max": 0.8726906776428223,
+      "output_dir": "D:\\Research\\NO-2D-Metamaterials\\PLOTS\\wavelet_embedding_inspection\\low_fscale_sweep\\cycles_at_best_fscale\\fscale28_offset1p01_sigma0p4_fr1_kx7_ky11"
+    },
+    {
+      "phase": "cycles_extended",
+      "freq_scale": 28,
+      "kx_cycles": 9,
+      "ky_cycles": 11,
+      "max_offdiag": 0.8953205347061157,
+      "avg_similarity": 0.29013514518737793,
+      "mean_max_offdiag": 0.7756264805793762,
+      "pairs_ge_0.95": 0,
+      "ky0_max": 0.8489724397659302,
+      "output_dir": "D:\\Research\\NO-2D-Metamaterials\\PLOTS\\wavelet_embedding_inspection\\low_fscale_sweep\\cycles_at_best_fscale\\fscale28_offset1p01_sigma0p4_fr1_kx9_ky11"
+    },
+    {
+      "phase": "cycles_extended",
+      "freq_scale": 28,
+      "kx_cycles": 9,
+      "ky_cycles": 13,
+      "max_offdiag": 0.8888403177261353,
+      "avg_similarity": 0.28519803285598755,
+      "mean_max_offdiag": 0.7658687233924866,
+      "pairs_ge_0.95": 0,
+      "ky0_max": 0.8489724397659302,
+      "output_dir": "D:\\Research\\NO-2D-Metamaterials\\PLOTS\\wavelet_embedding_inspection\\low_fscale_sweep\\cycles_at_best_fscale\\fscale28_offset1p01_sigma0p4_fr1_kx9_ky13"
+    },
+    {
+      "phase": "cycles_extended",
+      "freq_scale": 28,
+      "kx_cycles": 11,
+      "ky_cycles": 13,
+      "max_offdiag": 0.9188041090965271,
+      "avg_similarity": 0.26683372259140015,
+      "mean_max_offdiag": 0.7638729810714722,
+      "pairs_ge_0.95": 0,
+      "ky0_max": 0.8739832639694214,
+      "output_dir": "D:\\Research\\NO-2D-Metamaterials\\PLOTS\\wavelet_embedding_inspection\\low_fscale_sweep\\cycles_at_best_fscale\\fscale28_offset1p01_sigma0p4_fr1_kx11_ky13"
+    },
+    {
+      "phase": "cycles_extended",
+      "freq_scale": 28,
+      "kx_cycles": 11,
+      "ky_cycles": 15,
+      "max_offdiag": 0.9064679145812988,
+      "avg_similarity": 0.26574358344078064,
+      "mean_max_offdiag": 0.7619550228118896,
+      "pairs_ge_0.95": 0,
+      "ky0_max": 0.8739832639694214,
+      "output_dir": "D:\\Research\\NO-2D-Metamaterials\\PLOTS\\wavelet_embedding_inspection\\low_fscale_sweep\\cycles_at_best_fscale\\fscale28_offset1p01_sigma0p4_fr1_kx11_ky15"
+    },
+    {
+      "phase": "cycles_extended",
+      "freq_scale": 28,
+      "kx_cycles": 13,
+      "ky_cycles": 15,
+      "max_offdiag": 0.8831067085266113,
+      "avg_similarity": 0.2507801651954651,
+      "mean_max_offdiag": 0.7629583477973938,
+      "pairs_ge_0.95": 0,
+      "ky0_max": 0.8721006512641907,
+      "output_dir": "D:\\Research\\NO-2D-Metamaterials\\PLOTS\\wavelet_embedding_inspection\\low_fscale_sweep\\cycles_at_best_fscale\\fscale28_offset1p01_sigma0p4_fr1_kx13_ky15"
+    },
+    {
+      "phase": "cycles_extended",
+      "freq_scale": 28,
+      "kx_cycles": 13,
+      "ky_cycles": 17,
+      "max_offdiag": 0.8846345543861389,
+      "avg_similarity": 0.2433173954486847,
+      "mean_max_offdiag": 0.7630996108055115,
+      "pairs_ge_0.95": 0,
+      "ky0_max": 0.8721006512641907,
+      "output_dir": "D:\\Research\\NO-2D-Metamaterials\\PLOTS\\wavelet_embedding_inspection\\low_fscale_sweep\\cycles_at_best_fscale\\fscale28_offset1p01_sigma0p4_fr1_kx13_ky17"
+    },
+    {
+      "phase": "cycles_extended",
+      "freq_scale": 28,
+      "kx_cycles": 15,
+      "ky_cycles": 17,
+      "max_offdiag": 0.8932095766067505,
+      "avg_similarity": 0.2281959354877472,
+      "mean_max_offdiag": 0.7624551057815552,
+      "pairs_ge_0.95": 0,
+      "ky0_max": 0.8671184778213501,
+      "output_dir": "D:\\Research\\NO-2D-Metamaterials\\PLOTS\\wavelet_embedding_inspection\\low_fscale_sweep\\cycles_at_best_fscale\\fscale28_offset1p01_sigma0p4_fr1_kx15_ky17"
+    },
+    {
+      "phase": "cycles_extended",
+      "freq_scale": 28,
+      "kx_cycles": 17,
+      "ky_cycles": 19,
+      "max_offdiag": 0.9438909292221069,
+      "avg_similarity": 0.20771223306655884,
+      "mean_max_offdiag": 0.7707124948501587,
+      "pairs_ge_0.95": 0,
+      "ky0_max": 0.9398712515830994,
+      "output_dir": "D:\\Research\\NO-2D-Metamaterials\\PLOTS\\wavelet_embedding_inspection\\low_fscale_sweep\\cycles_at_best_fscale\\fscale28_offset1p01_sigma0p4_fr1_kx17_ky19"
+    }
+  ],
+  "best_cycles_overall": {
+    "phase": "cycles_extended",
+    "freq_scale": 28,
+    "kx_cycles": 13,
+    "ky_cycles": 15,
+    "max_offdiag": 0.8831067085266113,
+    "avg_similarity": 0.2507801651954651,
+    "mean_max_offdiag": 0.7629583477973938,
+    "pairs_ge_0.95": 0,
+    "ky0_max": 0.8721006512641907,
+    "output_dir": "D:\\Research\\NO-2D-Metamaterials\\PLOTS\\wavelet_embedding_inspection\\low_fscale_sweep\\cycles_at_best_fscale\\fscale28_offset1p01_sigma0p4_fr1_kx13_ky15"
+  }
+}

@@ -278,7 +278,7 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--modes-width", type=int, default=32)
     p.add_argument("--learning-rate", type=float, default=2e-3)
     p.add_argument("--weight-decay", type=float, default=0.0)
-    p.add_argument("--loss", choices=("mse", "l1", "smoothl1"), default="l1")
+    p.add_argument("--loss", choices=("mse", "l1", "smoothl1"), default="smoothl1")
     p.add_argument("--scheduler", choices=("steplr", "cosine", "none"), default="steplr")
     p.add_argument("--step-size", type=int, default=1)
     p.add_argument("--gamma", type=float, default=0.9)

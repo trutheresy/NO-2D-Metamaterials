@@ -3,12 +3,14 @@ Plot per-sample loss histograms (100 bins) with a fitted density curve overlaid,
 figure per loss criterion.
 
 Consumes the same inputs as ``per_sample_loss.py``:
---truth      : ground-truth field tensor, e.g. ``eigenfrequency_uniform_full.pt`` with
-               shape ``(n_geom, n_wv, n_bands, H, W)``.
---inference  : dense prediction tensor from ``run_model_inference.py`` with shape
-               ``(n_geom*n_wv*n_bands, out_channels, H, W)``.
+--dataset-pt-dir : dataset *_pt folder with ``displacements_dataset.pt`` (truth) and
+                   ``eigenfrequency_uniform_full.pt`` (layout).
+--inference      : dense prediction tensor from ``run_model_inference.py`` with shape
+                   ``(n_geom*n_wv*n_bands, out_channels, H, W)``.
 
-For each requested loss it computes the per-sample loss (mean over the H x W field) and
+By default the per-sample loss uses channels 0–4 with **group weighting**:
+50% eigenfrequency (ch0) + 50% mean of displacement channels 1–4 (not 1/5 per channel).
+For each requested loss it computes that scalar and
 renders a histogram with a Gaussian-KDE curve scaled to match relative bin heights
 when normalization is enabled (each sample weighted by 1/N, with N the full per-loss
 sample count before excluding non-positive or out-of-range values for plotting).
@@ -16,7 +18,7 @@ The y-axis is autoscaled. By default the x-axis is log-scaled with a major tick 
 every order of magnitude in the data range.
 
 Supported losses: mae, mse, nmae, nmse, nrms (aliases l1, l2, nl1, nl2, nrmse). NMAE/NMSE/NRMS use the
-eps-stabilized denominators from per_sample_loss.py (defaults 1e-5 / 1e-7).
+eps-stabilized denominators from per_sample_loss.py (defaults 1e-5 / 1e-5).
 """
 
 from __future__ import annotations
@@ -36,9 +38,14 @@ from scipy.stats import gaussian_kde
 
 from per_sample_loss import (
     compute_per_sample_losses,
+    normalize_channel_weighting,
     normalize_loss_name,
+    parse_channels,
+    parse_index_list,
+    prepare_scoring_data,
     resolve_device,
 )
+from second_peak_analysis import flat_indices
 
 
 LOSS_XLABEL = {
@@ -140,10 +147,16 @@ def set_log_decade_ticks(ax, xmin: float, xmax: float) -> None:
 
 def main() -> None:
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    p.add_argument("--truth", required=True, help="Ground-truth field tensor (.pt), shape (n_geom, n_wv, n_bands, H, W).")
+    p.add_argument("--dataset-pt-dir", required=True, help="Dataset *_pt folder with displacements_dataset.pt.")
     p.add_argument("--inference", required=True, help="Dense prediction tensor (.pt), shape (n_geom*n_wv*n_bands, C, H, W).")
     p.add_argument("--losses", nargs="+", required=True, help="Loss criteria: mae mse nmae nmse nrms (aliases l1, l2, nl1, nl2, nrmse).")
-    p.add_argument("--channel", type=int, default=0, help="Prediction channel to compare (default 0 = eigenfrequency).")
+    p.add_argument("--channels", default="0,1,2,3,4", help="Comma-separated prediction channels (default: 0,1,2,3,4).")
+    p.add_argument(
+        "--channel-weighting",
+        default="group",
+        choices=("uniform", "group"),
+        help="How to combine per-channel losses (default: group = 50%% ch0 + 50%% mean(ch1-4)).",
+    )
     p.add_argument("--title", default="", help="Optional figure title (blank by default).")
     p.add_argument("--output-dir", default="", help="Folder for the histogram PNGs (default: inference file's folder).")
     p.add_argument("--out-prefix", default="loss_histogram", help="Output filename prefix.")
@@ -161,9 +174,14 @@ def main() -> None:
     p.add_argument("--kde-samples", type=int, default=200000, help="Max samples used to fit the KDE curve (default 200000).")
     p.add_argument("--seed", type=int, default=0)
     p.add_argument("--nmae-eps", type=float, default=1e-5, help="Epsilon added to mean(|t|) denominator for nmae (default 1e-5).")
-    p.add_argument("--nmse-eps", type=float, default=1e-7, help="Epsilon added to mean(t^2) denominator for nmse (default 1e-7).")
+    p.add_argument("--nmse-eps", type=float, default=1e-5, help="Epsilon added to mean(t^2) denominator for nmse (default 1e-5).")
     p.add_argument("--batch-size", type=int, default=8192)
     p.add_argument("--device", default="auto", choices=("auto", "cuda", "cpu"))
+    p.add_argument(
+        "--exclude-wave-indices",
+        default="",
+        help="Comma-separated wavevector indices to omit from histograms (all bands/geometries).",
+    )
     args = p.parse_args()
     log_x = not args.linear_x
     normalize = not args.raw_count
@@ -174,50 +192,48 @@ def main() -> None:
         if ln not in losses:
             losses.append(ln)
 
+    channels = parse_channels(args.channels)
+    channel_weighting = normalize_channel_weighting(args.channel_weighting)
+    exclude_waves = parse_index_list(args.exclude_wave_indices, "--exclude-wave-indices")
     device = resolve_device(args.device)
-    truth_path = Path(args.truth)
+    dataset_pt_dir = Path(args.dataset_pt_dir)
     infer_path = Path(args.inference)
     out_dir = Path(args.output_dir) if args.output_dir else infer_path.parent
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    truth = torch.load(truth_path, map_location="cpu", mmap=True, weights_only=True)
     predictions = torch.load(infer_path, map_location="cpu", mmap=True, weights_only=True)
-
-    if truth.ndim != 5:
-        raise ValueError(f"Expected truth shape (n_geom, n_wv, n_bands, H, W); got {tuple(truth.shape)}.")
-    n_geom, n_wv, n_bands, field_h, field_w = (int(s) for s in truth.shape)
+    truth_flat, n_geom, n_wv, n_bands, field_h, field_w, channels = prepare_scoring_data(
+        dataset_pt_dir, predictions, channels
+    )
     total = n_geom * n_wv * n_bands
 
-    if predictions.ndim != 4:
-        raise ValueError(f"Expected prediction shape (N, C, H, W); got {tuple(predictions.shape)}.")
-    if predictions.shape[0] != total:
-        raise ValueError(
-            f"Prediction sample count {predictions.shape[0]} != n_geom*n_wv*n_bands ({total}). "
-            f"Inference must be a dense full-dataset run."
-        )
-    if predictions.shape[2:] != truth.shape[3:]:
-        raise ValueError(f"Field size mismatch: truth {tuple(truth.shape[3:])} vs pred {tuple(predictions.shape[2:])}.")
-    if not (0 <= args.channel < predictions.shape[1]):
-        raise ValueError(f"--channel {args.channel} out of range for out_channels={predictions.shape[1]}.")
-
-    truth_flat = truth.reshape(total, field_h, field_w)
-
-    print(f"Truth     : {truth_path}  shape={tuple(truth.shape)} dtype={truth.dtype}")
+    print(f"Dataset   : {dataset_pt_dir}")
+    print(f"Truth     : eigenfrequency_uniform + displacements  shape={tuple(truth_flat.shape)} dtype={truth_flat.dtype}")
     print(f"Inference : {infer_path}  shape={tuple(predictions.shape)} dtype={predictions.dtype}")
-    print(f"Channel   : {args.channel}   Field: {field_h}x{field_w}   Device: {device}")
+    print(f"Channels  : {channels}   weighting: {channel_weighting}   Field: {field_h}x{field_w}   Device: {device}")
+    if exclude_waves:
+        print(f"Excluding wave indices: {exclude_waves}  ({len(exclude_waves)} wavevectors)")
     print(f"Samples   : {total}   Losses: {losses}")
     print(f"Output dir: {out_dir}")
 
     per_sample = compute_per_sample_losses(
         truth_flat=truth_flat,
         predictions=predictions,
-        channel=args.channel,
+        channels=channels,
         losses=losses,
         device=device,
         batch_size=args.batch_size,
         nmae_eps=args.nmae_eps,
         nmse_eps=args.nmse_eps,
+        channel_weighting=channel_weighting,
     )
+
+    if exclude_waves:
+        _, wave_idx, _ = flat_indices(n_geom, n_wv, n_bands)
+        keep = ~np.isin(wave_idx, np.array(exclude_waves, dtype=np.int64))
+        n_kept = int(keep.sum())
+        print(f"Histogram sample count after wave exclusion: {n_kept} / {total}")
+        per_sample = {loss: arr[keep] for loss, arr in per_sample.items()}
 
     tag = f"_{args.tag}" if args.tag else ""
     for loss in losses:

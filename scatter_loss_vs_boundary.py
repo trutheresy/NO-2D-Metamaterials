@@ -9,9 +9,9 @@ geometry (from compute_boundary_length.py), one figure per loss, with Pearson/Sp
 correlations annotated.
 
 Inputs match per_sample_loss.py:
-  --truth      ground-truth field tensor (n_geom, n_wv, n_bands, H, W)
-  --inference  dense prediction tensor    (n_geom*n_wv*n_bands, C, H, W)
-  --geometries discrete geometries tensor (n_geom, H, W), binary {0,1}
+  --dataset-pt-dir  dataset *_pt folder with displacements_dataset.pt (truth)
+  --inference       dense prediction tensor    (n_geom*n_wv*n_bands, C, H, W)
+  --geometries      discrete geometries tensor (n_geom, H, W), binary {0,1}
 
 Outputs (to --output-dir, default <inference-dir>/boundary_length_vs_loss):
   - one scatter PNG per loss
@@ -31,7 +31,13 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from scipy.stats import pearsonr, spearmanr
 
-from per_sample_loss import compute_per_sample_losses, normalize_loss_name, resolve_device
+from per_sample_loss import (
+    compute_per_sample_losses,
+    normalize_loss_name,
+    parse_channels,
+    prepare_scoring_data,
+    resolve_device,
+)
 from compute_boundary_length import load_geometries, to_binary, boundary_length
 
 
@@ -45,17 +51,17 @@ LOSS_YLABEL = {
 
 def main() -> None:
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    p.add_argument("--truth", required=True, help="Ground-truth field tensor (.pt), shape (n_geom, n_wv, n_bands, H, W).")
+    p.add_argument("--dataset-pt-dir", required=True, help="Dataset *_pt folder with displacements_dataset.pt.")
     p.add_argument("--inference", required=True, help="Dense prediction tensor (.pt), shape (n_geom*n_wv*n_bands, C, H, W).")
     p.add_argument("--geometries", required=True, help="Discrete geometries tensor (.pt), shape (n_geom, H, W), binary {0,1}.")
     p.add_argument("--losses", nargs="+", default=["mae", "mse", "nmae", "nmse"], help="Loss criteria (default: all four).")
-    p.add_argument("--channel", type=int, default=0, help="Prediction channel to compare (default 0 = eigenfrequency).")
+    p.add_argument("--channels", default="0,1,2,3,4", help="Comma-separated prediction channels to average (default: 0,1,2,3,4).")
     p.add_argument("--output-dir", default="", help="Output folder (default: <inference-dir>/boundary_length_vs_loss).")
     p.add_argument("--tag", default="", help="Dataset tag for filenames (e.g. b_test).")
     p.add_argument("--periodic", action="store_true", help="Use periodic (wrap-around) boundary length.")
     p.add_argument("--linear-y", action="store_true", help="Use a linear loss (y) axis (default is log-scaled).")
     p.add_argument("--nmae-eps", type=float, default=1e-5)
-    p.add_argument("--nmse-eps", type=float, default=1e-7)
+    p.add_argument("--nmse-eps", type=float, default=1e-5)
     p.add_argument("--batch-size", type=int, default=8192)
     p.add_argument("--device", default="auto", choices=("auto", "cuda", "cpu"))
     args = p.parse_args()
@@ -67,36 +73,34 @@ def main() -> None:
         if ln not in losses:
             losses.append(ln)
 
+    channels = parse_channels(args.channels)
     device = resolve_device(args.device)
-    truth_path = Path(args.truth)
+    dataset_pt_dir = Path(args.dataset_pt_dir)
     infer_path = Path(args.inference)
     out_dir = Path(args.output_dir) if args.output_dir else infer_path.parent / "boundary_length_vs_loss"
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    truth = torch.load(truth_path, map_location="cpu", mmap=True, weights_only=True)
     predictions = torch.load(infer_path, map_location="cpu", mmap=True, weights_only=True)
-    if truth.ndim != 5:
-        raise ValueError(f"Expected truth shape (n_geom, n_wv, n_bands, H, W); got {tuple(truth.shape)}.")
-    n_geom, n_wv, n_bands, field_h, field_w = (int(s) for s in truth.shape)
+    truth_flat, n_geom, n_wv, n_bands, field_h, field_w, channels = prepare_scoring_data(
+        dataset_pt_dir, predictions, channels
+    )
     per_geom = n_wv * n_bands
-    total = n_geom * per_geom
-    if predictions.shape[0] != total:
-        raise ValueError(f"Prediction rows {predictions.shape[0]} != n_geom*n_wv*n_bands ({total}).")
 
     # boundary length per geometry
     gb = to_binary(load_geometries(Path(args.geometries)), None)
     if int(gb.shape[0]) != n_geom:
-        raise ValueError(f"geometry count {int(gb.shape[0])} != truth n_geom {n_geom}.")
+        raise ValueError(f"geometry count {int(gb.shape[0])} != dataset n_geom {n_geom}.")
     blen = boundary_length(gb, args.periodic, 1.0)  # (n_geom,)
 
-    truth_flat = truth.reshape(total, field_h, field_w)
-    print(f"Truth      : {truth_path}  shape={tuple(truth.shape)}")
+    print(f"Dataset    : {dataset_pt_dir}")
+    print(f"Truth      : eigenfrequency_uniform + displacements  shape={tuple(truth_flat.shape)}")
     print(f"Inference  : {infer_path}  shape={tuple(predictions.shape)}")
+    print(f"Channels   : {channels}")
     print(f"Geometries : {n_geom}   per-geometry samples (n_wv*n_bands) = {per_geom}")
     print(f"Losses     : {losses}   Output: {out_dir}")
 
     per_sample = compute_per_sample_losses(
-        truth_flat=truth_flat, predictions=predictions, channel=args.channel,
+        truth_flat=truth_flat, predictions=predictions, channels=channels,
         losses=losses, device=device, batch_size=args.batch_size,
         nmae_eps=args.nmae_eps, nmse_eps=args.nmse_eps,
     )

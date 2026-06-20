@@ -1,0 +1,68 @@
+{
+  "c_test": {
+    "displacement_complexity": {
+      "ky0": {
+        "mean_rms": 0.015444365096967491,
+        "mean_std": 0.01534052289618305
+      },
+      "kx0": {
+        "mean_rms": 0.015497830237548943,
+        "mean_std": 0.015394503636779648
+      },
+      "interior": {
+        "mean_rms": 0.015589301910303296,
+        "mean_std": 0.015455658580953385
+      }
+    },
+    "eigenvalue_structure": {
+      "ky0_path": {
+        "mean_adjacent_k_step": 52.83318515692816,
+        "std_across_geoms_bands": 906.9010676895365,
+        "mean_frequency": 1536.9618467496746
+      },
+      "kx0_path": {
+        "mean_adjacent_k_step": 52.833698177761505,
+        "std_across_geoms_bands": 918.2357395634042,
+        "mean_frequency": 1528.2773045466497
+      },
+      "interior_sample": {
+        "mean_adjacent_k_step": 48.40625141059027,
+        "std_across_geoms_bands": 896.8916719315574,
+        "mean_frequency": 1542.5669576041666
+      }
+    }
+  },
+  "b_test": {
+    "displacement_complexity": {
+      "ky0": {
+        "mean_rms": 0.015350122404845559,
+        "mean_std": 0.015255470901124134
+      },
+      "kx0": {
+        "mean_rms": 0.015439865386081478,
+        "mean_std": 0.015336003061254232
+      },
+      "interior": {
+        "mean_rms": 0.015595675120024983,
+        "mean_std": 0.015486641111974786
+      }
+    },
+    "eigenvalue_structure": {
+      "ky0_path": {
+        "mean_adjacent_k_step": 14.399567532009547,
+        "std_across_geoms_bands": 372.0107165778451,
+        "mean_frequency": 443.32895448567706
+      },
+      "kx0_path": {
+        "mean_adjacent_k_step": 14.399460761176217,
+        "std_across_geoms_bands": 372.88244154707075,
+        "mean_frequency": 439.3839984600361
+      },
+      "interior_sample": {
+        "mean_adjacent_k_step": 12.864241970486113,
+        "std_across_geoms_bands": 370.04264294775373,
+        "mean_frequency": 447.1666789583333
+      }
+    }
+  }
+}
