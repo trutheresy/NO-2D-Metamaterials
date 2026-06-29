@@ -1,0 +1,39 @@
+﻿=== c_test sharded orchestrator started 2026-06-24T19:09:54.9718996-04:00 ===
+2026-06-24T19:09:55.0675725-04:00  Waiting for b_test python (PID 99936) to finish...
+2026-06-24T23:34:16.0444463-04:00  b_test worker has exited.
+2026-06-24T23:34:21.1126978-04:00  b_test predictions present: d:\Research\NO-2D-Metamaterials\INFERENCE\260619_E11_best_MAEMSE_cpu_wfemb\NO_I3O5_BCF16_L1_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_260619_E11_best_MAEMSE_260624-161744\predictions_I3O5_NO_I3O5_BCF16_L1_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_260619_E11_best_MAEMSE.pt (18.6 GB)
+2026-06-24T23:34:21.1453594-04:00  Stopping chain PowerShell (PID 97752) and any stray sequential c_test worker...
+2026-06-24T23:34:28.4331842-04:00  Killing stray c_test worker PID 96484
+2026-06-24T23:34:31.4730676-04:00  Launching sharded c_test inference (6 workers x 4 threads)...
+2026-06-24T23:34:34.5437557-04:00  Found 1 dataset(s)
+2026-06-24T23:34:34.6364957-04:00  Inferred 1000 geometries per dataset from d:\Research\NO-2D-Metamaterials\DATASETS\c_test\continuous_2026-03-05_20-07-34_pt
+2026-06-24T23:34:34.7776457-04:00  I/O case: I3O5 (out_channels=5), n_waveforms=325, n_bands=6
+2026-06-24T23:34:34.7776457-04:00  Sharding 1000 geometries into 6 workers (threads/worker=4, total threads=24)
+2026-06-24T23:34:34.7776457-04:00  Estimated RAM: ~3.7 GB inputs/worker x 6 workers, merged output ~18.6 GB
+2026-06-24T23:34:34.7776457-04:00  Inference run folder: d:\Research\NO-2D-Metamaterials\INFERENCE\260619_E11_best_MAEMSE_cpu_wfemb\NO_I3O5_BCF16_L1_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_260619_E11_best_MAEMSE_260624-233434_sharded
+2026-06-24T23:34:34.7776457-04:00  Launching workers...
+2026-06-24T23:34:34.7786457-04:00    worker 00: geometries [0, 167) (167)  threads=4  log=d:\Research\NO-2D-Metamaterials\INFERENCE\260619_E11_best_MAEMSE_cpu_wfemb\NO_I3O5_BCF16_L1_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_260619_E11_best_MAEMSE_260624-233434_sharded\shards\shard_00.log
+2026-06-24T23:34:34.7856459-04:00    worker 01: geometries [167, 334) (167)  threads=4  log=d:\Research\NO-2D-Metamaterials\INFERENCE\260619_E11_best_MAEMSE_cpu_wfemb\NO_I3O5_BCF16_L1_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_260619_E11_best_MAEMSE_260624-233434_sharded\shards\shard_01.log
+2026-06-24T23:34:34.7906480-04:00    worker 02: geometries [334, 501) (167)  threads=4  log=d:\Research\NO-2D-Metamaterials\INFERENCE\260619_E11_best_MAEMSE_cpu_wfemb\NO_I3O5_BCF16_L1_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_260619_E11_best_MAEMSE_260624-233434_sharded\shards\shard_02.log
+2026-06-24T23:34:34.7966487-04:00    worker 03: geometries [501, 668) (167)  threads=4  log=d:\Research\NO-2D-Metamaterials\INFERENCE\260619_E11_best_MAEMSE_cpu_wfemb\NO_I3O5_BCF16_L1_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_260619_E11_best_MAEMSE_260624-233434_sharded\shards\shard_03.log
+2026-06-24T23:34:34.8026477-04:00    worker 04: geometries [668, 834) (166)  threads=4  log=d:\Research\NO-2D-Metamaterials\INFERENCE\260619_E11_best_MAEMSE_cpu_wfemb\NO_I3O5_BCF16_L1_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_260619_E11_best_MAEMSE_260624-233434_sharded\shards\shard_04.log
+2026-06-24T23:34:34.8092486-04:00    worker 05: geometries [834, 1000) (166)  threads=4  log=d:\Research\NO-2D-Metamaterials\INFERENCE\260619_E11_best_MAEMSE_cpu_wfemb\NO_I3O5_BCF16_L1_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_260619_E11_best_MAEMSE_260624-233434_sharded\shards\shard_05.log
+2026-06-25T05:42:45.1825196-04:00    worker 00: ok
+2026-06-25T05:42:45.1845180-04:00    worker 01: ok
+2026-06-25T05:42:45.1845180-04:00    worker 02: ok
+2026-06-25T05:42:45.1845180-04:00    worker 03: ok
+2026-06-25T05:42:45.1845180-04:00    worker 04: ok
+2026-06-25T05:42:45.1845180-04:00    worker 05: ok
+2026-06-25T05:42:45.1845180-04:00  All workers finished in 368.2 min. Merging shards...
+2026-06-25T05:42:57.9086615-04:00  Saving outputs to d:\Research\NO-2D-Metamaterials\INFERENCE\260619_E11_best_MAEMSE_cpu_wfemb\NO_I3O5_BCF16_L1_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_260619_E11_best_MAEMSE_260624-233434_sharded\predictions_I3O5_NO_I3O5_BCF16_L1_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_260619_E11_best_MAEMSE.pt...
+2026-06-25T05:43:14.9252786-04:00  Outputs saved successfully!
+2026-06-25T05:43:14.9252786-04:00    - Format: single stacked tensor (n_samples, 5, 32, 32)
+2026-06-25T05:43:14.9252786-04:00    - Channels: ['eigenfrequency', 'disp_x_real', 'disp_x_imag', 'disp_y_real', 'disp_y_imag']
+2026-06-25T05:43:14.9252786-04:00    - Shape: (1950000, 5, 32, 32)  dtype: torch.float16
+2026-06-25T05:43:14.9252786-04:00    - Total size: 18.60 GB
+2026-06-25T05:43:14.9262790-04:00    - Metadata: 325 waveforms, 6 bands, 1000 geometries
+2026-06-25T05:43:14.9262790-04:00    - Index map: idx = geom*(325*6) + wave*6 + band
+2026-06-25T05:43:14.9302789-04:00  Wrote inference documentation: d:\Research\NO-2D-Metamaterials\INFERENCE\260619_E11_best_MAEMSE_cpu_wfemb\NO_I3O5_BCF16_L1_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_260619_E11_best_MAEMSE_260624-233434_sharded\inference_info_NO_I3O5_BCF16_L1_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_260619_E11_best_MAEMSE_260624-233434.txt
+2026-06-25T05:43:16.8975288-04:00  Removed 6 shard tensor(s) (use --keep-shards to retain).
+2026-06-25T05:43:16.8975288-04:00  Done! Outputs saved in: d:\Research\NO-2D-Metamaterials\INFERENCE\260619_E11_best_MAEMSE_cpu_wfemb\NO_I3O5_BCF16_L1_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_260619_E11_best_MAEMSE_260624-233434_sharded
+2026-06-25T05:43:18.8743317-04:00  === c_test sharded inference finished (exit=0) ===

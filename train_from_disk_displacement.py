@@ -302,6 +302,11 @@ def parse_args() -> argparse.Namespace:
         default=10,
         help="Number of random test samples to render when --diagnostic-panels is on.",
     )
+    p.add_argument(
+        "--init-checkpoint",
+        default="",
+        help="Optional .pth weights to load when starting a new run (fresh optimizer/scheduler).",
+    )
     return p.parse_args()
 
 
@@ -456,6 +461,14 @@ def build_criterion(loss_name: str) -> nn.Module:
     if loss_name == "l1":
         return nn.L1Loss()
     return nn.SmoothL1Loss(beta=1e-5)
+
+
+def paired_validation_loss(loss_name: str) -> str | None:
+    if loss_name == "l1":
+        return "mse"
+    if loss_name == "mse":
+        return "l1"
+    return None
 
 
 def build_optimizer(args: argparse.Namespace, model: nn.Module) -> torch.optim.Optimizer:
@@ -891,12 +904,15 @@ def main() -> None:
             hidden_channels=args.hidden_channels,
             n_layers=args.layers,
         ).to(device)
-        inferred_prev_loss = _infer_previous_loss_from_run(run_dir) if resume_mode else None
         criterion = build_criterion(args.loss)
-        compare_loss_name: str | None = inferred_prev_loss
-        criterion_compare = build_criterion(compare_loss_name) if compare_loss_name and compare_loss_name != args.loss else None
+        compare_loss_name: str | None = paired_validation_loss(args.loss)
+        criterion_compare = build_criterion(compare_loss_name) if compare_loss_name else None
         if criterion_compare is not None:
-            logger.info("Dual-loss logging enabled | active_loss=%s compare_loss=%s", args.loss, compare_loss_name)
+            logger.info(
+                "Dual-loss validation logging | active_loss=%s compare_loss=%s",
+                args.loss,
+                compare_loss_name,
+            )
         optimizer = build_optimizer(args, model)
         scheduler = build_scheduler(args, optimizer)
         scaler = torch.cuda.amp.GradScaler(enabled=(device.type == "cuda" and args.amp == "fp16"))
@@ -904,6 +920,21 @@ def main() -> None:
         total_epochs = args.epochs
         best_val = float("inf")
         best_epoch = -1
+
+        if not resume_mode and args.init_checkpoint.strip():
+            init_path = Path(args.init_checkpoint).resolve()
+            if not init_path.is_file():
+                raise FileNotFoundError(f"--init-checkpoint not found: {init_path}")
+            init_blob = torch.load(init_path, map_location="cpu", weights_only=False)
+            if isinstance(init_blob, dict) and "model_state_dict" in init_blob:
+                init_state = init_blob["model_state_dict"]
+            else:
+                init_state = init_blob
+            loaded_ok, compat_path = _try_load_model_state_with_compat_fallback(model, init_state, run_dir)
+            if not loaded_ok:
+                logger.warning("Loaded compat weights from %s for init checkpoint %s", compat_path, init_path)
+            metadata["init_checkpoint"] = str(init_path)
+            logger.info("Warm-started model weights from %s", init_path)
 
         state_latest_path = run_dir / "training_state_latest.pt"
         if resume_mode:
@@ -1031,7 +1062,9 @@ def main() -> None:
         crash_state["phase"] = "train_loop_setup"
 
         dual_compare = criterion_compare is not None
-        best_metric_col = "val_compare_loss" if dual_compare else "val_loss"
+        best_metric_col = (
+            "val_compare_loss" if dual_compare and compare_loss_name == "l1" else "val_loss"
+        )
         expected_metrics_header = metrics_csv_fieldnames(OUT_CHANNELS, dual_compare=dual_compare)
         csv_mode = "a" if (resume_mode and metrics_csv.exists()) else "w"
         if csv_mode == "a" and metrics_csv.exists():

@@ -1,0 +1,72 @@
+=== 260401 epochs 2-32 ===
+Backfilling 31 epochs in NO_I3O5_BCF16_L1&L2_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_260401 | mse_start=11 | val_index_source=indices_full | test_samples=3900000
+backfill_val_dual_loss | epoch=2 trained_loss=l1 val_l1=7.640232e-03 val_mse=2.111907e-04 rows_updated=1 migrated=False
+backfill_val_dual_loss | epoch=3 trained_loss=l1 val_l1=7.526533e-03 val_mse=2.096815e-04 rows_updated=1 migrated=False
+backfill_val_dual_loss | epoch=4 trained_loss=l1 val_l1=7.586539e-03 val_mse=2.128513e-04 rows_updated=1 migrated=False
+backfill_val_dual_loss | epoch=5 trained_loss=l1 val_l1=7.530782e-03 val_mse=2.108103e-04 rows_updated=1 migrated=False
+backfill_val_dual_loss | epoch=6 trained_loss=l1 val_l1=7.662889e-03 val_mse=2.200644e-04 rows_updated=1 migrated=False
+backfill_val_dual_loss | epoch=7 trained_loss=l1 val_l1=7.607397e-03 val_mse=2.182883e-04 rows_updated=1 migrated=False
+backfill_val_dual_loss | epoch=8 trained_loss=l1 val_l1=7.627433e-03 val_mse=2.230297e-04 rows_updated=1 migrated=False
+backfill_val_dual_loss | epoch=9 trained_loss=l1 val_l1=7.635746e-03 val_mse=2.232945e-04 rows_updated=1 migrated=False
+backfill_val_dual_loss | epoch=10 trained_loss=l1 val_l1=7.649803e-03 val_mse=2.240723e-04 rows_updated=1 migrated=False
+backfill_val_dual_loss | epoch=11 trained_loss=mse val_l1=7.657677e-03 val_mse=1.997713e-04 rows_updated=1 migrated=False
+backfill_val_dual_loss | epoch=12 trained_loss=mse val_l1=7.937252e-03 val_mse=2.084401e-04 rows_updated=1 migrated=False
+backfill_val_dual_loss | epoch=13 trained_loss=mse val_l1=7.757038e-03 val_mse=2.101923e-04 rows_updated=1 migrated=False
+backfill_val_dual_loss | epoch=14 trained_loss=mse val_l1=7.738636e-03 val_mse=2.109201e-04 rows_updated=1 migrated=False
+backfill_val_dual_loss | epoch=15 trained_loss=mse val_l1=7.846351e-03 val_mse=2.210577e-04 rows_updated=1 migrated=False
+backfill_val_dual_loss | epoch=16 trained_loss=mse val_l1=7.845209e-03 val_mse=2.225111e-04 rows_updated=1 migrated=False
+backfill_val_dual_loss | epoch=17 trained_loss=mse val_l1=7.892306e-03 val_mse=2.259306e-04 rows_updated=1 migrated=False
+backfill_val_dual_loss | epoch=18 trained_loss=mse val_l1=7.754291e-03 val_mse=2.194946e-04 rows_updated=1 migrated=False
+backfill_val_dual_loss | epoch=19 trained_loss=mse val_l1=7.791377e-03 val_mse=2.194453e-04 rows_updated=1 migrated=False
+backfill_val_dual_loss | epoch=20 trained_loss=mse val_l1=7.928859e-03 val_mse=2.255595e-04 rows_updated=1 migrated=False
+backfill_val_dual_loss | epoch=21 trained_loss=mse val_l1=7.763670e-03 val_mse=2.237294e-04 rows_updated=1 migrated=False
+backfill_val_dual_loss | epoch=22 trained_loss=mse val_l1=7.921883e-03 val_mse=2.263443e-04 rows_updated=1 migrated=False
+backfill_val_dual_loss | epoch=23 trained_loss=mse val_l1=7.869507e-03 val_mse=2.261492e-04 rows_updated=1 migrated=False
+backfill_val_dual_loss | epoch=24 trained_loss=mse val_l1=7.776517e-03 val_mse=2.226281e-04 rows_updated=1 migrated=False
+backfill_val_dual_loss | epoch=25 trained_loss=mse val_l1=7.897001e-03 val_mse=2.279393e-04 rows_updated=1 migrated=False
+backfill_val_dual_loss | epoch=26 trained_loss=mse val_l1=7.876866e-03 val_mse=2.291294e-04 rows_updated=1 migrated=False
+backfill_val_dual_loss | epoch=27 trained_loss=mse val_l1=7.876060e-03 val_mse=2.267566e-04 rows_updated=1 migrated=False
+backfill_val_dual_loss | epoch=28 trained_loss=mse val_l1=7.862194e-03 val_mse=2.282036e-04 rows_updated=1 migrated=False
+backfill_val_dual_loss | epoch=29 trained_loss=mse val_l1=7.868580e-03 val_mse=2.273507e-04 rows_updated=1 migrated=False
+backfill_val_dual_loss | epoch=30 trained_loss=mse val_l1=7.925677e-03 val_mse=2.314099e-04 rows_updated=1 migrated=False
+backfill_val_dual_loss | epoch=31 trained_loss=mse val_l1=7.816678e-03 val_mse=2.315325e-04 rows_updated=1 migrated=False
+backfill_val_dual_loss | epoch=32 trained_loss=mse val_l1=7.867571e-03 val_mse=2.338301e-04 rows_updated=1 migrated=False
+Done. Updated D:\Research\NO-2D-Metamaterials\MODELS\training_runs\NO_I3O5_BCF16_L1&L2_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_260401\metrics.csv
+=== 260619 epochs 1-16 ===
+Backed up metrics.csv -> metrics.csv.pre_fullval.bak
+Backfilling 16 epochs in NO_I3O5_BCF16_L1_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_260619 | mse_start=9 | val_index_source=indices_full | test_samples=3900000
+backfill_val_dual_loss | epoch=1 trained_loss=l1 val_l1=2.714800e-03 val_mse=6.385273e-05 rows_updated=1 migrated=False
+backfill_val_dual_loss | epoch=2 trained_loss=l1 val_l1=2.531198e-03 val_mse=5.781745e-05 rows_updated=1 migrated=False
+backfill_val_dual_loss | epoch=3 trained_loss=l1 val_l1=2.337068e-03 val_mse=5.486907e-05 rows_updated=1 migrated=False
+backfill_val_dual_loss | epoch=4 trained_loss=l1 val_l1=2.293192e-03 val_mse=5.359671e-05 rows_updated=1 migrated=False
+backfill_val_dual_loss | epoch=5 trained_loss=l1 val_l1=2.233978e-03 val_mse=5.234700e-05 rows_updated=1 migrated=False
+backfill_val_dual_loss | epoch=6 trained_loss=l1 val_l1=2.211628e-03 val_mse=5.191854e-05 rows_updated=1 migrated=False
+backfill_val_dual_loss | epoch=7 trained_loss=l1 val_l1=2.200389e-03 val_mse=5.136638e-05 rows_updated=1 migrated=False
+backfill_val_dual_loss | epoch=8 trained_loss=l1 val_l1=2.133785e-03 val_mse=5.106384e-05 rows_updated=1 migrated=False
+backfill_val_dual_loss | epoch=9 trained_loss=mse val_l1=2.427615e-03 val_mse=5.623181e-05 rows_updated=1 migrated=False
+backfill_val_dual_loss | epoch=10 trained_loss=mse val_l1=2.400810e-03 val_mse=5.475653e-05 rows_updated=1 migrated=False
+backfill_val_dual_loss | epoch=11 trained_loss=mse val_l1=2.293923e-03 val_mse=5.106018e-05 rows_updated=1 migrated=False
+backfill_val_dual_loss | epoch=12 trained_loss=mse val_l1=2.503705e-03 val_mse=5.049911e-05 rows_updated=1 migrated=False
+backfill_val_dual_loss | epoch=13 trained_loss=mse val_l1=2.288340e-03 val_mse=5.304603e-05 rows_updated=1 migrated=False
+backfill_val_dual_loss | epoch=14 trained_loss=mse val_l1=2.351126e-03 val_mse=5.173964e-05 rows_updated=1 migrated=False
+backfill_val_dual_loss | epoch=15 trained_loss=mse val_l1=2.346532e-03 val_mse=5.439537e-05 rows_updated=1 migrated=False
+backfill_val_dual_loss | epoch=16 trained_loss=mse val_l1=2.317601e-03 val_mse=5.430434e-05 rows_updated=1 migrated=False
+Done. Updated D:\Research\NO-2D-Metamaterials\MODELS\training_runs\NO_I3O5_BCF16_L1_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_260619\metrics.csv
+=== 260622 epochs 1-12 ===
+Backed up metrics.csv -> metrics.csv.pre_fullval.bak
+Backfilling 12 epochs in NO_I3O5_BCF16_L1_HC128_LR4e-03_WD0e+00_SS1_G8e-01_ch0u_260622 | mse_start=None | val_index_source=indices_full | test_samples=3900000
+backfill_val_dual_loss | epoch=1 trained_loss=l1 val_l1=3.556263e-03 val_mse=8.241785e-05 rows_updated=1 migrated=False
+backfill_val_dual_loss | epoch=2 trained_loss=l1 val_l1=3.062932e-03 val_mse=6.862345e-05 rows_updated=1 migrated=False
+backfill_val_dual_loss | epoch=3 trained_loss=l1 val_l1=2.769000e-03 val_mse=6.351214e-05 rows_updated=1 migrated=False
+backfill_val_dual_loss | epoch=4 trained_loss=l1 val_l1=2.754308e-03 val_mse=6.138512e-05 rows_updated=1 migrated=False
+backfill_val_dual_loss | epoch=5 trained_loss=l1 val_l1=2.579462e-03 val_mse=5.969080e-05 rows_updated=1 migrated=False
+backfill_val_dual_loss | epoch=6 trained_loss=l1 val_l1=2.552403e-03 val_mse=5.886731e-05 rows_updated=1 migrated=False
+backfill_val_dual_loss | epoch=7 trained_loss=l1 val_l1=2.506653e-03 val_mse=5.812860e-05 rows_updated=1 migrated=False
+backfill_val_dual_loss | epoch=8 trained_loss=l1 val_l1=2.463027e-03 val_mse=6.704743e-05 rows_updated=1 migrated=False
+backfill_val_dual_loss | epoch=9 trained_loss=l1 val_l1=2.470211e-03 val_mse=6.800044e-05 rows_updated=1 migrated=False
+backfill_val_dual_loss | epoch=10 trained_loss=l1 val_l1=2.448615e-03 val_mse=6.711404e-05 rows_updated=1 migrated=False
+backfill_val_dual_loss | epoch=11 trained_loss=l1 val_l1=8.850409e-03 val_mse=2.215825e-04 rows_updated=1 migrated=False
+backfill_val_dual_loss | epoch=12 trained_loss=l1 val_l1=9.498512e-03 val_mse=2.416310e-04 rows_updated=1 migrated=False
+Done. Updated D:\Research\NO-2D-Metamaterials\MODELS\training_runs\NO_I3O5_BCF16_L1_HC128_LR4e-03_WD0e+00_SS1_G8e-01_ch0u_260622\metrics.csv
+=== ALL DONE ===
+=== report + Huber training ===

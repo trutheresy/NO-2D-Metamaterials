@@ -37,6 +37,8 @@ import numpy as np
 import torch
 from tqdm import tqdm
 
+from output_layout import resolve_script_output_dir
+
 
 EIGEN_CH0_FILES = {
     "uniform": "eigenfrequency_uniform_full.pt",
@@ -194,7 +196,10 @@ def main() -> None:
     p.add_argument("--predictions", help="Explicit path to the prediction tensor (.pt). Overrides --inference-dir.")
     p.add_argument("--dataset-pt-dir", required=True, help="Dataset *_pt folder with reduced_indices.pt, outputs.pt, eigenfrequency_*_full.pt.")
     p.add_argument("--eigen-encoding", choices=tuple(EIGEN_CH0_FILES), default="uniform", help="Channel-0 eigenfrequency encoding to compare against (default: uniform).")
-    p.add_argument("--out-csv", default="", help="CSV output path. Default: <inference-dir>/loss_comparison_<dataset>.csv")
+    p.add_argument("--out-csv", default="", help="Explicit CSV output path (overrides the model/dataset layout below).")
+    p.add_argument("--model-name", default="", help="Model name for the INFERENCE/<model>/<dataset>/<subdir> layout.")
+    p.add_argument("--dataset", default="", help="Dataset folder for the layout (default: dataset *_pt parent name).")
+    p.add_argument("--output-subdir", default="", help="Optional script output folder name under INFERENCE/<model>/<dataset> (default: none).")
     p.add_argument("--batch-size", type=int, default=8192)
     p.add_argument("--device", default="auto", choices=("auto", "cuda", "cpu"))
     args = p.parse_args()
@@ -267,11 +272,19 @@ def main() -> None:
 
     rows = build_rows(mae, mse, col_labels)
 
+    dataset_tag = args.dataset or pt_dir.parent.name  # e.g. c_test / b_test
     if args.out_csv:
         out_csv = Path(args.out_csv)
     else:
-        dataset_tag = pt_dir.parent.name  # e.g. c_test / b_test
-        out_csv = inference_dir / f"loss_comparison_{dataset_tag}.csv"
+        out_dir = resolve_script_output_dir(
+            explicit=None,
+            category="inference",
+            model_name=args.model_name or None,
+            dataset=dataset_tag,
+            subdir=args.output_subdir,
+            fallback=inference_dir,
+        )
+        out_csv = out_dir / f"loss_comparison_{dataset_tag}.csv"
     write_csv(out_csv, rows, col_labels)
 
     # Console summary.

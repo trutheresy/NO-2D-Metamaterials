@@ -27,7 +27,11 @@ so the y-axis defaults to ``Frequency [rad/s]`` (override with --ylabel).
 from __future__ import annotations
 
 import argparse
+import sys
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from output_layout import resolve_script_output_dir
 
 import numpy as np
 import torch
@@ -190,8 +194,20 @@ if __name__ == "__main__":
     parser.add_argument("--pred", required=True, help="Predicted eigenvalues: a .pt file or a folder containing eigenvalues_predictions_full.pt / eigenvalue_data_full.pt.")
     parser.add_argument("-n", "--n-structs", type=int, default=None, help="Number of structures to plot (default: all).")
     parser.add_argument("-t", "--title", type=str, default="", help="Custom plot title (default: blank).")
-    parser.add_argument("-o", "--output-dir", type=str, default=None, help="Output folder for plots.")
+    parser.add_argument("-o", "--output-dir", type=str, default=None, help="Explicit output folder (overrides the model/dataset layout below).")
+    parser.add_argument("--model-name", type=str, default="", help="Model name for the PLOTS/<model>/<dataset>/<subdir> layout.")
+    parser.add_argument("--dataset", type=str, default="", help="Dataset folder for the layout (e.g. c_test / b_test).")
+    parser.add_argument("--output-subdir", type=str, default="dispersion_overlay", help="Script output folder name under PLOTS/<model>/<dataset> (default: dispersion_overlay).")
     parser.add_argument("--ylabel", type=str, default="Frequency [rad/s]", help="Y-axis label (data is angular frequency, rad/s).")
     parser.add_argument("--mark-points", action="store_true", help="Add markers on the true bands.")
     args = parser.parse_args()
-    main(args.true, args.pred, args.n_structs, args.title, args.output_dir, args.ylabel, args.mark_points)
+    output_dir = args.output_dir
+    if output_dir is None and args.model_name:
+        output_dir = str(resolve_script_output_dir(
+            explicit=None,
+            category="plots",
+            model_name=args.model_name,
+            dataset=args.dataset,
+            subdir=args.output_subdir,
+        ))
+    main(args.true, args.pred, args.n_structs, args.title, output_dir, args.ylabel, args.mark_points)

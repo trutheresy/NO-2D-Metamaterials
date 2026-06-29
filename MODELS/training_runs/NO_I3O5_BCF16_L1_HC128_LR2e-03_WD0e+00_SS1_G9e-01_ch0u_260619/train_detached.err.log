@@ -1,0 +1,8 @@
+Add-Content : The process cannot access the file 'D:\Research\NO-2D-Metamaterials\MODELS\training_runs\NO_I3O5_BCF16_L1
+_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_260619\train_detached.log' because it is being used by another process.
+At D:\Research\NO-2D-Metamaterials\run_wfemb_epochs_5_12_detached.ps1:30 char:5
++     Add-Content -Path $Log -Value $line
++     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : WriteError: (D:\Research\NO-...in_detached.log:String) [Add-Content], IOException
+    + FullyQualifiedErrorId : GetContentWriterIOError,Microsoft.PowerShell.Commands.AddContentCommand
+ 

@@ -53,6 +53,8 @@ import numpy as np
 import torch
 from tqdm import tqdm
 
+from output_layout import resolve_script_output_dir
+
 
 DEFAULT_SCORING_CHANNELS = [0, 1, 2, 3, 4]
 # Backward-compatible alias used by plot_high_loss_samples.py
@@ -362,7 +364,12 @@ def main() -> None:
         default=",".join(str(c) for c in DEFAULT_SCORING_CHANNELS),
         help="Comma-separated prediction channels to score and average (default: 0,1,2,3,4).",
     )
-    p.add_argument("--output-dir", default="", help="Folder for the per-loss .npy files (default: inference file's folder).")
+    p.add_argument("--output-dir", default="", help="Explicit output folder (overrides the model/dataset layout below).")
+    p.add_argument("--model-name", default="", help="Model name for the PLOTS/INFERENCE/<model>/<dataset>/<subdir> layout.")
+    p.add_argument("--dataset", default="", help="Dataset folder for the layout (default: --tag).")
+    p.add_argument("--output-subdir", default="", help="Script output folder name under <model>/<dataset> (e.g. MAE_sample_case_plots).")
+    p.add_argument("--category", default="inference", choices=("plots", "inference"),
+                   help="Top-level root for the layout: 'inference' (data, default) or 'plots'.")
     p.add_argument("--out-prefix", default="per_sample_loss", help="Output filename prefix.")
     p.add_argument("--tag", default="", help="Optional tag appended to filenames (e.g. dataset name).")
     p.add_argument("--nmae-eps", type=float, default=1e-5, help="Epsilon added to mean(|t|) denominator for nmae (default 1e-5).")
@@ -381,8 +388,14 @@ def main() -> None:
     device = resolve_device(args.device)
     dataset_pt_dir = Path(args.dataset_pt_dir)
     infer_path = Path(args.inference)
-    out_dir = Path(args.output_dir) if args.output_dir else infer_path.parent
-    out_dir.mkdir(parents=True, exist_ok=True)
+    out_dir = resolve_script_output_dir(
+        explicit=args.output_dir or None,
+        category=args.category,
+        model_name=args.model_name or None,
+        dataset=args.dataset or args.tag,
+        subdir=args.output_subdir,
+        fallback=infer_path.parent,
+    )
 
     predictions = torch.load(infer_path, map_location="cpu", mmap=True, weights_only=True)
     truth_flat, n_geom, n_wv, n_bands, field_h, field_w, channels = prepare_scoring_data(

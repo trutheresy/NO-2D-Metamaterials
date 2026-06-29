@@ -23,6 +23,9 @@ import sys
 if __name__ == "__main__":
     sys.path.insert(0, str(Path(__file__).parent))
 
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from output_layout import resolve_script_output_dir
+
 # Import local modules
 try:
     from plotting import plot_design
@@ -864,7 +867,7 @@ def plot_dispersion_on_contour(ax, contour_info, frequencies_contour, contour_pa
         ax.legend()
 
 
-def main(cli_data_dir=None, cli_original_dir=None, n_structs=None, infer=True, save_km=True, save_t=False, save_plot_points=False):
+def main(cli_data_dir=None, cli_original_dir=None, n_structs=None, infer=True, save_km=True, save_t=False, save_plot_points=False, output_dir=None):
     """
     Main script execution.
     
@@ -952,7 +955,10 @@ def main(cli_data_dir=None, cli_original_dir=None, n_structs=None, infer=True, s
     import os
     current_dir = Path(os.getcwd())
     dataset_name = data_dir.name
-    output_dir = current_dir / 'PLOTS' / f'{dataset_name}_recon'
+    if output_dir is not None:
+        output_dir = Path(output_dir)
+    else:
+        output_dir = current_dir / 'PLOTS' / f'{dataset_name}_recon'
     output_dir.mkdir(parents=True, exist_ok=True)
     print(f"Output directory: {output_dir}")
     
@@ -1352,6 +1358,19 @@ if __name__ == "__main__":
     parser.add_argument("--no-save-km", action="store_true", help="Do not save computed K and M matrices")
     parser.add_argument("--save-t", action="store_true", help="Save computed T matrices (default: False)")
     parser.add_argument("--save-plot-points", action="store_true", help="Save plot point locations (wavevectors_contour, frequencies_contour, contour_param) to .npz file")
+    parser.add_argument("-o", "--output-dir", type=str, default=None, help="Explicit output folder (overrides the model/dataset layout below).")
+    parser.add_argument("--model-name", type=str, default="", help="Model name for the PLOTS/<model>/<dataset>/<subdir> layout.")
+    parser.add_argument("--dataset", type=str, default="", help="Dataset folder for the layout (e.g. c_test / b_test).")
+    parser.add_argument("--output-subdir", type=str, default="dispersion_plots", help="Script output folder name under PLOTS/<model>/<dataset> (default: dispersion_plots).")
     args = parser.parse_args()
-    main(args.data_dir, args.original_dir, args.n_structs, infer=not args.no_infer, save_km=not args.no_save_km, save_t=args.save_t, save_plot_points=args.save_plot_points)
+    output_dir = args.output_dir
+    if output_dir is None and args.model_name:
+        output_dir = str(resolve_script_output_dir(
+            explicit=None,
+            category="plots",
+            model_name=args.model_name,
+            dataset=args.dataset,
+            subdir=args.output_subdir,
+        ))
+    main(args.data_dir, args.original_dir, args.n_structs, infer=not args.no_infer, save_km=not args.no_save_km, save_t=args.save_t, save_plot_points=args.save_plot_points, output_dir=output_dir)
 

@@ -1,0 +1,23 @@
+{
+  "status": "completed",
+  "run_name": "NO_I3O5_BCF16_L1_HC128_LR4e-03_WD0e+00_SS1_G8e-01_ch0u_260622",
+  "run_id": "NO_I3O5_BCF16_L1_HC128_LR4e-03_WD0e+00_SS1_G8e-01_ch0u_260622",
+  "started_at_utc": "2026-06-25T18:20:52.869026+00:00",
+  "ended_at_utc": "2026-06-26T01:54:33.535541+00:00",
+  "duration_sec": 27220.666515,
+  "best_val_loss": 0.0024498265087992575,
+  "best_epoch": 10,
+  "checkpoints": {
+    "best": "D:\\Research\\NO-2D-Metamaterials\\MODELS\\training_runs\\NO_I3O5_BCF16_L1_HC128_LR4e-03_WD0e+00_SS1_G8e-01_ch0u_260622\\NO_I3O5_BCF16_L1_HC128_LR4e-03_WD0e+00_SS1_G8e-01_ch0u_260622_best.pth",
+    "final": "D:\\Research\\NO-2D-Metamaterials\\MODELS\\training_runs\\NO_I3O5_BCF16_L1_HC128_LR4e-03_WD0e+00_SS1_G8e-01_ch0u_260622\\NO_I3O5_BCF16_L1_HC128_LR4e-03_WD0e+00_SS1_G8e-01_ch0u_260622_final.pth",
+    "epoch_pattern": "D:\\Research\\NO-2D-Metamaterials\\MODELS\\training_runs\\NO_I3O5_BCF16_L1_HC128_LR4e-03_WD0e+00_SS1_G8e-01_ch0u_260622\\NO_I3O5_BCF16_L1_HC128_LR4e-03_WD0e+00_SS1_G8e-01_ch0u_260622_E{epoch}.pth"
+  },
+  "artifacts": {
+    "train_log": "D:\\Research\\NO-2D-Metamaterials\\MODELS\\training_runs\\NO_I3O5_BCF16_L1_HC128_LR4e-03_WD0e+00_SS1_G8e-01_ch0u_260622\\train.log",
+    "resolved_config": "D:\\Research\\NO-2D-Metamaterials\\MODELS\\training_runs\\NO_I3O5_BCF16_L1_HC128_LR4e-03_WD0e+00_SS1_G8e-01_ch0u_260622\\resolved_config.json",
+    "run_metadata": "D:\\Research\\NO-2D-Metamaterials\\MODELS\\training_runs\\NO_I3O5_BCF16_L1_HC128_LR4e-03_WD0e+00_SS1_G8e-01_ch0u_260622\\run_metadata.json",
+    "metrics_csv": "D:\\Research\\NO-2D-Metamaterials\\MODELS\\training_runs\\NO_I3O5_BCF16_L1_HC128_LR4e-03_WD0e+00_SS1_G8e-01_ch0u_260622\\metrics.csv",
+    "metrics_jsonl": "D:\\Research\\NO-2D-Metamaterials\\MODELS\\training_runs\\NO_I3O5_BCF16_L1_HC128_LR4e-03_WD0e+00_SS1_G8e-01_ch0u_260622\\metrics.jsonl",
+    "diagnostics": "D:\\Research\\NO-2D-Metamaterials\\MODELS\\training_runs\\NO_I3O5_BCF16_L1_HC128_LR4e-03_WD0e+00_SS1_G8e-01_ch0u_260622\\diagnostics"
+  }
+}

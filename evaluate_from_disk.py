@@ -174,6 +174,12 @@ def parse_args() -> argparse.Namespace:
     p = argparse.ArgumentParser(description="Evaluate disk-backed NO model on c_test and b_test shards.")
     p.add_argument("--model-path", required=True, help="Path to model checkpoint (.pth).")
     p.add_argument("--output-root", default="D:/Research/NO-2D-Metamaterials/DATASETS")
+    p.add_argument(
+        "--val-full-test",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="Evaluate on indices_full.pt for c_test/b_test (default). Use --no-val-full-test for reduced_indices.",
+    )
     p.add_argument("--eigen-ch0-encoding", choices=tuple(EIGEN_CH0_FILES.keys()), default="uniform")
     p.add_argument("--losses", nargs="+", required=True, help="List of losses: mse, l1, smoothl1, l2")
     p.add_argument("--batch-size", type=int, default=520)
@@ -201,6 +207,14 @@ def parse_args() -> argparse.Namespace:
         help=(
             "Append evaluation results to train.log / metrics.jsonl / evaluation_metrics.csv when present, "
             "and backfill metrics.csv rows for the inferred epoch (see --epoch)."
+        ),
+    )
+    p.add_argument(
+        "--trained-loss",
+        default="",
+        help=(
+            "Loss used as the active training objective for this epoch when backfilling metrics.csv "
+            "(l1 or mse). Default: read from resolved_config.json (final session loss only)."
         ),
     )
     p.add_argument(
@@ -291,6 +305,23 @@ def discover_test_shards(output_root: Path, eigen_ch0_encoding: str) -> list[Sha
     return shards
 
 
+def build_test_dataset(
+    output_root: Path,
+    eigen_ch0_encoding: str,
+    out_channels: int,
+    *,
+    val_full_test: bool = True,
+) -> Dataset[tuple[torch.Tensor, torch.Tensor]]:
+    """Build c_test/b_test dataset; default uses indices_full.pt (100% of test data)."""
+    if val_full_test:
+        from train_from_disk import FullIndexTensorPairDataset, discover_full_index_test_shards
+
+        shards = discover_full_index_test_shards(output_root, TEST_PREFIXES, eigen_ch0_encoding)
+        return FullIndexTensorPairDataset(shards, eigen_ch0_encoding)
+    shards = discover_test_shards(output_root, eigen_ch0_encoding)
+    return ShardedTensorPairDataset(shards, out_channels=out_channels)
+
+
 def normalize_loss_name(name: str) -> str:
     n = name.strip().lower()
     if n == "l2":
@@ -322,6 +353,50 @@ def per_channel_loss_mean(pred: torch.Tensor, yb: torch.Tensor, loss_name: str) 
         raise ValueError(f"Unknown loss_name: {loss_name!r}")
 
 
+def reference_l1_mse_fieldnames(out_channels: int) -> list[str]:
+    cols = ["train_l1_loss", "train_mse_loss", "val_l1_loss", "val_mse_loss"]
+    for loss_name in ("l1", "mse"):
+        for split in ("train", "val"):
+            cols += [f"{split}_{loss_name}_loss_ch{i}" for i in range(out_channels)]
+    return cols
+
+
+def populate_reference_l1_mse_from_row(
+    row: dict[str, str],
+    out_channels: int,
+    *,
+    active_loss: str | None,
+) -> None:
+    train_loss = row.get("train_loss", "")
+    val_loss = row.get("val_loss", "")
+    train_cmp = row.get("train_compare_loss", "")
+    val_cmp = row.get("val_compare_loss", "")
+
+    if active_loss == "l1":
+        row["train_l1_loss"] = train_loss
+        row["val_l1_loss"] = val_loss
+        row["train_mse_loss"] = train_cmp
+        row["val_mse_loss"] = val_cmp
+        for i in range(out_channels):
+            row[f"train_l1_loss_ch{i}"] = row.get(f"train_loss_ch{i}", "")
+            row[f"val_l1_loss_ch{i}"] = row.get(f"val_loss_ch{i}", "")
+            row[f"train_mse_loss_ch{i}"] = row.get(f"train_compare_loss_ch{i}", "")
+            row[f"val_mse_loss_ch{i}"] = row.get(f"val_compare_loss_ch{i}", "")
+    elif active_loss == "mse":
+        row["train_mse_loss"] = train_loss
+        row["val_mse_loss"] = val_loss
+        row["train_l1_loss"] = train_cmp
+        row["val_l1_loss"] = val_cmp
+        for i in range(out_channels):
+            row[f"train_mse_loss_ch{i}"] = row.get(f"train_loss_ch{i}", "")
+            row[f"val_mse_loss_ch{i}"] = row.get(f"val_loss_ch{i}", "")
+            row[f"train_l1_loss_ch{i}"] = row.get(f"train_compare_loss_ch{i}", "")
+            row[f"val_l1_loss_ch{i}"] = row.get(f"val_compare_loss_ch{i}", "")
+    else:
+        for key in reference_l1_mse_fieldnames(out_channels):
+            row.setdefault(key, "")
+
+
 def metrics_csv_fieldnames(out_channels: int, *, dual_compare: bool) -> list[str]:
     cols = [
         "epoch",
@@ -341,6 +416,7 @@ def metrics_csv_fieldnames(out_channels: int, *, dual_compare: bool) -> list[str
             "val_compare_loss",
             *[f"train_compare_loss_ch{i}" for i in range(out_channels)],
             *[f"val_compare_loss_ch{i}" for i in range(out_channels)],
+            *reference_l1_mse_fieldnames(out_channels),
         ]
     return cols
 
@@ -398,7 +474,7 @@ def read_trained_loss_from_run_dir(run_dir: Path) -> str | None:
     return None
 
 
-def migrate_row_dict_to_dual(row: dict[str, str], out_channels: int) -> dict[str, str]:
+def migrate_row_dict_to_dual(row: dict[str, str], out_channels: int, *, active_loss: str | None = None) -> dict[str, str]:
     single_header = metrics_csv_fieldnames(out_channels, dual_compare=False)
     out = {k: row.get(k, "") for k in single_header}
     out["train_compare_loss"] = row.get("train_loss", "")
@@ -406,12 +482,18 @@ def migrate_row_dict_to_dual(row: dict[str, str], out_channels: int) -> dict[str
     for i in range(out_channels):
         out[f"train_compare_loss_ch{i}"] = row.get(f"train_loss_ch{i}", "")
         out[f"val_compare_loss_ch{i}"] = row.get(f"val_loss_ch{i}", "")
+    populate_reference_l1_mse_from_row(out, out_channels, active_loss=active_loss)
     return out
 
 
-def ensure_dual_schema(rows: list[dict[str, str]], out_channels: int) -> tuple[list[str], list[dict[str, str]]]:
+def ensure_dual_schema(
+    rows: list[dict[str, str]],
+    out_channels: int,
+    *,
+    active_loss: str | None = None,
+) -> tuple[list[str], list[dict[str, str]]]:
     dual_header = metrics_csv_fieldnames(out_channels, dual_compare=True)
-    new_rows = [migrate_row_dict_to_dual(r, out_channels) for r in rows]
+    new_rows = [migrate_row_dict_to_dual(r, out_channels, active_loss=active_loss) for r in rows]
     return dual_header, new_rows
 
 
@@ -424,13 +506,57 @@ def _epoch_cell_to_int(cell: str | None) -> int | None:
         return None
 
 
-def load_model_state(model: torch.nn.Module, model_path: Path) -> None:
-    blob = torch.load(model_path, map_location="cpu", weights_only=False)
+def _extract_state_dict(blob: object) -> dict[str, torch.Tensor]:
     state = blob["model_state_dict"] if isinstance(blob, dict) and "model_state_dict" in blob else blob
-    if isinstance(state, dict) and "_metadata" in state:
+    if not isinstance(state, dict):
+        raise TypeError(f"Checkpoint did not contain a state dict: {type(state).__name__}")
+    if "_metadata" in state:
         state = dict(state)
         state.pop("_metadata", None)
-    model.load_state_dict(state)
+    return state  # type: ignore[return-value]
+
+
+def _normalize_state_dict_keys(state: dict[str, torch.Tensor]) -> dict[str, torch.Tensor]:
+    prefixes = ("fno.", "model.", "module.")
+    out: dict[str, torch.Tensor] = {}
+    for key, value in state.items():
+        nk = key
+        for prefix in prefixes:
+            if nk.startswith(prefix):
+                nk = nk[len(prefix) :]
+                break
+        out[nk] = value
+    return out
+
+
+def load_model_state(model: torch.nn.Module, model_path: Path, *, run_dir: Path | None = None) -> None:
+    blob = torch.load(model_path, map_location="cpu", weights_only=False)
+    state = _extract_state_dict(blob)
+    target = model.model if hasattr(model, "model") else model
+    candidates = [state]
+    normalized = _normalize_state_dict_keys(state)
+    if normalized.keys() != state.keys():
+        candidates.append(normalized)
+
+    last_err: RuntimeError | None = None
+    for candidate in candidates:
+        try:
+            target.load_state_dict(candidate)
+            return
+        except RuntimeError as e:
+            last_err = e
+
+    if run_dir is not None:
+        compat_ckpts = sorted(run_dir.glob("*best_fno2d_compat*.pth"))
+        if compat_ckpts:
+            compat_blob = torch.load(compat_ckpts[-1], map_location="cpu", weights_only=False)
+            compat_state = _extract_state_dict(compat_blob)
+            target.load_state_dict(compat_state)
+            return
+
+    if last_err is not None:
+        raise last_err
+    raise RuntimeError(f"Failed to load checkpoint: {model_path}")
 
 
 def _append_train_log_messages(run_dir: Path, messages: list[str]) -> None:
@@ -565,6 +691,16 @@ def backfill_metrics_csv(
             r["val_compare_loss"] = f"{float(v['avg_pixel_loss']):.17g}"
             for i in range(out_channels):
                 r[f"val_compare_loss_ch{i}"] = f"{float(v['val_ch'][i]):.17g}"
+        if "val_l1_loss" in header and "l1" in eval_by_loss:
+            v = eval_by_loss["l1"]
+            r["val_l1_loss"] = f"{float(v['avg_pixel_loss']):.17g}"
+            for i in range(out_channels):
+                r[f"val_l1_loss_ch{i}"] = f"{float(v['val_ch'][i]):.17g}"
+        if "val_mse_loss" in header and "mse" in eval_by_loss:
+            v = eval_by_loss["mse"]
+            r["val_mse_loss"] = f"{float(v['avg_pixel_loss']):.17g}"
+            for i in range(out_channels):
+                r[f"val_mse_loss_ch{i}"] = f"{float(v['val_ch'][i]):.17g}"
         updated += 1
 
     if not found_any:
@@ -853,8 +989,12 @@ def main() -> None:
     device = resolve_device(args.allow_cpu)
 
     output_root = Path(args.output_root)
-    shards = discover_test_shards(output_root, args.eigen_ch0_encoding)
-    dataset = ShardedTensorPairDataset(shards, out_channels=args.out_channels)
+    dataset = build_test_dataset(
+        output_root,
+        args.eigen_ch0_encoding,
+        args.out_channels,
+        val_full_test=bool(args.val_full_test),
+    )
 
     model = FourierNeuralOperator(
         modes_height=args.modes_height,
@@ -864,7 +1004,7 @@ def main() -> None:
         out_channels=args.out_channels,
     ).to(device)
     model_path = Path(args.model_path)
-    load_model_state(model, model_path)
+    load_model_state(model, model_path, run_dir=model_path.resolve().parent if args.write_to_logs else None)
 
     ev = run_evaluation(
         dataset=dataset,
@@ -890,7 +1030,9 @@ def main() -> None:
     trained_loss: str | None = None
     if args.write_to_logs:
         epoch = parse_epoch_from_checkpoint(model_path, args.epoch)
-        trained_loss = read_trained_loss_from_run_dir(run_dir)
+        trained_loss = args.trained_loss.strip().lower() or read_trained_loss_from_run_dir(run_dir)
+        if trained_loss == "l2":
+            trained_loss = "mse"
 
     payload: dict[str, object] = {
         "model_path": ev.model_path,

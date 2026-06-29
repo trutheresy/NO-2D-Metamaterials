@@ -1,7 +1,7 @@
 {
   "run_name": "NO_I3O5_BCF16_L1_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_260619",
   "run_id": "NO_I3O5_BCF16_L1_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_260619",
-  "status": "running",
+  "status": "completed",
   "started_at_utc": "2026-06-19T23:17:01.663971+00:00",
   "git": {
     "git_commit": "2bc56ab0e356f0b2cc8f51dc996c4120602d166e",
@@ -17,10 +17,12 @@
     "device_count": 1,
     "device_name_0": "NVIDIA GeForce RTX 4080 SUPER"
   },
-  "ended_at_utc": "2026-06-20T13:33:56.491303+00:00",
-  "duration_sec": 51414.827332,
-  "best_val_loss": 0.0022931205395143477,
-  "best_epoch": 4,
-  "resumed_at_utc": "2026-06-20T19:00:53.948614+00:00",
-  "resume_extend_epochs": 4
+  "ended_at_utc": "2026-06-22T15:06:17.434356+00:00",
+  "duration_sec": 50394.202744,
+  "best_val_loss": 5.102563364765583e-05,
+  "best_epoch": 8,
+  "resumed_at_utc": "2026-06-22T01:06:23.231612+00:00",
+  "resume_extend_epochs": 4,
+  "resume_from_epoch": 12,
+  "resume_target_total_epochs": 16
 }

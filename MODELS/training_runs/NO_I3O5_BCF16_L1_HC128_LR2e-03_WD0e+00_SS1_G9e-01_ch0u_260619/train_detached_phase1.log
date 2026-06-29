@@ -1,0 +1,3 @@
+2026-06-20 15:20:20,543 | INFO | Resumed full state from D:\Research\NO-2D-Metamaterials\MODELS\training_runs\NO_I3O5_BCF16_L1_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_260619\training_state_latest.pt at epoch=4
+2026-06-20 15:20:20,547 | INFO | Run started | run_name=NO_I3O5_BCF16_L1_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_260619 run_id=NO_I3O5_BCF16_L1_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_260619 device=cuda train_samples=18720000 test_samples=780000 epoch_range=5..8
+2026-06-20 15:20:20,548 | INFO | Fault diagnostics | main_fault_log=D:\Research\NO-2D-Metamaterials\MODELS\training_runs\NO_I3O5_BCF16_L1_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_260619\main_process_fault.log

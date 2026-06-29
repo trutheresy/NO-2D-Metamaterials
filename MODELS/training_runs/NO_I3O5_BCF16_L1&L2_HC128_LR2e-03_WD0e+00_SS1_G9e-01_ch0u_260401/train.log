@@ -139,3 +139,35 @@ RuntimeError: Error(s) in loading state_dict for FourierNeuralOperator:
 2026-04-14 13:58:35,270 | INFO | evaluation_from_disk | epoch=32 checkpoint=NO_I3O5_BCF16_L1&L2_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_260401_E32.pth num_test_samples=780000 trained_loss='l1'
 2026-04-14 13:58:35,271 | INFO | evaluation_from_disk | epoch=32 loss=mse avg_pixel_loss=6.358959e-05 avg_sample_loss=6.358959e-05
 2026-04-14 13:58:35,276 | INFO | evaluation_from_disk | epoch=32 metrics_csv rows_updated=1 migrated_to_dual_header=False
+2026-06-25 23:36:26,861 | INFO | backfill_val_dual_loss | epoch=1 trained_loss=l1 val_l1=7.596323e-03 val_mse=2.105091e-04 rows_updated=1 migrated=False
+2026-06-25 23:53:22,913 | INFO | backfill_val_dual_loss | epoch=2 trained_loss=l1 val_l1=7.640232e-03 val_mse=2.111907e-04 rows_updated=1 migrated=False
+2026-06-26 00:09:47,038 | INFO | backfill_val_dual_loss | epoch=3 trained_loss=l1 val_l1=7.526533e-03 val_mse=2.096815e-04 rows_updated=1 migrated=False
+2026-06-26 00:25:33,639 | INFO | backfill_val_dual_loss | epoch=4 trained_loss=l1 val_l1=7.586539e-03 val_mse=2.128513e-04 rows_updated=1 migrated=False
+2026-06-26 00:40:50,241 | INFO | backfill_val_dual_loss | epoch=5 trained_loss=l1 val_l1=7.530782e-03 val_mse=2.108103e-04 rows_updated=1 migrated=False
+2026-06-26 00:56:05,716 | INFO | backfill_val_dual_loss | epoch=6 trained_loss=l1 val_l1=7.662889e-03 val_mse=2.200644e-04 rows_updated=1 migrated=False
+2026-06-26 01:11:20,546 | INFO | backfill_val_dual_loss | epoch=7 trained_loss=l1 val_l1=7.607397e-03 val_mse=2.182883e-04 rows_updated=1 migrated=False
+2026-06-26 01:26:34,930 | INFO | backfill_val_dual_loss | epoch=8 trained_loss=l1 val_l1=7.627433e-03 val_mse=2.230297e-04 rows_updated=1 migrated=False
+2026-06-26 01:41:49,891 | INFO | backfill_val_dual_loss | epoch=9 trained_loss=l1 val_l1=7.635746e-03 val_mse=2.232945e-04 rows_updated=1 migrated=False
+2026-06-26 01:57:04,576 | INFO | backfill_val_dual_loss | epoch=10 trained_loss=l1 val_l1=7.649803e-03 val_mse=2.240723e-04 rows_updated=1 migrated=False
+2026-06-26 02:13:08,651 | INFO | backfill_val_dual_loss | epoch=11 trained_loss=mse val_l1=7.657677e-03 val_mse=1.997713e-04 rows_updated=1 migrated=False
+2026-06-26 02:29:21,162 | INFO | backfill_val_dual_loss | epoch=12 trained_loss=mse val_l1=7.937252e-03 val_mse=2.084401e-04 rows_updated=1 migrated=False
+2026-06-26 02:45:33,341 | INFO | backfill_val_dual_loss | epoch=13 trained_loss=mse val_l1=7.757038e-03 val_mse=2.101923e-04 rows_updated=1 migrated=False
+2026-06-26 03:01:46,050 | INFO | backfill_val_dual_loss | epoch=14 trained_loss=mse val_l1=7.738636e-03 val_mse=2.109201e-04 rows_updated=1 migrated=False
+2026-06-26 03:17:59,850 | INFO | backfill_val_dual_loss | epoch=15 trained_loss=mse val_l1=7.846351e-03 val_mse=2.210577e-04 rows_updated=1 migrated=False
+2026-06-26 03:33:55,620 | INFO | backfill_val_dual_loss | epoch=16 trained_loss=mse val_l1=7.845209e-03 val_mse=2.225111e-04 rows_updated=1 migrated=False
+2026-06-26 03:49:12,567 | INFO | backfill_val_dual_loss | epoch=17 trained_loss=mse val_l1=7.892306e-03 val_mse=2.259306e-04 rows_updated=1 migrated=False
+2026-06-26 04:04:29,136 | INFO | backfill_val_dual_loss | epoch=18 trained_loss=mse val_l1=7.754291e-03 val_mse=2.194946e-04 rows_updated=1 migrated=False
+2026-06-26 04:19:46,287 | INFO | backfill_val_dual_loss | epoch=19 trained_loss=mse val_l1=7.791377e-03 val_mse=2.194453e-04 rows_updated=1 migrated=False
+2026-06-26 04:35:02,913 | INFO | backfill_val_dual_loss | epoch=20 trained_loss=mse val_l1=7.928859e-03 val_mse=2.255595e-04 rows_updated=1 migrated=False
+2026-06-26 04:50:19,911 | INFO | backfill_val_dual_loss | epoch=21 trained_loss=mse val_l1=7.763670e-03 val_mse=2.237294e-04 rows_updated=1 migrated=False
+2026-06-26 05:05:36,968 | INFO | backfill_val_dual_loss | epoch=22 trained_loss=mse val_l1=7.921883e-03 val_mse=2.263443e-04 rows_updated=1 migrated=False
+2026-06-26 05:20:54,224 | INFO | backfill_val_dual_loss | epoch=23 trained_loss=mse val_l1=7.869507e-03 val_mse=2.261492e-04 rows_updated=1 migrated=False
+2026-06-26 05:36:11,664 | INFO | backfill_val_dual_loss | epoch=24 trained_loss=mse val_l1=7.776517e-03 val_mse=2.226281e-04 rows_updated=1 migrated=False
+2026-06-26 05:51:29,052 | INFO | backfill_val_dual_loss | epoch=25 trained_loss=mse val_l1=7.897001e-03 val_mse=2.279393e-04 rows_updated=1 migrated=False
+2026-06-26 06:06:46,096 | INFO | backfill_val_dual_loss | epoch=26 trained_loss=mse val_l1=7.876866e-03 val_mse=2.291294e-04 rows_updated=1 migrated=False
+2026-06-26 06:22:03,301 | INFO | backfill_val_dual_loss | epoch=27 trained_loss=mse val_l1=7.876060e-03 val_mse=2.267566e-04 rows_updated=1 migrated=False
+2026-06-26 06:37:20,518 | INFO | backfill_val_dual_loss | epoch=28 trained_loss=mse val_l1=7.862194e-03 val_mse=2.282036e-04 rows_updated=1 migrated=False
+2026-06-26 06:52:37,861 | INFO | backfill_val_dual_loss | epoch=29 trained_loss=mse val_l1=7.868580e-03 val_mse=2.273507e-04 rows_updated=1 migrated=False
+2026-06-26 07:07:55,004 | INFO | backfill_val_dual_loss | epoch=30 trained_loss=mse val_l1=7.925677e-03 val_mse=2.314099e-04 rows_updated=1 migrated=False
+2026-06-26 07:23:12,333 | INFO | backfill_val_dual_loss | epoch=31 trained_loss=mse val_l1=7.816678e-03 val_mse=2.315325e-04 rows_updated=1 migrated=False
+2026-06-26 07:38:29,537 | INFO | backfill_val_dual_loss | epoch=32 trained_loss=mse val_l1=7.867571e-03 val_mse=2.338301e-04 rows_updated=1 migrated=False

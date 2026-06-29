@@ -39,6 +39,7 @@ from per_sample_loss import (
     resolve_device,
 )
 from compute_boundary_length import load_geometries, to_binary, boundary_length
+from output_layout import resolve_script_output_dir
 
 
 LOSS_YLABEL = {
@@ -56,7 +57,10 @@ def main() -> None:
     p.add_argument("--geometries", required=True, help="Discrete geometries tensor (.pt), shape (n_geom, H, W), binary {0,1}.")
     p.add_argument("--losses", nargs="+", default=["mae", "mse", "nmae", "nmse"], help="Loss criteria (default: all four).")
     p.add_argument("--channels", default="0,1,2,3,4", help="Comma-separated prediction channels to average (default: 0,1,2,3,4).")
-    p.add_argument("--output-dir", default="", help="Output folder (default: <inference-dir>/boundary_length_vs_loss).")
+    p.add_argument("--output-dir", default="", help="Explicit output folder (overrides the model/dataset layout below).")
+    p.add_argument("--model-name", default="", help="Model name for the PLOTS/<model>/<dataset>/<subdir> layout.")
+    p.add_argument("--dataset", default="", help="Dataset folder for the layout (default: --tag).")
+    p.add_argument("--output-subdir", default="boundary_length_vs_loss", help="Script output folder name under PLOTS/<model>/<dataset> (default: boundary_length_vs_loss).")
     p.add_argument("--tag", default="", help="Dataset tag for filenames (e.g. b_test).")
     p.add_argument("--periodic", action="store_true", help="Use periodic (wrap-around) boundary length.")
     p.add_argument("--linear-y", action="store_true", help="Use a linear loss (y) axis (default is log-scaled).")
@@ -77,8 +81,14 @@ def main() -> None:
     device = resolve_device(args.device)
     dataset_pt_dir = Path(args.dataset_pt_dir)
     infer_path = Path(args.inference)
-    out_dir = Path(args.output_dir) if args.output_dir else infer_path.parent / "boundary_length_vs_loss"
-    out_dir.mkdir(parents=True, exist_ok=True)
+    out_dir = resolve_script_output_dir(
+        explicit=args.output_dir or None,
+        category="plots",
+        model_name=args.model_name or None,
+        dataset=args.dataset or args.tag,
+        subdir=args.output_subdir,
+        fallback=infer_path.parent / "boundary_length_vs_loss",
+    )
 
     predictions = torch.load(infer_path, map_location="cpu", mmap=True, weights_only=True)
     truth_flat, n_geom, n_wv, n_bands, field_h, field_w, channels = prepare_scoring_data(

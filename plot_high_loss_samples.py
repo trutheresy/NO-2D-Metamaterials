@@ -30,6 +30,7 @@ import matplotlib.pyplot as plt
 
 import NO_utilities
 from per_sample_loss import DEFAULT_SCORING_CHANNELS, parse_channels
+from output_layout import resolve_script_output_dir
 
 
 def main() -> None:
@@ -38,7 +39,10 @@ def main() -> None:
     p.add_argument("--predictions", required=True, help="Dense prediction tensor (.pt), shape (n_geom*n_wv*n_bands, C, H, W).")
     p.add_argument("--loss-array", nargs=2, action="append", metavar=("NAME", "PATH"), required=True,
                    help="Loss name and .npy path from per_sample_loss.py. Repeatable.")
-    p.add_argument("--output-dir", required=True, help="Base folder for outputs (a <LOSS>_high_loss_samples subfolder is created).")
+    p.add_argument("--output-dir", default="", help="Explicit base folder (overrides the model/dataset layout below); a <LOSS>_high_loss_samples subfolder is created inside it.")
+    p.add_argument("--model-name", default="", help="Model name for the PLOTS/<model>/<dataset>/<subdir> layout.")
+    p.add_argument("--dataset", default="", help="Dataset folder for the layout (default: --tag).")
+    p.add_argument("--output-subdir", default="high_loss_analysis", help="Script output folder name under PLOTS/<model>/<dataset> (default: high_loss_analysis).")
     p.add_argument("--tag", default="", help="Dataset tag for filenames (e.g. c_test).")
     p.add_argument("--top", type=int, default=12, help="Number of highest-loss samples to plot (default 12).")
     p.add_argument("--analyze-top", type=int, default=200, help="Number of highest-loss samples for the pattern summary (default 200).")
@@ -53,8 +57,14 @@ def main() -> None:
 
     channels = parse_channels(args.channels)
     pt = Path(args.dataset_pt_dir)
-    base_out = Path(args.output_dir)
-    base_out.mkdir(parents=True, exist_ok=True)
+    base_out = resolve_script_output_dir(
+        explicit=args.output_dir or None,
+        category="plots",
+        model_name=args.model_name or None,
+        dataset=args.dataset or args.tag,
+        subdir=args.output_subdir,
+        fallback=Path(args.predictions).parent,
+    )
 
     geometries = torch.load(pt / "geometries_full.pt", weights_only=False)
     waveforms = torch.load(pt / "waveforms_full.pt", weights_only=False)

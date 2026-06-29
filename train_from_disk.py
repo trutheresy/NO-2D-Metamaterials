@@ -56,6 +56,24 @@ class ShardInfo:
     n: int
 
 
+@dataclass
+class FullIndexShardInfo:
+    """Test shard metadata for on-the-fly assembly from indices_full.pt."""
+
+    name: str
+    pt_dir: Path
+    indices_path: Path
+    geometries_path: Path
+    waveforms_path: Path
+    band_fft_path: Path
+    eigen_ch0_path: Path
+    displacements_path: Path
+    n: int
+    n_design: int
+    n_wv: int
+    n_band: int
+
+
 class ShardedTensorPairDataset(Dataset[tuple[torch.Tensor, torch.Tensor]]):
     """
     Disk-backed dataset: inputs.pt; output channel 0 from eigenfrequency_*_full.pt at
@@ -115,6 +133,108 @@ class ShardedTensorPairDataset(Dataset[tuple[torch.Tensor, torch.Tensor]]):
         y0 = self._loaded_eigen_ch0[d, w, b]
         y_rest = self._loaded_outputs[local_idx, 1:5]
         y = torch.cat([y0.unsqueeze(0), y_rest], dim=0)
+        return x, y
+
+
+class FullIndexTensorPairDataset(Dataset[tuple[torch.Tensor, torch.Tensor]]):
+    """
+    Disk-backed validation dataset over indices_full.pt.
+
+    Assembles inputs from geometries/waveforms/band_fft and targets from
+    eigenfrequency_*_full.pt + displacements_dataset.pt without requiring
+    prebuilt inputs.pt/outputs.pt for the full index list.
+    """
+
+    def __init__(self, shards: list[FullIndexShardInfo], eigen_ch0_encoding: str):
+        if eigen_ch0_encoding not in EIGEN_CH0_FILES:
+            raise ValueError(f"Unknown eigen_ch0_encoding: {eigen_ch0_encoding!r}")
+        if not shards:
+            raise ValueError("No shards were provided.")
+        self.shards = shards
+        self.eigen_ch0_encoding = eigen_ch0_encoding
+        self._lengths = [s.n for s in shards]
+        self._offsets = np.cumsum([0, *self._lengths]).tolist()
+        self._total = self._offsets[-1]
+
+        self._loaded_shard_idx: int | None = None
+        self._loaded_geometries: torch.Tensor | None = None
+        self._loaded_waveforms: torch.Tensor | None = None
+        self._loaded_band_fft: torch.Tensor | None = None
+        self._loaded_eigen_ch0: torch.Tensor | None = None
+        self._loaded_disp: list[torch.Tensor] | None = None
+        self._loaded_indices: np.ndarray | None = None
+        self._n_wv: int = 0
+        self._n_band: int = 0
+
+    def __len__(self) -> int:
+        return self._total
+
+    def _resolve(self, idx: int) -> tuple[int, int]:
+        if idx < 0 or idx >= self._total:
+            raise IndexError(f"Index out of range: {idx}")
+        shard_idx = bisect.bisect_right(self._offsets, idx) - 1
+        local_idx = idx - self._offsets[shard_idx]
+        return shard_idx, local_idx
+
+    def _load_shard(self, shard_idx: int) -> None:
+        if self._loaded_shard_idx == shard_idx:
+            return
+        shard = self.shards[shard_idx]
+        self._loaded_geometries = torch.load(
+            shard.geometries_path, map_location="cpu", mmap=True, weights_only=True
+        )
+        self._loaded_waveforms = torch.load(
+            shard.waveforms_path, map_location="cpu", mmap=True, weights_only=True
+        )
+        self._loaded_band_fft = torch.load(
+            shard.band_fft_path, map_location="cpu", mmap=True, weights_only=True
+        )
+        self._loaded_eigen_ch0 = torch.load(
+            shard.eigen_ch0_path, map_location="cpu", mmap=True, weights_only=True
+        )
+        displacements = torch.load(shard.displacements_path, map_location="cpu", mmap=True, weights_only=False)
+        if not hasattr(displacements, "tensors") or len(displacements.tensors) != 4:
+            raise ValueError(
+                f"displacements_dataset in {shard.pt_dir} must be a TensorDataset with 4 tensors"
+            )
+        self._loaded_disp = list(displacements.tensors)
+        indices = torch.load(shard.indices_path, map_location="cpu", weights_only=False)
+        self._loaded_indices = np.asarray(indices, dtype=np.int64)
+        if self._loaded_indices.ndim != 2 or self._loaded_indices.shape[1] != 3:
+            raise ValueError(
+                f"indices_full must have shape [N,3] when treated as array, got {self._loaded_indices.shape}"
+            )
+        self._n_wv = shard.n_wv
+        self._n_band = shard.n_band
+        self._loaded_shard_idx = shard_idx
+
+    def __getitem__(self, idx: int) -> tuple[torch.Tensor, torch.Tensor]:
+        shard_idx, local_idx = self._resolve(idx)
+        self._load_shard(shard_idx)
+        assert self._loaded_geometries is not None
+        assert self._loaded_waveforms is not None
+        assert self._loaded_band_fft is not None
+        assert self._loaded_eigen_ch0 is not None
+        assert self._loaded_disp is not None
+        assert self._loaded_indices is not None
+
+        d, w, b = (int(v) for v in self._loaded_indices[local_idx])
+        x = torch.stack(
+            [self._loaded_geometries[d], self._loaded_waveforms[w], self._loaded_band_fft[b]],
+            dim=0,
+        )
+        y0 = self._loaded_eigen_ch0[d, w, b]
+        flat = d * self._n_wv * self._n_band + w * self._n_band + b
+        y = torch.stack(
+            [
+                y0,
+                self._loaded_disp[0][flat],
+                self._loaded_disp[1][flat],
+                self._loaded_disp[2][flat],
+                self._loaded_disp[3][flat],
+            ],
+            dim=0,
+        )
         return x, y
 
 
@@ -279,6 +399,12 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--learning-rate", type=float, default=2e-3)
     p.add_argument("--weight-decay", type=float, default=0.0)
     p.add_argument("--loss", choices=("mse", "l1", "smoothl1"), default="smoothl1")
+    p.add_argument(
+        "--huber-beta",
+        type=float,
+        default=1e-3,
+        help="SmoothL1/Huber transition point (|r|=beta). Used when --loss smoothl1.",
+    )
     p.add_argument("--scheduler", choices=("steplr", "cosine", "none"), default="steplr")
     p.add_argument("--step-size", type=int, default=1)
     p.add_argument("--gamma", type=float, default=0.9)
@@ -292,6 +418,13 @@ def parse_args() -> argparse.Namespace:
     )
     p.add_argument("--max-train-samples", type=int, default=0, help="0 means use all.")
     p.add_argument("--max-test-samples", type=int, default=0, help="0 means use all.")
+    p.add_argument(
+        "--val-full-test",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="Validate on indices_full.pt for c_test/b_test (all design×wavevector×band samples). "
+        "Use --no-val-full-test to validate on downselected reduced_indices (~20%%).",
+    )
     p.add_argument(
         "--eigen-ch0-encoding",
         choices=tuple(EIGEN_CH0_FILES.keys()),
@@ -322,6 +455,23 @@ def parse_args() -> argparse.Namespace:
         type=int,
         default=10,
         help="Number of random test samples to render when --diagnostic-panels is on.",
+    )
+    p.add_argument(
+        "--init-checkpoint",
+        default="",
+        help="Optional .pth weights to load when starting a new run (fresh optimizer/scheduler).",
+    )
+    p.add_argument(
+        "--reset-optimizer-scheduler",
+        action=argparse.BooleanOptionalAction,
+        default=False,
+        help="When resuming, load model weights but rebuild optimizer/scheduler at CLI lr/gamma (epoch-1 values).",
+    )
+    p.add_argument(
+        "--resume-from-epoch",
+        type=int,
+        default=0,
+        help="When resuming, load {run_name}_E{n}.pth and continue at epoch n+1 (0 = use training_state_latest).",
     )
     return p.parse_args()
 
@@ -426,6 +576,111 @@ def discover_shards(output_root: Path, prefixes: tuple[str, ...], eigen_ch0_enco
     return shards
 
 
+def discover_full_index_test_shards(
+    output_root: Path, prefixes: tuple[str, ...], eigen_ch0_encoding: str
+) -> list[FullIndexShardInfo]:
+    if eigen_ch0_encoding not in EIGEN_CH0_FILES:
+        raise ValueError(f"Unknown eigen_ch0_encoding: {eigen_ch0_encoding!r}")
+    eigen_fname = EIGEN_CH0_FILES[eigen_ch0_encoding]
+    shards: list[FullIndexShardInfo] = []
+    ds_dirs = sorted([p for p in output_root.iterdir() if p.is_dir() and p.name.startswith(prefixes)], key=lambda p: p.name)
+    validated_contract = False
+    for d in ds_dirs:
+        pt = latest_pt_dir(d)
+        indices_path = pt / "indices_full.pt"
+        geometries_path = pt / "geometries_full.pt"
+        waveforms_path = pt / "waveforms_full.pt"
+        band_fft_path = pt / "band_fft_full.pt"
+        eigen_path = pt / eigen_fname
+        disp_path = pt / "displacements_dataset.pt"
+        required = {
+            "indices_full.pt": indices_path,
+            "geometries_full.pt": geometries_path,
+            "waveforms_full.pt": waveforms_path,
+            "band_fft_full.pt": band_fft_path,
+            eigen_fname: eigen_path,
+            "displacements_dataset.pt": disp_path,
+        }
+        for label, path in required.items():
+            if not path.exists():
+                raise FileNotFoundError(
+                    f"Missing {label} in {pt} (required for full-index validation)"
+                )
+
+        indices = torch.load(indices_path, map_location="cpu", weights_only=False)
+        n = len(indices)
+
+        if not validated_contract:
+            geometries = torch.load(geometries_path, map_location="cpu", mmap=True, weights_only=True)
+            waveforms = torch.load(waveforms_path, map_location="cpu", mmap=True, weights_only=True)
+            band_fft = torch.load(band_fft_path, map_location="cpu", mmap=True, weights_only=True)
+            eig = torch.load(eigen_path, map_location="cpu", mmap=True, weights_only=True)
+            displacements = torch.load(disp_path, map_location="cpu", mmap=True, weights_only=False)
+            if geometries.ndim != 3 or tuple(geometries.shape[-2:]) != (32, 32):
+                raise ValueError(f"Invalid geometries_full shape in {pt}: {tuple(geometries.shape)}")
+            if waveforms.ndim != 3 or tuple(waveforms.shape[-2:]) != (32, 32):
+                raise ValueError(f"Invalid waveforms_full shape in {pt}: {tuple(waveforms.shape)}")
+            if band_fft.ndim != 3 or tuple(band_fft.shape[-2:]) != (32, 32):
+                raise ValueError(f"Invalid band_fft_full shape in {pt}: {tuple(band_fft.shape)}")
+            if eig.ndim != 5 or tuple(eig.shape[-2:]) != (32, 32):
+                raise ValueError(
+                    f"Invalid {eigen_fname} in {pt}: expected 5D with trailing (32,32), got shape={tuple(eig.shape)}"
+                )
+            n_design = int(geometries.shape[0])
+            n_wv = int(waveforms.shape[0])
+            n_band = int(band_fft.shape[0])
+            if tuple(eig.shape[:3]) != (n_design, n_wv, n_band):
+                raise ValueError(
+                    f"{eigen_fname} leading dims do not match geometry/waveform/band counts in {pt}: "
+                    f"eigen={tuple(eig.shape[:3])}, expected=({n_design}, {n_wv}, {n_band})"
+                )
+            if not hasattr(displacements, "tensors") or len(displacements.tensors) != 4:
+                raise ValueError(f"displacements_dataset in {pt} must be a TensorDataset with 4 tensors")
+            full_rows = n_design * n_wv * n_band
+            disp_rows = int(displacements.tensors[0].shape[0])
+            if disp_rows != full_rows:
+                raise ValueError(
+                    f"displacements row count mismatch in {pt}: rows={disp_rows}, expected full={full_rows}"
+                )
+            arr = np.asarray(indices, dtype=np.int64)
+            if arr.ndim != 2 or arr.shape[1] != 3:
+                raise ValueError(f"indices_full must be shape [N,3] when treated as array, got {arr.shape}")
+            dmax, wmax, bmax = int(arr[:, 0].max()), int(arr[:, 1].max()), int(arr[:, 2].max())
+            dmin, wmin, bmin = int(arr[:, 0].min()), int(arr[:, 1].min()), int(arr[:, 2].min())
+            if dmin < 0 or wmin < 0 or bmin < 0:
+                raise ValueError(f"Negative (design,wavevector,band) index in indices_full under {pt}")
+            if dmax >= n_design or wmax >= n_wv or bmax >= n_band:
+                raise ValueError(
+                    f"indices_full out of range in {pt}: max indices ({dmax},{wmax},{bmax}) "
+                    f"vs counts ({n_design},{n_wv},{n_band})"
+                )
+            validated_contract = True
+        else:
+            n_design = int(torch.load(geometries_path, map_location="cpu", mmap=True, weights_only=True).shape[0])
+            n_wv = int(torch.load(waveforms_path, map_location="cpu", mmap=True, weights_only=True).shape[0])
+            n_band = int(torch.load(band_fft_path, map_location="cpu", mmap=True, weights_only=True).shape[0])
+
+        shards.append(
+            FullIndexShardInfo(
+                name=d.name,
+                pt_dir=pt,
+                indices_path=indices_path,
+                geometries_path=geometries_path,
+                waveforms_path=waveforms_path,
+                band_fft_path=band_fft_path,
+                eigen_ch0_path=eigen_path,
+                displacements_path=disp_path,
+                n=n,
+                n_design=n_design,
+                n_wv=n_wv,
+                n_band=n_band,
+            )
+        )
+    if not shards:
+        raise FileNotFoundError(f"No dataset shards found with prefixes={prefixes} under {output_root}")
+    return shards
+
+
 def dataset_version_hash(shards: list[ShardInfo], eigen_ch0_encoding: str) -> str:
     h = hashlib.sha256()
     h.update(eigen_ch0_encoding.encode("utf-8"))
@@ -437,6 +692,25 @@ def dataset_version_hash(shards: list[ShardInfo], eigen_ch0_encoding: str) -> st
         h.update(str(int(s.inputs_path.stat().st_mtime)).encode("utf-8"))
         h.update(str(int(s.outputs_path.stat().st_mtime)).encode("utf-8"))
         h.update(str(int(s.eigen_ch0_path.stat().st_mtime)).encode("utf-8"))
+    return h.hexdigest()[:12]
+
+
+def full_index_dataset_version_hash(shards: list[FullIndexShardInfo], eigen_ch0_encoding: str) -> str:
+    h = hashlib.sha256()
+    h.update(eigen_ch0_encoding.encode("utf-8"))
+    h.update(b"indices_full")
+    for s in shards:
+        h.update(str(s.pt_dir).encode("utf-8"))
+        for path in (
+            s.indices_path,
+            s.geometries_path,
+            s.waveforms_path,
+            s.band_fft_path,
+            s.eigen_ch0_path,
+            s.displacements_path,
+        ):
+            h.update(str(path.stat().st_size).encode("utf-8"))
+            h.update(str(int(path.stat().st_mtime)).encode("utf-8"))
     return h.hexdigest()[:12]
 
 
@@ -490,6 +764,35 @@ def maybe_cap_shards(shards: list[ShardInfo], cap: int) -> list[ShardInfo]:
     return out
 
 
+def maybe_cap_full_shards(shards: list[FullIndexShardInfo], cap: int) -> list[FullIndexShardInfo]:
+    if cap <= 0:
+        return shards
+    out: list[FullIndexShardInfo] = []
+    remaining = cap
+    for s in shards:
+        if remaining <= 0:
+            break
+        keep = min(s.n, remaining)
+        out.append(
+            FullIndexShardInfo(
+                s.name,
+                s.pt_dir,
+                s.indices_path,
+                s.geometries_path,
+                s.waveforms_path,
+                s.band_fft_path,
+                s.eigen_ch0_path,
+                s.displacements_path,
+                keep,
+                s.n_design,
+                s.n_wv,
+                s.n_band,
+            )
+        )
+        remaining -= keep
+    return out
+
+
 def amp_context(device: torch.device, amp_mode: str):
     if device.type != "cuda" or amp_mode == "none":
         return torch.autocast(device_type=device.type, enabled=False)
@@ -498,12 +801,64 @@ def amp_context(device: torch.device, amp_mode: str):
     return torch.autocast(device_type="cuda", dtype=torch.bfloat16, enabled=True)
 
 
-def build_criterion(loss_name: str) -> nn.Module:
+def build_criterion(loss_name: str, *, huber_beta: float = 1e-3) -> nn.Module:
     if loss_name == "mse":
         return nn.MSELoss()
     if loss_name == "l1":
         return nn.L1Loss()
-    return nn.SmoothL1Loss(beta=1e-5)
+    return nn.SmoothL1Loss(beta=huber_beta)
+
+
+def compare_loss_name_for_csv(active_loss: str) -> str:
+    """Backward-compat compare column: L1 when training MSE, else MSE (incl. SmoothL1)."""
+    if active_loss == "mse":
+        return "l1"
+    return "mse"
+
+
+def reference_l1_mse_fieldnames(out_channels: int) -> list[str]:
+    cols = ["train_l1_loss", "train_mse_loss", "val_l1_loss", "val_mse_loss"]
+    for loss_name in ("l1", "mse"):
+        for split in ("train", "val"):
+            cols += [f"{split}_{loss_name}_loss_ch{i}" for i in range(out_channels)]
+    return cols
+
+
+def populate_reference_l1_mse_from_row(
+    row: dict[str, str],
+    out_channels: int,
+    *,
+    active_loss: str | None,
+) -> None:
+    """Fill explicit L1/MSE reference columns from active/compare columns when possible."""
+    train_loss = row.get("train_loss", "")
+    val_loss = row.get("val_loss", "")
+    train_cmp = row.get("train_compare_loss", "")
+    val_cmp = row.get("val_compare_loss", "")
+
+    if active_loss == "l1":
+        row["train_l1_loss"] = train_loss
+        row["val_l1_loss"] = val_loss
+        row["train_mse_loss"] = train_cmp
+        row["val_mse_loss"] = val_cmp
+        for i in range(out_channels):
+            row[f"train_l1_loss_ch{i}"] = row.get(f"train_loss_ch{i}", "")
+            row[f"val_l1_loss_ch{i}"] = row.get(f"val_loss_ch{i}", "")
+            row[f"train_mse_loss_ch{i}"] = row.get(f"train_compare_loss_ch{i}", "")
+            row[f"val_mse_loss_ch{i}"] = row.get(f"val_compare_loss_ch{i}", "")
+    elif active_loss == "mse":
+        row["train_mse_loss"] = train_loss
+        row["val_mse_loss"] = val_loss
+        row["train_l1_loss"] = train_cmp
+        row["val_l1_loss"] = val_cmp
+        for i in range(out_channels):
+            row[f"train_mse_loss_ch{i}"] = row.get(f"train_loss_ch{i}", "")
+            row[f"val_mse_loss_ch{i}"] = row.get(f"val_loss_ch{i}", "")
+            row[f"train_l1_loss_ch{i}"] = row.get(f"train_compare_loss_ch{i}", "")
+            row[f"val_l1_loss_ch{i}"] = row.get(f"val_compare_loss_ch{i}", "")
+    else:
+        for key in reference_l1_mse_fieldnames(out_channels):
+            row.setdefault(key, "")
 
 
 def build_optimizer(args: argparse.Namespace, model: nn.Module) -> torch.optim.Optimizer:
@@ -519,7 +874,13 @@ def build_scheduler(args: argparse.Namespace, optimizer: torch.optim.Optimizer):
     return torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=t_max)
 
 
-def per_channel_loss_mean(pred: torch.Tensor, yb: torch.Tensor, loss_name: str) -> torch.Tensor:
+def per_channel_loss_mean(
+    pred: torch.Tensor,
+    yb: torch.Tensor,
+    loss_name: str,
+    *,
+    huber_beta: float = 1e-3,
+) -> torch.Tensor:
     """
     Per-channel mean of the given loss, shape [C]: mean over (N, H, W) per channel.
     Matches the per-channel breakdown implied by nn.MSELoss / L1Loss / SmoothL1Loss with default reduction.
@@ -532,7 +893,12 @@ def per_channel_loss_mean(pred: torch.Tensor, yb: torch.Tensor, loss_name: str) 
         if loss_name == "l1":
             return (pf - yf).abs().mean(dim=(0, 2, 3)).cpu().to(torch.float64)
         if loss_name == "smoothl1":
-            return F.smooth_l1_loss(pf, yf, reduction="none", beta=1e-5).mean(dim=(0, 2, 3)).cpu().to(torch.float64)
+            return (
+                F.smooth_l1_loss(pf, yf, reduction="none", beta=huber_beta)
+                .mean(dim=(0, 2, 3))
+                .cpu()
+                .to(torch.float64)
+            )
         raise ValueError(f"Unknown loss_name: {loss_name!r}")
 
 
@@ -555,6 +921,7 @@ def metrics_csv_fieldnames(out_channels: int, *, dual_compare: bool) -> list[str
             "val_compare_loss",
             *[f"train_compare_loss_ch{i}" for i in range(out_channels)],
             *[f"val_compare_loss_ch{i}" for i in range(out_channels)],
+            *reference_l1_mse_fieldnames(out_channels),
         ]
     return cols
 
@@ -568,18 +935,18 @@ def _to_float_or_nan(v: str | None) -> float:
         return float("nan")
 
 
-def _migrate_metrics_to_dual_header(metrics_csv: Path, out_channels: int) -> None:
+def _migrate_metrics_schema(metrics_csv: Path, out_channels: int, *, active_loss: str | None) -> None:
     """
-    Upgrade single-loss metrics.csv to dual-loss header in-place by seeding compare columns
-    from the active loss columns. This preserves CSV append compatibility for resumed runs
-    that switch active loss and need compare-loss tracking.
+    Upgrade metrics.csv to the current dual-loss + L1/MSE reference header in-place.
+    Seeds compare/reference columns from active loss columns when historical rows lack them.
     """
     dual_header = metrics_csv_fieldnames(out_channels, dual_compare=True)
     single_header = metrics_csv_fieldnames(out_channels, dual_compare=False)
     with metrics_csv.open("r", newline="", encoding="utf-8") as rf:
-        rows = list(csv.DictReader(rf))
-        existing_header = rows[0].keys() if rows else single_header
-    if list(existing_header) != single_header:
+        reader = csv.DictReader(rf)
+        existing_header = list(reader.fieldnames or [])
+        rows = list(reader)
+    if existing_header == dual_header:
         return
 
     tmp_path = metrics_csv.with_suffix(".csv.tmp")
@@ -587,15 +954,17 @@ def _migrate_metrics_to_dual_header(metrics_csv: Path, out_channels: int) -> Non
         writer = csv.DictWriter(wf, fieldnames=dual_header)
         writer.writeheader()
         for row in rows:
-            # For historical rows we only have one loss family in CSV; copy it into compare
-            # columns as the best available apples-to-apples baseline.
-            merged = {k: row.get(k, "") for k in single_header}
-            merged["train_compare_loss"] = row.get("train_loss", "")
-            merged["val_compare_loss"] = row.get("val_loss", "")
-            for i in range(out_channels):
-                merged[f"train_compare_loss_ch{i}"] = row.get(f"train_loss_ch{i}", "")
-                merged[f"val_compare_loss_ch{i}"] = row.get(f"val_loss_ch{i}", "")
-            writer.writerow(merged)
+            if existing_header == single_header:
+                merged = {k: row.get(k, "") for k in single_header}
+                merged["train_compare_loss"] = row.get("train_loss", "")
+                merged["val_compare_loss"] = row.get("val_loss", "")
+                for i in range(out_channels):
+                    merged[f"train_compare_loss_ch{i}"] = row.get(f"train_loss_ch{i}", "")
+                    merged[f"val_compare_loss_ch{i}"] = row.get(f"val_loss_ch{i}", "")
+            else:
+                merged = {k: row.get(k, "") for k in dual_header}
+            populate_reference_l1_mse_from_row(merged, out_channels, active_loss=active_loss)
+            writer.writerow({k: merged.get(k, "") for k in dual_header})
     tmp_path.replace(metrics_csv)
 
 
@@ -622,23 +991,68 @@ def _sync_best_weights_from_epoch(run_dir: Path, run_name: str, best_epoch: int,
         shutil.copyfile(src, best_path)
 
 
+def _truncate_metrics_after_epoch(run_dir: Path, max_epoch: int) -> None:
+    """Drop metrics rows with epoch > max_epoch when rewinding a resumed run."""
+    metrics_csv = run_dir / "metrics.csv"
+    if metrics_csv.is_file():
+        with metrics_csv.open("r", newline="", encoding="utf-8") as rf:
+            rows = list(csv.DictReader(rf))
+            fieldnames = rows[0].keys() if rows else []
+        kept = [r for r in rows if int(float(r.get("epoch", "0"))) <= max_epoch]
+        if len(kept) < len(rows):
+            with metrics_csv.open("w", newline="", encoding="utf-8") as wf:
+                writer = csv.DictWriter(wf, fieldnames=fieldnames)
+                writer.writeheader()
+                writer.writerows(kept)
+    metrics_jsonl = run_dir / "metrics.jsonl"
+    if metrics_jsonl.is_file():
+        kept_lines: list[str] = []
+        with metrics_jsonl.open("r", encoding="utf-8") as rf:
+            for line in rf:
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    row = json.loads(line)
+                    if int(row.get("epoch", 0)) <= max_epoch:
+                        kept_lines.append(line)
+                except json.JSONDecodeError:
+                    continue
+        metrics_jsonl.write_text("\n".join(kept_lines) + ("\n" if kept_lines else ""), encoding="utf-8")
+
+
+@dataclass
+class LossMetrics:
+    active: float
+    active_ch: list[float]
+    l1: float
+    l1_ch: list[float]
+    mse: float
+    mse_ch: list[float]
+    samples_per_sec: float
+
+    def compare(self, compare_loss_name: str) -> tuple[float, list[float]]:
+        if compare_loss_name == "l1":
+            return self.l1, self.l1_ch
+        return self.mse, self.mse_ch
+
+
 def evaluate(
     model: nn.Module,
     loader: DataLoader,
     device: torch.device,
     amp_mode: str,
     criterion: nn.Module,
-    criterion_compare: nn.Module | None,
     active_loss_name: str,
-    compare_loss_name: str | None,
-) -> tuple[float, float | None, list[float], list[float] | None, float]:
+    huber_beta: float = 1e-3,
+) -> LossMetrics:
     model.eval()
-    running_loss = 0.0
-    running_loss_compare = 0.0 if criterion_compare is not None else None
-    running_per_ch = torch.zeros(OUT_CHANNELS, dtype=torch.float64)
-    running_per_ch_cmp = (
-        torch.zeros(OUT_CHANNELS, dtype=torch.float64) if compare_loss_name is not None else None
-    )
+    running_active = 0.0
+    running_l1 = 0.0
+    running_mse = 0.0
+    running_active_ch = torch.zeros(OUT_CHANNELS, dtype=torch.float64)
+    running_l1_ch = torch.zeros(OUT_CHANNELS, dtype=torch.float64)
+    running_mse_ch = torch.zeros(OUT_CHANNELS, dtype=torch.float64)
     n_samples = 0
     start = time.time()
     with torch.no_grad():
@@ -647,25 +1061,28 @@ def evaluate(
             yb = yb.to(device, dtype=torch.float32, non_blocking=True)
             with amp_context(device, amp_mode):
                 pred = model(xb)
-                loss = criterion(pred, yb)
-                loss_compare = criterion_compare(pred, yb) if criterion_compare is not None else None
+                loss_active = criterion(pred, yb)
+                loss_l1 = F.l1_loss(pred, yb)
+                loss_mse = F.mse_loss(pred, yb)
             bs = xb.shape[0]
-            running_loss += float(loss.item()) * bs
-            if running_loss_compare is not None and loss_compare is not None:
-                running_loss_compare += float(loss_compare.item()) * bs
-            running_per_ch += per_channel_loss_mean(pred, yb, active_loss_name) * bs
-            if running_per_ch_cmp is not None and compare_loss_name is not None:
-                running_per_ch_cmp += per_channel_loss_mean(pred, yb, compare_loss_name) * bs
+            running_active += float(loss_active.item()) * bs
+            running_l1 += float(loss_l1.item()) * bs
+            running_mse += float(loss_mse.item()) * bs
+            running_active_ch += per_channel_loss_mean(pred, yb, active_loss_name, huber_beta=huber_beta) * bs
+            running_l1_ch += per_channel_loss_mean(pred, yb, "l1", huber_beta=huber_beta) * bs
+            running_mse_ch += per_channel_loss_mean(pred, yb, "mse", huber_beta=huber_beta) * bs
             n_samples += bs
     elapsed = max(time.time() - start, 1e-9)
-    mean_loss = running_loss / max(n_samples, 1)
-    mean_loss_compare = (running_loss_compare / max(n_samples, 1)) if running_loss_compare is not None else None
-    mean_ch = (running_per_ch / max(n_samples, 1)).tolist()
-    mean_ch_cmp = (
-        (running_per_ch_cmp / max(n_samples, 1)).tolist() if running_per_ch_cmp is not None else None
+    denom = max(n_samples, 1)
+    return LossMetrics(
+        active=running_active / denom,
+        active_ch=(running_active_ch / denom).tolist(),
+        l1=running_l1 / denom,
+        l1_ch=(running_l1_ch / denom).tolist(),
+        mse=running_mse / denom,
+        mse_ch=(running_mse_ch / denom).tolist(),
+        samples_per_sec=n_samples / elapsed,
     )
-    sps = n_samples / elapsed
-    return mean_loss, mean_loss_compare, mean_ch, mean_ch_cmp, sps
 
 
 def setup_logger(log_path: Path) -> logging.Logger:
@@ -898,12 +1315,23 @@ def main() -> None:
     try:
         output_root = Path(args.output_root)
         train_shards = discover_shards(output_root, TRAIN_PREFIXES, args.eigen_ch0_encoding)
-        test_shards = discover_shards(output_root, TEST_PREFIXES, args.eigen_ch0_encoding)
+        if args.val_full_test:
+            test_shards_materialized: list[ShardInfo] = []
+            test_shards_full = discover_full_index_test_shards(output_root, TEST_PREFIXES, args.eigen_ch0_encoding)
+            test_shards_full = maybe_cap_full_shards(test_shards_full, args.max_test_samples)
+        else:
+            test_shards_materialized = discover_shards(output_root, TEST_PREFIXES, args.eigen_ch0_encoding)
+            test_shards_materialized = maybe_cap_shards(test_shards_materialized, args.max_test_samples)
+            test_shards_full = []
         train_shards = maybe_cap_shards(train_shards, args.max_train_samples)
-        test_shards = maybe_cap_shards(test_shards, args.max_test_samples)
 
         train_ds = ShardedTensorPairDataset(train_shards, args.eigen_ch0_encoding)
-        test_ds = ShardedTensorPairDataset(test_shards, args.eigen_ch0_encoding)
+        if args.val_full_test:
+            test_ds: Dataset[tuple[torch.Tensor, torch.Tensor]] = FullIndexTensorPairDataset(
+                test_shards_full, args.eigen_ch0_encoding
+            )
+        else:
+            test_ds = ShardedTensorPairDataset(test_shards_materialized, args.eigen_ch0_encoding)
 
         train_loader_kwargs: dict[str, Any] = {
             "num_workers": args.num_workers,
@@ -949,12 +1377,15 @@ def main() -> None:
             hidden_channels=args.hidden_channels,
             n_layers=args.layers,
         ).to(device)
-        inferred_prev_loss = _infer_previous_loss_from_run(run_dir) if resume_mode else None
-        criterion = build_criterion(args.loss)
-        compare_loss_name: str | None = inferred_prev_loss
-        criterion_compare = build_criterion(compare_loss_name) if compare_loss_name and compare_loss_name != args.loss else None
-        if criterion_compare is not None:
-            logger.info("Dual-loss logging enabled | active_loss=%s compare_loss=%s", args.loss, compare_loss_name)
+        criterion = build_criterion(args.loss, huber_beta=args.huber_beta)
+        compare_loss_name = compare_loss_name_for_csv(args.loss)
+        if args.loss == "smoothl1":
+            logger.info("Huber/SmoothL1 beta=%.6e", args.huber_beta)
+        logger.info(
+            "Reference L1/MSE logging enabled | active_loss=%s compare_col=%s",
+            args.loss,
+            compare_loss_name,
+        )
         optimizer = build_optimizer(args, model)
         scheduler = build_scheduler(args, optimizer)
         scaler = torch.cuda.amp.GradScaler(enabled=(device.type == "cuda" and args.amp == "fp16"))
@@ -963,21 +1394,80 @@ def main() -> None:
         best_val = float("inf")
         best_epoch = -1
 
+        if not resume_mode and args.init_checkpoint.strip():
+            init_path = Path(args.init_checkpoint).resolve()
+            if not init_path.is_file():
+                raise FileNotFoundError(f"--init-checkpoint not found: {init_path}")
+            init_blob = torch.load(init_path, map_location="cpu", weights_only=False)
+            if isinstance(init_blob, dict) and "model_state_dict" in init_blob:
+                init_state = init_blob["model_state_dict"]
+            else:
+                init_state = init_blob
+            loaded_ok, compat_path = _try_load_model_state_with_compat_fallback(model, init_state, run_dir)
+            if not loaded_ok:
+                logger.warning("Loaded compat weights from %s for init checkpoint %s", compat_path, init_path)
+            metadata["init_checkpoint"] = str(init_path)
+            logger.info("Warm-started model weights from %s", init_path)
+
         state_latest_path = run_dir / "training_state_latest.pt"
         if resume_mode:
-            if state_latest_path.is_file():
+            if args.resume_from_epoch > 0:
+                ep_n = int(args.resume_from_epoch)
+                ep_ckpt = run_dir / f"{run_name}_E{ep_n}.pth"
+                if not ep_ckpt.is_file():
+                    raise FileNotFoundError(f"--resume-from-epoch {ep_n}: missing checkpoint {ep_ckpt}")
+                _truncate_metrics_after_epoch(run_dir, ep_n)
+                for stray in run_dir.glob(f"{run_name}_E*.pth"):
+                    try:
+                        n = int(stray.stem.rsplit("_E", 1)[-1])
+                    except ValueError:
+                        continue
+                    if n > ep_n:
+                        stray.unlink(missing_ok=True)
+                ep_blob = torch.load(ep_ckpt, map_location="cpu", weights_only=False)
+                if isinstance(ep_blob, dict) and "model_state_dict" in ep_blob:
+                    ep_state = ep_blob["model_state_dict"]
+                else:
+                    ep_state = ep_blob
+                loaded_ok, compat_path = _try_load_model_state_with_compat_fallback(model, ep_state, run_dir)
+                if not loaded_ok:
+                    logger.warning("Loaded compat weights from %s for epoch checkpoint %s", compat_path, ep_ckpt)
+                start_epoch = ep_n + 1
+                metadata["resume_from_epoch_checkpoint"] = str(ep_ckpt)
+                if args.reset_optimizer_scheduler:
+                    logger.info(
+                        "Loaded weights from %s; reset optimizer/scheduler to lr=%.3e gamma=%.3g; "
+                        "continuing at epoch=%d.",
+                        ep_ckpt,
+                        args.learning_rate,
+                        args.gamma,
+                        start_epoch,
+                    )
+                else:
+                    logger.info("Loaded weights from %s; continuing at epoch=%d.", ep_ckpt, start_epoch)
+            elif state_latest_path.is_file():
                 state_blob = torch.load(state_latest_path, map_location="cpu", weights_only=False)
                 state_dict = state_blob["model_state_dict"]
                 resumed_full_state, compat_path = _try_load_model_state_with_compat_fallback(model, state_dict, run_dir)
                 if resumed_full_state:
-                    optimizer.load_state_dict(state_blob["optimizer_state_dict"])
-                    if scheduler is not None and state_blob.get("scheduler_state_dict") is not None:
-                        scheduler.load_state_dict(state_blob["scheduler_state_dict"])
-                    scaler.load_state_dict(state_blob.get("scaler_state_dict", {}))
                     start_epoch = int(state_blob["epoch"]) + 1
                     best_val = float(state_blob.get("best_val_loss", best_val))
                     best_epoch = int(state_blob.get("best_epoch", best_epoch))
-                    logger.info("Resumed full state from %s at epoch=%d", state_latest_path, start_epoch - 1)
+                    if args.reset_optimizer_scheduler:
+                        logger.info(
+                            "Resumed model weights from %s at epoch=%d; reset optimizer/scheduler to "
+                            "lr=%.3e gamma=%.3g (not restoring saved optimizer state).",
+                            state_latest_path,
+                            start_epoch - 1,
+                            args.learning_rate,
+                            args.gamma,
+                        )
+                    else:
+                        optimizer.load_state_dict(state_blob["optimizer_state_dict"])
+                        if scheduler is not None and state_blob.get("scheduler_state_dict") is not None:
+                            scheduler.load_state_dict(state_blob["scheduler_state_dict"])
+                        scaler.load_state_dict(state_blob.get("scaler_state_dict", {}))
+                        logger.info("Resumed full state from %s at epoch=%d", state_latest_path, start_epoch - 1)
                 else:
                     fallback_epoch = _latest_epoch_from_ckpts(run_dir)
                     if fallback_epoch >= 0:
@@ -1028,7 +1518,32 @@ def main() -> None:
             metadata["resume_from_epoch"] = start_epoch - 1
             metadata["resume_target_total_epochs"] = total_epochs
 
-        data_ver = dataset_version_hash(train_shards + test_shards, args.eigen_ch0_encoding)
+        train_data_ver = dataset_version_hash(train_shards, args.eigen_ch0_encoding)
+        if args.val_full_test:
+            test_data_ver = full_index_dataset_version_hash(test_shards_full, args.eigen_ch0_encoding)
+            test_shards_count = len(test_shards_full)
+            test_shards_config = [
+                {
+                    "name": s.name,
+                    "pt_dir": str(s.pt_dir),
+                    "n": s.n,
+                    "index_source": "indices_full",
+                }
+                for s in test_shards_full
+            ]
+        else:
+            test_data_ver = dataset_version_hash(test_shards_materialized, args.eigen_ch0_encoding)
+            test_shards_count = len(test_shards_materialized)
+            test_shards_config = [
+                {
+                    "name": s.name,
+                    "pt_dir": str(s.pt_dir),
+                    "n": s.n,
+                    "index_source": "reduced_indices",
+                }
+                for s in test_shards_materialized
+            ]
+        data_ver = hashlib.sha256(f"{train_data_ver}:{test_data_ver}".encode("utf-8")).hexdigest()[:12]
         params: dict[str, Any] = {
             "model_name": "FNO2d",
             "in_channels": 3,
@@ -1040,6 +1555,7 @@ def main() -> None:
             "modes_width": args.modes_width,
             "optimizer": "adamw",
             "loss": args.loss,
+            "huber_beta": args.huber_beta,
             "scheduler": args.scheduler,
             "learning_rate": args.learning_rate,
             "weight_decay": args.weight_decay,
@@ -1056,9 +1572,10 @@ def main() -> None:
             "amp": args.amp,
             "device": str(device),
             "train_shards_count": len(train_shards),
-            "test_shards_count": len(test_shards),
+            "test_shards_count": test_shards_count,
             "train_samples": len(train_ds),
             "test_samples": len(test_ds),
+            "val_index_source": "indices_full" if args.val_full_test else "reduced_indices",
             "dataset_version": data_ver,
             "train_sampler": "shard_aware" if args.train_shuffle else "sequential",
         }
@@ -1068,7 +1585,7 @@ def main() -> None:
             "params": params,
             "resume_mode": resume_mode,
             "train_shards": [{"name": s.name, "pt_dir": str(s.pt_dir), "n": s.n} for s in train_shards],
-            "test_shards": [{"name": s.name, "pt_dir": str(s.pt_dir), "n": s.n} for s in test_shards],
+            "test_shards": test_shards_config,
         }
         write_json(run_dir / "resolved_config.json", config_payload)
         best_path = run_dir / f"{run_name}_best.pth"
@@ -1076,25 +1593,29 @@ def main() -> None:
         metrics_jsonl = run_dir / "metrics.jsonl"
 
         logger.info(
-            "Run started | run_name=%s run_id=%s device=%s train_samples=%d test_samples=%d epoch_range=%d..%d",
+            "Run started | run_name=%s run_id=%s device=%s train_samples=%d test_samples=%d "
+            "val_index_source=%s epoch_range=%d..%d",
             run_name,
             run_id,
             device,
             len(train_ds),
             len(test_ds),
+            "indices_full" if args.val_full_test else "reduced_indices",
             start_epoch,
             total_epochs,
         )
         logger.info("Fault diagnostics | main_fault_log=%s", main_fault_path)
         crash_state["phase"] = "train_loop_setup"
 
-        dual_compare = criterion_compare is not None
-        best_metric_col = "val_compare_loss" if dual_compare else "val_loss"
+        dual_compare = True
+        # When training MSE, track best checkpoint on val MAE (compare); otherwise on active loss.
+        best_metric_col = (
+            "val_compare_loss" if compare_loss_name == "l1" else "val_loss"
+        )
         expected_metrics_header = metrics_csv_fieldnames(OUT_CHANNELS, dual_compare=dual_compare)
         csv_mode = "a" if (resume_mode and metrics_csv.exists()) else "w"
         if csv_mode == "a" and metrics_csv.exists():
-            if dual_compare:
-                _migrate_metrics_to_dual_header(metrics_csv, OUT_CHANNELS)
+            _migrate_metrics_schema(metrics_csv, OUT_CHANNELS, active_loss=args.loss)
             with metrics_csv.open("r", newline="", encoding="utf-8") as rf:
                 existing_header = next(csv.reader(rf))
             if existing_header != expected_metrics_header:
@@ -1122,11 +1643,11 @@ def main() -> None:
                 model.train()
                 t_epoch0 = time.time()
                 running = 0.0
-                running_compare = 0.0 if criterion_compare is not None else None
+                running_l1 = 0.0
+                running_mse = 0.0
                 running_train_per_ch = torch.zeros(OUT_CHANNELS, dtype=torch.float64)
-                running_train_per_ch_cmp = (
-                    torch.zeros(OUT_CHANNELS, dtype=torch.float64) if criterion_compare is not None else None
-                )
+                running_train_l1_ch = torch.zeros(OUT_CHANNELS, dtype=torch.float64)
+                running_train_mse_ch = torch.zeros(OUT_CHANNELS, dtype=torch.float64)
                 n_seen = 0
                 data_time = 0.0
                 last = time.time()
@@ -1157,7 +1678,6 @@ def main() -> None:
                             with amp_context(device, args.amp):
                                 pred = model(xb)
                                 loss = criterion(pred, yb)
-                                loss_compare = criterion_compare(pred, yb) if criterion_compare is not None else None
 
                             if scaler.is_enabled():
                                 scaler.scale(loss).backward()
@@ -1169,11 +1689,14 @@ def main() -> None:
 
                             bs = xb.shape[0]
                             running += float(loss.item()) * bs
-                            if running_compare is not None and loss_compare is not None:
-                                running_compare += float(loss_compare.item()) * bs
-                            running_train_per_ch += per_channel_loss_mean(pred, yb, args.loss) * bs
-                            if running_train_per_ch_cmp is not None and compare_loss_name is not None:
-                                running_train_per_ch_cmp += per_channel_loss_mean(pred, yb, compare_loss_name) * bs
+                            with torch.no_grad():
+                                running_l1 += float(F.l1_loss(pred, yb).item()) * bs
+                                running_mse += float(F.mse_loss(pred, yb).item()) * bs
+                            running_train_per_ch += per_channel_loss_mean(
+                                pred, yb, args.loss, huber_beta=args.huber_beta
+                            ) * bs
+                            running_train_l1_ch += per_channel_loss_mean(pred, yb, "l1", huber_beta=args.huber_beta) * bs
+                            running_train_mse_ch += per_channel_loss_mean(pred, yb, "mse", huber_beta=args.huber_beta) * bs
                             n_seen += bs
                             last = time.time()
                             train_bar.update(1)
@@ -1198,7 +1721,6 @@ def main() -> None:
                         with amp_context(device, args.amp):
                             pred = model(xb)
                             loss = criterion(pred, yb)
-                            loss_compare = criterion_compare(pred, yb) if criterion_compare is not None else None
 
                         if scaler.is_enabled():
                             scaler.scale(loss).backward()
@@ -1210,11 +1732,14 @@ def main() -> None:
 
                         bs = xb.shape[0]
                         running += float(loss.item()) * bs
-                        if running_compare is not None and loss_compare is not None:
-                            running_compare += float(loss_compare.item()) * bs
-                        running_train_per_ch += per_channel_loss_mean(pred, yb, args.loss) * bs
-                        if running_train_per_ch_cmp is not None and compare_loss_name is not None:
-                            running_train_per_ch_cmp += per_channel_loss_mean(pred, yb, compare_loss_name) * bs
+                        with torch.no_grad():
+                            running_l1 += float(F.l1_loss(pred, yb).item()) * bs
+                            running_mse += float(F.mse_loss(pred, yb).item()) * bs
+                        running_train_per_ch += per_channel_loss_mean(
+                            pred, yb, args.loss, huber_beta=args.huber_beta
+                        ) * bs
+                        running_train_l1_ch += per_channel_loss_mean(pred, yb, "l1", huber_beta=args.huber_beta) * bs
+                        running_train_mse_ch += per_channel_loss_mean(pred, yb, "mse", huber_beta=args.huber_beta) * bs
                         n_seen += bs
                         last = time.time()
 
@@ -1231,25 +1756,33 @@ def main() -> None:
                     scheduler.step()
                 epoch_time = max(time.time() - t_epoch0, 1e-9)
                 train_loss = running / max(n_seen, 1)
-                train_loss_compare = (running_compare / max(n_seen, 1)) if running_compare is not None else None
+                train_l1 = running_l1 / max(n_seen, 1)
+                train_mse = running_mse / max(n_seen, 1)
                 train_ch = (running_train_per_ch / max(n_seen, 1)).tolist()
-                train_ch_cmp = (
-                    (running_train_per_ch_cmp / max(n_seen, 1)).tolist()
-                    if running_train_per_ch_cmp is not None
-                    else None
+                train_l1_ch = (running_train_l1_ch / max(n_seen, 1)).tolist()
+                train_mse_ch = (running_train_mse_ch / max(n_seen, 1)).tolist()
+                train_loss_compare, train_ch_cmp = (
+                    (train_l1, train_l1_ch) if compare_loss_name == "l1" else (train_mse, train_mse_ch)
                 )
                 train_sps = n_seen / epoch_time
                 crash_state["phase"] = "eval_epoch"
-                val_loss, val_loss_compare, val_ch, val_ch_cmp, val_sps = evaluate(
+                val_metrics = evaluate(
                     model,
                     test_loader,
                     device,
                     args.amp,
                     criterion,
-                    criterion_compare,
                     args.loss,
-                    compare_loss_name,
+                    args.huber_beta,
                 )
+                val_loss = val_metrics.active
+                val_ch = val_metrics.active_ch
+                val_l1 = val_metrics.l1
+                val_mse = val_metrics.mse
+                val_l1_ch = val_metrics.l1_ch
+                val_mse_ch = val_metrics.mse_ch
+                val_loss_compare, val_ch_cmp = val_metrics.compare(compare_loss_name)
+                val_sps = val_metrics.samples_per_sec
                 lr_now = float(optimizer.param_groups[0]["lr"])
 
                 if args.diagnostic_panels:
@@ -1285,17 +1818,23 @@ def main() -> None:
                     val_sps,
                     *val_ch,
                 ]
-                row_compare_metric: float | None = None
-                if train_ch_cmp is not None and val_ch_cmp is not None:
-                    row_compare_metric = float(val_loss_compare) if val_loss_compare is not None else None
-                    row.extend(
-                        [
-                            float(train_loss_compare) if train_loss_compare is not None else float("nan"),
-                            row_compare_metric if row_compare_metric is not None else float("nan"),
-                            *train_ch_cmp,
-                            *val_ch_cmp,
-                        ]
-                    )
+                row_compare_metric: float = float(val_loss_compare)
+                row.extend(
+                    [
+                        float(train_loss_compare),
+                        row_compare_metric,
+                        *train_ch_cmp,
+                        *val_ch_cmp,
+                        train_l1,
+                        train_mse,
+                        val_l1,
+                        val_mse,
+                        *train_l1_ch,
+                        *train_mse_ch,
+                        *val_l1_ch,
+                        *val_mse_ch,
+                    ]
+                )
                 writer.writerow(row)
                 csv_f.flush()
 
@@ -1308,16 +1847,22 @@ def main() -> None:
                     "data_time_sec": data_time,
                     "train_samples_per_sec": train_sps,
                     "val_samples_per_sec": val_sps,
+                    "train_compare_loss": float(train_loss_compare),
+                    "val_compare_loss": float(val_loss_compare),
+                    "train_l1_loss": train_l1,
+                    "train_mse_loss": train_mse,
+                    "val_l1_loss": val_l1,
+                    "val_mse_loss": val_mse,
                 }
                 for i in range(OUT_CHANNELS):
                     epoch_metrics[f"train_loss_ch{i}"] = train_ch[i]
                     epoch_metrics[f"val_loss_ch{i}"] = val_ch[i]
-                if train_ch_cmp is not None and val_ch_cmp is not None:
-                    epoch_metrics["train_compare_loss"] = float(train_loss_compare) if train_loss_compare is not None else None
-                    epoch_metrics["val_compare_loss"] = float(val_loss_compare) if val_loss_compare is not None else None
-                    for i in range(OUT_CHANNELS):
-                        epoch_metrics[f"train_compare_loss_ch{i}"] = train_ch_cmp[i]
-                        epoch_metrics[f"val_compare_loss_ch{i}"] = val_ch_cmp[i]
+                    epoch_metrics[f"train_compare_loss_ch{i}"] = train_ch_cmp[i]
+                    epoch_metrics[f"val_compare_loss_ch{i}"] = val_ch_cmp[i]
+                    epoch_metrics[f"train_l1_loss_ch{i}"] = train_l1_ch[i]
+                    epoch_metrics[f"train_mse_loss_ch{i}"] = train_mse_ch[i]
+                    epoch_metrics[f"val_l1_loss_ch{i}"] = val_l1_ch[i]
+                    epoch_metrics[f"val_mse_loss_ch{i}"] = val_mse_ch[i]
                 jsonl_f.write(json.dumps(epoch_metrics) + "\n")
                 jsonl_f.flush()
 
@@ -1344,12 +1889,16 @@ def main() -> None:
                     f"val_loss={val_loss:.6e} lr={lr_now:.3e} train_sps={train_sps:.1f}",
                     use_tqdm=use_tqdm,
                 )
-                if train_loss_compare is not None and val_loss_compare is not None and compare_loss_name is not None:
-                    emit_progress(
-                        f"epoch={epoch}/{total_epochs} compare_loss({compare_loss_name}) "
-                        f"train={train_loss_compare:.6e} val={val_loss_compare:.6e}",
-                        use_tqdm=use_tqdm,
-                    )
+                emit_progress(
+                    f"epoch={epoch}/{total_epochs} compare_loss({compare_loss_name}) "
+                    f"train={train_loss_compare:.6e} val={val_loss_compare:.6e}",
+                    use_tqdm=use_tqdm,
+                )
+                emit_progress(
+                    f"epoch={epoch}/{total_epochs} ref_l1 train={train_l1:.6e} val={val_l1:.6e} "
+                    f"ref_mse train={train_mse:.6e} val={val_mse:.6e}",
+                    use_tqdm=use_tqdm,
+                )
                 logger.info(
                     "epoch=%d/%d loss=%s train_ch_%s=%s val_ch_%s=%s train_loss=%.6e val_loss=%.6e lr=%.3e train_sps=%.1f",
                     epoch,
@@ -1364,25 +1913,27 @@ def main() -> None:
                     lr_now,
                     train_sps,
                 )
-                if (
-                    train_loss_compare is not None
-                    and val_loss_compare is not None
-                    and compare_loss_name is not None
-                    and train_ch_cmp is not None
-                    and val_ch_cmp is not None
-                ):
-                    logger.info(
-                        "epoch=%d/%d compare_loss=%s train_ch_%s=%s val_ch_%s=%s train_loss=%.6e val_loss=%.6e",
-                        epoch,
-                        total_epochs,
-                        compare_loss_name,
-                        compare_loss_name,
-                        " ".join(f"{x:.3e}" for x in train_ch_cmp),
-                        compare_loss_name,
-                        " ".join(f"{x:.3e}" for x in val_ch_cmp),
-                        train_loss_compare,
-                        val_loss_compare,
-                    )
+                logger.info(
+                    "epoch=%d/%d compare_loss=%s train=%.6e val=%.6e train_ch_%s=%s val_ch_%s=%s",
+                    epoch,
+                    total_epochs,
+                    compare_loss_name,
+                    train_loss_compare,
+                    val_loss_compare,
+                    compare_loss_name,
+                    " ".join(f"{x:.3e}" for x in train_ch_cmp),
+                    compare_loss_name,
+                    " ".join(f"{x:.3e}" for x in val_ch_cmp),
+                )
+                logger.info(
+                    "epoch=%d/%d ref_l1 train=%.6e val=%.6e ref_mse train=%.6e val=%.6e",
+                    epoch,
+                    total_epochs,
+                    train_l1,
+                    val_l1,
+                    train_mse,
+                    val_mse,
+                )
                 emit_progress(
                     f"Epoch {epoch}/{total_epochs} done | train_loss={train_loss:.4e} "
                     f"val_loss={val_loss:.4e} lr={lr_now:.2e}",

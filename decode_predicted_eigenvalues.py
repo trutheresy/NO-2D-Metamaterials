@@ -35,6 +35,7 @@ import torch
 from tqdm import tqdm
 
 import NO_utilities as NU
+from output_layout import resolve_script_output_dir
 
 
 def find_predictions_file(inference_dir: Path) -> Path:
@@ -87,7 +88,10 @@ def decode_channel(
 def main() -> None:
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("--input-dir", required=True, help="INFERENCE run folder containing predictions_*.pt.")
-    p.add_argument("--output-dir", required=True, help="Folder to write eigenvalues_predictions_full.pt into.")
+    p.add_argument("--output-dir", default="", help="Explicit folder to write the output into (overrides the model/dataset layout below).")
+    p.add_argument("--model-name", default="", help="Model name for the INFERENCE/<model>/<dataset>/<subdir> layout.")
+    p.add_argument("--dataset", default="", help="Dataset folder for the layout.")
+    p.add_argument("--output-subdir", default="", help="Optional script output folder name under INFERENCE/<model>/<dataset> (default: none).")
     p.add_argument("--predictions", default="", help="Explicit prediction tensor path (overrides --input-dir lookup).")
     p.add_argument("--reference-pt-dir", default="", help="Folder with eigenvalue_data_full.pt for the (n_geom, n_wv) grid. Default: auto-resolve under --output-dir.")
     p.add_argument("--out-name", default="eigenvalues_predictions_full.pt", help="Output filename.")
@@ -98,8 +102,14 @@ def main() -> None:
     args = p.parse_args()
 
     input_dir = Path(args.input_dir)
-    output_dir = Path(args.output_dir)
-    output_dir.mkdir(parents=True, exist_ok=True)
+    output_dir = resolve_script_output_dir(
+        explicit=args.output_dir or None,
+        category="inference",
+        model_name=args.model_name or None,
+        dataset=args.dataset,
+        subdir=args.output_subdir,
+        fallback=input_dir,
+    )
 
     pred_path = Path(args.predictions) if args.predictions else find_predictions_file(input_dir)
     print(f"Predictions      : {pred_path}")

@@ -1,0 +1,9 @@
+26/06/29  3:57:04.43 | === Huber 260626: +2 epochs (phase 1), then conditional +2 === 
+26/06/29  3:57:04.43 | === extend +2 epochs (phase1) === 
+2026-06-29 03:57:18,972 | INFO | Huber/SmoothL1 beta=1.000000e-03
+2026-06-29 03:57:18,973 | INFO | Reference L1/MSE logging enabled | active_loss=smoothl1 compare_col=mse
+D:\Research\NO-2D-Metamaterials\train_from_disk.py:1391: FutureWarning: `torch.cuda.amp.GradScaler(args...)` is deprecated. Please use `torch.amp.GradScaler('cuda', args...)` instead.
+  scaler = torch.cuda.amp.GradScaler(enabled=(device.type == "cuda" and args.amp == "fp16"))
+2026-06-29 03:57:20,318 | INFO | Resumed full state from D:\Research\NO-2D-Metamaterials\MODELS\training_runs\NO_I3O5_BCF16_SL1_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_260626\training_state_latest.pt at epoch=12
+2026-06-29 03:57:20,322 | INFO | Run started | run_name=NO_I3O5_BCF16_SL1_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_260626 run_id=NO_I3O5_BCF16_SL1_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_260626 device=cuda train_samples=18720000 test_samples=3900000 val_index_source=indices_full epoch_range=13..14
+2026-06-29 03:57:20,322 | INFO | Fault diagnostics | main_fault_log=D:\Research\NO-2D-Metamaterials\MODELS\training_runs\NO_I3O5_BCF16_SL1_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_260626\main_process_fault.log

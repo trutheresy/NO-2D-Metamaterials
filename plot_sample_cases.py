@@ -31,6 +31,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
 import NO_utilities
+from output_layout import resolve_script_output_dir
 
 
 # Percentiles are in PERFORMANCE (opposite of loss): higher p = better performance =
@@ -59,7 +60,10 @@ def main() -> None:
     p.add_argument("--predictions", required=True, help="Dense prediction tensor (.pt), shape (n_geom*n_wv*n_bands, C, H, W).")
     p.add_argument("--loss-array", nargs=2, action="append", metavar=("NAME", "PATH"), required=True,
                    help="Loss name and .npy path from per_sample_loss.py. Repeatable, e.g. --loss-array mae a.npy --loss-array mse b.npy")
-    p.add_argument("--output-dir", required=True, help="Folder to save the case plots.")
+    p.add_argument("--output-dir", default="", help="Explicit output folder (overrides the model/dataset layout below).")
+    p.add_argument("--model-name", default="", help="Model name for the PLOTS/<model>/<dataset>/<subdir> layout.")
+    p.add_argument("--dataset", default="", help="Dataset folder for the layout (default: --tag).")
+    p.add_argument("--output-subdir", default="", help="Script output folder name under PLOTS/<model>/<dataset> (e.g. MAE_sample_case_plots).")
     p.add_argument("--tag", default="", help="Dataset tag for filenames (e.g. c_test).")
     p.add_argument("--field-cmap", default="RdBu_r")
     p.add_argument("--diverge-center", type=float, default=0.0)
@@ -71,8 +75,14 @@ def main() -> None:
     args = p.parse_args()
 
     pt = Path(args.dataset_pt_dir)
-    out_dir = Path(args.output_dir)
-    out_dir.mkdir(parents=True, exist_ok=True)
+    out_dir = resolve_script_output_dir(
+        explicit=args.output_dir or None,
+        category="plots",
+        model_name=args.model_name or None,
+        dataset=args.dataset or args.tag,
+        subdir=args.output_subdir,
+        fallback=Path(args.predictions).parent,
+    )
 
     geometries = torch.load(pt / "geometries_full.pt", weights_only=False)
     waveforms = torch.load(pt / "waveforms_full.pt", weights_only=False)

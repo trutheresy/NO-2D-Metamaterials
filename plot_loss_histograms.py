@@ -45,6 +45,7 @@ from per_sample_loss import (
     prepare_scoring_data,
     resolve_device,
 )
+from output_layout import resolve_script_output_dir
 from second_peak_analysis import flat_indices
 
 
@@ -158,7 +159,10 @@ def main() -> None:
         help="How to combine per-channel losses (default: group = 50%% ch0 + 50%% mean(ch1-4)).",
     )
     p.add_argument("--title", default="", help="Optional figure title (blank by default).")
-    p.add_argument("--output-dir", default="", help="Folder for the histogram PNGs (default: inference file's folder).")
+    p.add_argument("--output-dir", default="", help="Explicit output folder (overrides the model/dataset layout below).")
+    p.add_argument("--model-name", default="", help="Model name for the PLOTS/<model>/<dataset>/<subdir> layout.")
+    p.add_argument("--dataset", default="", help="Dataset folder for the layout (default: --tag).")
+    p.add_argument("--output-subdir", default="histograms", help="Script output folder name under PLOTS/<model>/<dataset> (default: histograms).")
     p.add_argument("--out-prefix", default="loss_histogram", help="Output filename prefix.")
     p.add_argument("--tag", default="", help="Optional tag in filenames (e.g. dataset name).")
     p.add_argument("--bins", type=int, default=200, help="Number of histogram bins (default 200).")
@@ -198,8 +202,14 @@ def main() -> None:
     device = resolve_device(args.device)
     dataset_pt_dir = Path(args.dataset_pt_dir)
     infer_path = Path(args.inference)
-    out_dir = Path(args.output_dir) if args.output_dir else infer_path.parent
-    out_dir.mkdir(parents=True, exist_ok=True)
+    out_dir = resolve_script_output_dir(
+        explicit=args.output_dir or None,
+        category="plots",
+        model_name=args.model_name or None,
+        dataset=args.dataset or args.tag,
+        subdir=args.output_subdir,
+        fallback=infer_path.parent,
+    )
 
     predictions = torch.load(infer_path, map_location="cpu", mmap=True, weights_only=True)
     truth_flat, n_geom, n_wv, n_bands, field_h, field_w, channels = prepare_scoring_data(
