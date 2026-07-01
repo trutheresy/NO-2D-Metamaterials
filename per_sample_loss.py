@@ -375,7 +375,8 @@ def main() -> None:
     p.add_argument("--nmae-eps", type=float, default=1e-5, help="Epsilon added to mean(|t|) denominator for nmae (default 1e-5).")
     p.add_argument("--nmse-eps", type=float, default=1e-5, help="Epsilon added to mean(t^2) denominator for nmse (default 1e-5).")
     p.add_argument("--batch-size", type=int, default=8192)
-    p.add_argument("--device", default="auto", choices=("auto", "cuda", "cpu"))
+    p.add_argument("--device", default="cpu", choices=("auto", "cuda", "cpu"),
+                   help="Compute device (default: cpu). Use 'cuda' or 'auto' to opt into GPU.")
     args = p.parse_args()
 
     losses = []

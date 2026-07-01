@@ -1253,25 +1253,35 @@ def main() -> None:
     save_root.mkdir(parents=True, exist_ok=True)
     output_run_dir = Path(args.output_run_dir).resolve() if args.output_run_dir.strip() else None
     resume_mode = bool(args.resume_run_dir.strip())
+    prior_run_dir: Path | None = None
     if resume_mode:
         src_run_dir = Path(args.resume_run_dir).resolve()
+        if output_run_dir is not None:
+            prior_run_dir = src_run_dir
         if not src_run_dir.is_dir():
             raise FileNotFoundError(f"--resume-run-dir does not exist: {src_run_dir}")
+        src_meta_path = src_run_dir / "run_metadata.json"
+        if not src_meta_path.is_file():
+            raise FileNotFoundError(f"Missing run_metadata.json in resume dir: {src_run_dir}")
+        src_meta = json.loads(src_meta_path.read_text(encoding="utf-8"))
         if output_run_dir is not None:
             if output_run_dir.exists():
                 raise FileExistsError(f"--output-run-dir already exists: {output_run_dir}")
             shutil.copytree(src_run_dir, output_run_dir)
             run_dir = output_run_dir
+            old_run_name = str(src_meta.get("run_name", run_dir.name))
+            run_name = run_dir.name
+            run_id = run_name
+            if old_run_name != run_name:
+                for ckpt in run_dir.glob(f"{old_run_name}_*.pth"):
+                    ckpt.rename(ckpt.with_name(ckpt.name.replace(old_run_name, run_name, 1)))
         else:
             run_dir = src_run_dir
         run_metadata_path = run_dir / "run_metadata.json"
         if not run_metadata_path.is_file():
             raise FileNotFoundError(f"Missing run_metadata.json in resume dir: {run_dir}")
         prev_meta = json.loads(run_metadata_path.read_text(encoding="utf-8"))
-        if output_run_dir is not None:
-            run_name = run_dir.name
-            run_id = run_name
-        else:
+        if output_run_dir is None:
             run_name = str(prev_meta.get("run_name", run_dir.name))
             run_id = str(prev_meta.get("run_id", run_dir.name))
         if args.extend_epochs <= 0:
@@ -1300,6 +1310,10 @@ def main() -> None:
         metadata["status"] = "running"
         metadata["resumed_at_utc"] = start_ts.isoformat()
         metadata["resume_extend_epochs"] = int(args.extend_epochs)
+        if prior_run_dir is not None:
+            metadata["branched_from_run_dir"] = str(prior_run_dir)
+        if args.resume_from_epoch > 0:
+            metadata["inherited_epochs_through"] = int(args.resume_from_epoch)
     else:
         metadata = {
             "run_name": run_name,
@@ -1445,6 +1459,14 @@ def main() -> None:
                     )
                 else:
                     logger.info("Loaded weights from %s; continuing at epoch=%d.", ep_ckpt, start_epoch)
+                if prior_run_dir is not None:
+                    logger.info(
+                        "Branched run: epochs 1-%d checkpoints/metrics were copied from prior run %s; "
+                        "epochs > %d in this folder will be replaced by this continuation.",
+                        ep_n,
+                        prior_run_dir,
+                        ep_n,
+                    )
             elif state_latest_path.is_file():
                 state_blob = torch.load(state_latest_path, map_location="cpu", weights_only=False)
                 state_dict = state_blob["model_state_dict"]
@@ -1604,6 +1626,12 @@ def main() -> None:
             start_epoch,
             total_epochs,
         )
+        if prior_run_dir is not None and args.resume_from_epoch > 0:
+            logger.info(
+                "Prior run reference | epochs 1-%d canonical location: %s",
+                int(args.resume_from_epoch),
+                prior_run_dir,
+            )
         logger.info("Fault diagnostics | main_fault_log=%s", main_fault_path)
         crash_state["phase"] = "train_loop_setup"
 

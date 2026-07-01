@@ -75,6 +75,18 @@ def main() -> None:
 
     n_wv = int(waveforms.shape[0])
     n_band = int(band_ffts.shape[0])
+    full_rows = int(geometries.shape[0]) * n_wv * n_band
+    disp_rows = int(displacements.tensors[0].shape[0])
+    if disp_rows != full_rows:
+        raise ValueError(
+            f"displacements rows {disp_rows} != full grid {full_rows}; "
+            f"this script requires dense full-dataset layout."
+        )
+    if int(predictions.shape[0]) != full_rows:
+        raise ValueError(
+            f"predictions rows {predictions.shape[0]} != full grid {full_rows}; "
+            f"inference must be a dense full-dataset run."
+        )
 
     def stack_target_channels(d: int, w: int, b: int, combined: int) -> torch.Tensor:
         ch0 = eigenfrequency_uniform[d, w, b]
