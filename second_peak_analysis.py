@@ -10,7 +10,7 @@ from scipy.stats import chi2_contingency
 def flat_indices(n_geom: int, n_wv: int, n_bands: int) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     """Return (geom, wave, band) index arrays for C-order flat layout."""
     total = n_geom * n_wv * n_bands
-    combined = np.arange(total, dtype=np.int64)
+    combined = np.arange(total, dtype=np.int32)
     per_geom = n_wv * n_bands
     geom = combined // per_geom
     wave = (combined % per_geom) // n_bands

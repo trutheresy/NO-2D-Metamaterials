@@ -27,7 +27,7 @@ class EvaluationResult:
     """
     Return value from run_evaluation for programmatic use (e.g. notebooks).
 
-    per_sample_losses: shape (N,) float64 when a single string loss (or custom criterion) is recorded;
+    per_sample_losses: shape (N,) float32 when a single string loss (or custom criterion) is recorded;
       index i matches dataset[i] under shuffle=False.
     per_sample_losses_by_name: optional dict of (N,) tensors when recording every requested loss.
     """
@@ -345,11 +345,11 @@ def per_channel_loss_mean(pred: torch.Tensor, yb: torch.Tensor, loss_name: str) 
         pf = pred.detach().float()
         yf = yb.float()
         if loss_name == "mse":
-            return (pf - yf).square().mean(dim=(0, 2, 3)).cpu().to(torch.float64)
+            return (pf - yf).square().mean(dim=(0, 2, 3)).cpu().to(torch.float32)
         if loss_name == "l1":
-            return (pf - yf).abs().mean(dim=(0, 2, 3)).cpu().to(torch.float64)
+            return (pf - yf).abs().mean(dim=(0, 2, 3)).cpu().to(torch.float32)
         if loss_name == "smoothl1":
-            return F.smooth_l1_loss(pf, yf, reduction="none", beta=1e-5).mean(dim=(0, 2, 3)).cpu().to(torch.float64)
+            return F.smooth_l1_loss(pf, yf, reduction="none", beta=1e-5).mean(dim=(0, 2, 3)).cpu().to(torch.float32)
         raise ValueError(f"Unknown loss_name: {loss_name!r}")
 
 
@@ -862,7 +862,7 @@ def run_evaluation(
     """
     Run batched inference and loss metrics on a disk-backed (x, y) dataset.
 
-    Unless unified_loss is True, preallocates per-sample loss storage (float64 CPU)
+    Unless unified_loss is True, preallocates per-sample loss storage (float32 CPU)
     aligned with global sample index. Optional per_sample_criterion(pred, target) must
     return shape [B] for each batch (mutually exclusive with per_sample_loss_for_each).
     """
@@ -885,24 +885,24 @@ def run_evaluation(
 
     if not unified_loss:
         if per_sample_criterion is not None:
-            buf_single = torch.empty(n_total, dtype=torch.float64)
+            buf_single = torch.empty(n_total, dtype=torch.float32)
             used_custom = True
         elif per_sample_loss_for_each:
-            buf_by_name = {ln: torch.empty(n_total, dtype=torch.float64) for ln in losses}
+            buf_by_name = {ln: torch.empty(n_total, dtype=torch.float32) for ln in losses}
         else:
             key = normalize_loss_name(per_sample_loss) if per_sample_loss.strip() else losses[0]
             if key not in losses:
                 raise ValueError(
                     f"--per-sample-loss {key!r} must be one of the normalized --losses entries: {losses}."
                 )
-            buf_single = torch.empty(n_total, dtype=torch.float64)
+            buf_single = torch.empty(n_total, dtype=torch.float32)
             per_sample_key = key
 
     stats: dict[str, dict[str, float]] = {
         loss_name: {"pixel_sum": 0.0, "sample_sum": 0.0} for loss_name in losses
     }
     stats_per_ch: dict[str, torch.Tensor] = {
-        loss_name: torch.zeros(out_channels, dtype=torch.float64) for loss_name in losses
+        loss_name: torch.zeros(out_channels, dtype=torch.float32) for loss_name in losses
     }
     total_pixels = 0
     total_samples = 0
@@ -935,16 +935,16 @@ def run_evaluation(
                         raise ValueError(
                             "per_sample_criterion(pred, target) must return a torch.Tensor of shape [B]."
                         )
-                    buf_single[offset : offset + bs] = custom_row.detach().float().cpu().to(torch.float64)
+                    buf_single[offset : offset + bs] = custom_row.detach().float().cpu().to(torch.float32)
                 else:
                     assert per_sample_key is not None
                     lm = loss_tensor(per_sample_key, pred, yb).float()
-                    buf_single[offset : offset + bs] = lm.view(bs, -1).mean(dim=1).cpu().to(torch.float64)
+                    buf_single[offset : offset + bs] = lm.view(bs, -1).mean(dim=1).cpu().to(torch.float32)
             elif buf_by_name is not None:
                 for loss_name in losses:
                     lm = loss_tensor(loss_name, pred, yb).float()
                     buf_by_name[loss_name][offset : offset + bs] = (
-                        lm.view(bs, -1).mean(dim=1).cpu().to(torch.float64)
+                        lm.view(bs, -1).mean(dim=1).cpu().to(torch.float32)
                     )
 
             offset += bs

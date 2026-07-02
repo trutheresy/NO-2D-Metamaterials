@@ -1,0 +1,19 @@
+2026-07-01T07:51:54.458258+00:00 | worker_start pid=23484
+Windows fatal exception: access violation
+
+Thread 0x000165d8 (most recent call first):
+  File "C:\ProgramData\anaconda3\envs\NO_2D_Metamaterials\Lib\threading.py", line 355 in wait
+  File "C:\ProgramData\anaconda3\envs\NO_2D_Metamaterials\Lib\multiprocessing\queues.py", line 251 in _feed
+  File "C:\ProgramData\anaconda3\envs\NO_2D_Metamaterials\Lib\threading.py", line 1010 in run
+  File "C:\ProgramData\anaconda3\envs\NO_2D_Metamaterials\Lib\threading.py", line 1073 in _bootstrap_inner
+  File "C:\ProgramData\anaconda3\envs\NO_2D_Metamaterials\Lib\threading.py", line 1030 in _bootstrap
+
+Current thread 0x000194c4 (most recent call first):
+  File "D:\Research\NO-2D-Metamaterials\train_from_disk.py", line 135 in __getitem__
+  File "C:\ProgramData\anaconda3\envs\NO_2D_Metamaterials\Lib\site-packages\torch\utils\data\_utils\fetch.py", line 52 in fetch
+  File "C:\ProgramData\anaconda3\envs\NO_2D_Metamaterials\Lib\site-packages\torch\utils\data\_utils\worker.py", line 351 in _worker_loop
+  File "C:\ProgramData\anaconda3\envs\NO_2D_Metamaterials\Lib\multiprocessing\process.py", line 108 in run
+  File "C:\ProgramData\anaconda3\envs\NO_2D_Metamaterials\Lib\multiprocessing\process.py", line 314 in _bootstrap
+  File "C:\ProgramData\anaconda3\envs\NO_2D_Metamaterials\Lib\multiprocessing\spawn.py", line 135 in _main
+  File "C:\ProgramData\anaconda3\envs\NO_2D_Metamaterials\Lib\multiprocessing\spawn.py", line 122 in spawn_main
+  File "<string>", line 1 in <module>

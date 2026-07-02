@@ -32,6 +32,7 @@ import matplotlib.pyplot as plt
 from scipy.stats import pearsonr, spearmanr
 
 from per_sample_loss import (
+    INDEX_DTYPE,
     compute_per_sample_losses,
     normalize_loss_name,
     parse_channels,
@@ -126,7 +127,9 @@ def main() -> None:
 
     # save combined table
     header = ["geom_idx", "boundary_length"] + [f"{l}_mean" for l in losses]
-    cols = [geom_idx.astype(np.float64), blen] + [per_geom_means[l] for l in losses]
+    cols = [geom_idx.astype(INDEX_DTYPE), blen.astype(np.float32, copy=False)] + [
+        per_geom_means[l].astype(np.float32, copy=False) for l in losses
+    ]
     table = np.stack(cols, axis=1)
     csv_path = out_dir / f"per_geometry_boundary_vs_loss{tag}.csv"
     np.savetxt(csv_path, table, delimiter=",", header=",".join(header), comments="", fmt="%.10g")

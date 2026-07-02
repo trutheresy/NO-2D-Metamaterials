@@ -367,7 +367,7 @@ def discover_displacement_shards(output_root: Path, prefixes: tuple[str, ...]) -
                 raise ValueError(
                     f"Sample count mismatch in {pt}: outputs N={int(y.shape[0])} vs len(reduced_indices)={n}"
                 )
-            arr = np.asarray(ridx, dtype=np.int64)
+            arr = np.asarray(ridx, dtype=np.int32)
             if arr.ndim != 2 or arr.shape[1] != 3:
                 raise ValueError(f"reduced_indices must be shape [N,3] when treated as array, got {arr.shape}")
             validated_contract = True
@@ -490,11 +490,11 @@ def per_channel_loss_mean(pred: torch.Tensor, yb: torch.Tensor, loss_name: str) 
         pf = pred.detach().float()
         yf = yb.float()
         if loss_name == "mse":
-            return (pf - yf).square().mean(dim=(0, 2, 3)).cpu().to(torch.float64)
+            return (pf - yf).square().mean(dim=(0, 2, 3)).cpu().to(torch.float32)
         if loss_name == "l1":
-            return (pf - yf).abs().mean(dim=(0, 2, 3)).cpu().to(torch.float64)
+            return (pf - yf).abs().mean(dim=(0, 2, 3)).cpu().to(torch.float32)
         if loss_name == "smoothl1":
-            return F.smooth_l1_loss(pf, yf, reduction="none", beta=1e-5).mean(dim=(0, 2, 3)).cpu().to(torch.float64)
+            return F.smooth_l1_loss(pf, yf, reduction="none", beta=1e-5).mean(dim=(0, 2, 3)).cpu().to(torch.float32)
         raise ValueError(f"Unknown loss_name: {loss_name!r}")
 
 
@@ -590,9 +590,9 @@ def evaluate(
     model.eval()
     running_loss = 0.0
     running_loss_compare = 0.0 if criterion_compare is not None else None
-    running_per_ch = torch.zeros(OUT_CHANNELS, dtype=torch.float64)
+    running_per_ch = torch.zeros(OUT_CHANNELS, dtype=torch.float32)
     running_per_ch_cmp = (
-        torch.zeros(OUT_CHANNELS, dtype=torch.float64) if compare_loss_name is not None else None
+        torch.zeros(OUT_CHANNELS, dtype=torch.float32) if compare_loss_name is not None else None
     )
     n_samples = 0
     start = time.time()
@@ -1097,9 +1097,9 @@ def main() -> None:
                 t_epoch0 = time.time()
                 running = 0.0
                 running_compare = 0.0 if criterion_compare is not None else None
-                running_train_per_ch = torch.zeros(OUT_CHANNELS, dtype=torch.float64)
+                running_train_per_ch = torch.zeros(OUT_CHANNELS, dtype=torch.float32)
                 running_train_per_ch_cmp = (
-                    torch.zeros(OUT_CHANNELS, dtype=torch.float64) if criterion_compare is not None else None
+                    torch.zeros(OUT_CHANNELS, dtype=torch.float32) if criterion_compare is not None else None
                 )
                 n_seen = 0
                 data_time = 0.0

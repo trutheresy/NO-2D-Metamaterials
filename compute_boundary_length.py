@@ -67,7 +67,7 @@ def boundary_length(g: torch.Tensor, periodic: bool, pixel_size: float) -> np.nd
         wrap_h = (g[:, :, 0] != g[:, :, -1]).sum(dim=1)      # left<->right wrap
         wrap_v = (g[:, 0, :] != g[:, -1, :]).sum(dim=1)      # top<->bottom wrap
         edges = edges + wrap_h + wrap_v
-    return (edges.to(torch.float64) * pixel_size).cpu().numpy()
+    return (edges.to(torch.float32) * pixel_size).cpu().numpy().astype(np.float32, copy=False)
 
 
 def main() -> None:
@@ -85,8 +85,8 @@ def main() -> None:
     n_geom, h, w = (int(s) for s in gb.shape)
 
     lengths = boundary_length(gb, args.periodic, args.pixel_size)
-    geom_idx = np.arange(n_geom, dtype=np.float64)
-    out_arr = np.stack([geom_idx, lengths], axis=1)
+    geom_idx = np.arange(n_geom, dtype=np.int32)
+    out_arr = np.column_stack([geom_idx.astype(np.float32), lengths]).astype(np.float32)
 
     if args.output:
         out_path = Path(args.output)

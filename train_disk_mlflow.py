@@ -250,7 +250,7 @@ def discover_shards(output_root: Path, prefixes: tuple[str, ...], eigen_ch0_enco
                 raise ValueError(
                     f"Sample count mismatch in {pt}: outputs N={int(y.shape[0])} vs len(reduced_indices)={n}"
                 )
-            arr = np.asarray(ridx, dtype=np.int64)
+            arr = np.asarray(ridx, dtype=np.int32)
             if arr.ndim != 2 or arr.shape[1] != 3:
                 raise ValueError(f"reduced_indices must be shape [N,3] when treated as array, got {arr.shape}")
             dmax, wmax, bmax = int(arr[:, 0].max()), int(arr[:, 1].max()), int(arr[:, 2].max())
@@ -365,11 +365,11 @@ def per_channel_loss_mean(pred: torch.Tensor, yb: torch.Tensor, loss_name: str) 
         pf = pred.detach().float()
         yf = yb.float()
         if loss_name == "mse":
-            return (pf - yf).square().mean(dim=(0, 2, 3)).cpu().to(torch.float64)
+            return (pf - yf).square().mean(dim=(0, 2, 3)).cpu().to(torch.float32)
         if loss_name == "l1":
-            return (pf - yf).abs().mean(dim=(0, 2, 3)).cpu().to(torch.float64)
+            return (pf - yf).abs().mean(dim=(0, 2, 3)).cpu().to(torch.float32)
         if loss_name == "smoothl1":
-            return F.smooth_l1_loss(pf, yf, reduction="none", beta=1e-5).mean(dim=(0, 2, 3)).cpu().to(torch.float64)
+            return F.smooth_l1_loss(pf, yf, reduction="none", beta=1e-5).mean(dim=(0, 2, 3)).cpu().to(torch.float32)
         raise ValueError(f"Unknown loss_name: {loss_name!r}")
 
 
@@ -405,7 +405,7 @@ def evaluate(
 ) -> tuple[float, list[float], float]:
     model.eval()
     running_loss = 0.0
-    running_per_ch = torch.zeros(5, dtype=torch.float64)
+    running_per_ch = torch.zeros(5, dtype=torch.float32)
     n_samples = 0
     start = time.time()
     with torch.no_grad():
@@ -590,7 +590,7 @@ def main() -> None:
                 model.train()
                 start_epoch = time.time()
                 running = 0.0
-                running_train_per_ch = torch.zeros(5, dtype=torch.float64)
+                running_train_per_ch = torch.zeros(5, dtype=torch.float32)
                 n_seen = 0
                 data_time = 0.0
                 last = time.time()

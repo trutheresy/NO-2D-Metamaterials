@@ -67,9 +67,9 @@ def decode_channel(
     reduce: str,
     batch_size: int,
 ) -> np.ndarray:
-    """Decode the encoded eigenfrequency channel into a flat (N,) float64 array."""
+    """Decode the encoded eigenfrequency channel into a flat (N,) float32 array."""
     n = predictions.shape[0]
-    out = np.empty(n, dtype=np.float64)
+    out = np.empty(n, dtype=np.float32)
     for start in tqdm(range(0, n, batch_size), desc="Decoding", unit="batch"):
         end = min(start + batch_size, n)
         patch = predictions[start:end, channel]  # (B, 32, 32) float16
@@ -78,10 +78,10 @@ def decode_channel(
             arr = patch.to(torch.float16).numpy()
             with contextlib.redirect_stdout(io.StringIO()):
                 vals = NU.decode_eigenfrequency_uniform(arr)
-            out[start:end] = np.asarray(vals, dtype=np.float64).reshape(-1)
+            out[start:end] = np.asarray(vals, dtype=np.float32).reshape(-1)
         else:  # mean: same formula as the decoder, averaged over the patch (denoises)
-            pixel_mean = patch.to(torch.float32).mean(dim=(1, 2)).numpy().astype(np.float64)
-            out[start:end] = np.exp(100.0 * pixel_mean)
+            pixel_mean = patch.to(torch.float32).mean(dim=(1, 2)).numpy()
+            out[start:end] = np.exp(100.0 * pixel_mean, dtype=np.float32)
     return out
 
 
@@ -97,7 +97,8 @@ def main() -> None:
     p.add_argument("--out-name", default="eigenvalues_predictions_full.pt", help="Output filename.")
     p.add_argument("--channel", type=int, default=0, help="Prediction channel holding the encoded eigenfrequency (default: 0).")
     p.add_argument("--reduce", choices=("pixel", "mean"), default="pixel", help="Decode via NO_utilities corner-pixel decoder (pixel) or patch-mean (mean).")
-    p.add_argument("--save-dtype", choices=("float32", "float16", "float64"), default="float32")
+    p.add_argument("--save-dtype", choices=("float32", "float16"), default="float32",
+                   help="Output tensor dtype (default: float32).")
     p.add_argument("--batch-size", type=int, default=65536)
     args = p.parse_args()
 
@@ -145,7 +146,7 @@ def main() -> None:
     decoded_flat = decode_channel(predictions, args.channel, args.reduce, args.batch_size)
     decoded = torch.from_numpy(decoded_flat).reshape(n_geom, n_wv, n_bands)
 
-    dtype = {"float32": torch.float32, "float16": torch.float16, "float64": torch.float64}[args.save_dtype]
+    dtype = {"float32": torch.float32, "float16": torch.float16}[args.save_dtype]
     decoded = decoded.to(dtype)
 
     out_path = output_dir / args.out_name

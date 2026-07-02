@@ -105,8 +105,8 @@ def compute_per_sample_losses(
     Errors are averaged over the 32x32 field to produce one scalar per channel.
     """
     m = int(predictions.shape[0])
-    mae = np.empty((m, out_channels), dtype=np.float64)
-    mse = np.empty((m, out_channels), dtype=np.float64)
+    mae = np.empty((m, out_channels), dtype=np.float32)
+    mse = np.empty((m, out_channels), dtype=np.float32)
 
     for start in tqdm(range(0, m, batch_size), desc="Scoring", unit="batch"):
         end = min(start + batch_size, m)
@@ -126,8 +126,8 @@ def compute_per_sample_losses(
         mae_b = err.abs().mean(dim=(2, 3))
         mse_b = err.square().mean(dim=(2, 3))
 
-        mae[start:end] = mae_b.double().cpu().numpy()
-        mse[start:end] = mse_b.double().cpu().numpy()
+        mae[start:end] = mae_b.float().cpu().numpy()
+        mse[start:end] = mse_b.float().cpu().numpy()
 
     return mae, mse
 

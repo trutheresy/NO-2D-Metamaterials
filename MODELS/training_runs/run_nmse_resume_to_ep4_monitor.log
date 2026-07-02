@@ -1,0 +1,20 @@
+26/07/01 23:30:24.73 | === launch NMSE resume monitor (target epoch 4) === 
+2026-07-01 23:30:26 | === monitor start | run=NO_I3O5_BCF16_NMSE_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_260701 target_epoch=4 ===
+Traceback (most recent call last):
+  File "D:\Research\NO-2D-Metamaterials\resume_nmse_to_epoch4.py", line 220, in <module>
+    sys.exit(main())
+             ^^^^^^
+  File "D:\Research\NO-2D-Metamaterials\resume_nmse_to_epoch4.py", line 155, in main
+    log(
+  File "D:\Research\NO-2D-Metamaterials\resume_nmse_to_epoch4.py", line 27, in log
+    with log_path.open("a", encoding="utf-8") as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\ProgramData\anaconda3\envs\NO_2D_Metamaterials\Lib\pathlib.py", line 1013, in open
+    return io.open(self, mode, buffering, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+PermissionError: [Errno 13] Permission denied: 'D:\\Research\\NO-2D-Metamaterials\\MODELS\\training_runs\\run_nmse_resume_to_ep4_monitor.log'
+2026-07-01 23:31:12 | === launch NMSE resume monitor (target epoch 4) ===
+2026-07-01 23:31:12 | === monitor start | run=NO_I3O5_BCF16_NMSE_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_260701 target_epoch=4 ===
+2026-07-01 23:31:12 | Attempt 1: resume from E1, extend_epochs=3, num_workers=2
+2026-07-02 10:57:28 | Attempt 1 finished exit=0 status=completed last_completed_epoch=4/4
+2026-07-02 10:57:28 | Training completed through target epoch.

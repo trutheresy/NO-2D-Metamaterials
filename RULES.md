@@ -86,7 +86,7 @@ flowchart TD
 | `backfill_val_dual_loss.py` | Full-val GPU backfill |
 | `run_*.bat` / `.ps1` wrappers invoking the above | Indirect GPU use |
 
-**Allowed while training:** `run_model_inference_cpu.py`, read-only monitoring (`watch_training_vs_baseline.py`, log/metrics inspection), notebooks that do not load models on GPU.
+**Allowed while training:** `run_model_inference_cpu.py`, read-only log/metrics inspection, notebooks that do not load models on GPU.
 
 **Stale `"running"` status:** If metadata says running but `train.log` is frozen and no trainer process exists, ask the user before reclaiming the GPU; optionally set status to `"failed"`.
 
@@ -107,10 +107,9 @@ flowchart TD
 
 ### Launch scripts and pipelines
 
-- **Detached long jobs:** use `*_detached.bat` — redirect stdout/stderr to a log under `MODELS/training_runs/`.
-- **No duplicate pipelines:** before `run_backfill_fullval_all_runs.bat` or `poll_backfill_then_report_and_train.bat`, check an existing log for `=== ALL DONE ===`.
-- **Chained pipelines:** `run_after_backfill_report_and_huber.bat` ends in training — ensure no run is already active.
-- **Launcher paths:** root `.bat`/`.ps1` hardcode `D:\Research\NO-2D-Metamaterials`; update if the repo moves.
+- **Detached long jobs:** run `train_from_disk.py` (or inference/backfill scripts) in the background; redirect stdout/stderr to a log under `MODELS/training_runs/`.
+- **One job at a time:** before starting a new trainer or GPU backfill, confirm no other run has `status: running`.
+- **Resume:** `train_from_disk.py --resume-run-dir <run_dir> --extend-epochs N` plus the same hyperparameter flags as the original run.
 
 ---
 

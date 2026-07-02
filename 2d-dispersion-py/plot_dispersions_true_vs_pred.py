@@ -19,6 +19,11 @@ Both eigenvalue tensors are shape ``(N_struct, N_wv, N_eig)`` and share the
 ground-truth wavevector grid. One overlay PNG per structure is written, named by
 geometry index.
 
+Also writes ``eigenvalue_nmae_by_geometry.csv`` in the same output folder with
+columns ``geometry_index``, ``total_nmae``, and ``rank`` (int; 1 = lowest NMAE /
+best). NMAE is ``mean(|pred - true|) / (mean(|true|) + eps)`` over all wavevector
+x band points on the full grid (not the IBZ contour used for plotting).
+
 Units note: values are plotted as stored (no Hz/rad-s conversion), matching
 ``plot_dispersions.py``. The dataset eigenvalues are angular frequency (rad/s),
 so the y-axis defaults to ``Frequency [rad/s]`` (override with --ylabel).
@@ -27,6 +32,7 @@ so the y-axis defaults to ``Frequency [rad/s]`` (override with --ylabel).
 from __future__ import annotations
 
 import argparse
+import csv
 import sys
 from pathlib import Path
 
@@ -113,6 +119,36 @@ def interp_to_contour(wavevectors: np.ndarray, frequencies: np.ndarray, contour_
     return out
 
 
+def compute_geometry_eigenvalue_nmae(
+    eigen_true: np.ndarray,
+    eigen_pred: np.ndarray,
+    n_structs: int,
+    eps: float = 1e-5,
+) -> np.ndarray:
+    """Per-geometry NMAE over all wavevector x band scalar eigenvalue points."""
+    true_g = eigen_true[:n_structs]
+    pred_g = eigen_pred[:n_structs]
+    abs_err = np.abs(pred_g - true_g, dtype=np.float32).reshape(n_structs, -1)
+    denom = np.abs(true_g, dtype=np.float32).reshape(n_structs, -1).mean(axis=1) + np.float32(eps)
+    return (abs_err.mean(axis=1) / denom).astype(np.float32)
+
+
+def save_geometry_nmae_csv(out_dir: Path, nmae: np.ndarray) -> Path:
+    """Write geometry_index, total_nmae, rank CSV alongside dispersion overlay PNGs."""
+    n = int(nmae.shape[0])
+    order = np.argsort(nmae, kind="stable")
+    ranks = np.empty(n, dtype=np.int32)
+    ranks[order] = np.arange(1, n + 1, dtype=np.int32)
+
+    csv_path = out_dir / "eigenvalue_nmae_by_geometry.csv"
+    with csv_path.open("w", newline="", encoding="utf-8") as f:
+        writer = csv.writer(f)
+        writer.writerow(["geometry_index", "total_nmae", "rank"])
+        for geom_idx, val in enumerate(nmae):
+            writer.writerow([geom_idx, f"{float(val):.12e}", int(ranks[geom_idx])])
+    return csv_path
+
+
 def plot_overlay(ax, contour_info, true_c, pred_c, title, ylabel, mark_points):
     x = contour_info["wavevector_parameter"]
     n_bands = min(true_c.shape[1], pred_c.shape[1])
@@ -151,6 +187,7 @@ def main(
     output_dir: str | None = None,
     ylabel: str = "Frequency [rad/s]",
     mark_points: bool = False,
+    nmae_eps: float = 1e-5,
 ) -> None:
     geometries, wavevectors, eigen_true, true_pt = load_true_dir(true_dir)
     eigen_pred, pred_path = load_pred(pred)
@@ -171,6 +208,13 @@ def main(
     print(f"True eigenvalues : {true_pt / 'eigenvalue_data_full.pt'}  shape={eigen_true.shape}")
     print(f"Pred eigenvalues : {pred_path}  shape={eigen_pred.shape}")
     print(f"Plotting {n_plot} structures -> {out_dir}")
+
+    nmae = compute_geometry_eigenvalue_nmae(eigen_true, eigen_pred, n_total, eps=nmae_eps)
+    csv_path = save_geometry_nmae_csv(out_dir, nmae)
+    print(
+        f"Saved NMAE CSV   : {csv_path}  ({n_total} geometries; "
+        f"mean={nmae.mean():.6e}, min={nmae.min():.6e}, max={nmae.max():.6e})"
+    )
 
     contour_wv, contour_info = get_IBZ_contour_wavevectors(10, 1.0, "p4mm")
 
@@ -199,6 +243,7 @@ if __name__ == "__main__":
     parser.add_argument("--dataset", type=str, default="", help="Dataset folder for the layout (e.g. c_test / b_test).")
     parser.add_argument("--output-subdir", type=str, default="dispersion_overlay", help="Script output folder name under PLOTS/<model>/<dataset> (default: dispersion_overlay).")
     parser.add_argument("--ylabel", type=str, default="Frequency [rad/s]", help="Y-axis label (data is angular frequency, rad/s).")
+    parser.add_argument("--nmae-eps", type=float, default=1e-5, help="Epsilon added to mean(|true|) in per-geometry eigenvalue NMAE (default 1e-5).")
     parser.add_argument("--mark-points", action="store_true", help="Add markers on the true bands.")
     args = parser.parse_args()
     output_dir = args.output_dir
@@ -210,4 +255,4 @@ if __name__ == "__main__":
             dataset=args.dataset,
             subdir=args.output_subdir,
         ))
-    main(args.true, args.pred, args.n_structs, args.title, output_dir, args.ylabel, args.mark_points)
+    main(args.true, args.pred, args.n_structs, args.title, output_dir, args.ylabel, args.mark_points, args.nmae_eps)

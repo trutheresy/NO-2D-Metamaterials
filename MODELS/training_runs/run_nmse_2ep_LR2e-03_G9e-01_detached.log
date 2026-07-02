@@ -1,0 +1,382 @@
+26/07/01 14:19:48.50 | === start NMSE 2-epoch run (random init) === 
+2026-07-01 14:20:10,873 | INFO | NMSE epsilon=1.000000e-05
+2026-07-01 14:20:10,874 | INFO | Loss logging: active=nmse; every epoch records train/val nmse, MAE, and MSE
+D:\Research\NO-2D-Metamaterials\train_from_disk.py:1858: FutureWarning: `torch.cuda.amp.GradScaler(args...)` is deprecated. Please use `torch.amp.GradScaler('cuda', args...)` instead.
+  scaler = torch.cuda.amp.GradScaler(enabled=(device.type == "cuda" and args.amp == "fp16"))
+2026-07-01 14:20:11,410 | INFO | Run started | run_name=NO_I3O5_BCF16_NMSE_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_260701 run_id=NO_I3O5_BCF16_NMSE_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_260701 device=cuda train_samples=18720000 test_samples=3900000 val_index_source=indices_full epoch_range=1..2
+2026-07-01 14:20:11,411 | INFO | Fault diagnostics | main_fault_log=D:\Research\NO-2D-Metamaterials\MODELS\training_runs\NO_I3O5_BCF16_NMSE_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_260701\main_process_fault.log
+E1/2 B200/36000 batch_loss=7.3925e-01
+E1/2 B400/36000 batch_loss=6.4825e-01
+E1/2 B600/36000 batch_loss=5.7086e-01
+E1/2 B800/36000 batch_loss=5.2229e-01
+E1/2 B1000/36000 batch_loss=4.9870e-01
+E1/2 B1200/36000 batch_loss=4.4179e-01
+E1/2 B1400/36000 batch_loss=4.1873e-01
+E1/2 B1600/36000 batch_loss=4.1930e-01
+E1/2 B1800/36000 batch_loss=4.3193e-01
+E1/2 B2000/36000 batch_loss=3.9709e-01
+E1/2 B2200/36000 batch_loss=3.9645e-01
+E1/2 B2400/36000 batch_loss=3.5520e-01
+E1/2 B2600/36000 batch_loss=3.9287e-01
+E1/2 B2800/36000 batch_loss=3.3654e-01
+E1/2 B3000/36000 batch_loss=3.7457e-01
+E1/2 B3200/36000 batch_loss=3.1639e-01
+E1/2 B3400/36000 batch_loss=3.5902e-01
+E1/2 B3600/36000 batch_loss=3.6824e-01
+E1/2 B3800/36000 batch_loss=3.6749e-01
+E1/2 B4000/36000 batch_loss=3.0511e-01
+E1/2 B4200/36000 batch_loss=3.0589e-01
+E1/2 B4400/36000 batch_loss=2.8563e-01
+E1/2 B4600/36000 batch_loss=2.8122e-01
+E1/2 B4800/36000 batch_loss=3.6715e-01
+E1/2 B5000/36000 batch_loss=3.4926e-01
+E1/2 B5200/36000 batch_loss=3.4239e-01
+E1/2 B5400/36000 batch_loss=2.7454e-01
+E1/2 B5600/36000 batch_loss=3.4961e-01
+E1/2 B5800/36000 batch_loss=3.4442e-01
+E1/2 B6000/36000 batch_loss=2.7286e-01
+E1/2 B6200/36000 batch_loss=2.5632e-01
+E1/2 B6400/36000 batch_loss=2.5788e-01
+E1/2 B6600/36000 batch_loss=2.7872e-01
+E1/2 B6800/36000 batch_loss=2.5958e-01
+E1/2 B7000/36000 batch_loss=2.7791e-01
+E1/2 B7200/36000 batch_loss=3.2243e-01
+E1/2 B7400/36000 batch_loss=3.3351e-01
+E1/2 B7600/36000 batch_loss=2.6613e-01
+E1/2 B7800/36000 batch_loss=3.1447e-01
+E1/2 B8000/36000 batch_loss=2.4271e-01
+E1/2 B8200/36000 batch_loss=3.3822e-01
+E1/2 B8400/36000 batch_loss=2.3557e-01
+E1/2 B8600/36000 batch_loss=3.1845e-01
+E1/2 B8800/36000 batch_loss=2.8114e-01
+E1/2 B9000/36000 batch_loss=3.0477e-01
+E1/2 B9200/36000 batch_loss=3.0918e-01
+E1/2 B9400/36000 batch_loss=3.3073e-01
+E1/2 B9600/36000 batch_loss=3.4484e-01
+E1/2 B9800/36000 batch_loss=3.0118e-01
+E1/2 B10000/36000 batch_loss=3.2700e-01
+E1/2 B10200/36000 batch_loss=3.2082e-01
+E1/2 B10400/36000 batch_loss=2.7904e-01
+E1/2 B10600/36000 batch_loss=2.3526e-01
+E1/2 B10800/36000 batch_loss=3.3931e-01
+E1/2 B11000/36000 batch_loss=2.1755e-01
+E1/2 B11200/36000 batch_loss=2.2290e-01
+E1/2 B11400/36000 batch_loss=3.0448e-01
+E1/2 B11600/36000 batch_loss=2.2001e-01
+E1/2 B11800/36000 batch_loss=3.1201e-01
+E1/2 B12000/36000 batch_loss=2.5820e-01
+E1/2 B12200/36000 batch_loss=1.9630e-01
+E1/2 B12400/36000 batch_loss=3.2574e-01
+E1/2 B12600/36000 batch_loss=2.9143e-01
+E1/2 B12800/36000 batch_loss=1.8799e-01
+E1/2 B13000/36000 batch_loss=2.3684e-01
+E1/2 B13200/36000 batch_loss=2.2502e-01
+E1/2 B13400/36000 batch_loss=2.0993e-01
+E1/2 B13600/36000 batch_loss=2.9455e-01
+E1/2 B13800/36000 batch_loss=2.9459e-01
+E1/2 B14000/36000 batch_loss=1.9295e-01
+E1/2 B14200/36000 batch_loss=2.3882e-01
+E1/2 B14400/36000 batch_loss=1.8583e-01
+E1/2 B14600/36000 batch_loss=2.9466e-01
+E1/2 B14800/36000 batch_loss=2.2072e-01
+E1/2 B15000/36000 batch_loss=2.1983e-01
+E1/2 B15200/36000 batch_loss=2.7571e-01
+E1/2 B15400/36000 batch_loss=2.9871e-01
+E1/2 B15600/36000 batch_loss=3.1169e-01
+E1/2 B15800/36000 batch_loss=3.0459e-01
+E1/2 B16000/36000 batch_loss=1.9840e-01
+E1/2 B16200/36000 batch_loss=2.7098e-01
+E1/2 B16400/36000 batch_loss=3.0184e-01
+E1/2 B16600/36000 batch_loss=2.9336e-01
+E1/2 B16800/36000 batch_loss=2.7366e-01
+E1/2 B17000/36000 batch_loss=3.0354e-01
+E1/2 B17200/36000 batch_loss=2.7792e-01
+E1/2 B17400/36000 batch_loss=2.7415e-01
+E1/2 B17600/36000 batch_loss=2.1467e-01
+E1/2 B17800/36000 batch_loss=2.9465e-01
+E1/2 B18000/36000 batch_loss=1.9799e-01
+E1/2 B18200/36000 batch_loss=2.9011e-01
+E1/2 B18400/36000 batch_loss=1.8131e-01
+E1/2 B18600/36000 batch_loss=2.9966e-01
+E1/2 B18800/36000 batch_loss=2.5636e-01
+E1/2 B19000/36000 batch_loss=2.8805e-01
+E1/2 B19200/36000 batch_loss=1.9632e-01
+E1/2 B19400/36000 batch_loss=2.6865e-01
+E1/2 B19600/36000 batch_loss=1.9741e-01
+E1/2 B19800/36000 batch_loss=1.8158e-01
+E1/2 B20000/36000 batch_loss=2.8739e-01
+E1/2 B20200/36000 batch_loss=1.9944e-01
+E1/2 B20400/36000 batch_loss=2.7138e-01
+E1/2 B20600/36000 batch_loss=2.5964e-01
+E1/2 B20800/36000 batch_loss=1.9478e-01
+E1/2 B21000/36000 batch_loss=1.9346e-01
+E1/2 B21200/36000 batch_loss=7.9288e-01
+E1/2 B21400/36000 batch_loss=7.7434e-01
+E1/2 B21600/36000 batch_loss=7.7053e-01
+E1/2 B21800/36000 batch_loss=7.7234e-01
+E1/2 B22000/36000 batch_loss=7.6248e-01
+E1/2 B22200/36000 batch_loss=7.5859e-01
+E1/2 B22400/36000 batch_loss=7.7031e-01
+E1/2 B22600/36000 batch_loss=7.5576e-01
+E1/2 B22800/36000 batch_loss=7.5575e-01
+E1/2 B23000/36000 batch_loss=7.5915e-01
+E1/2 B23200/36000 batch_loss=7.2895e-01
+E1/2 B23400/36000 batch_loss=7.2333e-01
+E1/2 B23600/36000 batch_loss=7.2248e-01
+E1/2 B23800/36000 batch_loss=7.0625e-01
+E1/2 B24000/36000 batch_loss=7.2237e-01
+E1/2 B24200/36000 batch_loss=6.8167e-01
+E1/2 B24400/36000 batch_loss=6.6941e-01
+E1/2 B24600/36000 batch_loss=6.6468e-01
+E1/2 B24800/36000 batch_loss=6.4631e-01
+E1/2 B25000/36000 batch_loss=6.5451e-01
+E1/2 B25200/36000 batch_loss=6.8608e-01
+E1/2 B25400/36000 batch_loss=6.6408e-01
+E1/2 B25600/36000 batch_loss=6.1704e-01
+E1/2 B25800/36000 batch_loss=6.3356e-01
+E1/2 B26000/36000 batch_loss=6.2426e-01
+E1/2 B26200/36000 batch_loss=6.0048e-01
+E1/2 B26400/36000 batch_loss=6.2532e-01
+E1/2 B26600/36000 batch_loss=5.8698e-01
+E1/2 B26800/36000 batch_loss=5.5587e-01
+E1/2 B27000/36000 batch_loss=6.0278e-01
+E1/2 B27200/36000 batch_loss=5.8656e-01
+E1/2 B27400/36000 batch_loss=5.3851e-01
+E1/2 B27600/36000 batch_loss=5.3026e-01
+E1/2 B27800/36000 batch_loss=5.2169e-01
+E1/2 B28000/36000 batch_loss=4.8205e-01
+E1/2 B28200/36000 batch_loss=5.2354e-01
+E1/2 B28400/36000 batch_loss=5.1200e-01
+E1/2 B28600/36000 batch_loss=4.6607e-01
+E1/2 B28800/36000 batch_loss=5.4459e-01
+E1/2 B29000/36000 batch_loss=4.3730e-01
+E1/2 B29200/36000 batch_loss=4.5717e-01
+E1/2 B29400/36000 batch_loss=4.6460e-01
+E1/2 B29600/36000 batch_loss=4.0252e-01
+E1/2 B29800/36000 batch_loss=4.7603e-01
+E1/2 B30000/36000 batch_loss=4.6911e-01
+E1/2 B30200/36000 batch_loss=5.0357e-01
+E1/2 B30400/36000 batch_loss=3.6686e-01
+E1/2 B30600/36000 batch_loss=3.6264e-01
+E1/2 B30800/36000 batch_loss=4.3938e-01
+E1/2 B31000/36000 batch_loss=3.5147e-01
+E1/2 B31200/36000 batch_loss=3.7138e-01
+E1/2 B31400/36000 batch_loss=4.2862e-01
+E1/2 B31600/36000 batch_loss=3.4545e-01
+E1/2 B31800/36000 batch_loss=4.0875e-01
+E1/2 B32000/36000 batch_loss=3.4263e-01
+E1/2 B32200/36000 batch_loss=3.4395e-01
+E1/2 B32400/36000 batch_loss=4.1123e-01
+E1/2 B32600/36000 batch_loss=3.9758e-01
+E1/2 B32800/36000 batch_loss=3.1233e-01
+E1/2 B33000/36000 batch_loss=2.9529e-01
+E1/2 B33200/36000 batch_loss=3.8571e-01
+E1/2 B33400/36000 batch_loss=3.7813e-01
+E1/2 B33600/36000 batch_loss=3.5692e-01
+E1/2 B33800/36000 batch_loss=3.5476e-01
+E1/2 B34000/36000 batch_loss=2.9970e-01
+E1/2 B34200/36000 batch_loss=3.1061e-01
+E1/2 B34400/36000 batch_loss=2.9730e-01
+E1/2 B34600/36000 batch_loss=3.1456e-01
+E1/2 B34800/36000 batch_loss=2.8191e-01
+E1/2 B35000/36000 batch_loss=3.6208e-01
+E1/2 B35200/36000 batch_loss=3.5154e-01
+E1/2 B35400/36000 batch_loss=3.5831e-01
+E1/2 B35600/36000 batch_loss=2.5748e-01
+E1/2 B35800/36000 batch_loss=2.5460e-01
+E1/2 B36000/36000 batch_loss=2.5631e-01
+2026-07-01 18:00:05,258 | INFO | Saved 10 diagnostic panel(s) under D:\Research\NO-2D-Metamaterials\MODELS\training_runs\NO_I3O5_BCF16_NMSE_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_260701\diagnostics\epoch_001
+epoch=1/2 loss=nmse train_nmse=4.250337e-01 val_nmse=3.121030e-01 train_mae=5.594396e-03 val_mae=4.575757e-03 train_mse=1.233630e-04 val_mse=8.328399e-05 lr=1.800e-03 train_sps=1524.7
+2026-07-01 18:00:06,787 | INFO | epoch=1/2 loss=nmse train_nmse=4.250337e-01 val_nmse=3.121030e-01 train_mae=5.594396e-03 val_mae=4.575757e-03 train_mse=1.233630e-04 val_mse=8.328399e-05 lr=1.800e-03 train_sps=1524.7
+2026-07-01 18:00:06,788 | INFO | epoch=1/2 loss_ch_nmse train=1.924e-02 4.395e-01 4.942e-01 5.628e-01 6.094e-01 val=6.190e-03 3.260e-01 3.536e-01 4.389e-01 4.359e-01
+2026-07-01 18:00:06,788 | INFO | epoch=1/2 mae_ch train=5.033e-03 5.596e-03 5.368e-03 6.152e-03 5.823e-03 val=3.329e-03 4.638e-03 4.465e-03 5.354e-03 5.093e-03 mse_ch train=8.370e-05 1.184e-04 1.179e-04 1.497e-04 1.471e-04 val=2.142e-05 8.799e-05 8.434e-05 1.172e-04 1.055e-04
+Epoch 1/2 done | loss=nmse train=4.2503e-01 val=3.1210e-01 mae=4.5758e-03 mse=8.3284e-05 lr=1.80e-03
+E2/2 B200/36000 batch_loss=3.7093e-01
+E2/2 B400/36000 batch_loss=3.3485e-01
+E2/2 B600/36000 batch_loss=2.7717e-01
+E2/2 B800/36000 batch_loss=2.8850e-01
+E2/2 B1000/36000 batch_loss=2.4477e-01
+E2/2 B1200/36000 batch_loss=2.7756e-01
+E2/2 B1400/36000 batch_loss=2.5688e-01
+E2/2 B1600/36000 batch_loss=3.4887e-01
+E2/2 B1800/36000 batch_loss=2.3818e-01
+E2/2 B2000/36000 batch_loss=3.1546e-01
+E2/2 B2200/36000 batch_loss=3.1716e-01
+E2/2 B2400/36000 batch_loss=3.4602e-01
+E2/2 B2600/36000 batch_loss=3.3899e-01
+E2/2 B2800/36000 batch_loss=2.2184e-01
+E2/2 B3000/36000 batch_loss=3.0577e-01
+E2/2 B3200/36000 batch_loss=2.3467e-01
+E2/2 B3400/36000 batch_loss=3.1251e-01
+E2/2 B3600/36000 batch_loss=2.5605e-01
+E2/2 B3800/36000 batch_loss=2.9200e-01
+E2/2 B4000/36000 batch_loss=2.3347e-01
+E2/2 B4200/36000 batch_loss=2.1415e-01
+E2/2 B4400/36000 batch_loss=3.2031e-01
+E2/2 B4600/36000 batch_loss=3.1522e-01
+E2/2 B4800/36000 batch_loss=3.1046e-01
+E2/2 B5000/36000 batch_loss=2.9918e-01
+E2/2 B5200/36000 batch_loss=3.2741e-01
+E2/2 B5400/36000 batch_loss=2.5563e-01
+E2/2 B5600/36000 batch_loss=2.2879e-01
+E2/2 B5800/36000 batch_loss=2.3653e-01
+E2/2 B6000/36000 batch_loss=3.1414e-01
+E2/2 B6200/36000 batch_loss=3.3862e-01
+E2/2 B6400/36000 batch_loss=2.3301e-01
+E2/2 B6600/36000 batch_loss=3.1915e-01
+E2/2 B6800/36000 batch_loss=2.2515e-01
+E2/2 B7000/36000 batch_loss=2.0727e-01
+E2/2 B7200/36000 batch_loss=2.1803e-01
+E2/2 B7400/36000 batch_loss=2.2449e-01
+E2/2 B7600/36000 batch_loss=2.1661e-01
+E2/2 B7800/36000 batch_loss=3.4252e-01
+E2/2 B8000/36000 batch_loss=1.8721e-01
+E2/2 B8200/36000 batch_loss=2.8650e-01
+E2/2 B8400/36000 batch_loss=2.3931e-01
+E2/2 B8600/36000 batch_loss=2.1751e-01
+E2/2 B8800/36000 batch_loss=3.1363e-01
+E2/2 B9000/36000 batch_loss=2.1738e-01
+E2/2 B9200/36000 batch_loss=3.0767e-01
+E2/2 B9400/36000 batch_loss=2.6567e-01
+E2/2 B9600/36000 batch_loss=2.9956e-01
+E2/2 B9800/36000 batch_loss=2.9738e-01
+E2/2 B10000/36000 batch_loss=2.2254e-01
+E2/2 B10200/36000 batch_loss=2.3502e-01
+E2/2 B10400/36000 batch_loss=2.2020e-01
+E2/2 B10600/36000 batch_loss=2.9578e-01
+E2/2 B10800/36000 batch_loss=3.0663e-01
+E2/2 B11000/36000 batch_loss=3.1888e-01
+E2/2 B11200/36000 batch_loss=3.1287e-01
+E2/2 B11400/36000 batch_loss=2.3701e-01
+E2/2 B11600/36000 batch_loss=2.0643e-01
+E2/2 B11800/36000 batch_loss=2.0450e-01
+E2/2 B12000/36000 batch_loss=2.9591e-01
+E2/2 B12200/36000 batch_loss=1.8004e-01
+E2/2 B12400/36000 batch_loss=2.0936e-01
+E2/2 B12600/36000 batch_loss=2.0980e-01
+E2/2 B12800/36000 batch_loss=2.1299e-01
+E2/2 B13000/36000 batch_loss=3.3128e-01
+E2/2 B13200/36000 batch_loss=2.0132e-01
+E2/2 B13400/36000 batch_loss=1.9000e-01
+E2/2 B13600/36000 batch_loss=1.9056e-01
+E2/2 B13800/36000 batch_loss=2.0727e-01
+E2/2 B14000/36000 batch_loss=2.6655e-01
+E2/2 B14200/36000 batch_loss=2.8310e-01
+E2/2 B14400/36000 batch_loss=1.8563e-01
+E2/2 B14600/36000 batch_loss=2.9805e-01
+E2/2 B14800/36000 batch_loss=2.7947e-01
+E2/2 B15000/36000 batch_loss=2.7943e-01
+E2/2 B15200/36000 batch_loss=2.0648e-01
+E2/2 B15400/36000 batch_loss=3.2508e-01
+E2/2 B15600/36000 batch_loss=2.0418e-01
+E2/2 B15800/36000 batch_loss=2.1186e-01
+E2/2 B16000/36000 batch_loss=1.9825e-01
+E2/2 B16200/36000 batch_loss=2.6234e-01
+E2/2 B16400/36000 batch_loss=2.9817e-01
+E2/2 B16600/36000 batch_loss=3.2452e-01
+E2/2 B16800/36000 batch_loss=1.9057e-01
+E2/2 B17000/36000 batch_loss=1.9519e-01
+E2/2 B17200/36000 batch_loss=1.8628e-01
+E2/2 B17400/36000 batch_loss=1.9318e-01
+E2/2 B17600/36000 batch_loss=2.6516e-01
+E2/2 B17800/36000 batch_loss=2.7341e-01
+E2/2 B18000/36000 batch_loss=2.9540e-01
+E2/2 B18200/36000 batch_loss=2.8434e-01
+E2/2 B18400/36000 batch_loss=1.8456e-01
+E2/2 B18600/36000 batch_loss=1.7328e-01
+E2/2 B18800/36000 batch_loss=1.6856e-01
+E2/2 B19000/36000 batch_loss=2.6476e-01
+E2/2 B19200/36000 batch_loss=2.7693e-01
+E2/2 B19400/36000 batch_loss=2.5400e-01
+E2/2 B19600/36000 batch_loss=1.9800e-01
+E2/2 B19800/36000 batch_loss=2.7883e-01
+E2/2 B20000/36000 batch_loss=2.7000e-01
+E2/2 B20200/36000 batch_loss=1.9571e-01
+E2/2 B20400/36000 batch_loss=1.8604e-01
+E2/2 B20600/36000 batch_loss=2.7881e-01
+E2/2 B20800/36000 batch_loss=2.9039e-01
+E2/2 B21000/36000 batch_loss=2.6572e-01
+E2/2 B21200/36000 batch_loss=2.4926e-01
+E2/2 B21400/36000 batch_loss=2.0349e-01
+E2/2 B21600/36000 batch_loss=2.4742e-01
+E2/2 B21800/36000 batch_loss=2.6641e-01
+E2/2 B22000/36000 batch_loss=2.7847e-01
+E2/2 B22200/36000 batch_loss=1.8375e-01
+E2/2 B22400/36000 batch_loss=1.7657e-01
+E2/2 B22600/36000 batch_loss=1.4717e-01
+E2/2 B22800/36000 batch_loss=1.7805e-01
+E2/2 B23000/36000 batch_loss=2.5781e-01
+E2/2 B23200/36000 batch_loss=3.0344e-01
+E2/2 B23400/36000 batch_loss=2.5876e-01
+E2/2 B23600/36000 batch_loss=2.8893e-01
+E2/2 B23800/36000 batch_loss=2.0169e-01
+E2/2 B24000/36000 batch_loss=1.8427e-01
+E2/2 B24200/36000 batch_loss=1.7558e-01
+E2/2 B24400/36000 batch_loss=2.4649e-01
+E2/2 B24600/36000 batch_loss=2.8356e-01
+E2/2 B24800/36000 batch_loss=1.6253e-01
+E2/2 B25000/36000 batch_loss=1.8241e-01
+E2/2 B25200/36000 batch_loss=1.7820e-01
+E2/2 B25400/36000 batch_loss=1.4645e-01
+E2/2 B25600/36000 batch_loss=2.5120e-01
+E2/2 B25800/36000 batch_loss=2.5894e-01
+E2/2 B26000/36000 batch_loss=2.8593e-01
+E2/2 B26200/36000 batch_loss=2.7438e-01
+E2/2 B26400/36000 batch_loss=2.7718e-01
+E2/2 B26600/36000 batch_loss=2.7105e-01
+E2/2 B26800/36000 batch_loss=1.5604e-01
+E2/2 B27000/36000 batch_loss=1.7462e-01
+2026-07-01 20:47:09,237 | ERROR | Training failed
+Traceback (most recent call last):
+  File "C:\ProgramData\anaconda3\envs\NO_2D_Metamaterials\Lib\site-packages\torch\utils\data\dataloader.py", line 1243, in _try_get_data
+    data = self._data_queue.get(timeout=timeout)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\ProgramData\anaconda3\envs\NO_2D_Metamaterials\Lib\queue.py", line 179, in get
+    raise Empty
+_queue.Empty
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "D:\Research\NO-2D-Metamaterials\train_from_disk.py", line 2202, in main
+    for batch_idx, (xb, yb) in enumerate(train_loader, start=1):
+  File "C:\ProgramData\anaconda3\envs\NO_2D_Metamaterials\Lib\site-packages\torch\utils\data\dataloader.py", line 701, in __next__
+    data = self._next_data()
+           ^^^^^^^^^^^^^^^^^
+  File "C:\ProgramData\anaconda3\envs\NO_2D_Metamaterials\Lib\site-packages\torch\utils\data\dataloader.py", line 1448, in _next_data
+    idx, data = self._get_data()
+                ^^^^^^^^^^^^^^^^
+  File "C:\ProgramData\anaconda3\envs\NO_2D_Metamaterials\Lib\site-packages\torch\utils\data\dataloader.py", line 1393, in _get_data
+    success, data = self._try_get_data(self._timeout)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\ProgramData\anaconda3\envs\NO_2D_Metamaterials\Lib\site-packages\torch\utils\data\dataloader.py", line 1256, in _try_get_data
+    raise RuntimeError(
+RuntimeError: DataLoader worker (pid(s) 101960) exited unexpectedly
+Traceback (most recent call last):
+  File "C:\ProgramData\anaconda3\envs\NO_2D_Metamaterials\Lib\site-packages\torch\utils\data\dataloader.py", line 1243, in _try_get_data
+    data = self._data_queue.get(timeout=timeout)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\ProgramData\anaconda3\envs\NO_2D_Metamaterials\Lib\queue.py", line 179, in get
+    raise Empty
+_queue.Empty
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "D:\Research\NO-2D-Metamaterials\train_from_disk.py", line 2501, in <module>
+    main()
+  File "D:\Research\NO-2D-Metamaterials\train_from_disk.py", line 2202, in main
+    for batch_idx, (xb, yb) in enumerate(train_loader, start=1):
+  File "C:\ProgramData\anaconda3\envs\NO_2D_Metamaterials\Lib\site-packages\torch\utils\data\dataloader.py", line 701, in __next__
+    data = self._next_data()
+           ^^^^^^^^^^^^^^^^^
+  File "C:\ProgramData\anaconda3\envs\NO_2D_Metamaterials\Lib\site-packages\torch\utils\data\dataloader.py", line 1448, in _next_data
+    idx, data = self._get_data()
+                ^^^^^^^^^^^^^^^^
+  File "C:\ProgramData\anaconda3\envs\NO_2D_Metamaterials\Lib\site-packages\torch\utils\data\dataloader.py", line 1393, in _get_data
+    success, data = self._try_get_data(self._timeout)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\ProgramData\anaconda3\envs\NO_2D_Metamaterials\Lib\site-packages\torch\utils\data\dataloader.py", line 1256, in _try_get_data
+    raise RuntimeError(
+RuntimeError: DataLoader worker (pid(s) 101960) exited unexpectedly
+26/07/01 20:47:38.86 | === finished exit=1 === 

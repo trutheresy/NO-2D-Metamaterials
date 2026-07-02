@@ -18,11 +18,16 @@ Inputs
 --inference      : dense prediction tensor from ``run_model_inference.py`` with shape
                    ``(n_geom*n_wv*n_bands, out_channels, H, W)`` indexed as
                    ``combined = geom*(n_wv*n_bands) + wave*n_bands + band``.
+--channel-groups : one or more of ``freq_ch`` (ch0), ``disp_ch`` (ch1–4 mean),
+                   ``all_ch`` (ch0–4 mean). Each group writes files with a
+                   ``_<group>`` suffix (e.g. ``..._mae_c_test_freq_ch.npy``).
+                   When omitted, ``--channels`` selects a single output set with
+                   no group suffix (legacy behavior).
 --channels       : comma-separated prediction channel indices to score and average
-                   (default ``0,1,2,3,4`` = all output channels).
+                   when ``--channel-groups`` is not used (default ``0,1,2,3,4``).
 
 For each requested loss criterion this writes one array file (``.npy``) with five
-columns:
+columns (all **float32**; index columns hold exact integers for the full grid):
 
     col 0 : combined index   (flat C-order index = geom*(n_wv*n_bands) + wave*n_bands + band)
     col 1 : geometry index
@@ -38,15 +43,18 @@ real sample.
 Supported losses (per channel, mean over the H x W field, then mean over channels):
     mae  : mean(|p - t|)
     mse  : mean((p - t)^2)
+    rms  : sqrt(mse) = sqrt(mean((p - t)^2))   # per channel, then averaged
     nmae : mean(|p - t|) / (mean(|t|)   + eps_a)   # normalized by mean abs pixel value
     nmse : mean((p - t)^2) / (mean(t^2) + eps_s)   # normalized by mean square pixel value
     nrms : sqrt(nmse) = RMSE / sqrt(mean(t^2) + eps_s)   # per channel, then averaged
-(l1 -> mae, l2 -> mse.) Default eps_a = 1e-5, eps_s = 1e-5.
+(l1 -> mae, l2 -> mse, rmse -> rms.) Default eps_a = 1e-5, eps_s = 1e-5.
 """
 
 from __future__ import annotations
 
 import argparse
+import os
+from dataclasses import dataclass
 from pathlib import Path
 
 import numpy as np
@@ -60,6 +68,16 @@ DEFAULT_SCORING_CHANNELS = [0, 1, 2, 3, 4]
 # Backward-compatible alias used by plot_high_loss_samples.py
 DEFAULT_DISPLACEMENT_CHANNELS = DEFAULT_SCORING_CHANNELS
 
+CHANNEL_GROUPS: dict[str, list[int]] = {
+    "freq_ch": [0],
+    "disp_ch": [1, 2, 3, 4],
+    "all_ch": [0, 1, 2, 3, 4],
+}
+SUPPORTED_LOSSES = ("mae", "mse", "rms", "nmae", "nmse", "nrms")
+# Inference scoring dtypes (32-bit only): int32 index math; float32 loss accumulation/output.
+INDEX_DTYPE = np.int32
+LOSS_DTYPE = np.float32
+
 
 def normalize_loss_name(name: str) -> str:
     n = name.strip().lower()
@@ -67,6 +85,8 @@ def normalize_loss_name(name: str) -> str:
         return "mae"
     if n in ("l2", "mse"):
         return "mse"
+    if n in ("rms", "rmse"):
+        return "rms"
     if n in ("nmae", "nl1"):
         return "nmae"
     if n in ("nmse", "nl2"):
@@ -74,9 +94,28 @@ def normalize_loss_name(name: str) -> str:
     if n in ("nrms", "nrmse"):
         return "nrms"
     raise ValueError(
-        f"Unsupported loss {name!r}. Supported: mae, mse, nmae, nmse, nrms "
-        f"(aliases l1, l2, nl1, nl2, nrmse)."
+        f"Unsupported loss {name!r}. Supported: mae, mse, rms, nmae, nmse, nrms "
+        f"(aliases l1, l2, rmse, nl1, nl2, nrmse)."
     )
+
+
+def parse_channel_groups(names: list[str]) -> list[tuple[str, list[int]]]:
+    """Return ordered (group_name, channel_indices) for each requested group."""
+    if not names:
+        raise ValueError("--channel-groups requires at least one of: freq_ch, disp_ch, all_ch.")
+    seen: set[str] = set()
+    out: list[tuple[str, list[int]]] = []
+    for raw in names:
+        key = raw.strip().lower()
+        if key not in CHANNEL_GROUPS:
+            raise ValueError(
+                f"Unknown channel group {raw!r}. Supported: {', '.join(CHANNEL_GROUPS)}."
+            )
+        if key in seen:
+            continue
+        seen.add(key)
+        out.append((key, list(CHANNEL_GROUPS[key])))
+    return out
 
 
 def parse_channels(spec: str) -> list[int]:
@@ -134,6 +173,34 @@ def resolve_device(name: str) -> torch.device:
     if name == "auto":
         return torch.device("cuda" if torch.cuda.is_available() else "cpu")
     return torch.device(name)
+
+
+def configure_cpu_threads(n: int | None) -> int | None:
+    """Cap PyTorch/BLAS thread pools. Pass None or <=0 to leave defaults unchanged."""
+    if n is None or n <= 0:
+        return None
+    os.environ["OMP_NUM_THREADS"] = str(n)
+    os.environ["MKL_NUM_THREADS"] = str(n)
+    os.environ["OPENBLAS_NUM_THREADS"] = str(n)
+    os.environ["NUMEXPR_NUM_THREADS"] = str(n)
+    torch.set_num_threads(n)
+    interop = max(1, n // 2)
+    try:
+        torch.set_num_interop_threads(interop)
+    except RuntimeError:
+        pass
+    return n
+
+
+@dataclass
+class ScoringSources:
+    """Memory-mapped eigenfrequency view plus optional displacement targets."""
+
+    eigen_flat: torch.Tensor
+    displacements: object | None
+    total: int
+    field_h: int
+    field_w: int
 
 
 def load_dataset_layout(dataset_pt_dir: Path) -> tuple[int, int, int, int, int]:
@@ -199,6 +266,60 @@ def load_truth_stack(
     return torch.stack(chans, dim=1)
 
 
+def open_scoring_sources(
+    dataset_pt_dir: Path,
+    total: int,
+    field_hw: tuple[int, int],
+    need_displacements: bool,
+) -> ScoringSources:
+    """Open mmap eigenfrequency and optionally load displacement targets once."""
+    field_h, field_w = field_hw
+    eigen_path = dataset_pt_dir / "eigenfrequency_uniform_full.pt"
+    eigen = torch.load(eigen_path, map_location="cpu", mmap=True, weights_only=True)
+    eigen_flat = eigen.reshape(total, field_h, field_w)
+
+    displacements = None
+    if need_displacements:
+        displacements = load_displacements_dataset(dataset_pt_dir)
+        for ch_idx, tensor in enumerate(displacements.tensors, start=1):
+            if tuple(tensor.shape) != (total, field_h, field_w):
+                raise ValueError(
+                    f"Truth for channel {ch_idx} shape {tuple(tensor.shape)} != "
+                    f"expected ({total}, {field_h}, {field_w})."
+                )
+
+    return ScoringSources(
+        eigen_flat=eigen_flat,
+        displacements=displacements,
+        total=total,
+        field_h=field_h,
+        field_w=field_w,
+    )
+
+
+def load_truth_batch(
+    sources: ScoringSources,
+    channels: list[int],
+    start: int,
+    end: int,
+) -> torch.Tensor:
+    """Materialize truth for one batch only: (batch, len(channels), H, W)."""
+    chans: list[torch.Tensor] = []
+    for ch in channels:
+        if ch == 0:
+            truth = sources.eigen_flat[start:end]
+        elif 1 <= ch <= 4:
+            if sources.displacements is None:
+                raise RuntimeError(
+                    f"Channel {ch} requested but displacements_dataset.pt was not opened."
+                )
+            truth = sources.displacements.tensors[ch - 1][start:end]
+        else:
+            raise ValueError(f"Unsupported prediction channel {ch}; expected 0–4 for I3O5.")
+        chans.append(truth)
+    return torch.stack(chans, dim=1)
+
+
 def validate_channels(channels: list[int], out_channels: int) -> None:
     for ch in channels:
         if not (0 <= ch < out_channels):
@@ -236,7 +357,7 @@ def prepare_scoring_data(
 
 
 def compute_per_sample_losses(
-    truth_flat: torch.Tensor,
+    truth_flat: torch.Tensor | None,
     predictions: torch.Tensor,
     channels: list[int],
     losses: list[str],
@@ -245,6 +366,7 @@ def compute_per_sample_losses(
     nmae_eps: float = 1e-5,
     nmse_eps: float = 1e-5,
     channel_weighting: str = "uniform",
+    sources: ScoringSources | None = None,
 ) -> dict[str, np.ndarray]:
     """Return {loss_name: (n_samples,) per-sample loss}, combined over selected channels.
 
@@ -253,24 +375,36 @@ def compute_per_sample_losses(
 
     - ``uniform``: arithmetic mean over all selected channels (1/5 each for I3O5).
     - ``group``: 50% channel 0 (eigenfrequency) + 50% mean(channels 1–4).
+
+    Pass either a pre-stacked ``truth_flat`` (legacy) or ``sources`` for batched
+    mmap/slice loading that avoids duplicating the full truth tensor in RAM.
     """
-    if truth_flat.ndim != 4:
-        raise ValueError(f"Expected truth shape (N, C, H, W); got {tuple(truth_flat.shape)}.")
-    if truth_flat.shape[1] != len(channels):
-        raise ValueError(
-            f"Truth channel count {truth_flat.shape[1]} != len(channels)={len(channels)}."
-        )
+    if (truth_flat is None) == (sources is None):
+        raise ValueError("Provide exactly one of truth_flat or sources.")
+
+    if truth_flat is not None:
+        if truth_flat.ndim != 4:
+            raise ValueError(f"Expected truth shape (N, C, H, W); got {tuple(truth_flat.shape)}.")
+        if truth_flat.shape[1] != len(channels):
+            raise ValueError(
+                f"Truth channel count {truth_flat.shape[1]} != len(channels)={len(channels)}."
+            )
+        n = truth_flat.shape[0]
+    else:
+        n = sources.total  # type: ignore[union-attr]
 
     channel_weighting = normalize_channel_weighting(channel_weighting)
-    n = truth_flat.shape[0]
-    out = {loss: np.empty(n, dtype=np.float64) for loss in losses}
+    out = {loss: np.empty(n, dtype=LOSS_DTYPE) for loss in losses}
     need_mae = bool({"mae", "nmae"} & out.keys())
-    need_mse = bool({"mse", "nmse", "nrms"} & out.keys())
+    need_mse = bool({"mse", "rms", "nmse", "nrms"} & out.keys())
     reduce_spatial = (2, 3)
 
     for start in tqdm(range(0, n, batch_size), desc="Scoring", unit="batch"):
         end = min(start + batch_size, n)
-        truth_b = truth_flat[start:end].to(device, dtype=torch.float32)
+        if truth_flat is not None:
+            truth_b = truth_flat[start:end].to(device, dtype=torch.float32)
+        else:
+            truth_b = load_truth_batch(sources, channels, start, end).to(device, dtype=torch.float32)
         pred_b = predictions[start:end, channels].to(device, dtype=torch.float32)
         err = pred_b - truth_b
 
@@ -280,29 +414,34 @@ def compute_per_sample_losses(
         if "mae" in out:
             out["mae"][start:end] = combine_channel_losses(
                 mae_per_ch, channels, channel_weighting
-            ).double().cpu().numpy()
+            ).float().cpu().numpy()
         if "mse" in out:
             out["mse"][start:end] = combine_channel_losses(
                 mse_per_ch, channels, channel_weighting
-            ).double().cpu().numpy()
+            ).float().cpu().numpy()
+        if "rms" in out:
+            rms_per_ch = torch.sqrt(mse_per_ch.clamp_min(0.0))
+            out["rms"][start:end] = combine_channel_losses(
+                rms_per_ch, channels, channel_weighting
+            ).float().cpu().numpy()
         if "nmae" in out:
             denom_a = truth_b.abs().mean(dim=reduce_spatial)
             nmae_per_ch = mae_per_ch / (denom_a + nmae_eps)
             out["nmae"][start:end] = combine_channel_losses(
                 nmae_per_ch, channels, channel_weighting
-            ).double().cpu().numpy()
+            ).float().cpu().numpy()
         if "nmse" in out or "nrms" in out:
             denom_s = truth_b.square().mean(dim=reduce_spatial)
             nmse_per_ch = mse_per_ch / (denom_s + nmse_eps)
             if "nmse" in out:
                 out["nmse"][start:end] = combine_channel_losses(
                     nmse_per_ch, channels, channel_weighting
-                ).double().cpu().numpy()
+                ).float().cpu().numpy()
             if "nrms" in out:
                 nrms_per_ch = torch.sqrt(nmse_per_ch.clamp_min(0.0))
                 out["nrms"][start:end] = combine_channel_losses(
                     nrms_per_ch, channels, channel_weighting
-                ).double().cpu().numpy()
+                ).float().cpu().numpy()
     return out
 
 
@@ -350,6 +489,48 @@ def rank_report(losses_flat: np.ndarray, geom: np.ndarray, wave: np.ndarray, ban
     return rows
 
 
+def save_loss_arrays(
+    *,
+    per_sample: dict[str, np.ndarray],
+    losses: list[str],
+    loss_desc: dict[str, str],
+    out_dir: Path,
+    out_prefix: str,
+    tag_suffix: str,
+    group_suffix: str,
+    combined: np.ndarray,
+    geom: np.ndarray,
+    wave: np.ndarray,
+    band: np.ndarray,
+    channels: list[int],
+) -> None:
+    """Write .npy arrays and print percentile reports for one channel group."""
+    group_label = f" [{group_suffix}]" if group_suffix else ""
+    for loss in losses:
+        lg = per_sample[loss]
+        # Homogeneous float32 (N, 5): cols 0–3 hold exact integers up to ~2e6; col 4 is loss.
+        arr = np.empty((lg.shape[0], 5), dtype=LOSS_DTYPE)
+        arr[:, 0] = combined.astype(LOSS_DTYPE)
+        arr[:, 1] = geom.astype(LOSS_DTYPE)
+        arr[:, 2] = wave.astype(LOSS_DTYPE)
+        arr[:, 3] = band.astype(LOSS_DTYPE)
+        arr[:, 4] = lg.astype(LOSS_DTYPE, copy=False)
+        name_parts = [out_prefix, loss, tag_suffix, group_suffix]
+        stem = "_".join(part for part in name_parts if part)
+        out_path = out_dir / f"{stem}.npy"
+        np.save(out_path, arr)
+
+        rows = rank_report(lg, geom, wave, band)
+        ch_label = ",".join(str(c) for c in channels)
+        print(f"\n=== loss = {loss.upper()}{group_label} (channels {ch_label}; {loss_desc.get(loss, '')}) ===")
+        print(f"saved array : {out_path}  shape={arr.shape}  "
+              f"(cols: combined_idx, geom_idx, wave_idx, band_idx, {loss})")
+        print(f"mean={lg.mean():.6e}")
+        print(f"{'scenario':<14}{'combined':>12}{'geom':>8}{'wave':>8}{'band':>6}{'loss':>16}")
+        for label, idx, g, w, b, val in rows:
+            print(f"{label:<14}{idx:>12}{g:>8}{w:>8}{b:>6}{val:>16.6e}")
+
+
 def main() -> None:
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument(
@@ -358,11 +539,29 @@ def main() -> None:
         help="Dataset *_pt folder with displacements_dataset.pt and eigenfrequency_uniform_full.pt.",
     )
     p.add_argument("--inference", required=True, help="Dense prediction tensor (.pt), shape (n_geom*n_wv*n_bands, C, H, W).")
-    p.add_argument("--losses", nargs="+", required=True, help="Loss criteria: mae mse nmae nmse nrms (aliases l1, l2, nl1, nl2, nrmse).")
+    p.add_argument(
+        "--losses",
+        nargs="+",
+        required=True,
+        help=(
+            "Loss criteria (one or more): mae, mse, rms, nmae, nmse, nrms "
+            "(aliases l1, l2, rmse, nl1, nl2, nrmse)."
+        ),
+    )
+    p.add_argument(
+        "--channel-groups",
+        nargs="+",
+        choices=tuple(CHANNEL_GROUPS),
+        metavar="GROUP",
+        help=(
+            "Channel groups to score (repeatable). freq_ch=ch0, disp_ch=mean(ch1-4), "
+            "all_ch=mean(ch0-4). Each writes files with a _<group> suffix."
+        ),
+    )
     p.add_argument(
         "--channels",
         default=",".join(str(c) for c in DEFAULT_SCORING_CHANNELS),
-        help="Comma-separated prediction channels to score and average (default: 0,1,2,3,4).",
+        help="Comma-separated channels when --channel-groups is omitted (default: 0,1,2,3,4).",
     )
     p.add_argument("--output-dir", default="", help="Explicit output folder (overrides the model/dataset layout below).")
     p.add_argument("--model-name", default="", help="Model name for the PLOTS/INFERENCE/<model>/<dataset>/<subdir> layout.")
@@ -375,9 +574,22 @@ def main() -> None:
     p.add_argument("--nmae-eps", type=float, default=1e-5, help="Epsilon added to mean(|t|) denominator for nmae (default 1e-5).")
     p.add_argument("--nmse-eps", type=float, default=1e-5, help="Epsilon added to mean(t^2) denominator for nmse (default 1e-5).")
     p.add_argument("--batch-size", type=int, default=8192)
+    p.add_argument(
+        "--threads",
+        type=int,
+        default=4,
+        help=(
+            "Max CPU threads for PyTorch/BLAS (default: 4). Use 0 to leave defaults "
+            "(all cores). Lower values reduce interference with concurrent GPU training."
+        ),
+    )
     p.add_argument("--device", default="cpu", choices=("auto", "cuda", "cpu"),
                    help="Compute device (default: cpu). Use 'cuda' or 'auto' to opt into GPU.")
     args = p.parse_args()
+
+    thread_cap = configure_cpu_threads(args.threads)
+    if thread_cap is not None:
+        print(f"CPU threads: capped at {thread_cap} (torch.get_num_threads()={torch.get_num_threads()})")
 
     losses = []
     for name in args.losses:
@@ -385,7 +597,11 @@ def main() -> None:
         if ln not in losses:
             losses.append(ln)
 
-    channels = parse_channels(args.channels)
+    if args.channel_groups:
+        scoring_groups = parse_channel_groups(args.channel_groups)
+    else:
+        scoring_groups = [("", parse_channels(args.channels))]
+
     device = resolve_device(args.device)
     dataset_pt_dir = Path(args.dataset_pt_dir)
     infer_path = Path(args.inference)
@@ -399,63 +615,84 @@ def main() -> None:
     )
 
     predictions = torch.load(infer_path, map_location="cpu", mmap=True, weights_only=True)
-    truth_flat, n_geom, n_wv, n_bands, field_h, field_w, channels = prepare_scoring_data(
-        dataset_pt_dir, predictions, channels
-    )
+    n_geom, n_wv, n_bands, field_h, field_w = load_dataset_layout(dataset_pt_dir)
     total = n_geom * n_wv * n_bands
 
+    if predictions.shape[0] != total:
+        raise ValueError(
+            f"Prediction sample count {predictions.shape[0]} != n_geom*n_wv*n_bands ({total}). "
+            f"Inference must be a dense full-dataset run for index alignment."
+        )
+
     print(f"Dataset   : {dataset_pt_dir}")
-    print(f"Truth     : eigenfrequency_uniform + displacements  shape={tuple(truth_flat.shape)} dtype={truth_flat.dtype}")
     print(f"Inference : {infer_path}  shape={tuple(predictions.shape)} dtype={predictions.dtype}")
-    print(f"Channels  : {channels} (mean loss over these prediction channels)")
+    print(f"Losses    : {', '.join(losses)}")
+    print(
+        "Supported : "
+        + ", ".join(SUPPORTED_LOSSES)
+        + " (aliases l1->mae, l2->mse, rmse->rms, nl1->nmae, nl2->nmse, nrmse->nrms)"
+    )
     print(f"Field     : {field_h}x{field_w}   Device: {device}")
     print(f"Samples   : {total}  (n_geom={n_geom}, n_waveforms={n_wv}, n_bands={n_bands})")
     print(f"Output dir: {out_dir}")
 
-    combined = np.arange(total, dtype=np.int64)
-    geom = combined // (n_wv * n_bands)
-    wave = (combined % (n_wv * n_bands)) // n_bands
-    band = combined % n_bands
-
-    per_sample = compute_per_sample_losses(
-        truth_flat=truth_flat,
-        predictions=predictions,
-        channels=channels,
-        losses=losses,
-        device=device,
-        batch_size=args.batch_size,
-        nmae_eps=args.nmae_eps,
-        nmse_eps=args.nmse_eps,
-    )
+    combined = np.arange(total, dtype=INDEX_DTYPE)
+    geom = (combined // (n_wv * n_bands)).astype(INDEX_DTYPE)
+    wave = ((combined % (n_wv * n_bands)) // n_bands).astype(INDEX_DTYPE)
+    band = (combined % n_bands).astype(INDEX_DTYPE)
 
     loss_desc = {
         "mae": f"mean over channels of mean(|p-t|) over {field_h}x{field_w}",
         "mse": f"mean over channels of mean((p-t)^2) over {field_h}x{field_w}",
+        "rms": f"mean over channels of sqrt(mean((p-t)^2)) over {field_h}x{field_w}",
         "nmae": f"mean over channels of mean(|p-t|) / (mean(|t|) + {args.nmae_eps:g})",
         "nmse": f"mean over channels of mean((p-t)^2) / (mean(t^2) + {args.nmse_eps:g})",
         "nrms": f"mean over channels of sqrt(mean((p-t)^2) / (mean(t^2) + {args.nmse_eps:g}))",
     }
-    tag = f"_{args.tag}" if args.tag else ""
-    for loss in losses:
-        lg = per_sample[loss]
-        arr = np.column_stack([
-            combined.astype(np.float64),
-            geom.astype(np.float64),
-            wave.astype(np.float64),
-            band.astype(np.float64),
-            lg.astype(np.float64),
-        ])
-        out_path = out_dir / f"{args.out_prefix}_{loss}{tag}.npy"
-        np.save(out_path, arr)
+    tag_suffix = args.tag.strip("_") if args.tag else ""
 
-        rows = rank_report(lg, geom, wave, band)
-        print(f"\n=== loss = {loss.upper()} ({loss_desc.get(loss, '')}) ===")
-        print(f"saved array : {out_path}  shape={arr.shape}  "
-              f"(cols: combined_idx, geom_idx, wave_idx, band_idx, {loss})")
-        print(f"mean={lg.mean():.6e}")
-        print(f"{'scenario':<14}{'combined':>12}{'geom':>8}{'wave':>8}{'band':>6}{'loss':>16}")
-        for label, idx, g, w, b, val in rows:
-            print(f"{label:<14}{idx:>12}{g:>8}{w:>8}{b:>6}{val:>16.6e}")
+    all_channels = sorted({ch for _, chs in scoring_groups for ch in chs})
+    validate_channels(all_channels, int(predictions.shape[1]))
+    need_displacements = any(ch >= 1 for ch in all_channels)
+    sources = open_scoring_sources(
+        dataset_pt_dir, total, (field_h, field_w), need_displacements
+    )
+    truth_mode = "batched mmap/slice" if sources else "full stack"
+    print(
+        f"Truth mode: {truth_mode}  "
+        f"(eigen mmap; displacements={'loaded' if need_displacements else 'skipped'})"
+    )
+
+    for group_suffix, channels in scoring_groups:
+        validate_channels(channels, int(predictions.shape[1]))
+        group_note = f" ({group_suffix})" if group_suffix else ""
+        print(f"\n--- channel group{group_note}: {channels} ---")
+
+        per_sample = compute_per_sample_losses(
+            truth_flat=None,
+            predictions=predictions,
+            channels=channels,
+            losses=losses,
+            device=device,
+            batch_size=args.batch_size,
+            nmae_eps=args.nmae_eps,
+            nmse_eps=args.nmse_eps,
+            sources=sources,
+        )
+        save_loss_arrays(
+            per_sample=per_sample,
+            losses=losses,
+            loss_desc=loss_desc,
+            out_dir=out_dir,
+            out_prefix=args.out_prefix,
+            tag_suffix=tag_suffix,
+            group_suffix=group_suffix,
+            combined=combined,
+            geom=geom,
+            wave=wave,
+            band=band,
+            channels=channels,
+        )
 
 
 if __name__ == "__main__":

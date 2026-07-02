@@ -10,6 +10,9 @@ Consumes the same inputs as ``per_sample_loss.py``:
 
 By default the per-sample loss uses channels 0–4 with **group weighting**:
 50% eigenfrequency (ch0) + 50% mean of displacement channels 1–4 (not 1/5 per channel).
+Use ``--channel-group`` to score ``freq_ch`` (ch0), ``disp_ch`` (ch1–4 mean), or
+``all_ch`` (ch0–4 mean with uniform 1/5 weighting) instead; each maps to a
+recommended output subfolder name when ``--output-subdir`` is left at default.
 For each requested loss it computes that scalar and
 renders a histogram with a Gaussian-KDE curve scaled to match relative bin heights
 when normalization is enabled (each sample weighted by 1/N, with N the full per-loss
@@ -17,13 +20,14 @@ sample count before excluding non-positive or out-of-range values for plotting).
 The y-axis is autoscaled. By default the x-axis is log-scaled with a major tick at
 every order of magnitude in the data range.
 
-Supported losses: mae, mse, nmae, nmse, nrms (aliases l1, l2, nl1, nl2, nrmse). NMAE/NMSE/NRMS use the
+Supported losses: mae, mse, rms, nmae, nmse, nrms (aliases l1, l2, rmse, nl1, nl2, nrmse). NMAE/NMSE/NRMS use the
 eps-stabilized denominators from per_sample_loss.py (defaults 1e-5 / 1e-5).
 """
 
 from __future__ import annotations
 
 import argparse
+import csv
 import math
 from pathlib import Path
 
@@ -37,13 +41,16 @@ from matplotlib.ticker import FixedLocator, LogFormatterMathtext, NullLocator
 from scipy.stats import gaussian_kde
 
 from per_sample_loss import (
+    CHANNEL_GROUPS,
     compute_per_sample_losses,
+    load_dataset_layout,
     normalize_channel_weighting,
     normalize_loss_name,
+    open_scoring_sources,
     parse_channels,
     parse_index_list,
-    prepare_scoring_data,
     resolve_device,
+    validate_channels,
 )
 from output_layout import resolve_script_output_dir
 from second_peak_analysis import flat_indices
@@ -52,9 +59,16 @@ from second_peak_analysis import flat_indices
 LOSS_XLABEL = {
     "mae": "Per-sample MAE",
     "mse": "Per-sample MSE",
+    "rms": "Per-sample RMS",
     "nmae": "Per-sample NMAE",
     "nmse": "Per-sample NMSE",
     "nrms": "Per-sample NRMS",
+}
+
+CHANNEL_GROUP_SUBDIRS = {
+    "all_ch": "all channel histograms",
+    "disp_ch": "disp channel histograms",
+    "freq_ch": "freq channel histograms",
 }
 
 
@@ -150,8 +164,18 @@ def main() -> None:
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("--dataset-pt-dir", required=True, help="Dataset *_pt folder with displacements_dataset.pt.")
     p.add_argument("--inference", required=True, help="Dense prediction tensor (.pt), shape (n_geom*n_wv*n_bands, C, H, W).")
-    p.add_argument("--losses", nargs="+", required=True, help="Loss criteria: mae mse nmae nmse nrms (aliases l1, l2, nl1, nl2, nrmse).")
+    p.add_argument("--losses", nargs="+", required=True, help="Loss criteria: mae mse rms nmae nmse nrms (aliases l1, l2, rmse, nl1, nl2, nrmse).")
     p.add_argument("--channels", default="0,1,2,3,4", help="Comma-separated prediction channels (default: 0,1,2,3,4).")
+    p.add_argument(
+        "--channel-group",
+        choices=tuple(CHANNEL_GROUPS),
+        default="",
+        help=(
+            "Channel group to score (uniform mean over the group's channels): "
+            "freq_ch=ch0, disp_ch=mean(ch1-4), all_ch=mean(ch0-4). "
+            "Overrides --channels and sets uniform weighting."
+        ),
+    )
     p.add_argument(
         "--channel-weighting",
         default="group",
@@ -197,38 +221,48 @@ def main() -> None:
         if ln not in losses:
             losses.append(ln)
 
-    channels = parse_channels(args.channels)
-    channel_weighting = normalize_channel_weighting(args.channel_weighting)
+    channels = list(CHANNEL_GROUPS[args.channel_group]) if args.channel_group else parse_channels(args.channels)
+    channel_group = args.channel_group or ""
+    if channel_group:
+        channel_weighting = "uniform"
+    else:
+        channel_weighting = normalize_channel_weighting(args.channel_weighting)
     exclude_waves = parse_index_list(args.exclude_wave_indices, "--exclude-wave-indices")
     device = resolve_device(args.device)
     dataset_pt_dir = Path(args.dataset_pt_dir)
     infer_path = Path(args.inference)
+    output_subdir = args.output_subdir
+    if channel_group and output_subdir == "histograms":
+        output_subdir = CHANNEL_GROUP_SUBDIRS[channel_group]
     out_dir = resolve_script_output_dir(
         explicit=args.output_dir or None,
         category="plots",
         model_name=args.model_name or None,
         dataset=args.dataset or args.tag,
-        subdir=args.output_subdir,
+        subdir=output_subdir,
         fallback=infer_path.parent,
     )
 
     predictions = torch.load(infer_path, map_location="cpu", mmap=True, weights_only=True)
-    truth_flat, n_geom, n_wv, n_bands, field_h, field_w, channels = prepare_scoring_data(
-        dataset_pt_dir, predictions, channels
-    )
+    n_geom, n_wv, n_bands, field_h, field_w = load_dataset_layout(dataset_pt_dir)
     total = n_geom * n_wv * n_bands
+    validate_channels(channels, int(predictions.shape[1]))
+    need_displacements = any(ch >= 1 for ch in channels)
+    sources = open_scoring_sources(
+        dataset_pt_dir, total, (field_h, field_w), need_displacements
+    )
 
     print(f"Dataset   : {dataset_pt_dir}")
-    print(f"Truth     : eigenfrequency_uniform + displacements  shape={tuple(truth_flat.shape)} dtype={truth_flat.dtype}")
     print(f"Inference : {infer_path}  shape={tuple(predictions.shape)} dtype={predictions.dtype}")
-    print(f"Channels  : {channels}   weighting: {channel_weighting}   Field: {field_h}x{field_w}   Device: {device}")
+    group_note = f"  group={channel_group}" if channel_group else ""
+    print(f"Channels  : {channels}   weighting: {channel_weighting}{group_note}   Field: {field_h}x{field_w}   Device: {device}")
     if exclude_waves:
         print(f"Excluding wave indices: {exclude_waves}  ({len(exclude_waves)} wavevectors)")
     print(f"Samples   : {total}   Losses: {losses}")
     print(f"Output dir: {out_dir}")
 
     per_sample = compute_per_sample_losses(
-        truth_flat=truth_flat,
+        truth_flat=None,
         predictions=predictions,
         channels=channels,
         losses=losses,
@@ -237,16 +271,18 @@ def main() -> None:
         nmae_eps=args.nmae_eps,
         nmse_eps=args.nmse_eps,
         channel_weighting=channel_weighting,
+        sources=sources,
     )
 
     if exclude_waves:
         _, wave_idx, _ = flat_indices(n_geom, n_wv, n_bands)
-        keep = ~np.isin(wave_idx, np.array(exclude_waves, dtype=np.int64))
+        keep = ~np.isin(wave_idx, np.array(exclude_waves, dtype=np.int32))
         n_kept = int(keep.sum())
         print(f"Histogram sample count after wave exclusion: {n_kept} / {total}")
         per_sample = {loss: arr[keep] for loss, arr in per_sample.items()}
 
     tag = f"_{args.tag}" if args.tag else ""
+    stats_rows: list[dict[str, object]] = []
     for loss in losses:
         vals = per_sample[loss]
         finite = vals[np.isfinite(vals)]
@@ -323,6 +359,32 @@ def main() -> None:
         plt.close(fig)
         print(f"  {loss:<5} N={finite.size}  mean={mean_v:.6e}  median={median_v:.6e}  "
               f"min={float(finite.min()):.6e}  max={float(finite.max()):.6e} -> {out_path.name}")
+        stats_rows.append({
+            "loss": loss,
+            "n_samples": int(finite.size),
+            "mean": mean_v,
+            "median": median_v,
+            "min": float(finite.min()),
+            "max": float(finite.max()),
+        })
+
+    if stats_rows:
+        summary_path = out_dir / f"{args.out_prefix}_summary{tag}.csv"
+        fieldnames = [
+            "loss", "n_samples", "mean", "median", "min", "max",
+            "channel_weighting", "channel_group", "tag",
+        ]
+        with summary_path.open("w", newline="", encoding="utf-8") as f:
+            writer = csv.DictWriter(f, fieldnames=fieldnames)
+            writer.writeheader()
+            for row in stats_rows:
+                writer.writerow({
+                    **row,
+                    "channel_weighting": channel_weighting,
+                    "channel_group": channel_group,
+                    "tag": args.tag,
+                })
+        print(f"Wrote summary: {summary_path}")
 
 
 if __name__ == "__main__":

@@ -1,0 +1,30 @@
+{
+  "run_name": "NO_I3O5_BCF16_NMSE_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_260701",
+  "run_id": "NO_I3O5_BCF16_NMSE_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_260701",
+  "status": "running",
+  "started_at_utc": "2026-07-01T18:19:50.571412+00:00",
+  "git": {
+    "git_commit": "bd92ff101dc6f454df4dda387b7fdfcb74c6eaab",
+    "git_dirty": "true"
+  },
+  "environment": {
+    "python_version": "3.12.3",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "torch_version": "2.5.1",
+    "cuda_available": true,
+    "cuda_version": "11.8",
+    "cudnn_version": 90100,
+    "device_count": 1,
+    "device_name_0": "NVIDIA GeForce RTX 4080 SUPER"
+  },
+  "ended_at_utc": "2026-07-02T14:57:25.471915+00:00",
+  "duration_sec": 41170.788087,
+  "error_type": "RuntimeError",
+  "error_message": "DataLoader worker (pid(s) 101960) exited unexpectedly",
+  "resumed_at_utc": "2026-07-02T16:39:41.037765+00:00",
+  "resume_extend_epochs": 4,
+  "resume_from_epoch": 1,
+  "resume_target_total_epochs": 4,
+  "best_val_loss": 0.21496902320161462,
+  "best_epoch": 4
+}

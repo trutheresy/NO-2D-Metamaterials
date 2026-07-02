@@ -400,7 +400,7 @@ def discover_shards(output_root: Path, prefixes: tuple[str, ...], eigen_ch0_enco
                 raise ValueError(
                     f"Sample count mismatch in {pt}: outputs N={int(y.shape[0])} vs len(reduced_indices)={n}"
                 )
-            arr = np.asarray(ridx, dtype=np.int64)
+            arr = np.asarray(ridx, dtype=np.int32)
             if arr.ndim != 2 or arr.shape[1] != 3:
                 raise ValueError(f"reduced_indices must be shape [N,3] when treated as array, got {arr.shape}")
             dmax, wmax, bmax = int(arr[:, 0].max()), int(arr[:, 1].max()), int(arr[:, 2].max())
@@ -642,9 +642,9 @@ def evaluate(
     model.eval()
     running_loss = 0.0
     running_loss_compare = 0.0 if compare_base_loss is not None else None
-    running_per_ch = torch.zeros(OUT_CHANNELS, dtype=torch.float64)
+    running_per_ch = torch.zeros(OUT_CHANNELS, dtype=torch.float32)
     running_per_ch_cmp = (
-        torch.zeros(OUT_CHANNELS, dtype=torch.float64) if compare_base_loss is not None else None
+        torch.zeros(OUT_CHANNELS, dtype=torch.float32) if compare_base_loss is not None else None
     )
     n_samples = 0
     start = time.time()
@@ -664,10 +664,10 @@ def evaluate(
             running_loss += float(loss.item()) * bs
             if running_loss_compare is not None and loss_compare is not None:
                 running_loss_compare += float(loss_compare.item()) * bs
-            running_per_ch += per_channel_reduction(pred, yb, base_loss=base_loss).detach().cpu().to(torch.float64) * bs
+            running_per_ch += per_channel_reduction(pred, yb, base_loss=base_loss).detach().cpu().to(torch.float32) * bs
             if running_per_ch_cmp is not None and compare_base_loss is not None:
                 running_per_ch_cmp += (
-                    per_channel_reduction(pred, yb, base_loss=compare_base_loss).detach().cpu().to(torch.float64) * bs
+                    per_channel_reduction(pred, yb, base_loss=compare_base_loss).detach().cpu().to(torch.float32) * bs
                 )
             n_samples += bs
     elapsed = max(time.time() - start, 1e-9)
@@ -1141,9 +1141,9 @@ def main() -> None:
                 t_epoch0 = time.time()
                 running = 0.0
                 running_compare = 0.0 if compare_base_loss_name is not None else None
-                running_train_per_ch = torch.zeros(OUT_CHANNELS, dtype=torch.float64)
+                running_train_per_ch = torch.zeros(OUT_CHANNELS, dtype=torch.float32)
                 running_train_per_ch_cmp = (
-                    torch.zeros(OUT_CHANNELS, dtype=torch.float64) if compare_base_loss_name is not None else None
+                    torch.zeros(OUT_CHANNELS, dtype=torch.float32) if compare_base_loss_name is not None else None
                 )
                 n_seen = 0
                 data_time = 0.0
@@ -1196,7 +1196,7 @@ def main() -> None:
                             if running_compare is not None and loss_compare is not None:
                                 running_compare += float(loss_compare.item()) * bs
                             running_train_per_ch += (
-                                per_channel_reduction(pred, yb, base_loss=args.loss).detach().cpu().to(torch.float64)
+                                per_channel_reduction(pred, yb, base_loss=args.loss).detach().cpu().to(torch.float32)
                                 * bs
                             )
                             if running_train_per_ch_cmp is not None and compare_base_loss_name is not None:
@@ -1204,7 +1204,7 @@ def main() -> None:
                                     per_channel_reduction(pred, yb, base_loss=compare_base_loss_name)
                                     .detach()
                                     .cpu()
-                                    .to(torch.float64)
+                                    .to(torch.float32)
                                     * bs
                                 )
                             n_seen += bs
@@ -1252,14 +1252,14 @@ def main() -> None:
                         if running_compare is not None and loss_compare is not None:
                             running_compare += float(loss_compare.item()) * bs
                         running_train_per_ch += (
-                            per_channel_reduction(pred, yb, base_loss=args.loss).detach().cpu().to(torch.float64) * bs
+                            per_channel_reduction(pred, yb, base_loss=args.loss).detach().cpu().to(torch.float32) * bs
                         )
                         if running_train_per_ch_cmp is not None and compare_base_loss_name is not None:
                             running_train_per_ch_cmp += (
                                 per_channel_reduction(pred, yb, base_loss=compare_base_loss_name)
                                 .detach()
                                 .cpu()
-                                .to(torch.float64)
+                                .to(torch.float32)
                                 * bs
                             )
                         n_seen += bs

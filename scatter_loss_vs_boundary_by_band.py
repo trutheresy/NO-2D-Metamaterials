@@ -31,6 +31,7 @@ import matplotlib.pyplot as plt
 from scipy.stats import spearmanr
 
 from per_sample_loss import (
+    INDEX_DTYPE,
     compute_per_sample_losses,
     normalize_loss_name,
     parse_channels,
@@ -126,11 +127,11 @@ def main() -> None:
 
     # save combined table
     header = ["geom_idx", "boundary_length"]
-    cols = [geom_idx.astype(np.float64), blen]
+    cols = [geom_idx.astype(INDEX_DTYPE), blen.astype(np.float32, copy=False)]
     for loss in losses:
         for b in range(n_bands):
             header.append(f"{loss}_b{b}")
-            cols.append(per_geom_band[loss][:, b])
+            cols.append(per_geom_band[loss][:, b].astype(np.float32, copy=False))
     table = np.stack(cols, axis=1)
     csv_path = out_dir / f"per_geometry_band_boundary_vs_loss{tag}.csv"
     np.savetxt(csv_path, table, delimiter=",", header=",".join(header), comments="", fmt="%.10g")

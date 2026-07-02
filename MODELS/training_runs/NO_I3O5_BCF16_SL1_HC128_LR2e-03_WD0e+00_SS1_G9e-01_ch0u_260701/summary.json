@@ -1,0 +1,24 @@
+{
+  "status": "failed",
+  "run_name": "NO_I3O5_BCF16_SL1_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_260701",
+  "run_id": "NO_I3O5_BCF16_SL1_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_260701",
+  "started_at_utc": "2026-07-01T07:51:41.117793+00:00",
+  "ended_at_utc": "2026-07-01T15:38:43.370387+00:00",
+  "duration_sec": 28022.252594,
+  "error_type": "RuntimeError",
+  "error_message": "DataLoader worker (pid(s) 23484) exited unexpectedly",
+  "traceback": "Traceback (most recent call last):\n  File \"C:\\ProgramData\\anaconda3\\envs\\NO_2D_Metamaterials\\Lib\\site-packages\\torch\\utils\\data\\dataloader.py\", line 1243, in _try_get_data\n    data = self._data_queue.get(timeout=timeout)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\ProgramData\\anaconda3\\envs\\NO_2D_Metamaterials\\Lib\\queue.py\", line 179, in get\n    raise Empty\n_queue.Empty\n\nThe above exception was the direct cause of the following exception:\n\nTraceback (most recent call last):\n  File \"D:\\Research\\NO-2D-Metamaterials\\train_from_disk.py\", line 1742, in main\n    for batch_idx, (xb, yb) in enumerate(train_loader, start=1):\n  File \"C:\\ProgramData\\anaconda3\\envs\\NO_2D_Metamaterials\\Lib\\site-packages\\torch\\utils\\data\\dataloader.py\", line 701, in __next__\n    data = self._next_data()\n           ^^^^^^^^^^^^^^^^^\n  File \"C:\\ProgramData\\anaconda3\\envs\\NO_2D_Metamaterials\\Lib\\site-packages\\torch\\utils\\data\\dataloader.py\", line 1448, in _next_data\n    idx, data = self._get_data()\n                ^^^^^^^^^^^^^^^^\n  File \"C:\\ProgramData\\anaconda3\\envs\\NO_2D_Metamaterials\\Lib\\site-packages\\torch\\utils\\data\\dataloader.py\", line 1393, in _get_data\n    success, data = self._try_get_data(self._timeout)\n                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\ProgramData\\anaconda3\\envs\\NO_2D_Metamaterials\\Lib\\site-packages\\torch\\utils\\data\\dataloader.py\", line 1256, in _try_get_data\n    raise RuntimeError(\nRuntimeError: DataLoader worker (pid(s) 23484) exited unexpectedly\n",
+  "phase": "train_epoch",
+  "epoch": 14,
+  "batch": 3242,
+  "active_child_pids": [
+    110556,
+    89856,
+    29304
+  ],
+  "fault_logs": {
+    "main": "D:\\Research\\NO-2D-Metamaterials\\MODELS\\training_runs\\NO_I3O5_BCF16_SL1_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_260701\\main_process_fault.log",
+    "workers_glob": "D:\\Research\\NO-2D-Metamaterials\\MODELS\\training_runs\\NO_I3O5_BCF16_SL1_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_260701\\worker_*_fault.log"
+  },
+  "diagnostic_hint": "DataLoader worker failed. Check worker_*_fault.log files in run directory; if empty, rerun with --num-workers 0 to isolate worker-related failures."
+}

@@ -44,6 +44,290 @@ EIGEN_CH0_FILES = {
 
 OUT_CHANNELS = 5
 
+CANONICAL_LOSSES = frozenset({
+    "mae",
+    "mse",
+    "smoothl1",
+    "nmae",
+    "nmse",
+    "rmse",
+    "nrmse",
+    "mae_rmse",
+    "nmae_nrmse",
+})
+LOSS_CLI_CHOICES = (
+    "mae",
+    "mse",
+    "smoothl1",
+    "nmae",
+    "nmse",
+    "rmse",
+    "nrmse",
+    "mae_rmse",
+    "nmae_nrmse",
+    "l1",
+    "l2",
+    "huber",
+    "sl1",
+    "nl1",
+    "nl2",
+    "nrms",
+    "maermse",
+    "nmaenrmse",
+)
+DEFAULT_NMAE_EPS = 1e-5
+DEFAULT_NMSE_EPS = 1e-5
+DEFAULT_RMSE_SQRT_FLOOR = 1e-12
+DEFAULT_MAE_RMSE_COEFF = 1.0
+DEFAULT_NMAE_NRMSE_COEFF = 1.0
+
+
+def normalize_loss_name(name: str) -> str:
+    """Map CLI / legacy aliases to canonical loss names."""
+    n = name.strip().lower()
+    if n in ("l1", "mae"):
+        return "mae"
+    if n in ("l2", "mse"):
+        return "mse"
+    if n in ("smoothl1", "huber", "sl1"):
+        return "smoothl1"
+    if n in ("nl1", "nmae"):
+        return "nmae"
+    if n in ("nl2", "nmse"):
+        return "nmse"
+    if n in ("nrms", "nrmse"):
+        return "nrmse"
+    if n in ("maermse", "mae+rmse"):
+        return "mae_rmse"
+    if n in ("nmaenrmse", "nmae+nrms", "nmae_nrms"):
+        return "nmae_nrmse"
+    if n in CANONICAL_LOSSES:
+        return n
+    raise ValueError(
+        f"Unsupported loss {name!r}. Supported: {', '.join(sorted(CANONICAL_LOSSES))} "
+        f"(aliases l1, l2, huber, sl1, nl1, nl2, nrms, maermse, nmaenrmse)."
+    )
+
+
+class NormalizedMaeLoss(nn.Module):
+    """mean(|p-t|) / (mean(|t|) + eps) per channel, averaged over channels."""
+
+    def __init__(self, eps: float = DEFAULT_NMAE_EPS) -> None:
+        super().__init__()
+        self.eps = eps
+
+    def forward(self, pred: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
+        err = pred - target
+        mae_per_ch = err.abs().mean(dim=(0, 2, 3))
+        denom = target.abs().mean(dim=(0, 2, 3)) + self.eps
+        return (mae_per_ch / denom).mean()
+
+
+class NormalizedMseLoss(nn.Module):
+    """mean((p-t)^2) / (mean(t^2) + eps) per channel, averaged over channels."""
+
+    def __init__(self, eps: float = DEFAULT_NMSE_EPS) -> None:
+        super().__init__()
+        self.eps = eps
+
+    def forward(self, pred: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
+        err = pred - target
+        mse_per_ch = err.square().mean(dim=(0, 2, 3))
+        denom = target.square().mean(dim=(0, 2, 3)) + self.eps
+        return (mse_per_ch / denom).mean()
+
+
+class RmseLoss(nn.Module):
+    """sqrt(mean((p-t)^2)) per channel, averaged over channels."""
+
+    def __init__(self, sqrt_floor: float = DEFAULT_RMSE_SQRT_FLOOR) -> None:
+        super().__init__()
+        self.sqrt_floor = sqrt_floor
+
+    def forward(self, pred: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
+        err = pred - target
+        mse_per_ch = err.square().mean(dim=(0, 2, 3))
+        return torch.sqrt(mse_per_ch + self.sqrt_floor).mean()
+
+
+class NormalizedRmseLoss(nn.Module):
+    """sqrt(mean((p-t)^2) / (mean(t^2) + eps)) per channel, averaged over channels."""
+
+    def __init__(self, eps: float = DEFAULT_NMSE_EPS) -> None:
+        super().__init__()
+        self.eps = eps
+
+    def forward(self, pred: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
+        err = pred - target
+        mse_per_ch = err.square().mean(dim=(0, 2, 3))
+        denom = target.square().mean(dim=(0, 2, 3)) + self.eps
+        return torch.sqrt((mse_per_ch / denom).clamp_min(0.0)).mean()
+
+
+class MaeRmseLoss(nn.Module):
+    """mean(|p-t|) + c * sqrt(mean((p-t)^2)) per channel, averaged over channels."""
+
+    def __init__(self, coeff: float = DEFAULT_MAE_RMSE_COEFF, *, rmse_sqrt_floor: float = DEFAULT_RMSE_SQRT_FLOOR) -> None:
+        super().__init__()
+        self.coeff = coeff
+        self.rmse_sqrt_floor = rmse_sqrt_floor
+
+    def forward(self, pred: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
+        err = pred - target
+        mae_per_ch = err.abs().mean(dim=(0, 2, 3))
+        rmse_per_ch = torch.sqrt(err.square().mean(dim=(0, 2, 3)) + self.rmse_sqrt_floor)
+        return (mae_per_ch + self.coeff * rmse_per_ch).mean()
+
+
+class NmaeNrmseLoss(nn.Module):
+    """NMAE + c * NRMSE per channel, averaged over channels."""
+
+    def __init__(
+        self,
+        coeff: float = DEFAULT_NMAE_NRMSE_COEFF,
+        *,
+        nmae_eps: float = DEFAULT_NMAE_EPS,
+        nmse_eps: float = DEFAULT_NMSE_EPS,
+    ) -> None:
+        super().__init__()
+        self.coeff = coeff
+        self.nmae_eps = nmae_eps
+        self.nmse_eps = nmse_eps
+
+    def forward(self, pred: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
+        err = pred - target
+        mae_per_ch = err.abs().mean(dim=(0, 2, 3))
+        mse_per_ch = err.square().mean(dim=(0, 2, 3))
+        denom_a = target.abs().mean(dim=(0, 2, 3)) + self.nmae_eps
+        denom_s = target.square().mean(dim=(0, 2, 3)) + self.nmse_eps
+        nmae_per_ch = mae_per_ch / denom_a
+        nrmse_per_ch = torch.sqrt((mse_per_ch / denom_s).clamp_min(0.0))
+        return (nmae_per_ch + self.coeff * nrmse_per_ch).mean()
+
+
+@dataclass
+class TrainingLossSpec:
+    """Criterion plus metadata for logging, metrics, and checkpoint selection."""
+
+    name: str
+    criterion: nn.Module
+    compare_kind: str
+    run_tag: str
+    huber_beta: float = 1e-3
+    nmae_eps: float = DEFAULT_NMAE_EPS
+    nmse_eps: float = DEFAULT_NMSE_EPS
+    rmse_sqrt_floor: float = DEFAULT_RMSE_SQRT_FLOOR
+    mae_rmse_coeff: float = DEFAULT_MAE_RMSE_COEFF
+    nmae_nrmse_coeff: float = DEFAULT_NMAE_NRMSE_COEFF
+
+    def batch_loss(self, pred: torch.Tensor, yb: torch.Tensor) -> torch.Tensor:
+        return self.criterion(pred, yb)
+
+    def per_channel_mean(self, pred: torch.Tensor, yb: torch.Tensor) -> torch.Tensor:
+        return per_channel_loss_mean(
+            pred,
+            yb,
+            self.name,
+            huber_beta=self.huber_beta,
+            nmae_eps=self.nmae_eps,
+            nmse_eps=self.nmse_eps,
+            rmse_sqrt_floor=self.rmse_sqrt_floor,
+            mae_rmse_coeff=self.mae_rmse_coeff,
+            nmae_nrmse_coeff=self.nmae_nrmse_coeff,
+        )
+
+
+def build_training_loss(
+    loss_name: str,
+    *,
+    huber_beta: float = 1e-3,
+    nmae_eps: float = DEFAULT_NMAE_EPS,
+    nmse_eps: float = DEFAULT_NMSE_EPS,
+    rmse_sqrt_floor: float = DEFAULT_RMSE_SQRT_FLOOR,
+    mae_rmse_coeff: float = DEFAULT_MAE_RMSE_COEFF,
+    nmae_nrmse_coeff: float = DEFAULT_NMAE_NRMSE_COEFF,
+) -> TrainingLossSpec:
+    name = normalize_loss_name(loss_name)
+    common = dict(
+        huber_beta=huber_beta,
+        nmae_eps=nmae_eps,
+        nmse_eps=nmse_eps,
+        rmse_sqrt_floor=rmse_sqrt_floor,
+        mae_rmse_coeff=mae_rmse_coeff,
+        nmae_nrmse_coeff=nmae_nrmse_coeff,
+    )
+    if name == "mse":
+        return TrainingLossSpec(
+            name=name,
+            criterion=nn.MSELoss(),
+            compare_kind="mae",
+            run_tag="L2",
+            **common,
+        )
+    if name == "mae":
+        return TrainingLossSpec(
+            name=name,
+            criterion=nn.L1Loss(),
+            compare_kind="mse",
+            run_tag="MAE",
+            **common,
+        )
+    if name == "nmae":
+        return TrainingLossSpec(
+            name=name,
+            criterion=NormalizedMaeLoss(eps=nmae_eps),
+            compare_kind="mse",
+            run_tag="NMAE",
+            **common,
+        )
+    if name == "nmse":
+        return TrainingLossSpec(
+            name=name,
+            criterion=NormalizedMseLoss(eps=nmse_eps),
+            compare_kind="mse",
+            run_tag="NMSE",
+            **common,
+        )
+    if name == "rmse":
+        return TrainingLossSpec(
+            name=name,
+            criterion=RmseLoss(sqrt_floor=rmse_sqrt_floor),
+            compare_kind="mse",
+            run_tag="RMSE",
+            **common,
+        )
+    if name == "nrmse":
+        return TrainingLossSpec(
+            name=name,
+            criterion=NormalizedRmseLoss(eps=nmse_eps),
+            compare_kind="mse",
+            run_tag="NRMSE",
+            **common,
+        )
+    if name == "mae_rmse":
+        return TrainingLossSpec(
+            name=name,
+            criterion=MaeRmseLoss(coeff=mae_rmse_coeff, rmse_sqrt_floor=rmse_sqrt_floor),
+            compare_kind="mse",
+            run_tag="MAERMSE",
+            **common,
+        )
+    if name == "nmae_nrmse":
+        return TrainingLossSpec(
+            name=name,
+            criterion=NmaeNrmseLoss(coeff=nmae_nrmse_coeff, nmae_eps=nmae_eps, nmse_eps=nmse_eps),
+            compare_kind="mse",
+            run_tag="NMAENRMSE",
+            **common,
+        )
+    return TrainingLossSpec(
+        name=name,
+        criterion=nn.SmoothL1Loss(beta=huber_beta),
+        compare_kind="mse",
+        run_tag="SL1",
+        **common,
+    )
+
 
 @dataclass
 class ShardInfo:
@@ -199,7 +483,7 @@ class FullIndexTensorPairDataset(Dataset[tuple[torch.Tensor, torch.Tensor]]):
             )
         self._loaded_disp = list(displacements.tensors)
         indices = torch.load(shard.indices_path, map_location="cpu", weights_only=False)
-        self._loaded_indices = np.asarray(indices, dtype=np.int64)
+        self._loaded_indices = np.asarray(indices, dtype=np.int32)
         if self._loaded_indices.ndim != 2 or self._loaded_indices.shape[1] != 3:
             raise ValueError(
                 f"indices_full must have shape [N,3] when treated as array, got {self._loaded_indices.shape}"
@@ -398,12 +682,49 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--modes-width", type=int, default=32)
     p.add_argument("--learning-rate", type=float, default=2e-3)
     p.add_argument("--weight-decay", type=float, default=0.0)
-    p.add_argument("--loss", choices=("mse", "l1", "smoothl1"), default="smoothl1")
+    p.add_argument(
+        "--loss",
+        type=normalize_loss_name,
+        choices=LOSS_CLI_CHOICES,
+        default="smoothl1",
+        help="Training loss preset. Aliases: l1->mae, l2->mse, huber/sl1->smoothl1, nl1->nmae, nl2->nmse, nrms->nrmse, maermse->mae_rmse, nmaenrmse->nmae_nrmse.",
+    )
     p.add_argument(
         "--huber-beta",
         type=float,
         default=1e-3,
         help="SmoothL1/Huber transition point (|r|=beta). Used when --loss smoothl1.",
+    )
+    p.add_argument(
+        "--nmae-eps",
+        type=float,
+        default=DEFAULT_NMAE_EPS,
+        help="Epsilon added to mean(|t|) denominator for nmae / nmae_nrmse (default 1e-5).",
+    )
+    p.add_argument(
+        "--nmse-eps",
+        type=float,
+        default=DEFAULT_NMSE_EPS,
+        help="Epsilon added to mean(t^2) denominator for nmse / nrmse / nmae_nrmse (default 1e-5).",
+    )
+    p.add_argument(
+        "--rmse-sqrt-floor",
+        type=float,
+        default=DEFAULT_RMSE_SQRT_FLOOR,
+        help="Additive floor inside sqrt(mean((p-t)^2)) for rmse / mae_rmse gradient stability "
+        "(default 1e-12). Not a truth-normalization epsilon; see --nmse-eps / --nmae-eps.",
+    )
+    p.add_argument(
+        "--mae-rmse-coeff",
+        type=float,
+        default=DEFAULT_MAE_RMSE_COEFF,
+        help="Coefficient c on RMSE in --loss mae_rmse: MAE + c*RMSE (default 1.0).",
+    )
+    p.add_argument(
+        "--nmae-nrmse-coeff",
+        type=float,
+        default=DEFAULT_NMAE_NRMSE_COEFF,
+        help="Coefficient c on NRMSE in --loss nmae_nrmse: NMAE + c*NRMSE (default 1.0).",
     )
     p.add_argument("--scheduler", choices=("steplr", "cosine", "none"), default="steplr")
     p.add_argument("--step-size", type=int, default=1)
@@ -546,7 +867,7 @@ def discover_shards(output_root: Path, prefixes: tuple[str, ...], eigen_ch0_enco
                 raise ValueError(
                     f"Sample count mismatch in {pt}: outputs N={int(y.shape[0])} vs len(reduced_indices)={n}"
                 )
-            arr = np.asarray(ridx, dtype=np.int64)
+            arr = np.asarray(ridx, dtype=np.int32)
             if arr.ndim != 2 or arr.shape[1] != 3:
                 raise ValueError(f"reduced_indices must be shape [N,3] when treated as array, got {arr.shape}")
             dmax, wmax, bmax = int(arr[:, 0].max()), int(arr[:, 1].max()), int(arr[:, 2].max())
@@ -642,7 +963,7 @@ def discover_full_index_test_shards(
                 raise ValueError(
                     f"displacements row count mismatch in {pt}: rows={disp_rows}, expected full={full_rows}"
                 )
-            arr = np.asarray(indices, dtype=np.int64)
+            arr = np.asarray(indices, dtype=np.int32)
             if arr.ndim != 2 or arr.shape[1] != 3:
                 raise ValueError(f"indices_full must be shape [N,3] when treated as array, got {arr.shape}")
             dmax, wmax, bmax = int(arr[:, 0].max()), int(arr[:, 1].max()), int(arr[:, 2].max())
@@ -717,7 +1038,7 @@ def full_index_dataset_version_hash(shards: list[FullIndexShardInfo], eigen_ch0_
 def build_run_name(args: argparse.Namespace) -> str:
     ds = datetime.now().strftime("%y%m%d")
     ch0_tag = "ch0u" if args.eigen_ch0_encoding == "uniform" else "ch0fft"
-    loss_tag = {"mse": "L2", "l1": "L1", "smoothl1": "SL1"}[args.loss]
+    loss_tag = build_training_loss(args.loss).run_tag
     return (
         f"NO_I3O5_BCF16_{loss_tag}_HC{args.hidden_channels}_"
         f"LR{args.learning_rate:.0e}_WD{args.weight_decay:.0e}_"
@@ -801,19 +1122,26 @@ def amp_context(device: torch.device, amp_mode: str):
     return torch.autocast(device_type="cuda", dtype=torch.bfloat16, enabled=True)
 
 
-def build_criterion(loss_name: str, *, huber_beta: float = 1e-3) -> nn.Module:
-    if loss_name == "mse":
-        return nn.MSELoss()
-    if loss_name == "l1":
-        return nn.L1Loss()
-    return nn.SmoothL1Loss(beta=huber_beta)
-
-
-def compare_loss_name_for_csv(active_loss: str) -> str:
-    """Backward-compat compare column: L1 when training MSE, else MSE (incl. SmoothL1)."""
-    if active_loss == "mse":
-        return "l1"
-    return "mse"
+def build_criterion(
+    loss_name: str,
+    *,
+    huber_beta: float = 1e-3,
+    nmae_eps: float = DEFAULT_NMAE_EPS,
+    nmse_eps: float = DEFAULT_NMSE_EPS,
+    rmse_sqrt_floor: float = DEFAULT_RMSE_SQRT_FLOOR,
+    mae_rmse_coeff: float = DEFAULT_MAE_RMSE_COEFF,
+    nmae_nrmse_coeff: float = DEFAULT_NMAE_NRMSE_COEFF,
+) -> nn.Module:
+    """Return only the ``nn.Module`` for a preset loss (backward-compatible helper)."""
+    return build_training_loss(
+        loss_name,
+        huber_beta=huber_beta,
+        nmae_eps=nmae_eps,
+        nmse_eps=nmse_eps,
+        rmse_sqrt_floor=rmse_sqrt_floor,
+        mae_rmse_coeff=mae_rmse_coeff,
+        nmae_nrmse_coeff=nmae_nrmse_coeff,
+    ).criterion
 
 
 def reference_l1_mse_fieldnames(out_channels: int) -> list[str]:
@@ -830,13 +1158,13 @@ def populate_reference_l1_mse_from_row(
     *,
     active_loss: str | None,
 ) -> None:
-    """Fill explicit L1/MSE reference columns from active/compare columns when possible."""
+    """Fill explicit MAE/MSE reference columns from active/compare columns when possible."""
     train_loss = row.get("train_loss", "")
     val_loss = row.get("val_loss", "")
     train_cmp = row.get("train_compare_loss", "")
     val_cmp = row.get("val_compare_loss", "")
 
-    if active_loss == "l1":
+    if active_loss in ("l1", "mae"):
         row["train_l1_loss"] = train_loss
         row["val_l1_loss"] = val_loss
         row["train_mse_loss"] = train_cmp
@@ -880,25 +1208,59 @@ def per_channel_loss_mean(
     loss_name: str,
     *,
     huber_beta: float = 1e-3,
+    nmae_eps: float = DEFAULT_NMAE_EPS,
+    nmse_eps: float = DEFAULT_NMSE_EPS,
+    rmse_sqrt_floor: float = DEFAULT_RMSE_SQRT_FLOOR,
+    mae_rmse_coeff: float = DEFAULT_MAE_RMSE_COEFF,
+    nmae_nrmse_coeff: float = DEFAULT_NMAE_NRMSE_COEFF,
 ) -> torch.Tensor:
     """
     Per-channel mean of the given loss, shape [C]: mean over (N, H, W) per channel.
     Matches the per-channel breakdown implied by nn.MSELoss / L1Loss / SmoothL1Loss with default reduction.
     """
+    loss_name = normalize_loss_name(loss_name)
     with torch.no_grad():
         pf = pred.detach().float()
         yf = yb.float()
+        err = pf - yf
         if loss_name == "mse":
-            return (pf - yf).square().mean(dim=(0, 2, 3)).cpu().to(torch.float64)
-        if loss_name == "l1":
-            return (pf - yf).abs().mean(dim=(0, 2, 3)).cpu().to(torch.float64)
+            return err.square().mean(dim=(0, 2, 3)).cpu().to(torch.float32)
+        if loss_name == "mae":
+            return err.abs().mean(dim=(0, 2, 3)).cpu().to(torch.float32)
         if loss_name == "smoothl1":
             return (
                 F.smooth_l1_loss(pf, yf, reduction="none", beta=huber_beta)
                 .mean(dim=(0, 2, 3))
                 .cpu()
-                .to(torch.float64)
+                .to(torch.float32)
             )
+        if loss_name == "nmae":
+            mae_per_ch = err.abs().mean(dim=(0, 2, 3))
+            denom = yf.abs().mean(dim=(0, 2, 3)) + nmae_eps
+            return (mae_per_ch / denom).cpu().to(torch.float32)
+        if loss_name == "nmse":
+            mse_per_ch = err.square().mean(dim=(0, 2, 3))
+            denom = yf.square().mean(dim=(0, 2, 3)) + nmse_eps
+            return (mse_per_ch / denom).cpu().to(torch.float32)
+        if loss_name == "rmse":
+            mse_per_ch = err.square().mean(dim=(0, 2, 3))
+            return torch.sqrt(mse_per_ch + rmse_sqrt_floor).cpu().to(torch.float32)
+        if loss_name == "nrmse":
+            mse_per_ch = err.square().mean(dim=(0, 2, 3))
+            denom = yf.square().mean(dim=(0, 2, 3)) + nmse_eps
+            return torch.sqrt((mse_per_ch / denom).clamp_min(0.0)).cpu().to(torch.float32)
+        if loss_name == "mae_rmse":
+            mae_per_ch = err.abs().mean(dim=(0, 2, 3))
+            rmse_per_ch = torch.sqrt(err.square().mean(dim=(0, 2, 3)) + rmse_sqrt_floor)
+            return (mae_per_ch + mae_rmse_coeff * rmse_per_ch).cpu().to(torch.float32)
+        if loss_name == "nmae_nrmse":
+            mae_per_ch = err.abs().mean(dim=(0, 2, 3))
+            mse_per_ch = err.square().mean(dim=(0, 2, 3))
+            denom_a = yf.abs().mean(dim=(0, 2, 3)) + nmae_eps
+            denom_s = yf.square().mean(dim=(0, 2, 3)) + nmse_eps
+            nmae_per_ch = mae_per_ch / denom_a
+            nrmse_per_ch = torch.sqrt((mse_per_ch / denom_s).clamp_min(0.0))
+            return (nmae_per_ch + nmae_nrmse_coeff * nrmse_per_ch).cpu().to(torch.float32)
         raise ValueError(f"Unknown loss_name: {loss_name!r}")
 
 
@@ -1025,15 +1387,15 @@ def _truncate_metrics_after_epoch(run_dir: Path, max_epoch: int) -> None:
 class LossMetrics:
     active: float
     active_ch: list[float]
-    l1: float
-    l1_ch: list[float]
+    mae: float
+    mae_ch: list[float]
     mse: float
     mse_ch: list[float]
     samples_per_sec: float
 
-    def compare(self, compare_loss_name: str) -> tuple[float, list[float]]:
-        if compare_loss_name == "l1":
-            return self.l1, self.l1_ch
+    def compare(self, compare_kind: str) -> tuple[float, list[float]]:
+        if normalize_loss_name(compare_kind) == "mae":
+            return self.mae, self.mae_ch
         return self.mse, self.mse_ch
 
 
@@ -1042,17 +1404,15 @@ def evaluate(
     loader: DataLoader,
     device: torch.device,
     amp_mode: str,
-    criterion: nn.Module,
-    active_loss_name: str,
-    huber_beta: float = 1e-3,
+    loss_spec: TrainingLossSpec,
 ) -> LossMetrics:
     model.eval()
     running_active = 0.0
-    running_l1 = 0.0
+    running_mae = 0.0
     running_mse = 0.0
-    running_active_ch = torch.zeros(OUT_CHANNELS, dtype=torch.float64)
-    running_l1_ch = torch.zeros(OUT_CHANNELS, dtype=torch.float64)
-    running_mse_ch = torch.zeros(OUT_CHANNELS, dtype=torch.float64)
+    running_active_ch = torch.zeros(OUT_CHANNELS, dtype=torch.float32)
+    running_mae_ch = torch.zeros(OUT_CHANNELS, dtype=torch.float32)
+    running_mse_ch = torch.zeros(OUT_CHANNELS, dtype=torch.float32)
     n_samples = 0
     start = time.time()
     with torch.no_grad():
@@ -1061,27 +1421,90 @@ def evaluate(
             yb = yb.to(device, dtype=torch.float32, non_blocking=True)
             with amp_context(device, amp_mode):
                 pred = model(xb)
-                loss_active = criterion(pred, yb)
-                loss_l1 = F.l1_loss(pred, yb)
+                loss_active = loss_spec.batch_loss(pred, yb)
+                loss_mae = F.l1_loss(pred, yb)
                 loss_mse = F.mse_loss(pred, yb)
             bs = xb.shape[0]
             running_active += float(loss_active.item()) * bs
-            running_l1 += float(loss_l1.item()) * bs
+            running_mae += float(loss_mae.item()) * bs
             running_mse += float(loss_mse.item()) * bs
-            running_active_ch += per_channel_loss_mean(pred, yb, active_loss_name, huber_beta=huber_beta) * bs
-            running_l1_ch += per_channel_loss_mean(pred, yb, "l1", huber_beta=huber_beta) * bs
-            running_mse_ch += per_channel_loss_mean(pred, yb, "mse", huber_beta=huber_beta) * bs
+            running_active_ch += loss_spec.per_channel_mean(pred, yb) * bs
+            running_mae_ch += per_channel_loss_mean(pred, yb, "mae", huber_beta=loss_spec.huber_beta) * bs
+            running_mse_ch += per_channel_loss_mean(pred, yb, "mse", huber_beta=loss_spec.huber_beta) * bs
             n_samples += bs
     elapsed = max(time.time() - start, 1e-9)
     denom = max(n_samples, 1)
     return LossMetrics(
         active=running_active / denom,
         active_ch=(running_active_ch / denom).tolist(),
-        l1=running_l1 / denom,
-        l1_ch=(running_l1_ch / denom).tolist(),
+        mae=running_mae / denom,
+        mae_ch=(running_mae_ch / denom).tolist(),
         mse=running_mse / denom,
         mse_ch=(running_mse_ch / denom).tolist(),
         samples_per_sec=n_samples / elapsed,
+    )
+
+
+def _format_loss_ch(values: list[float]) -> str:
+    return " ".join(f"{x:.3e}" for x in values)
+
+
+def log_epoch_losses(
+    logger: logging.Logger,
+    *,
+    epoch: int,
+    total_epochs: int,
+    loss_name: str,
+    train_active: float,
+    val_active: float,
+    train_mae: float,
+    val_mae: float,
+    train_mse: float,
+    val_mse: float,
+    train_active_ch: list[float],
+    val_active_ch: list[float],
+    train_mae_ch: list[float],
+    val_mae_ch: list[float],
+    train_mse_ch: list[float],
+    val_mse_ch: list[float],
+    lr: float,
+    train_sps: float,
+) -> None:
+    """Log active training loss plus reference MAE and MSE for train and val."""
+    ch = _format_loss_ch
+    logger.info(
+        "epoch=%d/%d loss=%s train_%s=%.6e val_%s=%.6e "
+        "train_mae=%.6e val_mae=%.6e train_mse=%.6e val_mse=%.6e lr=%.3e train_sps=%.1f",
+        epoch,
+        total_epochs,
+        loss_name,
+        loss_name,
+        train_active,
+        loss_name,
+        val_active,
+        train_mae,
+        val_mae,
+        train_mse,
+        val_mse,
+        lr,
+        train_sps,
+    )
+    logger.info(
+        "epoch=%d/%d loss_ch_%s train=%s val=%s",
+        epoch,
+        total_epochs,
+        loss_name,
+        ch(train_active_ch),
+        ch(val_active_ch),
+    )
+    logger.info(
+        "epoch=%d/%d mae_ch train=%s val=%s mse_ch train=%s val=%s",
+        epoch,
+        total_epochs,
+        ch(train_mae_ch),
+        ch(val_mae_ch),
+        ch(train_mse_ch),
+        ch(val_mse_ch),
     )
 
 
@@ -1227,8 +1650,8 @@ def _infer_previous_loss_from_run(run_dir: Path) -> str | None:
                     m = loss_pat.search(line)
                     if m:
                         last_match = m.group(1).lower()
-            if last_match in {"mse", "l1", "smoothl1"}:
-                return last_match
+            if last_match in set(LOSS_CLI_CHOICES) | CANONICAL_LOSSES | {"mae+rmse", "nmae+nrms"}:
+                return normalize_loss_name(last_match)
             if last_match == "l2":
                 return "mse"
         except Exception:
@@ -1238,8 +1661,8 @@ def _infer_previous_loss_from_run(run_dir: Path) -> str | None:
         try:
             rc = json.loads(rc_path.read_text(encoding="utf-8"))
             loss = str(rc.get("args", {}).get("loss", "")).lower()
-            if loss in {"mse", "l1", "smoothl1"}:
-                return loss
+            if loss in set(LOSS_CLI_CHOICES) | CANONICAL_LOSSES:
+                return normalize_loss_name(loss)
         except Exception:
             pass
     return None
@@ -1391,14 +1814,44 @@ def main() -> None:
             hidden_channels=args.hidden_channels,
             n_layers=args.layers,
         ).to(device)
-        criterion = build_criterion(args.loss, huber_beta=args.huber_beta)
-        compare_loss_name = compare_loss_name_for_csv(args.loss)
-        if args.loss == "smoothl1":
-            logger.info("Huber/SmoothL1 beta=%.6e", args.huber_beta)
-        logger.info(
-            "Reference L1/MSE logging enabled | active_loss=%s compare_col=%s",
+        loss_spec = build_training_loss(
             args.loss,
-            compare_loss_name,
+            huber_beta=args.huber_beta,
+            nmae_eps=args.nmae_eps,
+            nmse_eps=args.nmse_eps,
+            rmse_sqrt_floor=args.rmse_sqrt_floor,
+            mae_rmse_coeff=args.mae_rmse_coeff,
+            nmae_nrmse_coeff=args.nmae_nrmse_coeff,
+        )
+        args.loss = loss_spec.name
+        compare_kind = loss_spec.compare_kind
+        if loss_spec.name == "smoothl1":
+            logger.info("Huber/SmoothL1 beta=%.6e", loss_spec.huber_beta)
+        elif loss_spec.name == "nmae":
+            logger.info("NMAE epsilon=%.6e", loss_spec.nmae_eps)
+        elif loss_spec.name == "nmse":
+            logger.info("NMSE epsilon=%.6e", loss_spec.nmse_eps)
+        elif loss_spec.name == "rmse":
+            logger.info("RMSE sqrt floor=%.6e", loss_spec.rmse_sqrt_floor)
+        elif loss_spec.name == "nrmse":
+            logger.info("NRMSE epsilon (mean(t^2) denom)=%.6e", loss_spec.nmse_eps)
+        elif loss_spec.name == "mae_rmse":
+            logger.info(
+                "MAE+RMSE coeff=%.6g sqrt_floor=%.6e",
+                loss_spec.mae_rmse_coeff,
+                loss_spec.rmse_sqrt_floor,
+            )
+        elif loss_spec.name == "nmae_nrmse":
+            logger.info(
+                "NMAE+NRMSE coeff=%.6g nmae_eps=%.6e nmse_eps=%.6e",
+                loss_spec.nmae_nrmse_coeff,
+                loss_spec.nmae_eps,
+                loss_spec.nmse_eps,
+            )
+        logger.info(
+            "Loss logging: active=%s; every epoch records train/val %s, MAE, and MSE",
+            loss_spec.name,
+            loss_spec.name,
         )
         optimizer = build_optimizer(args, model)
         scheduler = build_scheduler(args, optimizer)
@@ -1578,6 +2031,11 @@ def main() -> None:
             "optimizer": "adamw",
             "loss": args.loss,
             "huber_beta": args.huber_beta,
+            "nmae_eps": args.nmae_eps,
+            "nmse_eps": args.nmse_eps,
+            "rmse_sqrt_floor": args.rmse_sqrt_floor,
+            "mae_rmse_coeff": args.mae_rmse_coeff,
+            "nmae_nrmse_coeff": args.nmae_nrmse_coeff,
             "scheduler": args.scheduler,
             "learning_rate": args.learning_rate,
             "weight_decay": args.weight_decay,
@@ -1638,7 +2096,7 @@ def main() -> None:
         dual_compare = True
         # When training MSE, track best checkpoint on val MAE (compare); otherwise on active loss.
         best_metric_col = (
-            "val_compare_loss" if compare_loss_name == "l1" else "val_loss"
+            "val_compare_loss" if compare_kind == "mae" else "val_loss"
         )
         expected_metrics_header = metrics_csv_fieldnames(OUT_CHANNELS, dual_compare=dual_compare)
         csv_mode = "a" if (resume_mode and metrics_csv.exists()) else "w"
@@ -1671,11 +2129,11 @@ def main() -> None:
                 model.train()
                 t_epoch0 = time.time()
                 running = 0.0
-                running_l1 = 0.0
+                running_mae = 0.0
                 running_mse = 0.0
-                running_train_per_ch = torch.zeros(OUT_CHANNELS, dtype=torch.float64)
-                running_train_l1_ch = torch.zeros(OUT_CHANNELS, dtype=torch.float64)
-                running_train_mse_ch = torch.zeros(OUT_CHANNELS, dtype=torch.float64)
+                running_train_per_ch = torch.zeros(OUT_CHANNELS, dtype=torch.float32)
+                running_train_mae_ch = torch.zeros(OUT_CHANNELS, dtype=torch.float32)
+                running_train_mse_ch = torch.zeros(OUT_CHANNELS, dtype=torch.float32)
                 n_seen = 0
                 data_time = 0.0
                 last = time.time()
@@ -1705,7 +2163,7 @@ def main() -> None:
                             optimizer.zero_grad(set_to_none=True)
                             with amp_context(device, args.amp):
                                 pred = model(xb)
-                                loss = criterion(pred, yb)
+                                loss = loss_spec.batch_loss(pred, yb)
 
                             if scaler.is_enabled():
                                 scaler.scale(loss).backward()
@@ -1718,13 +2176,15 @@ def main() -> None:
                             bs = xb.shape[0]
                             running += float(loss.item()) * bs
                             with torch.no_grad():
-                                running_l1 += float(F.l1_loss(pred, yb).item()) * bs
+                                running_mae += float(F.l1_loss(pred, yb).item()) * bs
                                 running_mse += float(F.mse_loss(pred, yb).item()) * bs
-                            running_train_per_ch += per_channel_loss_mean(
-                                pred, yb, args.loss, huber_beta=args.huber_beta
+                            running_train_per_ch += loss_spec.per_channel_mean(pred, yb) * bs
+                            running_train_mae_ch += per_channel_loss_mean(
+                                pred, yb, "mae", huber_beta=loss_spec.huber_beta
                             ) * bs
-                            running_train_l1_ch += per_channel_loss_mean(pred, yb, "l1", huber_beta=args.huber_beta) * bs
-                            running_train_mse_ch += per_channel_loss_mean(pred, yb, "mse", huber_beta=args.huber_beta) * bs
+                            running_train_mse_ch += per_channel_loss_mean(
+                                pred, yb, "mse", huber_beta=loss_spec.huber_beta
+                            ) * bs
                             n_seen += bs
                             last = time.time()
                             train_bar.update(1)
@@ -1748,7 +2208,7 @@ def main() -> None:
                         optimizer.zero_grad(set_to_none=True)
                         with amp_context(device, args.amp):
                             pred = model(xb)
-                            loss = criterion(pred, yb)
+                            loss = loss_spec.batch_loss(pred, yb)
 
                         if scaler.is_enabled():
                             scaler.scale(loss).backward()
@@ -1761,13 +2221,15 @@ def main() -> None:
                         bs = xb.shape[0]
                         running += float(loss.item()) * bs
                         with torch.no_grad():
-                            running_l1 += float(F.l1_loss(pred, yb).item()) * bs
+                            running_mae += float(F.l1_loss(pred, yb).item()) * bs
                             running_mse += float(F.mse_loss(pred, yb).item()) * bs
-                        running_train_per_ch += per_channel_loss_mean(
-                            pred, yb, args.loss, huber_beta=args.huber_beta
+                        running_train_per_ch += loss_spec.per_channel_mean(pred, yb) * bs
+                        running_train_mae_ch += per_channel_loss_mean(
+                            pred, yb, "mae", huber_beta=loss_spec.huber_beta
                         ) * bs
-                        running_train_l1_ch += per_channel_loss_mean(pred, yb, "l1", huber_beta=args.huber_beta) * bs
-                        running_train_mse_ch += per_channel_loss_mean(pred, yb, "mse", huber_beta=args.huber_beta) * bs
+                        running_train_mse_ch += per_channel_loss_mean(
+                            pred, yb, "mse", huber_beta=loss_spec.huber_beta
+                        ) * bs
                         n_seen += bs
                         last = time.time()
 
@@ -1784,13 +2246,13 @@ def main() -> None:
                     scheduler.step()
                 epoch_time = max(time.time() - t_epoch0, 1e-9)
                 train_loss = running / max(n_seen, 1)
-                train_l1 = running_l1 / max(n_seen, 1)
+                train_mae = running_mae / max(n_seen, 1)
                 train_mse = running_mse / max(n_seen, 1)
                 train_ch = (running_train_per_ch / max(n_seen, 1)).tolist()
-                train_l1_ch = (running_train_l1_ch / max(n_seen, 1)).tolist()
+                train_mae_ch = (running_train_mae_ch / max(n_seen, 1)).tolist()
                 train_mse_ch = (running_train_mse_ch / max(n_seen, 1)).tolist()
                 train_loss_compare, train_ch_cmp = (
-                    (train_l1, train_l1_ch) if compare_loss_name == "l1" else (train_mse, train_mse_ch)
+                    (train_mae, train_mae_ch) if compare_kind == "mae" else (train_mse, train_mse_ch)
                 )
                 train_sps = n_seen / epoch_time
                 crash_state["phase"] = "eval_epoch"
@@ -1799,17 +2261,15 @@ def main() -> None:
                     test_loader,
                     device,
                     args.amp,
-                    criterion,
-                    args.loss,
-                    args.huber_beta,
+                    loss_spec,
                 )
                 val_loss = val_metrics.active
                 val_ch = val_metrics.active_ch
-                val_l1 = val_metrics.l1
+                val_mae = val_metrics.mae
                 val_mse = val_metrics.mse
-                val_l1_ch = val_metrics.l1_ch
+                val_mae_ch = val_metrics.mae_ch
                 val_mse_ch = val_metrics.mse_ch
-                val_loss_compare, val_ch_cmp = val_metrics.compare(compare_loss_name)
+                val_loss_compare, val_ch_cmp = val_metrics.compare(compare_kind)
                 val_sps = val_metrics.samples_per_sec
                 lr_now = float(optimizer.param_groups[0]["lr"])
 
@@ -1853,13 +2313,13 @@ def main() -> None:
                         row_compare_metric,
                         *train_ch_cmp,
                         *val_ch_cmp,
-                        train_l1,
+                        train_mae,
                         train_mse,
-                        val_l1,
+                        val_mae,
                         val_mse,
-                        *train_l1_ch,
+                        *train_mae_ch,
                         *train_mse_ch,
-                        *val_l1_ch,
+                        *val_mae_ch,
                         *val_mse_ch,
                     ]
                 )
@@ -1868,8 +2328,13 @@ def main() -> None:
 
                 epoch_metrics: dict[str, Any] = {
                     "epoch": epoch,
+                    "active_loss": loss_spec.name,
                     "train_loss": train_loss,
                     "val_loss": val_loss,
+                    "train_mae": train_mae,
+                    "val_mae": val_mae,
+                    "train_mse": train_mse,
+                    "val_mse": val_mse,
                     "lr": lr_now,
                     "epoch_time_sec": epoch_time,
                     "data_time_sec": data_time,
@@ -1877,9 +2342,9 @@ def main() -> None:
                     "val_samples_per_sec": val_sps,
                     "train_compare_loss": float(train_loss_compare),
                     "val_compare_loss": float(val_loss_compare),
-                    "train_l1_loss": train_l1,
+                    "train_l1_loss": train_mae,
                     "train_mse_loss": train_mse,
-                    "val_l1_loss": val_l1,
+                    "val_l1_loss": val_mae,
                     "val_mse_loss": val_mse,
                 }
                 for i in range(OUT_CHANNELS):
@@ -1887,9 +2352,9 @@ def main() -> None:
                     epoch_metrics[f"val_loss_ch{i}"] = val_ch[i]
                     epoch_metrics[f"train_compare_loss_ch{i}"] = train_ch_cmp[i]
                     epoch_metrics[f"val_compare_loss_ch{i}"] = val_ch_cmp[i]
-                    epoch_metrics[f"train_l1_loss_ch{i}"] = train_l1_ch[i]
+                    epoch_metrics[f"train_l1_loss_ch{i}"] = train_mae_ch[i]
                     epoch_metrics[f"train_mse_loss_ch{i}"] = train_mse_ch[i]
-                    epoch_metrics[f"val_l1_loss_ch{i}"] = val_l1_ch[i]
+                    epoch_metrics[f"val_l1_loss_ch{i}"] = val_mae_ch[i]
                     epoch_metrics[f"val_mse_loss_ch{i}"] = val_mse_ch[i]
                 jsonl_f.write(json.dumps(epoch_metrics) + "\n")
                 jsonl_f.flush()
@@ -1913,58 +2378,37 @@ def main() -> None:
                 )
 
                 emit_progress(
-                    f"epoch={epoch}/{total_epochs} train_loss={train_loss:.6e} "
-                    f"val_loss={val_loss:.6e} lr={lr_now:.3e} train_sps={train_sps:.1f}",
+                    f"epoch={epoch}/{total_epochs} loss={loss_spec.name} "
+                    f"train_{loss_spec.name}={train_loss:.6e} val_{loss_spec.name}={val_loss:.6e} "
+                    f"train_mae={train_mae:.6e} val_mae={val_mae:.6e} "
+                    f"train_mse={train_mse:.6e} val_mse={val_mse:.6e} "
+                    f"lr={lr_now:.3e} train_sps={train_sps:.1f}",
                     use_tqdm=use_tqdm,
                 )
-                emit_progress(
-                    f"epoch={epoch}/{total_epochs} compare_loss({compare_loss_name}) "
-                    f"train={train_loss_compare:.6e} val={val_loss_compare:.6e}",
-                    use_tqdm=use_tqdm,
+                log_epoch_losses(
+                    logger,
+                    epoch=epoch,
+                    total_epochs=total_epochs,
+                    loss_name=loss_spec.name,
+                    train_active=train_loss,
+                    val_active=val_loss,
+                    train_mae=train_mae,
+                    val_mae=val_mae,
+                    train_mse=train_mse,
+                    val_mse=val_mse,
+                    train_active_ch=train_ch,
+                    val_active_ch=val_ch,
+                    train_mae_ch=train_mae_ch,
+                    val_mae_ch=val_mae_ch,
+                    train_mse_ch=train_mse_ch,
+                    val_mse_ch=val_mse_ch,
+                    lr=lr_now,
+                    train_sps=train_sps,
                 )
                 emit_progress(
-                    f"epoch={epoch}/{total_epochs} ref_l1 train={train_l1:.6e} val={val_l1:.6e} "
-                    f"ref_mse train={train_mse:.6e} val={val_mse:.6e}",
-                    use_tqdm=use_tqdm,
-                )
-                logger.info(
-                    "epoch=%d/%d loss=%s train_ch_%s=%s val_ch_%s=%s train_loss=%.6e val_loss=%.6e lr=%.3e train_sps=%.1f",
-                    epoch,
-                    total_epochs,
-                    args.loss,
-                    args.loss,
-                    " ".join(f"{x:.3e}" for x in train_ch),
-                    args.loss,
-                    " ".join(f"{x:.3e}" for x in val_ch),
-                    train_loss,
-                    val_loss,
-                    lr_now,
-                    train_sps,
-                )
-                logger.info(
-                    "epoch=%d/%d compare_loss=%s train=%.6e val=%.6e train_ch_%s=%s val_ch_%s=%s",
-                    epoch,
-                    total_epochs,
-                    compare_loss_name,
-                    train_loss_compare,
-                    val_loss_compare,
-                    compare_loss_name,
-                    " ".join(f"{x:.3e}" for x in train_ch_cmp),
-                    compare_loss_name,
-                    " ".join(f"{x:.3e}" for x in val_ch_cmp),
-                )
-                logger.info(
-                    "epoch=%d/%d ref_l1 train=%.6e val=%.6e ref_mse train=%.6e val=%.6e",
-                    epoch,
-                    total_epochs,
-                    train_l1,
-                    val_l1,
-                    train_mse,
-                    val_mse,
-                )
-                emit_progress(
-                    f"Epoch {epoch}/{total_epochs} done | train_loss={train_loss:.4e} "
-                    f"val_loss={val_loss:.4e} lr={lr_now:.2e}",
+                    f"Epoch {epoch}/{total_epochs} done | loss={loss_spec.name} "
+                    f"train={train_loss:.4e} val={val_loss:.4e} "
+                    f"mae={val_mae:.4e} mse={val_mse:.4e} lr={lr_now:.2e}",
                     use_tqdm=use_tqdm,
                 )
 
