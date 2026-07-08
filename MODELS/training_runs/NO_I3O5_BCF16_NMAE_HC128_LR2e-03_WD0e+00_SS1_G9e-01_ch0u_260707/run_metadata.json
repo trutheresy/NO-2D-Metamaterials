@@ -1,7 +1,7 @@
 {
   "run_name": "NO_I3O5_BCF16_NMAE_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_260707",
   "run_id": "NO_I3O5_BCF16_NMAE_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_260707",
-  "status": "completed",
+  "status": "running",
   "started_at_utc": "2026-07-05T09:20:48.277174+00:00",
   "git": {
     "git_commit": "33b23869607d9d4e247b1c8b78c9a22abde33d1a",
@@ -22,5 +22,8 @@
   "best_val_loss": 0.2396924654463927,
   "best_epoch": 12,
   "branched_from_run_dir": "D:\\Research\\NO-2D-Metamaterials\\MODELS\\training_runs\\NO_I3O5_BCF16_NMAE_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_260705",
-  "branched_at_utc": "2026-07-08T03:30:54.023055+00:00"
+  "branched_at_utc": "2026-07-08T03:30:54.023055+00:00",
+  "resumed_at_utc": "2026-07-08T03:57:52.493564+00:00",
+  "resume_extend_epochs": 4,
+  "inherited_epochs_through": 12
 }

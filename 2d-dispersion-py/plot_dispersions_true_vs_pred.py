@@ -1,8 +1,9 @@
 """
 Overlay TRUE vs PREDICTED dispersion bands on the IBZ contour.
 
-Same contour/interpolation logic as ``plot_dispersions.py``, but each figure
-overlays two band sets for the same geometry:
+Same contour logic as ``plot_dispersions.py``, but bands are sampled only at wavevectors
+from the dataset grid that lie on the p4mm Γ–X–M–Γ path (no interpolation onto
+synthetic contour points). Each figure overlays two band sets for the same geometry:
 
 - TRUE bands       : solid lines, one color per band (6 bands -> 6 colors).
 - PREDICTED bands  : dashed lines, the SAME color as the corresponding band.
@@ -16,13 +17,14 @@ Inputs
          ``eigenvalues_predictions_full.pt`` is preferred, else ``eigenvalue_data_full.pt``.
 
 Both eigenvalue tensors are shape ``(N_struct, N_wv, N_eig)`` and share the
-ground-truth wavevector grid. One overlay PNG per structure is written, named by
-geometry index.
+ground-truth wavevector grid. One overlay PNG per structure is written with a
+filename encoding two loss rankings plus geometry index, e.g.
+``NMAE001_NMSE042_g123.png`` (by default ranked by NMAE then NMSE).
 
-Also writes ``eigenvalue_nmae_by_geometry.csv`` in the same output folder with
-columns ``geometry_index``, ``total_nmae``, and ``rank`` (int; 1 = lowest NMAE /
-best). NMAE is ``mean(|pred - true|) / (mean(|true|) + eps)`` over all wavevector
-x band points on the full grid (not the IBZ contour used for plotting).
+Also writes ``dispersion_losses.csv`` in the same output folder with per-geometry
+MAE, MSE, NMAE, and NMSE plus rank columns (1 = lowest loss / best). Losses are
+computed over all wavevector x band points on the full grid (not the IBZ contour
+used for plotting).
 
 Units note: values are plotted as stored (no Hz/rad-s conversion), matching
 ``plot_dispersions.py``. The dataset eigenvalues are angular frequency (rad/s),
@@ -46,10 +48,8 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
-from scipy.interpolate import LinearNDInterpolator
-from scipy.spatial.distance import cdist
 
-from plot_dispersion_with_eigenfrequencies_reduced_set import get_IBZ_contour_wavevectors
+from plot_dispersion_with_eigenfrequencies_reduced_set import select_p4mm_contour_from_grid
 
 
 # One color per band index; TRUE (solid) and PRED (dashed) share the band's color.
@@ -61,6 +61,11 @@ BAND_COLORS = [
     "tab:purple",
     "tab:brown",
 ]
+
+LOSS_NAMES = ("mae", "mse", "nmae", "nmse")
+DEFAULT_RANK_LOSS_PRIMARY = "nmae"
+DEFAULT_RANK_LOSS_SECONDARY = "nmse"
+DEFAULT_NMSE_EPS = 1e-5
 
 
 def resolve_pt_dir_with(folder: Path, required: str) -> Path:
@@ -96,56 +101,89 @@ def load_pred(pred_arg: str) -> np.ndarray:
     return torch.load(p, map_location="cpu", weights_only=False).to(torch.float32).numpy(), p
 
 
-def interp_to_contour(wavevectors: np.ndarray, frequencies: np.ndarray, contour_wv: np.ndarray) -> np.ndarray:
-    """Interpolate per-band frequencies onto the contour (linear + nearest fallback).
-
-    Mirrors plot_dispersions.py: scatteredInterpolant-style linear interpolation
-    with a nearest-neighbor fill outside the convex hull.
-    """
-    n_bands = frequencies.shape[1]
-    out = np.zeros((len(contour_wv), n_bands), dtype=np.float32)
-    wv32 = wavevectors.astype(np.float32)
-    cwv32 = contour_wv.astype(np.float32)
-    for b in range(n_bands):
-        interp = LinearNDInterpolator(wv32, frequencies[:, b].astype(np.float32), fill_value=np.nan)
-        vals = np.asarray(interp(cwv32), dtype=np.float32)
-        nan_mask = np.isnan(vals)
-        if np.any(nan_mask):
-            nan_idx = np.where(nan_mask)[0]
-            dist = cdist(cwv32[nan_idx], wv32)
-            nearest = np.argmin(dist, axis=1)
-            vals[nan_idx] = frequencies[nearest, b].astype(np.float32)
-        out[:, b] = vals
-    return out
+def eigenvalues_on_contour(eigenvalues: np.ndarray, contour_indices: np.ndarray) -> np.ndarray:
+    """Gather per-band eigenvalues at contour wavevector indices."""
+    return eigenvalues[contour_indices].astype(np.float32, copy=False)
 
 
-def compute_geometry_eigenvalue_nmae(
+def compute_geometry_dispersion_losses(
     eigen_true: np.ndarray,
     eigen_pred: np.ndarray,
     n_structs: int,
-    eps: float = 1e-5,
-) -> np.ndarray:
-    """Per-geometry NMAE over all wavevector x band scalar eigenvalue points."""
-    true_g = eigen_true[:n_structs]
-    pred_g = eigen_pred[:n_structs]
-    abs_err = np.abs(pred_g - true_g, dtype=np.float32).reshape(n_structs, -1)
-    denom = np.abs(true_g, dtype=np.float32).reshape(n_structs, -1).mean(axis=1) + np.float32(eps)
-    return (abs_err.mean(axis=1) / denom).astype(np.float32)
+    nmae_eps: float = 1e-5,
+    nmse_eps: float = DEFAULT_NMSE_EPS,
+) -> dict[str, np.ndarray]:
+    """Per-geometry MAE, MSE, NMAE, NMSE over all wavevector x band scalar points."""
+    true_g = eigen_true[:n_structs].astype(np.float32, copy=False)
+    pred_g = eigen_pred[:n_structs].astype(np.float32, copy=False)
+    err = pred_g - true_g
+    flat_true = true_g.reshape(n_structs, -1)
+    flat_err = err.reshape(n_structs, -1)
+
+    mae = np.abs(flat_err, dtype=np.float32).mean(axis=1)
+    mse = np.square(flat_err, dtype=np.float32).mean(axis=1)
+    nmae = mae / (np.abs(flat_true, dtype=np.float32).mean(axis=1) + np.float32(nmae_eps))
+    nmse = mse / (np.square(flat_true, dtype=np.float32).mean(axis=1) + np.float32(nmse_eps))
+    return {
+        "mae": mae.astype(np.float32),
+        "mse": mse.astype(np.float32),
+        "nmae": nmae.astype(np.float32),
+        "nmse": nmse.astype(np.float32),
+    }
 
 
-def save_geometry_nmae_csv(out_dir: Path, nmae: np.ndarray) -> Path:
-    """Write geometry_index, total_nmae, rank CSV alongside dispersion overlay PNGs."""
-    n = int(nmae.shape[0])
-    order = np.argsort(nmae, kind="stable")
-    ranks = np.empty(n, dtype=np.int32)
-    ranks[order] = np.arange(1, n + 1, dtype=np.int32)
+def compute_loss_ranks(losses: dict[str, np.ndarray]) -> dict[str, np.ndarray]:
+    """Return per-loss ranks (1 = lowest loss / best) using stable sort."""
+    ranks: dict[str, np.ndarray] = {}
+    for name in LOSS_NAMES:
+        vals = losses[name]
+        n = int(vals.shape[0])
+        order = np.argsort(vals, kind="stable")
+        rank = np.empty(n, dtype=np.int32)
+        rank[order] = np.arange(1, n + 1, dtype=np.int32)
+        ranks[name] = rank
+    return ranks
 
-    csv_path = out_dir / "eigenvalue_nmae_by_geometry.csv"
+
+def validate_rank_loss(name: str) -> str:
+    key = name.lower()
+    if key not in LOSS_NAMES:
+        raise ValueError(f"Unknown rank loss {name!r}; choose from {', '.join(LOSS_NAMES)}.")
+    return key
+
+
+def plot_filename(
+    geom_idx: int,
+    ranks: dict[str, np.ndarray],
+    rank_primary: str,
+    rank_secondary: str,
+) -> str:
+    """Build overlay PNG name, e.g. NMAE001_NMSE042_g123.png."""
+    return (
+        f"{rank_primary.upper()}{ranks[rank_primary][geom_idx]:03d}_"
+        f"{rank_secondary.upper()}{ranks[rank_secondary][geom_idx]:03d}_"
+        f"g{geom_idx:03d}.png"
+    )
+
+
+def save_dispersion_losses_csv(
+    out_dir: Path,
+    losses: dict[str, np.ndarray],
+    ranks: dict[str, np.ndarray],
+) -> Path:
+    """Write geometry_index, four losses, and per-loss ranks to dispersion_losses.csv."""
+    n = int(losses["mae"].shape[0])
+    csv_path = out_dir / "dispersion_losses.csv"
+    header = ["geometry_index", *LOSS_NAMES, *[f"rank_{name}" for name in LOSS_NAMES]]
     with csv_path.open("w", newline="", encoding="utf-8") as f:
         writer = csv.writer(f)
-        writer.writerow(["geometry_index", "total_nmae", "rank"])
-        for geom_idx, val in enumerate(nmae):
-            writer.writerow([geom_idx, f"{float(val):.12e}", int(ranks[geom_idx])])
+        writer.writerow(header)
+        for geom_idx in range(n):
+            writer.writerow(
+                [geom_idx]
+                + [f"{float(losses[name][geom_idx]):.12e}" for name in LOSS_NAMES]
+                + [int(ranks[name][geom_idx]) for name in LOSS_NAMES]
+            )
     return csv_path
 
 
@@ -159,11 +197,13 @@ def plot_overlay(ax, contour_info, true_c, pred_c, title, ylabel, mark_points):
         if mark_points:
             ax.plot(x, true_c[:, b], "o", color=color, markersize=3, markeredgewidth=0.5, markeredgecolor="white")
 
-    for i in range(contour_info["N_segment"] + 1):
-        ax.axvline(i, color="k", linestyle="--", alpha=0.3, linewidth=1)
+    for i in contour_info.get("segment_vertex_params", np.arange(contour_info["N_segment"] + 1)):
+        ax.axvline(float(i), color="k", linestyle="--", alpha=0.3, linewidth=1)
 
     if contour_info.get("vertex_labels"):
-        vertex_positions = np.linspace(0, contour_info["N_segment"], len(contour_info["vertex_labels"]))
+        vertex_positions = contour_info.get("segment_vertex_params")
+        if vertex_positions is None:
+            vertex_positions = np.linspace(0, contour_info["N_segment"], len(contour_info["vertex_labels"]))
         ax.set_xticks(vertex_positions)
         ax.set_xticklabels(contour_info["vertex_labels"])
 
@@ -188,6 +228,9 @@ def main(
     ylabel: str = "Frequency [rad/s]",
     mark_points: bool = False,
     nmae_eps: float = 1e-5,
+    nmse_eps: float = DEFAULT_NMSE_EPS,
+    rank_primary: str = DEFAULT_RANK_LOSS_PRIMARY,
+    rank_secondary: str = DEFAULT_RANK_LOSS_SECONDARY,
 ) -> None:
     geometries, wavevectors, eigen_true, true_pt = load_true_dir(true_dir)
     eigen_pred, pred_path = load_pred(pred)
@@ -209,24 +252,38 @@ def main(
     print(f"Pred eigenvalues : {pred_path}  shape={eigen_pred.shape}")
     print(f"Plotting {n_plot} structures -> {out_dir}")
 
-    nmae = compute_geometry_eigenvalue_nmae(eigen_true, eigen_pred, n_total, eps=nmae_eps)
-    csv_path = save_geometry_nmae_csv(out_dir, nmae)
+    rank_primary = validate_rank_loss(rank_primary)
+    rank_secondary = validate_rank_loss(rank_secondary)
+    if rank_primary == rank_secondary:
+        raise ValueError("rank-primary and rank-secondary must be different losses.")
+
+    losses = compute_geometry_dispersion_losses(
+        eigen_true, eigen_pred, n_total, nmae_eps=nmae_eps, nmse_eps=nmse_eps
+    )
+    ranks = compute_loss_ranks(losses)
+    csv_path = save_dispersion_losses_csv(out_dir, losses, ranks)
+    print(f"Saved losses CSV : {csv_path}  ({n_total} geometries)")
+    for name in LOSS_NAMES:
+        vals = losses[name]
+        print(
+            f"  {name.upper():4s} mean={vals.mean():.6e}, min={vals.min():.6e}, max={vals.max():.6e}"
+        )
+
+    contour_indices, _, contour_info = select_p4mm_contour_from_grid(wavevectors)
     print(
-        f"Saved NMAE CSV   : {csv_path}  ({n_total} geometries; "
-        f"mean={nmae.mean():.6e}, min={nmae.min():.6e}, max={nmae.max():.6e})"
+        f"Contour grid pts : {contour_info['n_contour_points']} along path "
+        f"({contour_info['n_unique_contour_points']} unique k of {wavevectors.shape[1]})"
     )
 
-    contour_wv, contour_info = get_IBZ_contour_wavevectors(10, 1.0, "p4mm")
-
     for struct_idx in range(n_plot):
-        wv = wavevectors[struct_idx]
-        true_c = interp_to_contour(wv, eigen_true[struct_idx], contour_wv)
-        pred_c = interp_to_contour(wv, eigen_pred[struct_idx], contour_wv)
+        true_c = eigenvalues_on_contour(eigen_true[struct_idx], contour_indices)
+        pred_c = eigenvalues_on_contour(eigen_pred[struct_idx], contour_indices)
 
         fig = plt.figure(figsize=(10, 6))
         ax = fig.add_subplot(111)
         plot_overlay(ax, contour_info, true_c, pred_c, title, ylabel, mark_points)
-        fig.savefig(out_dir / f"{struct_idx}.png", dpi=150, bbox_inches="tight")
+        png_name = plot_filename(struct_idx, ranks, rank_primary, rank_secondary)
+        fig.savefig(out_dir / png_name, dpi=150, bbox_inches="tight")
         plt.close(fig)
 
     print(f"Saved plots to: {out_dir}")
@@ -244,6 +301,21 @@ if __name__ == "__main__":
     parser.add_argument("--output-subdir", type=str, default="dispersion_overlay", help="Script output folder name under PLOTS/<model>/<dataset> (default: dispersion_overlay).")
     parser.add_argument("--ylabel", type=str, default="Frequency [rad/s]", help="Y-axis label (data is angular frequency, rad/s).")
     parser.add_argument("--nmae-eps", type=float, default=1e-5, help="Epsilon added to mean(|true|) in per-geometry eigenvalue NMAE (default 1e-5).")
+    parser.add_argument("--nmse-eps", type=float, default=DEFAULT_NMSE_EPS, help="Epsilon added to mean(true^2) in per-geometry eigenvalue NMSE (default 1e-5).")
+    parser.add_argument(
+        "--rank-primary",
+        type=str,
+        default=DEFAULT_RANK_LOSS_PRIMARY,
+        choices=LOSS_NAMES,
+        help="Loss used for the first rank segment in PNG filenames (default: nmae).",
+    )
+    parser.add_argument(
+        "--rank-secondary",
+        type=str,
+        default=DEFAULT_RANK_LOSS_SECONDARY,
+        choices=LOSS_NAMES,
+        help="Loss used for the second rank segment in PNG filenames (default: nmse).",
+    )
     parser.add_argument("--mark-points", action="store_true", help="Add markers on the true bands.")
     args = parser.parse_args()
     output_dir = args.output_dir
@@ -255,4 +327,16 @@ if __name__ == "__main__":
             dataset=args.dataset,
             subdir=args.output_subdir,
         ))
-    main(args.true, args.pred, args.n_structs, args.title, output_dir, args.ylabel, args.mark_points, args.nmae_eps)
+    main(
+        args.true,
+        args.pred,
+        args.n_structs,
+        args.title,
+        output_dir,
+        args.ylabel,
+        args.mark_points,
+        args.nmae_eps,
+        args.nmse_eps,
+        args.rank_primary,
+        args.rank_secondary,
+    )

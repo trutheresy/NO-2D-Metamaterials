@@ -4,8 +4,8 @@
     "save_dir": "D:/Research/NO-2D-Metamaterials/MODELS/training_runs",
     "output_run_dir": "",
     "epochs": 12,
-    "resume_run_dir": "",
-    "extend_epochs": 0,
+    "resume_run_dir": "D:\\Research\\NO-2D-Metamaterials\\MODELS\\training_runs\\NO_I3O5_BCF16_NMAE_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_260707",
+    "extend_epochs": 4,
     "batch_size": 520,
     "train_shuffle": true,
     "num_workers": 2,
@@ -41,7 +41,7 @@
     "diagnostic_samples": 10,
     "init_checkpoint": "",
     "reset_optimizer_scheduler": false,
-    "resume_from_epoch": 0
+    "resume_from_epoch": 12
   },
   "params": {
     "model_name": "FNO2d",
@@ -65,8 +65,9 @@
     "weight_decay": 0.0,
     "step_size": 1,
     "gamma": 0.9,
-    "t_max": 20,
-    "epochs": 12,
+    "t_max": 16,
+    "epochs": 16,
+    "start_epoch": 13,
     "batch_size": 520,
     "num_workers": 2,
     "prefetch_factor": 3,
@@ -82,7 +83,7 @@
     "dataset_version": "2448a8ff4197",
     "train_sampler": "shard_aware"
   },
-  "resume_mode": false,
+  "resume_mode": true,
   "train_shards": [
     {
       "name": "b_train_01",

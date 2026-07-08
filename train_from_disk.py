@@ -1202,6 +1202,23 @@ def build_scheduler(args: argparse.Namespace, optimizer: torch.optim.Optimizer):
     return torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=t_max)
 
 
+def _epoch_num_from_ckpt(path: Path) -> int | None:
+    if "_E" not in path.stem:
+        return None
+    suffix = path.stem.rsplit("_E", 1)[-1]
+    if not suffix.isdigit():
+        return None
+    return int(suffix)
+
+
+def _advance_scheduler_for_completed_epochs(scheduler: Any, completed_epochs: int) -> float | None:
+    if scheduler is None or completed_epochs <= 0:
+        return None
+    for _ in range(completed_epochs):
+        scheduler.step()
+    return float(scheduler.optimizer.param_groups[0]["lr"])
+
+
 def per_channel_loss_mean(
     pred: torch.Tensor,
     yb: torch.Tensor,
@@ -1877,6 +1894,7 @@ def main() -> None:
             logger.info("Warm-started model weights from %s", init_path)
 
         state_latest_path = run_dir / "training_state_latest.pt"
+        scheduler_state_restored = False
         if resume_mode:
             if args.resume_from_epoch > 0:
                 ep_n = int(args.resume_from_epoch)
@@ -1912,6 +1930,14 @@ def main() -> None:
                     )
                 else:
                     logger.info("Loaded weights from %s; continuing at epoch=%d.", ep_ckpt, start_epoch)
+                    lr_now = _advance_scheduler_for_completed_epochs(scheduler, ep_n)
+                    if lr_now is not None:
+                        logger.info(
+                            "Advanced StepLR by %d completed epochs; lr=%.3e for epoch=%d.",
+                            ep_n,
+                            lr_now,
+                            start_epoch,
+                        )
                 if prior_run_dir is not None:
                     logger.info(
                         "Branched run: epochs 1-%d checkpoints/metrics were copied from prior run %s; "
@@ -1941,6 +1967,7 @@ def main() -> None:
                         optimizer.load_state_dict(state_blob["optimizer_state_dict"])
                         if scheduler is not None and state_blob.get("scheduler_state_dict") is not None:
                             scheduler.load_state_dict(state_blob["scheduler_state_dict"])
+                            scheduler_state_restored = True
                         scaler.load_state_dict(state_blob.get("scaler_state_dict", {}))
                         logger.info("Resumed full state from %s at epoch=%d", state_latest_path, start_epoch - 1)
                 else:
@@ -1957,16 +1984,17 @@ def main() -> None:
                     )
             else:
                 # Legacy runs may only have model-only checkpoints; warm-start from latest epoch.
-                ckpts = sorted(run_dir.glob(f"{run_name}_E*.pth"))
+                ckpts = [
+                    p
+                    for p in run_dir.glob(f"{run_name}_E*.pth")
+                    if _epoch_num_from_ckpt(p) is not None
+                ]
                 if not ckpts:
                     raise FileNotFoundError(
                         f"No resumable state found in {run_dir}. Need training_state_latest.pt or {run_name}_E*.pth"
                     )
-                latest_ckpt = max(
-                    ckpts,
-                    key=lambda p: int(p.stem.split("_E")[-1]) if "_E" in p.stem else -1,
-                )
-                epoch_n = int(latest_ckpt.stem.split("_E")[-1])
+                latest_ckpt = max(ckpts, key=lambda p: _epoch_num_from_ckpt(p) or -1)
+                epoch_n = int(_epoch_num_from_ckpt(latest_ckpt))
                 legacy_blob = torch.load(latest_ckpt, map_location="cpu", weights_only=False)
                 if isinstance(legacy_blob, dict) and "model_state_dict" in legacy_blob:
                     state_dict = legacy_blob["model_state_dict"]
@@ -1989,6 +2017,15 @@ def main() -> None:
                         compat_path,
                         epoch_n,
                     )
+                if not args.reset_optimizer_scheduler and not scheduler_state_restored:
+                    lr_now = _advance_scheduler_for_completed_epochs(scheduler, epoch_n)
+                    if lr_now is not None:
+                        logger.info(
+                            "Advanced StepLR by %d completed epochs; lr=%.3e for epoch=%d.",
+                            epoch_n,
+                            lr_now,
+                            start_epoch,
+                        )
             total_epochs = start_epoch + int(args.extend_epochs) - 1
             metadata["resume_from_epoch"] = start_epoch - 1
             metadata["resume_target_total_epochs"] = total_epochs

@@ -5,6 +5,9 @@ Expected files in data_dir:
 - geometries_full.pt          (N_struct, N_pix, N_pix)
 - wavevectors_full.pt         (N_struct, N_wv, 2)
 - eigenvalue_data_full.pt     (N_struct, N_wv, N_eig)
+
+Contour points are taken from dataset wavevectors on the p4mm Γ–X–M–Γ path (no
+interpolation onto synthetic contour samples).
 """
 
 from __future__ import annotations
@@ -15,12 +18,10 @@ from pathlib import Path
 import numpy as np
 import torch
 import matplotlib.pyplot as plt
-from scipy.interpolate import LinearNDInterpolator
-from scipy.spatial.distance import cdist
 
 from plot_dispersion_with_eigenfrequencies_reduced_set import (
     plot_dispersion_on_contour,
-    get_IBZ_contour_wavevectors,
+    select_p4mm_contour_from_grid,
 )
 
 
@@ -59,11 +60,13 @@ def main(
         output_dir = Path.cwd() / "PLOTS" / f"{data_path.name}_full"
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    # Keep wavevector/dispersion logic consistent with existing plotting flow.
-    contour_wv, contour_info = get_IBZ_contour_wavevectors(10, 1.0, "p4mm")
+    contour_indices, contour_param, contour_info = select_p4mm_contour_from_grid(wavevectors_all)
+    print(
+        f"Contour grid pts : {contour_info['n_contour_points']} along path "
+        f"({contour_info['n_unique_contour_points']} unique k of {wavevectors_all.shape[1]})"
+    )
 
     for struct_idx in range(n_plot):
-        # Plot single-channel geometry directly.
         d = designs[struct_idx].astype(np.float16, copy=False)
         fig_design = plt.figure(figsize=(6, 5))
         ax_design = fig_design.add_subplot(111)
@@ -77,45 +80,15 @@ def main(
         fig_design.savefig(design_path / f"{struct_idx}.png", dpi=150, bbox_inches="tight")
         plt.close(fig_design)
 
-        wavevectors = wavevectors_all[struct_idx].astype(np.float16, copy=False)
-        frequencies = eigenvalues_all[struct_idx].astype(np.float16, copy=False)
-
-        frequencies_contour = np.zeros((len(contour_wv), frequencies.shape[1]), dtype=np.float16)
-        for eig_idx in range(frequencies.shape[1]):
-            # Match MATLAB plot_dispersion.m interpolation pathway:
-            # scatteredInterpolant(..., 'linear', 'linear') + nearest fallback outside hull.
-            interp = LinearNDInterpolator(
-                wavevectors.astype(np.float32),
-                frequencies[:, eig_idx].astype(np.float32),
-                fill_value=np.nan,
-            )
-            vals = np.asarray(interp(contour_wv.astype(np.float32)), dtype=np.float32)
-            nan_mask = np.isnan(vals)
-            if np.any(nan_mask):
-                nan_idx = np.where(nan_mask)[0]
-                dist = cdist(contour_wv[nan_idx].astype(np.float32), wavevectors.astype(np.float32))
-                nearest_idx = np.argmin(dist, axis=1)
-                vals[nan_idx] = frequencies[nearest_idx, eig_idx].astype(np.float32)
-            frequencies_contour[:, eig_idx] = np.asarray(vals, dtype=np.float16)
-
-        # Intermediate debug saves intentionally disabled in non-debug script.
-        # debug_npz = output_dir / "debug" / f"struct_{struct_idx}_plot_arrays.npz"
-        # debug_npz.parent.mkdir(parents=True, exist_ok=True)
-        # np.savez_compressed(
-        #     debug_npz,
-        #     wavevectors=wavevectors.astype(np.float16),
-        #     frequencies=frequencies.astype(np.float16),
-        #     contour_wv=contour_wv.astype(np.float16),
-        #     frequencies_contour=frequencies_contour.astype(np.float16),
-        # )
+        frequencies_contour = eigenvalues_all[struct_idx, contour_indices].astype(np.float32, copy=False)
 
         fig_disp = plt.figure(figsize=(10, 6))
         ax_disp = fig_disp.add_subplot(111)
         plot_dispersion_on_contour(
             ax_disp,
             contour_info,
-            frequencies_contour.astype(np.float32),
-            contour_info["wavevector_parameter"],
+            frequencies_contour,
+            contour_param,
             title=title,
             mark_points=True,
         )

@@ -865,6 +865,112 @@ def extract_grid_points_on_contour(wavevectors, frequencies, contour_info, a, to
     return contour_points, contour_freqs, contour_param
 
 
+def _grid_step_atol(wavevectors: np.ndarray) -> float:
+    """Half-step tolerance for matching float16 k-grid coordinates to contour edges."""
+    wv = wavevectors[0] if wavevectors.ndim == 3 else wavevectors
+    x_pos = wv[:, 0]
+    x_pos = x_pos[x_pos >= 0]
+    x_u = np.unique(np.round(x_pos, decimals=6))
+    y_u = np.unique(np.round(wv[:, 1], decimals=6))
+    step = min(float(np.min(np.diff(x_u))), float(np.min(np.diff(y_u))))
+    return step * 0.51
+
+
+def select_p4mm_contour_from_grid(wavevectors: np.ndarray, atol: float | None = None):
+    """Select dataset wavevector indices on the p4mm Γ–X–M–Γ contour.
+
+    Returns (indices, contour_parameter, contour_info) where ``indices`` index rows
+    of the ``(N_wv, N_eig)`` eigenvalue slice.
+    """
+    wv = wavevectors[0].astype(np.float32) if wavevectors.ndim == 3 else wavevectors.astype(np.float32)
+    x, y = wv[:, 0], wv[:, 1]
+    kmax = float(np.max(np.abs(wv)))
+    if atol is None:
+        atol = _grid_step_atol(wv)
+
+    on_gx = np.isclose(y, 0.0, atol=atol) & (x >= -atol) & (x <= kmax + atol)
+    on_xm = np.isclose(x, kmax, atol=atol) & (y >= -atol) & (y <= kmax + atol)
+    on_mg = np.isclose(x, y, atol=atol) & (x >= -atol) & (x <= kmax + atol)
+
+    idx_gx = np.where(on_gx)[0]
+    idx_gx = idx_gx[np.argsort(wv[idx_gx, 0])]
+    idx_xm = np.where(on_xm)[0]
+    idx_xm = idx_xm[np.argsort(wv[idx_xm, 1])]
+    idx_mg = np.where(on_mg)[0]
+    idx_mg = idx_mg[np.argsort(-wv[idx_mg, 0])]
+
+    ordered: list[int] = []
+    segment_ends: list[int] = []
+    for group in (idx_gx, idx_xm, idx_mg):
+        for i in group:
+            ii = int(i)
+            if not ordered or ii != ordered[-1]:
+                ordered.append(ii)
+        segment_ends.append(len(ordered) - 1)
+
+    if not ordered:
+        raise ValueError("No dataset wavevectors matched the p4mm IBZ contour.")
+
+    indices = np.asarray(ordered, dtype=np.int64)
+    pts = wv[indices]
+    dist = np.zeros(len(indices), dtype=np.float32)
+    for i in range(1, len(indices)):
+        dist[i] = dist[i - 1] + np.linalg.norm(pts[i] - pts[i - 1])
+
+    _, base_info = get_IBZ_contour_wavevectors(10, 1.0, "p4mm")
+    n_segment = int(base_info["N_segment"])
+    if dist[-1] > 0:
+        contour_param = dist / dist[-1] * float(n_segment)
+        vertex_params = np.array(
+            [0.0, contour_param[segment_ends[0]], contour_param[segment_ends[1]], contour_param[-1]],
+            dtype=np.float32,
+        )
+    else:
+        contour_param = dist
+        vertex_params = np.linspace(0, n_segment, len(base_info["vertex_labels"]), dtype=np.float32)
+
+    contour_info = {
+        "N_segment": n_segment,
+        "vertex_labels": base_info["vertex_labels"],
+        "wavevector_parameter": contour_param,
+        "segment_vertex_params": vertex_params,
+        "contour_indices": indices,
+        "n_contour_points": len(indices),
+        "n_unique_contour_points": len(set(ordered)),
+    }
+    return indices, contour_param, contour_info
+
+
+def select_contour_from_grid(
+    wavevectors: np.ndarray,
+    frequencies: np.ndarray,
+    symmetry_type: str = "p4mm",
+    a: float = 1.0,
+    atol: float | None = None,
+):
+    """Return contour wavevectors, frequencies, parameter, and plot metadata from grid rows only."""
+    wv = wavevectors[0] if wavevectors.ndim == 3 else wavevectors
+    if symmetry_type == "p4mm":
+        indices, contour_param, contour_info = select_p4mm_contour_from_grid(wv, atol=atol)
+        return wv[indices], frequencies[indices], contour_param, contour_info
+
+    if atol is None:
+        atol = _grid_step_atol(wv)
+    _, contour_info = get_IBZ_contour_wavevectors(10, a, symmetry_type)
+    wv_contour, freqs_contour, contour_param = extract_grid_points_on_contour(
+        wv, frequencies, contour_info, a, tolerance=atol
+    )
+    if len(wv_contour) == 0:
+        raise ValueError(f"No dataset wavevectors matched the {symmetry_type!r} IBZ contour.")
+    contour_info = dict(contour_info)
+    contour_info["wavevector_parameter"] = contour_param
+    contour_info["segment_vertex_params"] = np.linspace(
+        0, contour_info["N_segment"], len(contour_info.get("vertex_labels", [])), dtype=np.float32
+    )
+    contour_info["n_contour_points"] = len(wv_contour)
+    contour_info["n_unique_contour_points"] = len(wv_contour)
+    return wv_contour, freqs_contour, contour_param, contour_info
+
 
 # ============================================================================
 # Shared plotting function: plot_dispersion_on_contour
@@ -906,14 +1012,17 @@ def plot_dispersion_on_contour(ax, contour_info, frequencies_contour, contour_pa
                    'o', markersize=4, markeredgewidth=0.5, markeredgecolor='white')
     
     # Add vertical lines at segment boundaries
-    for i in range(contour_info['N_segment'] + 1):
-        ax.axvline(i, color='k', linestyle='--', alpha=0.3, linewidth=1)
+    vertex_positions = contour_info.get("segment_vertex_params")
+    if vertex_positions is None:
+        vertex_positions = np.arange(contour_info['N_segment'] + 1, dtype=np.float32)
+    for i in vertex_positions:
+        ax.axvline(float(i), color='k', linestyle='--', alpha=0.3, linewidth=1)
     
     # Add vertex labels
     if 'vertex_labels' in contour_info and contour_info['vertex_labels']:
-        # Get positions of vertices along parameter
-        vertex_positions = np.linspace(0, contour_info['N_segment'], 
-                                      len(contour_info['vertex_labels']))
+        if vertex_positions is None or len(vertex_positions) != len(contour_info['vertex_labels']):
+            vertex_positions = np.linspace(0, contour_info['N_segment'],
+                                          len(contour_info['vertex_labels']))
         ax.set_xticks(vertex_positions)
         ax.set_xticklabels(contour_info['vertex_labels'])
     
@@ -1057,8 +1166,8 @@ def main(cli_data_path=None, cli_original_dir=None, n_structs=None, save_plot_po
     png_resolution = 150
     verbose_loading = False
     mark_points = True
-    use_interpolation = True  # True: interpolate (smooth), False: grid points only (exact) - Set to True to match MATLAB
-    N_k_interp = 10  # Match MATLAB's N_k = 10
+    use_interpolation = False  # False: dataset grid points on contour; True: synthetic contour + interpolation
+    N_k_interp = 10  # Only used when use_interpolation=True
     
     # Load data with format detection
     print(f"\nLoading dataset: {data_path}")
@@ -1173,6 +1282,7 @@ def main(cli_data_path=None, cli_original_dir=None, n_structs=None, save_plot_po
         design_is_3channel = False
         N_wv_param = get_N_wv_from_data(designs.shape, wavevectors_all.shape)
         a = 1.0  # Default
+        symmetry_type = "p4mm"
         has_reconstruction = False
     
     # Make plots for specified number of structures
@@ -1272,56 +1382,57 @@ def main(cli_data_path=None, cli_original_dir=None, n_structs=None, save_plot_po
             else:
                 print("  WARNING: Cannot reconstruct frequencies - missing K_DATA, M_DATA, T_DATA, or EIGENVECTOR_DATA")
         
-        # Create grid interpolators
-        use_scattered = False  # Initialize for all formats
-        grid_interp = None
-        grid_interp_recon = None
-        try:
-            if format_type == 'mat':
-                grid_interp, wavevectors_grid = create_grid_interpolators(wavevectors, frequencies, N_wv_param)
-            else:
-                grid_interp, wavevectors_grid = create_grid_interpolators(wavevectors, frequencies, None)
-                use_scattered = (grid_interp is None)
-        except (ValueError, AssertionError) as e:
-            # Grid interpolation failed - use scattered interpolation instead
-            print(f"  WARNING: Grid interpolation failed: {e}")
-            print(f"  Falling back to scattered interpolation (like MATLAB)")
-            use_scattered = True
-            grid_interp = None
-
-        # MATLAB parity: use scattered interpolation for contour evaluation.
-        # Keep grid interpolator creation for diagnostics, but do not use it for plotting values.
+        # IBZ contour: dataset grid rows only (default) or synthetic interpolation path.
         if use_interpolation:
-            use_scattered = True
-            grid_interp = None
-        
-        if frequencies_recon is not None and format_type == 'mat':
-            try:
-                grid_interp_recon, _ = create_grid_interpolators(wavevectors, frequencies_recon, N_wv_param)
-            except (ValueError, AssertionError):
-                # Grid interpolation failed for reconstructed frequencies - will use scattered interpolation
-                grid_interp_recon = None
-            if use_interpolation:
-                grid_interp_recon = None
-        
-        # Get IBZ contour (use symmetry_type from dataset, matching MATLAB)
-        if use_interpolation:
-            print(f"  Using interpolation mode...")
-            print(f"    Symmetry type: {symmetry_type}")
+            print(f"  Using interpolation mode (symmetry_type={symmetry_type})...")
             try:
                 wavevectors_contour, contour_info = get_IBZ_contour_wavevectors(N_k_interp, a, symmetry_type)
                 print(f"    Generated contour path with {len(wavevectors_contour)} interpolation points")
             except Exception as e:
                 print(f"  WARNING: Could not generate contour: {e}")
                 continue
+
+            grid_interp = None
+            grid_interp_recon = None
+            if format_type == "mat":
+                try:
+                    grid_interp, _ = create_grid_interpolators(wavevectors, frequencies, N_wv_param)
+                except (ValueError, AssertionError):
+                    grid_interp = None
+                if frequencies_recon is not None:
+                    try:
+                        grid_interp_recon, _ = create_grid_interpolators(wavevectors, frequencies_recon, N_wv_param)
+                    except (ValueError, AssertionError):
+                        grid_interp_recon = None
+
+            print("  Interpolating frequencies to contour points...")
+            frequencies_contour = np.zeros((len(wavevectors_contour), frequencies.shape[1]))
+            if grid_interp is not None:
+                for eig_idx in range(frequencies.shape[1]):
+                    points_yx = wavevectors_contour[:, [1, 0]]
+                    frequencies_contour[:, eig_idx] = grid_interp[eig_idx](points_yx)
+            else:
+                for eig_idx in range(frequencies.shape[1]):
+                    interp = LinearNDInterpolator(wavevectors, frequencies[:, eig_idx], fill_value=np.nan)
+                    frequencies_contour[:, eig_idx] = interp(wavevectors_contour)
+                    nan_mask = np.isnan(frequencies_contour[:, eig_idx])
+                    if np.any(nan_mask):
+                        from scipy.spatial.distance import cdist
+                        nan_indices = np.where(nan_mask)[0]
+                        distances = cdist(wavevectors_contour[nan_indices], wavevectors)
+                        nearest_idx = np.argmin(distances, axis=1)
+                        frequencies_contour[nan_indices, eig_idx] = frequencies[nearest_idx, eig_idx]
+            contour_param = contour_info["wavevector_parameter"]
         else:
-            print(f"  Using grid-points-only mode...")
-            print(f"    Symmetry type: {symmetry_type}")
+            print(f"  Using grid-points-only mode (symmetry_type={symmetry_type})...")
             try:
-                _, contour_info = get_IBZ_contour_wavevectors(10, a, symmetry_type)
-                wavevectors_contour, frequencies_contour_grid, contour_param_grid = \
-                    extract_grid_points_on_contour(wavevectors, frequencies, contour_info, a, tolerance=2e-3)
-                print(f"    Found {len(wavevectors_contour)} grid points on contour path")
+                wavevectors_contour, frequencies_contour, contour_param, contour_info = select_contour_from_grid(
+                    wavevectors, frequencies, symmetry_type=symmetry_type, a=a
+                )
+                print(
+                    f"    Found {contour_info.get('n_contour_points', len(wavevectors_contour))} "
+                    f"grid points on contour path"
+                )
             except Exception as e:
                 print(f"  WARNING: Could not extract grid points: {e}")
                 continue
@@ -1342,90 +1453,6 @@ def main(cli_data_path=None, cli_original_dir=None, n_structs=None, save_plot_po
                 fig_contour.savefig(png_path, dpi=png_resolution, bbox_inches='tight')
                 print(f"    Saved: {png_path}")
                 plt.close(fig_contour)
-        
-        # Evaluate frequencies on contour
-        if use_scattered or (format_type == 'mat' and grid_interp is None):
-            # Use scattered interpolation for non-grid wavevectors (PyTorch/NumPy)
-            print("  Using scattered interpolation...")
-            if not use_interpolation:
-                frequencies_contour = np.zeros((len(wavevectors_contour), frequencies.shape[1]))
-                for eig_idx in range(frequencies.shape[1]):
-                    # Use LinearNDInterpolator with extrapolation (like MATLAB)
-                    interp = LinearNDInterpolator(wavevectors, frequencies[:, eig_idx], fill_value=np.nan)
-                    frequencies_contour[:, eig_idx] = interp(wavevectors_contour)
-                    
-                    # Handle extrapolation like MATLAB's extrap_method='linear'
-                    nan_mask = np.isnan(frequencies_contour[:, eig_idx])
-                    if np.any(nan_mask):
-                        from scipy.spatial.distance import cdist
-                        nan_indices = np.where(nan_mask)[0]
-                        if len(nan_indices) > 0:
-                            distances = cdist(wavevectors_contour[nan_indices], wavevectors)
-                            nearest_idx = np.argmin(distances, axis=1)
-                            frequencies_contour[nan_indices, eig_idx] = frequencies[nearest_idx, eig_idx]
-                
-                # Use grid points that were found
-                contour_param = contour_param_grid if 'contour_param_grid' in locals() else contour_info['wavevector_parameter'][:len(wavevectors_contour)]
-            else:
-                frequencies_contour = np.zeros((len(wavevectors_contour), frequencies.shape[1]))
-                for eig_idx in range(frequencies.shape[1]):
-                    # Use LinearNDInterpolator with extrapolation (like MATLAB)
-                    interp = LinearNDInterpolator(wavevectors, frequencies[:, eig_idx], fill_value=np.nan)
-                    frequencies_contour[:, eig_idx] = interp(wavevectors_contour)
-                    
-                    # Handle extrapolation like MATLAB's extrap_method='linear'
-                    # MATLAB's 'linear' extrapolation uses nearest neighbor for points outside convex hull
-                    nan_mask = np.isnan(frequencies_contour[:, eig_idx])
-                    if np.any(nan_mask):
-                        from scipy.spatial.distance import cdist
-                        nan_indices = np.where(nan_mask)[0]
-                        if len(nan_indices) > 0:
-                            # Find nearest neighbors for NaN points (matches MATLAB's extrapolation)
-                            distances = cdist(wavevectors_contour[nan_indices], wavevectors)
-                            nearest_idx = np.argmin(distances, axis=1)
-                            frequencies_contour[nan_indices, eig_idx] = frequencies[nearest_idx, eig_idx]
-                            print(f"      Extrapolated {len(nan_indices)} points using nearest neighbor for band {eig_idx+1}")
-                
-                contour_param = contour_info['wavevector_parameter']
-        elif use_interpolation:
-            print("  Interpolating frequencies to contour points...")
-            if grid_interp is not None:
-                # Use grid interpolation if available
-                frequencies_contour = np.zeros((len(wavevectors_contour), frequencies.shape[1]))
-                for eig_idx in range(frequencies.shape[1]):
-                    points_yx = wavevectors_contour[:, [1, 0]]
-                    frequencies_contour[:, eig_idx] = grid_interp[eig_idx](points_yx)
-            else:
-                # Fall back to scattered interpolation (like MATLAB's scatteredInterpolant)
-                # MATLAB uses scatteredInterpolant with extrap_method='linear' which extrapolates
-                # Python's griddata with method='linear' returns NaN outside convex hull
-                # Use LinearNDInterpolator which can handle extrapolation like MATLAB
-                print("    Using scattered interpolation (like MATLAB's scatteredInterpolant)...")
-                frequencies_contour = np.zeros((len(wavevectors_contour), frequencies.shape[1]))
-                for eig_idx in range(frequencies.shape[1]):
-                    # Create interpolator (matches MATLAB's scatteredInterpolant)
-                    interp = LinearNDInterpolator(wavevectors, frequencies[:, eig_idx], fill_value=np.nan)
-                    # Evaluate on contour points
-                    frequencies_contour[:, eig_idx] = interp(wavevectors_contour)
-                    
-                    # Handle extrapolation like MATLAB's extrap_method='linear'
-                    # MATLAB extrapolates using nearest neighbor method when outside convex hull
-                    nan_mask = np.isnan(frequencies_contour[:, eig_idx])
-                    if np.any(nan_mask):
-                        # For points outside convex hull, use nearest neighbor extrapolation
-                        # Find nearest point in input data for each NaN point
-                        from scipy.spatial.distance import cdist
-                        nan_indices = np.where(nan_mask)[0]
-                        if len(nan_indices) > 0:
-                            # Find nearest neighbors for NaN points
-                            distances = cdist(wavevectors_contour[nan_indices], wavevectors)
-                            nearest_idx = np.argmin(distances, axis=1)
-                            frequencies_contour[nan_indices, eig_idx] = frequencies[nearest_idx, eig_idx]
-            contour_param = contour_info['wavevector_parameter']
-        else:
-            print("  Using exact grid point frequencies...")
-            frequencies_contour = frequencies_contour_grid
-            contour_param = contour_param_grid
         
         # Save plot points if requested
         if save_plot_points:
@@ -1454,28 +1481,25 @@ def main(cli_data_path=None, cli_original_dir=None, n_structs=None, save_plot_po
             if use_interpolation:
                 frequencies_recon_contour = np.zeros((len(wavevectors_contour), frequencies.shape[1]))
                 if grid_interp_recon is not None:
-                    # Use grid interpolation if available
                     for eig_idx in range(frequencies.shape[1]):
                         points_yx = wavevectors_contour[:, [1, 0]]
                         frequencies_recon_contour[:, eig_idx] = grid_interp_recon[eig_idx](points_yx)
                 else:
-                    # Use scattered interpolation (like MATLAB's scatteredInterpolant)
                     for eig_idx in range(frequencies.shape[1]):
                         interp = LinearNDInterpolator(wavevectors, frequencies_recon[:, eig_idx], fill_value=np.nan)
                         frequencies_recon_contour[:, eig_idx] = interp(wavevectors_contour)
-                        # Handle extrapolation
                         nan_mask = np.isnan(frequencies_recon_contour[:, eig_idx])
                         if np.any(nan_mask):
                             from scipy.spatial.distance import cdist
                             nan_indices = np.where(nan_mask)[0]
-                            if len(nan_indices) > 0:
-                                distances = cdist(wavevectors_contour[nan_indices], wavevectors)
-                                nearest_idx = np.argmin(distances, axis=1)
-                                frequencies_recon_contour[nan_indices, eig_idx] = frequencies_recon[nearest_idx, eig_idx]
+                            distances = cdist(wavevectors_contour[nan_indices], wavevectors)
+                            nearest_idx = np.argmin(distances, axis=1)
+                            frequencies_recon_contour[nan_indices, eig_idx] = frequencies_recon[nearest_idx, eig_idx]
                 recon_param = contour_info['wavevector_parameter']
             else:
-                _, frequencies_recon_contour, recon_param = extract_grid_points_on_contour(
-                    wavevectors, frequencies_recon, contour_info, a)
+                _, frequencies_recon_contour, recon_param, _ = select_contour_from_grid(
+                    wavevectors, frequencies_recon, symmetry_type=symmetry_type, a=a
+                )
             
             fig_recon = plt.figure(figsize=(10, 6))
             ax_recon = fig_recon.add_subplot(111)
