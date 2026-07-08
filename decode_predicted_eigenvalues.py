@@ -14,9 +14,10 @@ Output : ``eigenvalues_predictions_full.pt`` written to the output folder, a ten
          eigenvalues -- the same layout (N_struct, N_wv, N_eig) that
          ``eigenvalue_data_full.pt`` uses, so it can drive the dispersion plotters.
 
-Decoding reuses ``NO_utilities.decode_eigenfrequency_uniform`` (``--reduce pixel``,
-the canonical corner-pixel decoder) or, for the model's only-approximately-uniform
-output, the patch-mean variant ``s = exp(100 * mean(patch))`` (``--reduce mean``).
+Decoding is patch-mean: ``s = exp(100 * mean(patch))``. The model's float16 output
+patches are only approximately uniform; averaging all 32x32 pixels suppresses the
+spatial noise that a single-pixel read would pass through (and removes the
+band-dependent error a corner-pixel decode introduces).
 
 The (n_geom, n_waveforms) grid is read from a reference dataset's
 ``eigenvalue_data_full.pt`` (auto-resolved under the output folder, or via
@@ -26,15 +27,12 @@ The (n_geom, n_waveforms) grid is read from a reference dataset's
 from __future__ import annotations
 
 import argparse
-import contextlib
-import io
 from pathlib import Path
 
 import numpy as np
 import torch
 from tqdm import tqdm
 
-import NO_utilities as NU
 from output_layout import resolve_script_output_dir
 
 
@@ -64,24 +62,16 @@ def resolve_reference_pt_dir(folder: Path) -> Path:
 def decode_channel(
     predictions: torch.Tensor,
     channel: int,
-    reduce: str,
     batch_size: int,
 ) -> np.ndarray:
-    """Decode the encoded eigenfrequency channel into a flat (N,) float32 array."""
+    """Decode the encoded eigenfrequency channel (patch mean) into a flat (N,) float32 array."""
     n = predictions.shape[0]
     out = np.empty(n, dtype=np.float32)
     for start in tqdm(range(0, n, batch_size), desc="Decoding", unit="batch"):
         end = min(start + batch_size, n)
         patch = predictions[start:end, channel]  # (B, 32, 32) float16
-        if reduce == "pixel":
-            # Canonical decoder (reads corner pixel); suppress its per-call warning.
-            arr = patch.to(torch.float16).numpy()
-            with contextlib.redirect_stdout(io.StringIO()):
-                vals = NU.decode_eigenfrequency_uniform(arr)
-            out[start:end] = np.asarray(vals, dtype=np.float32).reshape(-1)
-        else:  # mean: same formula as the decoder, averaged over the patch (denoises)
-            pixel_mean = patch.to(torch.float32).mean(dim=(1, 2)).numpy()
-            out[start:end] = np.exp(100.0 * pixel_mean, dtype=np.float32)
+        pixel_mean = patch.to(torch.float32).mean(dim=(1, 2)).numpy()
+        out[start:end] = np.exp(100.0 * pixel_mean, dtype=np.float32)
     return out
 
 
@@ -96,7 +86,6 @@ def main() -> None:
     p.add_argument("--reference-pt-dir", default="", help="Folder with eigenvalue_data_full.pt for the (n_geom, n_wv) grid. Default: auto-resolve under --output-dir.")
     p.add_argument("--out-name", default="eigenvalues_predictions_full.pt", help="Output filename.")
     p.add_argument("--channel", type=int, default=0, help="Prediction channel holding the encoded eigenfrequency (default: 0).")
-    p.add_argument("--reduce", choices=("pixel", "mean"), default="pixel", help="Decode via NO_utilities corner-pixel decoder (pixel) or patch-mean (mean).")
     p.add_argument("--save-dtype", choices=("float32", "float16"), default="float32",
                    help="Output tensor dtype (default: float32).")
     p.add_argument("--batch-size", type=int, default=65536)
@@ -141,9 +130,9 @@ def main() -> None:
     print(f"  derived n_bands   : {n_bands}  (== predictions / (n_geom*n_waveforms))")
     if n_bands != n_eig_ref:
         print(f"  note: predicted bands ({n_bands}) != reference eigenvalue bands ({n_eig_ref}).")
-    print(f"  decode reduce     : {args.reduce} (channel {args.channel})")
+    print(f"  decode            : patch mean (channel {args.channel})")
 
-    decoded_flat = decode_channel(predictions, args.channel, args.reduce, args.batch_size)
+    decoded_flat = decode_channel(predictions, args.channel, args.batch_size)
     decoded = torch.from_numpy(decoded_flat).reshape(n_geom, n_wv, n_bands)
 
     dtype = {"float32": torch.float32, "float16": torch.float16}[args.save_dtype]
