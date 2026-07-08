@@ -1,7 +1,7 @@
 {
   "run_name": "NO_I3O5_BCF16_NMSE_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_260701",
   "run_id": "NO_I3O5_BCF16_NMSE_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_260701",
-  "status": "running",
+  "status": "completed",
   "started_at_utc": "2026-07-01T18:19:50.571412+00:00",
   "git": {
     "git_commit": "bd92ff101dc6f454df4dda387b7fdfcb74c6eaab",
@@ -17,14 +17,14 @@
     "device_count": 1,
     "device_name_0": "NVIDIA GeForce RTX 4080 SUPER"
   },
-  "ended_at_utc": "2026-07-02T14:57:25.471915+00:00",
-  "duration_sec": 41170.788087,
+  "ended_at_utc": "2026-07-05T09:20:42.527663+00:00",
+  "duration_sec": 109241.535221,
   "error_type": "RuntimeError",
   "error_message": "DataLoader worker (pid(s) 101960) exited unexpectedly",
-  "resumed_at_utc": "2026-07-02T16:39:41.037765+00:00",
-  "resume_extend_epochs": 4,
-  "resume_from_epoch": 1,
-  "resume_target_total_epochs": 4,
-  "best_val_loss": 0.21496902320161462,
-  "best_epoch": 4
+  "resumed_at_utc": "2026-07-04T03:00:00.992442+00:00",
+  "resume_extend_epochs": 8,
+  "resume_from_epoch": 12,
+  "resume_target_total_epochs": 20,
+  "best_val_loss": 5.639447261940707e-05,
+  "best_epoch": 11
 }

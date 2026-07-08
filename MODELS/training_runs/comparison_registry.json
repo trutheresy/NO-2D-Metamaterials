@@ -1,0 +1,26 @@
+{
+  "version": 1,
+  "runs": {
+    "L1_0401": {
+      "run_dir": "NO_I3O5_BCF16_L1_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_260401",
+      "val_index_source": "reduced_indices"
+    },
+    "SL1_0626": {
+      "run_dir": "NO_I3O5_BCF16_SL1_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_260626",
+      "val_index_source": "indices_full"
+    },
+    "NMSE_0701": {
+      "run_dir": "NO_I3O5_BCF16_NMSE_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_260701",
+      "val_index_source": "indices_full"
+    },
+    "NMAE_0705": {
+      "run_dir": "NO_I3O5_BCF16_NMAE_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_260705",
+      "val_index_source": "indices_full"
+    },
+    "NMAE_0707": {
+      "run_dir": "NO_I3O5_BCF16_NMAE_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_260707",
+      "val_index_source": "indices_full",
+      "branched_from": "NMAE_0705"
+    }
+  }
+}

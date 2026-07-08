@@ -1,0 +1,28 @@
+{
+  "status": "stopped",
+  "run_name": "NO_I3O5_BCF16_NMAE_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_260705",
+  "run_id": "NO_I3O5_BCF16_NMAE_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_260705",
+  "started_at_utc": "2026-07-05T09:20:48.277174+00:00",
+  "ended_at_utc": "2026-07-07T08:09:33.130800+00:00",
+  "duration_sec": 168524.853626,
+  "best_val_loss": 0.2396924654463927,
+  "best_epoch": 12,
+  "checkpoints": {
+    "best": "D:\\Research\\NO-2D-Metamaterials\\MODELS\\training_runs\\NO_I3O5_BCF16_NMAE_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_260705\\NO_I3O5_BCF16_NMAE_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_260705_best.pth",
+    "final": "D:\\Research\\NO-2D-Metamaterials\\MODELS\\training_runs\\NO_I3O5_BCF16_NMAE_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_260705\\NO_I3O5_BCF16_NMAE_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_260705_final.pth",
+    "epoch_pattern": "D:\\Research\\NO-2D-Metamaterials\\MODELS\\training_runs\\NO_I3O5_BCF16_NMAE_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_260705\\NO_I3O5_BCF16_NMAE_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_260705_E{epoch}.pth",
+    "best_pinned_copy": "D:\\Research\\NO-2D-Metamaterials\\MODELS\\training_runs\\NO_I3O5_BCF16_NMAE_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_260705\\NO_I3O5_BCF16_NMAE_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_260705_E12_pinned.pth"
+  },
+  "artifacts": {
+    "train_log": "D:\\Research\\NO-2D-Metamaterials\\MODELS\\training_runs\\NO_I3O5_BCF16_NMAE_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_260705\\train.log",
+    "resolved_config": "D:\\Research\\NO-2D-Metamaterials\\MODELS\\training_runs\\NO_I3O5_BCF16_NMAE_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_260705\\resolved_config.json",
+    "run_metadata": "D:\\Research\\NO-2D-Metamaterials\\MODELS\\training_runs\\NO_I3O5_BCF16_NMAE_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_260705\\run_metadata.json",
+    "metrics_csv": "D:\\Research\\NO-2D-Metamaterials\\MODELS\\training_runs\\NO_I3O5_BCF16_NMAE_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_260705\\metrics.csv",
+    "metrics_jsonl": "D:\\Research\\NO-2D-Metamaterials\\MODELS\\training_runs\\NO_I3O5_BCF16_NMAE_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_260705\\metrics.jsonl",
+    "diagnostics": "D:\\Research\\NO-2D-Metamaterials\\MODELS\\training_runs\\NO_I3O5_BCF16_NMAE_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_260705\\diagnostics"
+  },
+  "stopped_at_utc": "2026-07-08T00:11:01.889624+00:00",
+  "stop_reason": "manual stop after epoch 16; best checkpoint pinned to epoch 12",
+  "completed_epochs": 16,
+  "pinned_best_from_epoch": 12
+}

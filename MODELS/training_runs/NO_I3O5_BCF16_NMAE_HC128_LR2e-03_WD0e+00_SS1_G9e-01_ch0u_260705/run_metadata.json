@@ -1,0 +1,30 @@
+{
+  "run_name": "NO_I3O5_BCF16_NMAE_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_260705",
+  "run_id": "NO_I3O5_BCF16_NMAE_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_260705",
+  "status": "stopped",
+  "started_at_utc": "2026-07-05T09:20:48.277174+00:00",
+  "git": {
+    "git_commit": "33b23869607d9d4e247b1c8b78c9a22abde33d1a",
+    "git_dirty": "true"
+  },
+  "environment": {
+    "python_version": "3.12.3",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "torch_version": "2.5.1",
+    "cuda_available": true,
+    "cuda_version": "11.8",
+    "cudnn_version": 90100,
+    "device_count": 1,
+    "device_name_0": "NVIDIA GeForce RTX 4080 SUPER"
+  },
+  "ended_at_utc": "2026-07-07T08:09:33.130800+00:00",
+  "duration_sec": 168524.853626,
+  "best_val_loss": 0.2396924654463927,
+  "best_epoch": 12,
+  "resumed_at_utc": "2026-07-07T08:09:38.766297+00:00",
+  "resume_extend_epochs": 8,
+  "stopped_at_utc": "2026-07-08T00:11:01.889624+00:00",
+  "stop_reason": "manual stop after epoch 16; best checkpoint pinned to epoch 12",
+  "completed_epochs": 16,
+  "pinned_best_from_epoch": 12
+}

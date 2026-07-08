@@ -110,6 +110,7 @@ flowchart TD
 - **Detached long jobs:** run `train_from_disk.py` (or inference/backfill scripts) in the background; redirect stdout/stderr to a log under `MODELS/training_runs/`.
 - **One job at a time:** before starting a new trainer or GPU backfill, confirm no other run has `status: running`.
 - **Resume:** `train_from_disk.py --resume-run-dir <run_dir> --extend-epochs N` plus the same hyperparameter flags as the original run.
+- **Metric comparisons:** edit `MODELS/training_runs/comparison_registry.json` (one label per run, format `LOSS_MMDD`, no aliases). Generate tables with `python report_metrics_table.py`.
 
 ---
 
