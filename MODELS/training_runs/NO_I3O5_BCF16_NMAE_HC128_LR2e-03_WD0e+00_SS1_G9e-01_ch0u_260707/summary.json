@@ -2,11 +2,11 @@
   "status": "completed",
   "run_name": "NO_I3O5_BCF16_NMAE_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_260707",
   "run_id": "NO_I3O5_BCF16_NMAE_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_260707",
-  "started_at_utc": "2026-07-05T09:20:48.277174+00:00",
-  "ended_at_utc": "2026-07-07T08:09:33.130800+00:00",
-  "duration_sec": 168524.853626,
-  "best_val_loss": 0.2396924654463927,
-  "best_epoch": 12,
+  "started_at_utc": "2026-07-08T16:58:34.774191+00:00",
+  "ended_at_utc": "2026-07-09T08:24:21.925435+00:00",
+  "duration_sec": 55547.151244,
+  "best_val_loss": 0.19718168021862706,
+  "best_epoch": 14,
   "checkpoints": {
     "best": "D:\\Research\\NO-2D-Metamaterials\\MODELS\\training_runs\\NO_I3O5_BCF16_NMAE_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_260707\\NO_I3O5_BCF16_NMAE_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_260707_best.pth",
     "final": "D:\\Research\\NO-2D-Metamaterials\\MODELS\\training_runs\\NO_I3O5_BCF16_NMAE_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_260707\\NO_I3O5_BCF16_NMAE_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_260707_final.pth",
@@ -19,6 +19,5 @@
     "metrics_csv": "D:\\Research\\NO-2D-Metamaterials\\MODELS\\training_runs\\NO_I3O5_BCF16_NMAE_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_260707\\metrics.csv",
     "metrics_jsonl": "D:\\Research\\NO-2D-Metamaterials\\MODELS\\training_runs\\NO_I3O5_BCF16_NMAE_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_260707\\metrics.jsonl",
     "diagnostics": "D:\\Research\\NO-2D-Metamaterials\\MODELS\\training_runs\\NO_I3O5_BCF16_NMAE_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_260707\\diagnostics"
-  },
-  "branched_from_run_dir": "D:\\Research\\NO-2D-Metamaterials\\MODELS\\training_runs\\NO_I3O5_BCF16_NMAE_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_260705"
+  }
 }

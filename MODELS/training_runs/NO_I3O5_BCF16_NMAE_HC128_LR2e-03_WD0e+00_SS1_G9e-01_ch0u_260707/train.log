@@ -70,3 +70,43 @@
 2026-07-08 11:17:50,151 | INFO | epoch=15/16 loss=nmae train_nmae=1.483167e-01 val_nmae=2.380359e-01 train_mae=1.400951e-03 val_mae=2.036090e-03 train_mse=2.942553e-05 val_mse=4.961966e-05 lr=4.118e-04 train_sps=1525.2
 2026-07-08 11:17:50,151 | INFO | epoch=15/16 loss_ch_nmae train=7.515e-03 1.600e-01 1.617e-01 2.080e-01 2.044e-01 val=8.974e-03 2.562e-01 2.696e-01 3.280e-01 3.274e-01
 2026-07-08 11:17:50,151 | INFO | epoch=15/16 mae_ch train=4.758e-04 1.473e-03 1.378e-03 1.908e-03 1.770e-03 val=5.627e-04 2.184e-03 2.086e-03 2.774e-03 2.574e-03 mse_ch train=1.174e-05 2.696e-05 2.472e-05 4.492e-05 3.879e-05 val=2.131e-06 5.120e-05 4.832e-05 7.867e-05 6.777e-05
+2026-07-08 12:44:29,818 | ERROR | Training failed
+Traceback (most recent call last):
+  File "C:\ProgramData\anaconda3\envs\NO_2D_Metamaterials\Lib\site-packages\torch\utils\data\dataloader.py", line 1243, in _try_get_data
+    data = self._data_queue.get(timeout=timeout)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\ProgramData\anaconda3\envs\NO_2D_Metamaterials\Lib\queue.py", line 179, in get
+    raise Empty
+_queue.Empty
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "D:\Research\NO-2D-Metamaterials\train_from_disk.py", line 2239, in main
+    for batch_idx, (xb, yb) in enumerate(train_loader, start=1):
+  File "C:\ProgramData\anaconda3\envs\NO_2D_Metamaterials\Lib\site-packages\torch\utils\data\dataloader.py", line 701, in __next__
+    data = self._next_data()
+           ^^^^^^^^^^^^^^^^^
+  File "C:\ProgramData\anaconda3\envs\NO_2D_Metamaterials\Lib\site-packages\torch\utils\data\dataloader.py", line 1448, in _next_data
+    idx, data = self._get_data()
+                ^^^^^^^^^^^^^^^^
+  File "C:\ProgramData\anaconda3\envs\NO_2D_Metamaterials\Lib\site-packages\torch\utils\data\dataloader.py", line 1393, in _get_data
+    success, data = self._try_get_data(self._timeout)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\ProgramData\anaconda3\envs\NO_2D_Metamaterials\Lib\site-packages\torch\utils\data\dataloader.py", line 1256, in _try_get_data
+    raise RuntimeError(
+RuntimeError: DataLoader worker (pid(s) 31256) exited unexpectedly
+2026-07-08 12:58:46,350 | INFO | NMSE epsilon=1.000000e-05
+2026-07-08 12:58:46,351 | INFO | Loss logging: active=nmse; every epoch records train/val nmse, MAE, and MSE
+2026-07-08 12:58:47,004 | INFO | Loaded weights from D:\Research\NO-2D-Metamaterials\MODELS\training_runs\NO_I3O5_BCF16_NMAE_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_260707\NO_I3O5_BCF16_NMAE_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_260707_E12.pth; continuing at epoch=13.
+2026-07-08 12:58:47,005 | INFO | Advanced StepLR by 12 completed epochs; lr=5.649e-04 for epoch=13.
+2026-07-08 12:58:47,008 | INFO | Run started | run_name=NO_I3O5_BCF16_NMAE_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_260707 run_id=NO_I3O5_BCF16_NMAE_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_260707 device=cuda train_samples=18720000 test_samples=3900000 val_index_source=indices_full epoch_range=13..16
+2026-07-08 12:58:47,009 | INFO | Fault diagnostics | main_fault_log=D:\Research\NO-2D-Metamaterials\MODELS\training_runs\NO_I3O5_BCF16_NMAE_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_260707\main_process_fault.log
+2026-07-08 16:58:15,311 | INFO | Saved 10 diagnostic panel(s) under D:\Research\NO-2D-Metamaterials\MODELS\training_runs\NO_I3O5_BCF16_NMAE_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_260707\diagnostics\epoch_013
+2026-07-08 16:58:16,781 | INFO | epoch=13/16 loss=nmse train_nmse=1.132345e-01 val_nmse=1.981483e-01 train_mae=1.736537e-03 val_mae=2.429388e-03 train_mse=3.020017e-05 val_mse=5.397203e-05 lr=5.084e-04 train_sps=1398.8
+2026-07-08 16:58:16,782 | INFO | epoch=13/16 loss_ch_nmse train=1.647e-03 1.058e-01 1.100e-01 1.789e-01 1.698e-01 val=6.508e-03 1.944e-01 2.086e-01 2.957e-01 2.856e-01
+2026-07-08 16:58:16,782 | INFO | epoch=13/16 mae_ch train=8.329e-04 1.785e-03 1.674e-03 2.283e-03 2.108e-03 val=1.293e-03 2.489e-03 2.345e-03 3.163e-03 2.857e-03 mse_ch train=7.494e-06 2.845e-05 2.627e-05 4.757e-05 4.122e-05 val=1.965e-05 5.245e-05 4.976e-05 7.906e-05 6.894e-05
+2026-07-08 20:38:06,283 | INFO | Saved 10 diagnostic panel(s) under D:\Research\NO-2D-Metamaterials\MODELS\training_runs\NO_I3O5_BCF16_NMAE_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_260707\diagnostics\epoch_014
+2026-07-08 20:38:07,960 | INFO | epoch=14/16 loss=nmse train_nmse=1.036177e-01 val_nmse=1.971817e-01 train_mae=1.714117e-03 val_mae=2.370475e-03 train_mse=2.746795e-05 val_mse=5.150758e-05 lr=4.575e-04 train_sps=1525.1
+2026-07-08 20:38:07,960 | INFO | epoch=14/16 loss_ch_nmse train=1.381e-03 9.646e-02 9.970e-02 1.638e-01 1.567e-01 val=2.374e-03 1.937e-01 2.071e-01 2.956e-01 2.872e-01
+2026-07-08 20:38:07,960 | INFO | epoch=14/16 mae_ch train=7.776e-04 1.782e-03 1.672e-03 2.250e-03 2.090e-03 val=1.028e-03 2.468e-03 2.371e-03 3.089e-03 2.897e-03 mse_ch train=5.995e-06 2.593e-05 2.381e-05 4.356e-05 3.804e-05 val=7.544e-06 5.229e-05 4.940e-05 7.900e-05 6.931e-05

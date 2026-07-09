@@ -98,7 +98,22 @@ foreach ($d in $datasets) {
         "--dataset", $tag,
         "--tag", $tag
     )
+
+    Run-Py "second_peak_$tag" @(
+        "analyze_second_peak_waves.py",
+        "--dataset-pt-dir", $pt,
+        "--predictions", $pred,
+        "--model-name", $MODEL,
+        "--dataset", $tag,
+        "--tag", $tag
+    )
 }
+
+Run-Py "second_peak_ibz_map" @(
+    "plot_ibz_second_peak_waves.py",
+    "--model-name", $MODEL,
+    "--datasets", "c_test", "b_test"
+)
 
 foreach ($d in $datasets) {
     $tag = $d.tag

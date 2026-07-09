@@ -2,7 +2,7 @@
 
 Conventions for researchers and Cursor agents working in this repo.
 
-**Related docs:** [ML_TRAINING.md](ML_TRAINING.md) · [DATA_GENERATION.md](DATA_GENERATION.md) · [.cursor/rules/](.cursor/rules/)
+**Related docs:** [ML_TRAINING.md](ML_TRAINING.md) · [DATA_GENERATION.md](DATA_GENERATION.md) · [INFERENCE_PIPELINE.md](INFERENCE_PIPELINE.md) · [.cursor/rules/](.cursor/rules/)
 
 ---
 
@@ -104,6 +104,7 @@ flowchart TD
 - **GPU vs CPU:** `run_model_inference_gpu.py` when GPU is free; `run_model_inference_cpu.py` when training holds the GPU.
 - **Config fidelity:** load architecture from the run's `resolved_config.json`.
 - **Output location:** `INFERENCE/<model_name>_<YYMMDD-HHMMSS>/` with `predictions_{case}_{model_name}.pt` and `inference_info_*.txt` (see `model_inference_common.py`).
+- **Standard post-inference analysis:** the full step-by-step pipeline (loss CSVs, histograms, sample cases, relative error, second-peak analysis, dispersion plots) is documented in [INFERENCE_PIPELINE.md](INFERENCE_PIPELINE.md).
 
 ### Launch scripts and pipelines
 

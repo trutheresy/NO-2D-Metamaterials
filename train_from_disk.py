@@ -80,6 +80,7 @@ DEFAULT_NMSE_EPS = 1e-5
 DEFAULT_RMSE_SQRT_FLOOR = 1e-12
 DEFAULT_MAE_RMSE_COEFF = 1.0
 DEFAULT_NMAE_NRMSE_COEFF = 1.0
+DEFAULT_L1_PENALTY = 0.0
 
 
 def normalize_loss_name(name: str) -> str:
@@ -683,6 +684,17 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--learning-rate", type=float, default=2e-3)
     p.add_argument("--weight-decay", type=float, default=0.0)
     p.add_argument(
+        "--l1-penalty",
+        type=float,
+        default=DEFAULT_L1_PENALTY,
+        help=(
+            "Lambda for an explicit L1 penalty on model weights added to the training loss "
+            "(loss = data_loss + lambda * sum(|W|) over >=2D weight tensors; biases/1-D params "
+            "excluded). 0 disables it. This is true L1 sparsity regularization, distinct from "
+            "--weight-decay (AdamW L2)."
+        ),
+    )
+    p.add_argument(
         "--loss",
         type=normalize_loss_name,
         choices=LOSS_CLI_CHOICES,
@@ -739,6 +751,52 @@ def parse_args() -> argparse.Namespace:
     )
     p.add_argument("--max-train-samples", type=int, default=0, help="0 means use all.")
     p.add_argument("--max-test-samples", type=int, default=0, help="0 means use all.")
+    p.add_argument(
+        "--train-prefixes",
+        default="",
+        help=(
+            "Comma-separated dataset-directory prefixes for the TRAIN split "
+            "(e.g. 'c_train_01' to use a single shard for quick tests). "
+            "Empty uses the built-in default (c_train, b_train)."
+        ),
+    )
+    p.add_argument(
+        "--test-prefixes",
+        default="",
+        help=(
+            "Comma-separated dataset-directory prefixes for the TEST/VAL split "
+            "(e.g. 'c_test'). Empty uses the built-in default (c_test, b_test)."
+        ),
+    )
+    p.add_argument(
+        "--tf32",
+        action=argparse.BooleanOptionalAction,
+        default=False,
+        help=(
+            "Enable TF32 for cuDNN and cuBLAS matmuls on Ampere/Ada GPUs "
+            "(sets allow_tf32 and float32_matmul_precision). Speeds up fp32 math "
+            "with negligible accuracy loss. Default off preserves legacy behavior."
+        ),
+    )
+    p.add_argument(
+        "--cudnn-benchmark",
+        action=argparse.BooleanOptionalAction,
+        default=False,
+        help=(
+            "Enable torch.backends.cudnn.benchmark to autotune convolution algorithms "
+            "for fixed input shapes. Default off preserves legacy behavior."
+        ),
+    )
+    p.add_argument(
+        "--matmul-precision",
+        choices=("highest", "high", "medium"),
+        default="highest",
+        help=(
+            "torch.set_float32_matmul_precision level. 'high'/'medium' enable TF32-style "
+            "fast paths; 'highest' keeps full fp32. Only applied when --tf32 is off; "
+            "--tf32 forces at least 'high'."
+        ),
+    )
     p.add_argument(
         "--val-full-test",
         action=argparse.BooleanOptionalAction,
@@ -1035,13 +1093,29 @@ def full_index_dataset_version_hash(shards: list[FullIndexShardInfo], eigen_ch0_
     return h.hexdigest()[:12]
 
 
+def compute_l1_weight_norm(model: nn.Module) -> torch.Tensor:
+    """Sum of |w| over >=2D weight tensors (skips biases and 1-D params).
+
+    Complex spectral weights contribute their magnitude via abs()."""
+    total: torch.Tensor | None = None
+    for param in model.parameters():
+        if not param.requires_grad or param.ndim < 2:
+            continue
+        s = param.abs().sum()
+        total = s if total is None else total + s
+    if total is None:
+        return torch.zeros((), device=next(model.parameters()).device)
+    return total
+
+
 def build_run_name(args: argparse.Namespace) -> str:
     ds = datetime.now().strftime("%y%m%d")
     ch0_tag = "ch0u" if args.eigen_ch0_encoding == "uniform" else "ch0fft"
     loss_tag = build_training_loss(args.loss).run_tag
+    l1_tag = f"_L1P{args.l1_penalty:.0e}" if args.l1_penalty > 0 else ""
     return (
         f"NO_I3O5_BCF16_{loss_tag}_HC{args.hidden_channels}_"
-        f"LR{args.learning_rate:.0e}_WD{args.weight_decay:.0e}_"
+        f"LR{args.learning_rate:.0e}_WD{args.weight_decay:.0e}{l1_tag}_"
         f"SS{args.step_size}_G{args.gamma:.0e}_{ch0_tag}_{ds}"
     )
 
@@ -1689,6 +1763,25 @@ def main() -> None:
     args = parse_args()
     seed_everything(args.seed)
 
+    if torch.cuda.is_available():
+        if args.tf32:
+            torch.backends.cuda.matmul.allow_tf32 = True
+            torch.backends.cudnn.allow_tf32 = True
+            torch.set_float32_matmul_precision(
+                "high" if args.matmul_precision == "highest" else args.matmul_precision
+            )
+        elif args.matmul_precision != "highest":
+            torch.set_float32_matmul_precision(args.matmul_precision)
+        if args.cudnn_benchmark:
+            torch.backends.cudnn.benchmark = True
+
+    train_prefixes = (
+        tuple(s.strip() for s in args.train_prefixes.split(",") if s.strip()) or TRAIN_PREFIXES
+    )
+    test_prefixes = (
+        tuple(s.strip() for s in args.test_prefixes.split(",") if s.strip()) or TEST_PREFIXES
+    )
+
     save_root = Path(args.save_dir)
     save_root.mkdir(parents=True, exist_ok=True)
     output_run_dir = Path(args.output_run_dir).resolve() if args.output_run_dir.strip() else None
@@ -1743,6 +1836,16 @@ def main() -> None:
     main_fault_path = enable_main_fault_handler(run_dir)
 
     logger = setup_logger(run_dir / "train.log")
+    if train_prefixes != TRAIN_PREFIXES or test_prefixes != TEST_PREFIXES:
+        logger.info("Dataset prefix override | train=%s test=%s", train_prefixes, test_prefixes)
+    if torch.cuda.is_available():
+        logger.info(
+            "Perf backends | tf32=%s cudnn_benchmark=%s matmul_precision=%s amp=%s",
+            bool(args.tf32),
+            bool(torch.backends.cudnn.benchmark),
+            torch.get_float32_matmul_precision(),
+            args.amp,
+        )
     start_ts = datetime.now(timezone.utc)
     run_metadata_path = run_dir / "run_metadata.json"
     if resume_mode:
@@ -1768,13 +1871,13 @@ def main() -> None:
 
     try:
         output_root = Path(args.output_root)
-        train_shards = discover_shards(output_root, TRAIN_PREFIXES, args.eigen_ch0_encoding)
+        train_shards = discover_shards(output_root, train_prefixes, args.eigen_ch0_encoding)
         if args.val_full_test:
             test_shards_materialized: list[ShardInfo] = []
-            test_shards_full = discover_full_index_test_shards(output_root, TEST_PREFIXES, args.eigen_ch0_encoding)
+            test_shards_full = discover_full_index_test_shards(output_root, test_prefixes, args.eigen_ch0_encoding)
             test_shards_full = maybe_cap_full_shards(test_shards_full, args.max_test_samples)
         else:
-            test_shards_materialized = discover_shards(output_root, TEST_PREFIXES, args.eigen_ch0_encoding)
+            test_shards_materialized = discover_shards(output_root, test_prefixes, args.eigen_ch0_encoding)
             test_shards_materialized = maybe_cap_shards(test_shards_materialized, args.max_test_samples)
             test_shards_full = []
         train_shards = maybe_cap_shards(train_shards, args.max_train_samples)
@@ -1842,6 +1945,9 @@ def main() -> None:
         )
         args.loss = loss_spec.name
         compare_kind = loss_spec.compare_kind
+        l1_lambda = float(args.l1_penalty)
+        if l1_lambda > 0.0:
+            logger.info("L1 weight penalty lambda=%.6e (added to training loss)", l1_lambda)
         if loss_spec.name == "smoothl1":
             logger.info("Huber/SmoothL1 beta=%.6e", loss_spec.huber_beta)
         elif loss_spec.name == "nmae":
@@ -2076,6 +2182,7 @@ def main() -> None:
             "scheduler": args.scheduler,
             "learning_rate": args.learning_rate,
             "weight_decay": args.weight_decay,
+            "l1_penalty": args.l1_penalty,
             "step_size": args.step_size,
             "gamma": args.gamma,
             "t_max": args.t_max if args.t_max > 0 else total_epochs,
@@ -2087,6 +2194,11 @@ def main() -> None:
             "pin_memory": bool(args.pin_memory),
             "seed": args.seed,
             "amp": args.amp,
+            "tf32": bool(args.tf32),
+            "cudnn_benchmark": bool(args.cudnn_benchmark),
+            "matmul_precision": torch.get_float32_matmul_precision(),
+            "train_prefixes": list(train_prefixes),
+            "test_prefixes": list(test_prefixes),
             "device": str(device),
             "train_shards_count": len(train_shards),
             "test_shards_count": test_shards_count,
@@ -2201,13 +2313,16 @@ def main() -> None:
                             with amp_context(device, args.amp):
                                 pred = model(xb)
                                 loss = loss_spec.batch_loss(pred, yb)
+                                total_loss = loss
+                                if l1_lambda > 0.0:
+                                    total_loss = loss + l1_lambda * compute_l1_weight_norm(model)
 
                             if scaler.is_enabled():
-                                scaler.scale(loss).backward()
+                                scaler.scale(total_loss).backward()
                                 scaler.step(optimizer)
                                 scaler.update()
                             else:
-                                loss.backward()
+                                total_loss.backward()
                                 optimizer.step()
 
                             bs = xb.shape[0]
@@ -2246,13 +2361,16 @@ def main() -> None:
                         with amp_context(device, args.amp):
                             pred = model(xb)
                             loss = loss_spec.batch_loss(pred, yb)
+                            total_loss = loss
+                            if l1_lambda > 0.0:
+                                total_loss = loss + l1_lambda * compute_l1_weight_norm(model)
 
                         if scaler.is_enabled():
-                            scaler.scale(loss).backward()
+                            scaler.scale(total_loss).backward()
                             scaler.step(optimizer)
                             scaler.update()
                         else:
-                            loss.backward()
+                            total_loss.backward()
                             optimizer.step()
 
                         bs = xb.shape[0]
@@ -2281,6 +2399,13 @@ def main() -> None:
 
                 if scheduler is not None:
                     scheduler.step()
+                if l1_lambda > 0.0:
+                    with torch.no_grad():
+                        epoch_l1_norm = float(compute_l1_weight_norm(model))
+                    epoch_l1_penalty = l1_lambda * epoch_l1_norm
+                else:
+                    epoch_l1_norm = 0.0
+                    epoch_l1_penalty = 0.0
                 epoch_time = max(time.time() - t_epoch0, 1e-9)
                 train_loss = running / max(n_seen, 1)
                 train_mae = running_mae / max(n_seen, 1)
@@ -2383,6 +2508,9 @@ def main() -> None:
                     "train_mse_loss": train_mse,
                     "val_l1_loss": val_mae,
                     "val_mse_loss": val_mse,
+                    "l1_lambda": l1_lambda,
+                    "l1_weight_norm": epoch_l1_norm,
+                    "l1_penalty": epoch_l1_penalty,
                 }
                 for i in range(OUT_CHANNELS):
                     epoch_metrics[f"train_loss_ch{i}"] = train_ch[i]

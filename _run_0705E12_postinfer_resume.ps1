@@ -111,5 +111,19 @@ foreach ($d in $datasets) {
         "--dataset", $tag,
         "--tag", $tag
     )
+    Run-Py "second_peak_$tag" @(
+        "analyze_second_peak_waves.py",
+        "--dataset-pt-dir", $pt,
+        "--predictions", (Join-Path $INF "$tag\predictions_I3O5_$MODEL.pt"),
+        "--model-name", $MODEL,
+        "--dataset", $tag,
+        "--tag", $tag
+    )
 }
+
+Run-Py "second_peak_ibz_map" @(
+    "plot_ibz_second_peak_waves.py",
+    "--model-name", $MODEL,
+    "--datasets", "c_test", "b_test"
+)
 Write-Output "`nALL_0705_POSTINFER_RESUME_DONE $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')"

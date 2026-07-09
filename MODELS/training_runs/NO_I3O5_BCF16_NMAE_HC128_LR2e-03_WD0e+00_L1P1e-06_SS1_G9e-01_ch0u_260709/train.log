@@ -1,0 +1,6 @@
+2026-07-09 14:31:58,480 | INFO | Perf backends | tf32=True cudnn_benchmark=True matmul_precision=high amp=bf16
+2026-07-09 14:32:10,414 | INFO | L1 weight penalty lambda=1.000000e-06 (added to training loss)
+2026-07-09 14:32:10,414 | INFO | NMAE epsilon=1.000000e-05
+2026-07-09 14:32:10,414 | INFO | Loss logging: active=nmae; every epoch records train/val nmae, MAE, and MSE
+2026-07-09 14:32:10,880 | INFO | Run started | run_name=NO_I3O5_BCF16_NMAE_HC128_LR2e-03_WD0e+00_L1P1e-06_SS1_G9e-01_ch0u_260709 run_id=NO_I3O5_BCF16_NMAE_HC128_LR2e-03_WD0e+00_L1P1e-06_SS1_G9e-01_ch0u_260709 device=cuda train_samples=18720000 test_samples=3900000 val_index_source=indices_full epoch_range=1..2
+2026-07-09 14:32:10,880 | INFO | Fault diagnostics | main_fault_log=D:\Research\NO-2D-Metamaterials\MODELS\training_runs\NO_I3O5_BCF16_NMAE_HC128_LR2e-03_WD0e+00_L1P1e-06_SS1_G9e-01_ch0u_260709\main_process_fault.log

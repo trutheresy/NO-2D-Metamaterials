@@ -40,6 +40,14 @@ foreach ($d in $datasets) {
         "--dataset", $tag,
         "--tag", $tag
     )
+    Run-Py "second_peak_$tag" @(
+        "analyze_second_peak_waves.py",
+        "--dataset-pt-dir", $pt,
+        "--predictions", $pred,
+        "--model-name", $MODEL,
+        "--dataset", $tag,
+        "--tag", $tag
+    )
     foreach ($loss in $losses) {
         $subdir = "$($loss.ToUpper())_sample_case_plots"
         Run-Py "per_sample_loss_${loss}_$tag" @(
@@ -111,4 +119,10 @@ foreach ($d in $datasets) {
     $designRaw = Join-Path $PLOT "$tag\dispersion_plots\design_raw"
     if (Test-Path -LiteralPath $designRaw) { Remove-Item -LiteralPath $designRaw -Recurse -Force }
 }
+Run-Py "second_peak_ibz_map" @(
+    "plot_ibz_second_peak_waves.py",
+    "--model-name", $MODEL,
+    "--datasets", "c_test", "b_test"
+)
+
 Write-Output "`nALL_0705_POSTINFER_DONE $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')"
