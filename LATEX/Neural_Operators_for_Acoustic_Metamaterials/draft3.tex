@@ -66,6 +66,9 @@
 
 % Lists and Enumerations
 \usepackage{enumitem}
+\usepackage{pifont}
+\newcommand{\checked}{\ding{51}}    % ✓
+\newcommand{\unchecked}{\ding{55}}  % ✗
 
 % Hyperlinks and References
 \usepackage{hyperref}
@@ -356,22 +359,21 @@ To investigate the influence of geometry representation on model performance, tw
 \subsection{Wave Propagation Simulations} 
 \label{ssec:wave_propagration_simulations}
 
-For each metamaterial geometry, wave propagation is simulated by solving the frequency-domain linear elastodynamic equation using the finite element analysis (FEA). After spatial discretization, the governing PDE takes the generalized eigenvalue form
+For each metamaterial geometry, wave propagation is simulated by solving the frequency-domain linear elastodynamic equation with finite element analysis (FEA). After spatial discretization and enforcement of Bloch periodicity, the governing problem takes the generalized eigenvalue form
 \begin{equation}
-\label{eqn:wave_fuction}
-\left( \mathbf{K}(\mathbf{k}) - \omega^2 \mathbf{M}(\mathbf{k}) \right) \mathbf{u} = \mathbf{0},
+\label{eqn:eig_PDE}
+\left( \mathbf{K}_r(\mathbf{k}) - \omega^2 \mathbf{M}_r(\mathbf{k}) \right) \mathbf{u} = \mathbf{0},
 \end{equation}
-where $\mathbf{K}(\mathbf{k})$ and $\mathbf{M}(\mathbf{k})$ are the stiffness and mass matrices, respectively, parameterized by the irreducible Brillouin zone (IBZ) wavevector $\mathbf{k}$, $\omega$ is the angular eigenfrequency, and $\mathbf{u}$ is the corresponding eigenvector describing the displacement field.
+where $\omega$ is the angular eigenfrequency, $\mathbf{u}$ is the corresponding complex Bloch displacement eigenvector, and $\mathbf{k}$ is the wavevector in the irreducible Brillouin zone (IBZ). The reduced stiffness and mass matrices $\mathbf{K}_r(\mathbf{k})$ and $\mathbf{M}_r(\mathbf{k})$ are obtained from geometry-dependent global finite-element matrices $\mathbf{K}$ and $\mathbf{M}$ via a wavevector-dependent Bloch transformation matrix $\mathbf{T}(\mathbf{k})$,
+\begin{equation}
+\label{eqn:reduced_KM}
+\mathbf{K}_r(\mathbf{k}) = \mathbf{T}(\mathbf{k})^{\dagger}\mathbf{K}\,\mathbf{T}(\mathbf{k}),
+\qquad
+\mathbf{M}_r(\mathbf{k}) = \mathbf{T}(\mathbf{k})^{\dagger}\mathbf{M}\,\mathbf{T}(\mathbf{k}),
+\end{equation}
+with $(\cdot)^{\dagger}$ the Hermitian transpose. Here $\mathbf{T}(\mathbf{k})$ maps the full mesh degrees of freedom to an independent set while applying phase factors $\mathrm{e}^{i\mathbf{k}\cdot\mathbf{R}}$ across periodic faces of the unit cell; $\mathbf{K}$ and $\mathbf{M}$ themselves depend only on the material field and are assembled once per geometry. These intermediate matrices are described briefly so the reader can compare the explicit FEA pipeline (Figure~\ref{fig:FEA_full_process}) with the Fourier neural operator architecture in Section~\ref{ssec:fourier_neural_operator}; they are not inputs to the neural operator.
 
-% Our FEA solver is implemented in the MATLAB. In the data-generation code, Eq.~\eqref{eqn:wave_fuction} is solved using intermediate steps involving five sparse matrices. The global stiffness and mass matrices, $\mathbf{K}^{\mathrm{FE}}$ and $\mathbf{M}^{\mathrm{FE}}$, are assembled once per unit-cell geometry from bilinear quadrilateral plane-stress elements and depend only on the spatial distribution of elastic moduli, density, and Poisson ratio; they do not depend on $\mathbf{k}$. Bloch periodicity at a given wavevector is enforced by a transformation matrix $\mathbf{T}(\mathbf{k})$ that relates the full mesh displacements to a smaller independent set of degrees of freedom through phase factors $\exp(i\mathbf{k}\cdot\mathbf{R})$ across opposite faces of the unit cell, where $\mathbf{R}$ is the relevant lattice translation vector. The stiffness and mass matrices appearing in Eq.~\eqref{eqn:wave_fuction} are then formed as
-% \begin{equation}
-% \mathbf{K}(\mathbf{k}) = \mathbf{T}(\mathbf{k})^{\dagger}\mathbf{K}^{\mathrm{FE}}\,\mathbf{T}(\mathbf{k}),
-% \qquad
-% \mathbf{M}(\mathbf{k}) = \mathbf{T}(\mathbf{k})^{\dagger}\mathbf{M}^{\mathrm{FE}}\,\mathbf{T}(\mathbf{k}),
-% \end{equation}
-% where $\dagger$ indicates the Hermitian transpose. These matrices are used directly in the eigenvalue solve.
-
-The IBZ is discretized into $25$ $x$ wave numbers and $13$ $y$ wave numbers, totaling $25 \times 13 = 325$ unique wavevectors covering the IBZ half plane. For each wavevector, the six lowest eigenfrequencies (bands) were computed using a custom finite element analysis (FEA) MATLAB script (see section \ref{sec:Repository} for implementation details). 
+The IBZ is discretized into $25$ $x$ wave numbers and $13$ $y$ wave numbers, totaling $25 \times 13 = 325$ unique wavevectors covering the IBZ half plane. For each wavevector, the six lowest eigenfrequencies (bands) were computed using a custom FEA MATLAB script (see Section~\ref{sec:Repository} for implementation details). 
 
 Each eigenvector $\mathbf{u}$ consists of two complex-valued displacement fields, $(u_x,u_y)$, which are separated into their real and imaginary components to produce four real-valued output channels, $(u_{x,real},u_{x,imag},u_{y,real},u_{y,imag})$. The corresponding eigenfrequency $\omega$ is encoded as a spatially uniform fifth channel, resulting in a target tensor of size $5\times32\times32$. Combined with the three-channel material representation described in the previous subsection, each simulation therefore produces a supervised learning sample mapping
 \begin{equation*}
@@ -384,7 +386,7 @@ The overall finite element data-generation procedure is summarized in Figure \re
 \begin{figure}[H]
   \centering
   \includegraphics[width=\textwidth]{Figures/Methods/distilled_FEA_process.png}
-  \caption{Flowchart of the FEA data generation method. Green squares represent varying inputs to the process, and orange squares represent computed quantities of the FEA process. Black rounded rectangles represent subroutines of the FEA process. The process starts with inputs of defined densities, stiffnesses, and Poisson ratios for each pixel of a metamaterial unit cell geometry (each a $32 \times 32$ pixel grid of values ranging from 0 to 1), along with a chosen $k_x$ and $k_y$ wavevector representing the stimulus to the metamaterial. A custom optimized FEA solver takes these inputs and produces intermediate transformation matrices, and then uses those to solve an eigenvalue matrix problem to produce the solution displacement fields (eigenvectors) and frequency $\omega$ (eigenvalues) for the given inputs.}
+  \caption{Flowchart of the FEA data generation method. Green squares represent varying inputs to the process, and orange squares represent computed quantities of the FEA process. Black rounded rectangles represent subroutines of the FEA process. The process starts with inputs of defined densities, stiffnesses, and Poisson ratios for each pixel of a metamaterial unit cell geometry (each a $32 \times 32$ pixel grid of values ranging from 0 to 1), along with a chosen $k_x$ and $k_y$ wavevector representing the stimulus to the metamaterial. A custom optimized FEA solver takes these inputs and produces intermediate matrices $(\mathbf{K},\mathbf{M},\mathbf{T})$, forms the reduced operators $(\mathbf{K}_r,\mathbf{M}_r)$, and then solves Eq.~\eqref{eqn:eig_PDE} for the displacement fields (eigenvectors) and frequencies $\omega$ (eigenvalues) for the given inputs.}
   \label{fig:FEA_full_process}
 \end{figure}
 
@@ -585,12 +587,12 @@ It was found that final model performance did not appreciably change for changes
 \section{Results and Discussion}
 This section presents the final model results in the following cases:
 \begin{itemize}
-    \item performance on displacement field prediction
-    \item performance on eigenvalue prediction
-    \item performance across multiple geometries
-    \item performance variation with binary geometry discontinuity measures
-    \item performance variation with encoding strategies
-    \item performance variation with training hyperparameters and loss function
+    \item[\checked] Performance on displacement field prediction
+    \item[\checked] Performance on eigenvalue prediction
+    \item[\checked] Performance across multiple geometries
+    \item[\checked] Performance variation with binary geometry discontinuity measures
+    \item[\unchecked] Performance variation with encoding strategies
+    \item[\unchecked] Performance variation with training hyperparameters and loss function
 \end{itemize}
 
 % In our search through the best encoding scheme for inputs, datatype representation for outputs, model architecture hyperparameters, and training hyperparameters for our FNO eigenvalue PDE solver, we discovered the following notable results.  
@@ -729,7 +731,7 @@ These results indicate two important takeaways. The first is that it is possible
         \label{fig:disp_loss_histogram_discrete}
     \end{subfigure}
     \caption{Comparison of relative prediction error distributions for continuous-valued and discrete metamaterial geometries for the same model. While there are some tail outliers, most samples fall within the range of $~10^{-2}$ to $~10^{-4}$, indicating that the same model is able to learn continuous and discrete geometry cases.}
-    \label{fig:loss_histograms}
+    \label{fig:disp_loss_histograms}
 \end{figure}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -804,26 +806,24 @@ Like with the continuous geometry figures, these plots represent the eigenfreque
         \label{fig:freq_loss_histogram_discrete}
     \end{subfigure}
     \caption{Comparison of relative prediction error distributions for continuous-valued and discrete metamaterial geometries for the same model. While there are some tail outliers, most samples fall within the range of $~10^{-2}$ to $~10^{-4}$, indicating that the same model is able to learn continuous and discrete geometry cases.}
-    \label{fig:loss_histograms}
+    \label{fig:freq_loss_histograms}
 \end{figure}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsection{Binary Geometry Performance Variation on Discontinuity Measures}
+\subsection{Dependence of Prediction Error on Band and Boundary Length}
 \label{ssec:boundary_length_vs_loss}
 
-The preceding subsections showed that, although the same wavelet-conditioned FNO can predict displacement fields for both continuous and discrete unit cells, discrete geometries are systematically more difficult: absolute and relative errors are larger, and the harder quartiles of the discrete test set degrade more visibly than their continuous counterparts (Figures~\ref{fig:loss_histograms}, \ref{fig:c_p25_output}--\ref{fig:b_p75_output}). This gap is expected from the architecture of the FNO itself. Each Fourier layer retains only a truncated set of spectral modes after the discrete FFT. Smooth continuous material fields, and the comparatively smooth displacement modes they induce, concentrate their energy in a modest number of low-to-moderate wavenumbers and are therefore well represented by that truncated basis. Binary geometries, by contrast, contain jump discontinuities at material interfaces. Under an FFT, such discontinuities produce a broadband spectrum whose coefficients decay slowly with wavenumber, so a substantial fraction of the high-frequency content needed to resolve sharp phase boundaries lies outside the retained modes. The spectral branch therefore sees a degraded, band-limited version of the interface, yielding Gibbs-type ringing or blur and a harder operator-learning problem precisely when geometric discontinuity is more severe.
-
-If this spectral-truncation account is correct, then even among discrete geometries the prediction error should increase with the amount of interface present. To test this empirically, we define the \emph{boundary length} of each binarized unit cell as the number of interior four-connected pixel edges separating a $0$-valued pixel from a $1$-valued pixel. This scalar is a discrete measure of interface complexity. For each of the $1000$ unseen discrete test geometries, we compute the mean absolute error (MAE) of the predicted displacement channels, averaged over all $325$ IBZ wavevectors, separately for each of the six retained eigenbands. The resulting relationships are shown in Figure~\ref{fig:boundary_vs_mae_by_band}.
+The preceding subsections showed that, although the same wavelet-conditioned FNO can predict displacement fields for both continuous and discrete unit cells, discrete geometries are systematically more difficult, with absolute and relative errors larger (Figures \ref{fig:disp_loss_histograms}, \ref{fig:freq_loss_histograms}), and the harder quartiles of the discrete test set degrading more visibly than their continuous counterparts. This gap is expected from the architecture of the FNO itself. Each Fourier layer retains only a truncated set of spectral modes after the discrete FFT. Smooth continuous material fields, and the comparatively smooth displacement modes they induce, concentrate their energy in a modest number of low-to-moderate wavenumbers and are therefore well represented by that truncated Fourier basis. Binary geometries, by contrast, contain jump discontinuities at material interfaces. Under an FFT, such discontinuities produce a broadband spectrum whose coefficients decay slowly with wavenumber, so a substantial fraction of the high-frequency content needed to resolve sharp phase boundaries lies outside the retained modes. The spectral branch therefore sees a degraded, band-limited version of the interface, yielding Gibbs-type ringing or blur and a harder operator-learning problem precisely when geometric discontinuity is more severe.
+If this spectral-truncation explanation is correct, then even among discrete geometries the prediction error should increase with the boundary interface length. To test this empirically, we define the \emph{boundary length} of each binarized unit cell as the number of interior four-connected pixel edges separating a $0$-valued pixel from a $1$-valued pixel. This scalar is a discrete measure of interface complexity. For each of the $1000$ unseen discrete test geometries, we compute the mean absolute error (MAE) of the predicted displacement channels, averaged over all $325$ IBZ wavevectors, separately for each of the six retained eigenbands. The resulting relationships are shown in Figure~\ref{fig:boundary_vs_mae_by_band}.
 
 \begin{figure}[H]
   \centering
-  \includegraphics[width=\textwidth]{Figures/Results/boundary_vs_mae_by_band_b_test.png}
-  \caption{Mean (over wavevectors) displacement MAE versus interface boundary length for each of the six eigenbands on the discrete test set. Points correspond to individual unit-cell geometries. Legend values $\rho$ are Spearman rank correlations. A positive trend appears for every band, consistent with degraded FNO accuracy as the total length of $0$/$1$ material interfaces increases.}
+  \includegraphics[width=\textwidth]{Figures/Statistics/boundary_vs_mae_by_band_b_test.png}
+  \caption{Mean displacement MAE versus interface boundary length, separated by color for each of the six eigenbands on the discrete test set. Points correspond to average performance on unit-cell geometries. Legend values $\rho$ are Spearman rank correlations. A positive trend appears for every band, consistent with degraded FNO accuracy as the total length of $0$/$1$ material interfaces increases.}
   \label{fig:boundary_vs_mae_by_band}
 \end{figure}
 
 Two complementary trends are apparent. First, for every band there is a positive monotonic association between boundary length and MAE, with Spearman correlations ranging from $\rho=0.644$ for band~$0$ to $\rho\approx0.42$--$0.56$ for the higher bands. Geometries with short interfaces are concentrated at lower absolute error, while geometries with long, meandering phase boundaries systematically occupy the upper portion of the cloud. This supports the interpretation that the hard cases for the learned operator are those for which the truncated Fourier representation must resolve more extensive sharp material transitions on the fixed $32\times32$ grid.
-
 Second, absolute error itself increases with band index. Averaged over the test geometries, the mean wavevector-averaged MAE rises from approximately $1.6\times10^{-3}$ for band~$0$ to approximately $3.8\times10^{-3}$ for band~$5$. Higher bands correspond to more rapidly oscillating Bloch modes that concentrate energy nearer material interfaces and therefore inherit more of the geometric difficulty encoded by boundary length. Together with the continuous-versus-discrete comparisons above, Figure~\ref{fig:boundary_vs_mae_by_band} indicates that prediction difficulty on discrete designs is organized both by band (modal complexity) and by interface measure (geometric complexity), as expected when a spectral surrogate retains only a portion of the broadband Fourier content generated by discontinuities.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

@@ -1,0 +1,25 @@
+\contentsline {section}{Table of Contents}{2}{affn.2}%
+\contentsline {section}{\numberline {1}Introduction}{4}{section.1}%
+\contentsline {section}{\numberline {2}Methodology}{6}{section.2}%
+\contentsline {subsection}{\numberline {2.1}Fourier Neural Operator}{6}{subsection.2.1}%
+\contentsline {subsection}{\numberline {2.2}Metamaterial Design Space}{9}{subsection.2.2}%
+\contentsline {subsection}{\numberline {2.3}Wave Propagation Simulations}{11}{subsection.2.3}%
+\contentsline {subsection}{\numberline {2.4}Input Wavelet Encoding}{12}{subsection.2.4}%
+\contentsline {subsection}{\numberline {2.5}Dataset Construction}{14}{subsection.2.5}%
+\contentsline {subsection}{\numberline {2.6}Training Procedure}{15}{subsection.2.6}%
+\contentsline {section}{\numberline {3}Results and Discussion}{17}{section.3}%
+\contentsline {subsection}{\numberline {3.1}Displacement Field Prediction}{17}{subsection.3.1}%
+\contentsline {subsubsection}{\numberline {3.1.1}Continuous Geometries}{18}{subsubsection.3.1.1}%
+\contentsline {subsubsection}{\numberline {3.1.2}Discrete Geometries}{21}{subsubsection.3.1.2}%
+\contentsline {subsubsection}{\numberline {3.1.3}Continuous Versus Discrete Performance}{24}{subsubsection.3.1.3}%
+\contentsline {subsection}{\numberline {3.2}Dispersion Band Reconstruction}{25}{subsection.3.2}%
+\contentsline {subsection}{\numberline {3.3}Dependence of Prediction Error on Band and Boundary Length}{27}{subsection.3.3}%
+\contentsline {subsection}{\numberline {3.4}Band and Wavevector Encoding}{29}{subsection.3.4}%
+\contentsline {subsection}{\numberline {3.5}Output Datatype}{30}{subsection.3.5}%
+\contentsline {section}{\numberline {4}Conclusions}{31}{section.4}%
+\let \numberline \tmptocnumberline 
+\contentsline {section}{\numberline {S1}Supplementary Information}{33}{appendix.A}%
+\contentsline {subsection}{\numberline {S1.1}Model and Training Hyperparameters}{33}{subsection.A.1}%
+\contentsline {subsection}{\numberline {S1.2}Loss Criterion}{33}{subsection.A.2}%
+\contentsline {subsection}{\numberline {S1.3}Output Wavelet Encoding}{38}{subsection.A.3}%
+\contentsline {subsection}{\numberline {S1.4}Algorithms for Gabor Wavelet Encoding}{39}{subsection.A.4}%
