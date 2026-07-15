@@ -54,6 +54,7 @@ from per_sample_loss import (
 )
 from output_layout import resolve_script_output_dir
 from second_peak_analysis import flat_indices
+from wave_mode_filters import degenerate_pivot_wave_indices, shear_mode_wave_indices
 
 
 LOSS_XLABEL = {
@@ -211,6 +212,19 @@ def main() -> None:
         default="",
         help="Comma-separated wavevector indices to omit from histograms (all bands/geometries).",
     )
+    p.add_argument(
+        "--exclude-shear-modes",
+        action="store_true",
+        help="Omit ky=0 and kx=0 wavevectors (dead phase-pivot lines; see wave_mode_filters.py).",
+    )
+    p.add_argument(
+        "--exclude-degenerate-pivot-cases",
+        action="store_true",
+        help=(
+            "Omit ky=0, kx=0, and TRIM (k≡-k) wavevectors including M corners "
+            "(see degenerate_pivot_wave_indices in wave_mode_filters.py)."
+        ),
+    )
     args = p.parse_args()
     log_x = not args.linear_x
     normalize = not args.raw_count
@@ -228,6 +242,10 @@ def main() -> None:
     else:
         channel_weighting = normalize_channel_weighting(args.channel_weighting)
     exclude_waves = parse_index_list(args.exclude_wave_indices, "--exclude-wave-indices")
+    if args.exclude_shear_modes:
+        exclude_waves = sorted(set(exclude_waves) | set(shear_mode_wave_indices()))
+    if args.exclude_degenerate_pivot_cases:
+        exclude_waves = sorted(set(exclude_waves) | set(degenerate_pivot_wave_indices()))
     device = resolve_device(args.device)
     dataset_pt_dir = Path(args.dataset_pt_dir)
     infer_path = Path(args.inference)

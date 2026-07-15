@@ -32,6 +32,8 @@ import matplotlib.pyplot as plt
 
 import NO_utilities
 from output_layout import resolve_script_output_dir
+from per_sample_loss import parse_index_list
+from wave_mode_filters import degenerate_pivot_wave_indices, shear_mode_wave_indices
 
 
 # Percentiles are in PERFORMANCE (opposite of loss): higher p = better performance =
@@ -72,6 +74,37 @@ def main() -> None:
                    help="Show the eigenfrequency channel (channel 0) column. Default: off (4-channel output).")
     p.add_argument("--title", action=argparse.BooleanOptionalAction, default=False,
                    help="Add a suptitle to each figure. Default: off (no title).")
+    p.add_argument(
+        "--paper-style",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help=(
+            "Paper figure styling: larger panel/colorbar fonts, no pixel-index ticks, "
+            "compact colorbar exponents (e-4 not e-04). Default: on."
+        ),
+    )
+    p.add_argument("--title-fontsize", type=float, default=18.0,
+                   help="Panel title font size when --paper-style is on (default: 18).")
+    p.add_argument("--colorbar-labelsize", type=float, default=13.0,
+                   help="Colorbar tick label size when --paper-style is on (default: 13).")
+    p.add_argument(
+        "--exclude-wave-indices",
+        default="",
+        help="Comma-separated wavevector indices to omit before selecting percentiles.",
+    )
+    p.add_argument(
+        "--exclude-shear-modes",
+        action="store_true",
+        help="Omit ky=0 and kx=0 wavevectors (dead phase-pivot lines; see wave_mode_filters.py).",
+    )
+    p.add_argument(
+        "--exclude-degenerate-pivot-cases",
+        action="store_true",
+        help=(
+            "Omit ky=0, kx=0, and TRIM (k≡-k) wavevectors including M corners "
+            "(see degenerate_pivot_wave_indices in wave_mode_filters.py)."
+        ),
+    )
     args = p.parse_args()
 
     pt = Path(args.dataset_pt_dir)
@@ -83,6 +116,13 @@ def main() -> None:
         subdir=args.output_subdir,
         fallback=Path(args.predictions).parent,
     )
+
+    exclude_waves = parse_index_list(args.exclude_wave_indices, "--exclude-wave-indices")
+    if args.exclude_shear_modes:
+        exclude_waves = sorted(set(exclude_waves) | set(shear_mode_wave_indices()))
+    if args.exclude_degenerate_pivot_cases:
+        exclude_waves = sorted(set(exclude_waves) | set(degenerate_pivot_wave_indices()))
+    exclude_set = set(exclude_waves)
 
     geometries = torch.load(pt / "geometries_full.pt", weights_only=False)
     waveforms = torch.load(pt / "waveforms_full.pt", weights_only=False)
@@ -106,6 +146,19 @@ def main() -> None:
     tag = args.tag or pt.parent.name
     for loss_name, loss_path in args.loss_array:
         arr = np.load(loss_path)
+        if exclude_set:
+            wave_col = arr[:, 2].astype(np.int64)
+            keep = ~np.isin(wave_col, np.array(sorted(exclude_set), dtype=np.int64))
+            n_before = arr.shape[0]
+            arr = arr[keep]
+            print(
+                f"Excluding {len(exclude_set)} wavevectors: "
+                f"{arr.shape[0]} / {n_before} samples kept for percentile selection"
+            )
+            if arr.shape[0] == 0:
+                raise ValueError(
+                    f"No samples left for loss={loss_name!r} after wave exclusion."
+                )
         losses = arr[:, 4]
         order = np.argsort(losses, kind="stable")
         n = order.shape[0]
@@ -120,6 +173,14 @@ def main() -> None:
             target_tensor = stack_target_channels(d, w, b, comb).float()
 
             plt.close("all")
+            style_kw = {}
+            if args.paper_style:
+                style_kw = {
+                    "hide_x_ticks": True,
+                    "hide_y_ticks": True,
+                    "title_fontsize": args.title_fontsize,
+                    "colorbar_labelsize": args.colorbar_labelsize,
+                }
             NO_utilities.visualize_sample(
                 input_tensor.cpu(),
                 output_tensor.cpu(),
@@ -128,6 +189,7 @@ def main() -> None:
                 field_cmap=args.field_cmap,
                 diverge_center=args.diverge_center,
                 show_eigfreq=args.show_eigfreq,
+                **style_kw,
             )
             nums = plt.get_fignums()
             if len(nums) < 2:

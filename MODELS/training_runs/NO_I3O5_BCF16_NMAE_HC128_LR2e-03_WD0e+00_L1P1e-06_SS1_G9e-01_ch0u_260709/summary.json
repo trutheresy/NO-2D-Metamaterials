@@ -1,0 +1,23 @@
+{
+  "status": "completed",
+  "run_name": "NO_I3O5_BCF16_NMAE_HC128_LR2e-03_WD0e+00_L1P1e-06_SS1_G9e-01_ch0u_260709",
+  "run_id": "NO_I3O5_BCF16_NMAE_HC128_LR2e-03_WD0e+00_L1P1e-06_SS1_G9e-01_ch0u_260709",
+  "started_at_utc": "2026-07-10T03:16:56.520806+00:00",
+  "ended_at_utc": "2026-07-10T17:45:14.588116+00:00",
+  "duration_sec": 52098.06731,
+  "best_val_loss": 0.34042604956626893,
+  "best_epoch": 6,
+  "checkpoints": {
+    "best": "D:\\Research\\NO-2D-Metamaterials\\MODELS\\training_runs\\NO_I3O5_BCF16_NMAE_HC128_LR2e-03_WD0e+00_L1P1e-06_SS1_G9e-01_ch0u_260709\\NO_I3O5_BCF16_NMAE_HC128_LR2e-03_WD0e+00_L1P1e-06_SS1_G9e-01_ch0u_260709_best.pth",
+    "final": "D:\\Research\\NO-2D-Metamaterials\\MODELS\\training_runs\\NO_I3O5_BCF16_NMAE_HC128_LR2e-03_WD0e+00_L1P1e-06_SS1_G9e-01_ch0u_260709\\NO_I3O5_BCF16_NMAE_HC128_LR2e-03_WD0e+00_L1P1e-06_SS1_G9e-01_ch0u_260709_final.pth",
+    "epoch_pattern": "D:\\Research\\NO-2D-Metamaterials\\MODELS\\training_runs\\NO_I3O5_BCF16_NMAE_HC128_LR2e-03_WD0e+00_L1P1e-06_SS1_G9e-01_ch0u_260709\\NO_I3O5_BCF16_NMAE_HC128_LR2e-03_WD0e+00_L1P1e-06_SS1_G9e-01_ch0u_260709_E{epoch}.pth"
+  },
+  "artifacts": {
+    "train_log": "D:\\Research\\NO-2D-Metamaterials\\MODELS\\training_runs\\NO_I3O5_BCF16_NMAE_HC128_LR2e-03_WD0e+00_L1P1e-06_SS1_G9e-01_ch0u_260709\\train.log",
+    "resolved_config": "D:\\Research\\NO-2D-Metamaterials\\MODELS\\training_runs\\NO_I3O5_BCF16_NMAE_HC128_LR2e-03_WD0e+00_L1P1e-06_SS1_G9e-01_ch0u_260709\\resolved_config.json",
+    "run_metadata": "D:\\Research\\NO-2D-Metamaterials\\MODELS\\training_runs\\NO_I3O5_BCF16_NMAE_HC128_LR2e-03_WD0e+00_L1P1e-06_SS1_G9e-01_ch0u_260709\\run_metadata.json",
+    "metrics_csv": "D:\\Research\\NO-2D-Metamaterials\\MODELS\\training_runs\\NO_I3O5_BCF16_NMAE_HC128_LR2e-03_WD0e+00_L1P1e-06_SS1_G9e-01_ch0u_260709\\metrics.csv",
+    "metrics_jsonl": "D:\\Research\\NO-2D-Metamaterials\\MODELS\\training_runs\\NO_I3O5_BCF16_NMAE_HC128_LR2e-03_WD0e+00_L1P1e-06_SS1_G9e-01_ch0u_260709\\metrics.jsonl",
+    "diagnostics": "D:\\Research\\NO-2D-Metamaterials\\MODELS\\training_runs\\NO_I3O5_BCF16_NMAE_HC128_LR2e-03_WD0e+00_L1P1e-06_SS1_G9e-01_ch0u_260709\\diagnostics"
+  }
+}

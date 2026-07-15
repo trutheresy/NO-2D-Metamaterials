@@ -43,10 +43,10 @@ from output_layout import resolve_script_output_dir
 
 
 LOSS_YLABEL = {
-    "mae": "Mean (over wavevectors) MAE",
-    "mse": "Mean (over wavevectors) MSE",
-    "nmae": "Mean (over wavevectors) NMAE",
-    "nmse": "Mean (over wavevectors) NMSE",
+    "mae": "Mean (Over Wavevectors) MAE",
+    "mse": "Mean (Over Wavevectors) MSE",
+    "nmae": "Mean (Over Wavevectors) NMAE",
+    "nmse": "Mean (Over Wavevectors) NMSE",
 }
 
 
@@ -70,6 +70,22 @@ def main() -> None:
     p.add_argument("--batch-size", type=int, default=8192)
     p.add_argument("--device", default="cpu", choices=("auto", "cuda", "cpu"),
                    help="Compute device (default: cpu). Use 'cuda' or 'auto' to opt into GPU.")
+    p.add_argument(
+        "--larger-fonts",
+        action="store_true",
+        help="Increase axis/tick/legend fonts by 2 pt vs the script defaults.",
+    )
+    p.add_argument(
+        "--figure-height",
+        type=float,
+        default=0.0,
+        help="Override figure height in inches (default: 5.5, or 5.0 with --shorter).",
+    )
+    p.add_argument(
+        "--shorter",
+        action="store_true",
+        help="Use a slightly shorter figure height (5.0 in instead of 5.5).",
+    )
     args = p.parse_args()
 
     log_y = not args.linear_y
@@ -121,6 +137,12 @@ def main() -> None:
     cmap = plt.get_cmap(args.cmap)
     geom_idx = np.arange(n_geom)
 
+    label_fs = 14.0 if args.larger_fonts else 12.0
+    tick_fs = 12.0 if args.larger_fonts else 10.0
+    legend_fs = 12.0 if args.larger_fonts else 10.0
+    fig_h = args.figure_height if args.figure_height > 0 else (5.0 if args.shorter else 5.5)
+    fig_w = 7.5
+
     per_geom_band = {}
     for loss in losses:
         per_geom_band[loss] = per_sample[loss].reshape(n_geom, n_wv, n_bands).mean(axis=1)  # (n_geom, n_bands)
@@ -138,9 +160,10 @@ def main() -> None:
     print(f"\nBoundary length ({mode}): mean={blen.mean():.2f} min={blen.min():.0f} max={blen.max():.0f}")
     print(f"Wrote table: {csv_path}")
 
+    xlabel = f"Boundary Length ({mode.title()} Edges)"
     for loss in losses:
         ydata = per_geom_band[loss]  # (n_geom, n_bands)
-        fig, ax = plt.subplots(figsize=(7.5, 5.5), constrained_layout=True)
+        fig, ax = plt.subplots(figsize=(fig_w, fig_h), constrained_layout=True)
         print(f"  {loss}:")
         for b in range(n_bands):
             yb = ydata[:, b]
@@ -150,13 +173,14 @@ def main() -> None:
             ax.scatter(blen[finite], yb[finite], s=12, alpha=0.5, color=color,
                        edgecolors="none", label=f"band {b}, \u03c1 = {rho:.3f}")
             print(f"    band {b}: Spearman rho = {rho:.4f}")
-        ax.set_xlabel(f"Boundary length ({mode} edges)")
-        ax.set_ylabel(LOSS_YLABEL.get(loss, f"Mean (over wavevectors) {loss}"))
+        ax.set_xlabel(xlabel, fontsize=label_fs)
+        ax.set_ylabel(LOSS_YLABEL.get(loss, f"Mean (Over Wavevectors) {loss.upper()}"), fontsize=label_fs)
+        ax.tick_params(axis="both", labelsize=tick_fs)
         if log_y:
             ax.set_yscale("log")
         else:
             ax.ticklabel_format(axis="y", style="sci", scilimits=(0, 0))
-        ax.legend(loc="best", framealpha=0.9)
+        ax.legend(loc="best", framealpha=0.9, fontsize=legend_fs)
         out_path = out_dir / f"boundary_vs_{loss}_by_band{tag}.png"
         fig.savefig(out_path, dpi=150)
         plt.close(fig)

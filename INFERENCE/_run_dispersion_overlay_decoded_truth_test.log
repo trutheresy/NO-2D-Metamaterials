@@ -1,0 +1,168 @@
+﻿**********************
+Windows PowerShell transcript start
+Start time: 20260713154505
+Username: WIN\hz283
+RunAs User: WIN\hz283
+Configuration Name: 
+Machine: BRINSON-LAB-000 (Microsoft Windows NT 10.0.26200.0)
+Host Application: C:\WINDOWS\System32\WindowsPowerShell\v1.0\powershell.exe -NoProfile -ExecutionPolicy Bypass -File d:\Research\NO-2D-Metamaterials\_run_dispersion_overlay_decoded_truth_test.ps1
+Process ID: 134564
+PSVersion: 5.1.26100.8655
+PSEdition: Desktop
+PSCompatibleVersions: 1.0, 2.0, 3.0, 4.0, 5.0, 5.1.26100.8655
+BuildVersion: 10.0.26100.8655
+CLRVersion: 4.0.30319.42000
+WSManStackVersion: 3.0
+PSRemotingProtocolVersion: 2.3
+SerializationVersion: 1.1.0.1
+**********************
+=== dispersion_overlay_decoded_truth_test regen ===
+Model: NO_I3O5_BCF16_NMAE_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_260705_E12_best
+
+========== c_test overlay_decoded_truth_test ==========
+
+>> dispersion_overlay_decoded_truth_test_c_test START 2026-07-13 15:45:06
+True eigenvalues : d:\Research\NO-2D-Metamaterials\INFERENCE\_decoded_truth\c_test\eigenvalue_data_full.pt  shape=(1000, 325, 6)
+Pred eigenvalues : d:\Research\NO-2D-Metamaterials\INFERENCE\NO_I3O5_BCF16_NMAE_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_260705_E12_best\c_test\eigenvalues_predictions_full.pt  shape=(1000, 325, 6)
+Plotting 1000 structures -> D:\Research\NO-2D-Metamaterials\PLOTS\NO_I3O5_BCF16_NMAE_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_260705_E12_best\c_test\dispersion_overlay_decoded_truth_test
+Saved losses CSV : D:\Research\NO-2D-Metamaterials\PLOTS\NO_I3O5_BCF16_NMAE_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_260705_E12_best\c_test\dispersion_overlay_decoded_truth_test\dispersion_losses.csv  (1000 geometries)
+  MAE  mean=2.935785e+01, min=1.055611e+01, max=3.627401e+02
+  MSE  mean=2.090927e+03, min=1.878137e+02, max=2.429766e+05
+  NMAE mean=2.108566e-02, min=8.973355e-03, max=2.255770e-01
+  NMSE mean=1.156642e-03, min=1.380899e-04, max=8.724535e-02
+Contour grid pts : 37 along path (36 unique k of 325)
+Saved plots to: D:\Research\NO-2D-Metamaterials\PLOTS\NO_I3O5_BCF16_NMAE_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_260705_E12_best\c_test\dispersion_overlay_decoded_truth_test
+>> dispersion_overlay_decoded_truth_test_c_test DONE 2026-07-13 15:46:51
+
+========== b_test overlay_decoded_truth_test ==========
+
+>> dispersion_overlay_decoded_truth_test_b_test START 2026-07-13 15:46:51
+True eigenvalues : d:\Research\NO-2D-Metamaterials\INFERENCE\_decoded_truth\b_test\eigenvalue_data_full.pt  shape=(1000, 325, 6)
+Pred eigenvalues : d:\Research\NO-2D-Metamaterials\INFERENCE\NO_I3O5_BCF16_NMAE_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_260705_E12_best\b_test\eigenvalues_predictions_full.pt  shape=(1000, 325, 6)
+Plotting 1000 structures -> D:\Research\NO-2D-Metamaterials\PLOTS\NO_I3O5_BCF16_NMAE_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_260705_E12_best\b_test\dispersion_overlay_decoded_truth_test
+Saved losses CSV : D:\Research\NO-2D-Metamaterials\PLOTS\NO_I3O5_BCF16_NMAE_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_260705_E12_best\b_test\dispersion_overlay_decoded_truth_test\dispersion_losses.csv  (1000 geometries)
+  MAE  mean=3.475755e+01, min=2.776799e+00, max=6.753602e+02
+  MSE  mean=6.417286e+03, min=1.559983e+01, max=5.368849e+05
+  NMAE mean=7.427526e-02, min=1.328321e-02, max=1.155229e+00
+  NMSE mean=2.046729e-02, min=2.827425e-04, max=1.326026e+00
+Contour grid pts : 37 along path (36 unique k of 325)
+Saved plots to: D:\Research\NO-2D-Metamaterials\PLOTS\NO_I3O5_BCF16_NMAE_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_260705_E12_best\b_test\dispersion_overlay_decoded_truth_test
+>> dispersion_overlay_decoded_truth_test_b_test DONE 2026-07-13 15:48:39
+
+ALL_DISPERSION_OVERLAY_DECODED_TRUTH_TEST_DONE 2026-07-13 15:48:39
+**********************
+Windows PowerShell transcript end
+End time: 20260713154839
+**********************
+**********************
+Windows PowerShell transcript start
+Start time: 20260713155605
+Username: WIN\hz283
+RunAs User: WIN\hz283
+Configuration Name: 
+Machine: BRINSON-LAB-000 (Microsoft Windows NT 10.0.26200.0)
+Host Application: C:\WINDOWS\System32\WindowsPowerShell\v1.0\powershell.exe -NoProfile -ExecutionPolicy Bypass -File d:\Research\NO-2D-Metamaterials\_run_dispersion_overlay_decoded_truth_test.ps1
+Process ID: 136776
+PSVersion: 5.1.26100.8655
+PSEdition: Desktop
+PSCompatibleVersions: 1.0, 2.0, 3.0, 4.0, 5.0, 5.1.26100.8655
+BuildVersion: 10.0.26100.8655
+CLRVersion: 4.0.30319.42000
+WSManStackVersion: 3.0
+PSRemotingProtocolVersion: 2.3
+SerializationVersion: 1.1.0.1
+**********************
+=== dispersion_overlay_decoded_truth_test regen ===
+Model: NO_I3O5_BCF16_NMAE_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_260705_E12_best
+
+========== c_test overlay_decoded_truth_test ==========
+
+>> dispersion_overlay_decoded_truth_test_c_test START 2026-07-13 15:56:05
+True eigenvalues : d:\Research\NO-2D-Metamaterials\INFERENCE\_decoded_truth\c_test\eigenvalue_data_full.pt  shape=(1000, 325, 6)
+Pred eigenvalues : d:\Research\NO-2D-Metamaterials\INFERENCE\NO_I3O5_BCF16_NMAE_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_260705_E12_best\c_test\eigenvalues_predictions_full.pt  shape=(1000, 325, 6)
+Plotting 1000 structures -> D:\Research\NO-2D-Metamaterials\PLOTS\NO_I3O5_BCF16_NMAE_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_260705_E12_best\c_test\dispersion_overlay_decoded_truth_test
+Saved losses CSV : D:\Research\NO-2D-Metamaterials\PLOTS\NO_I3O5_BCF16_NMAE_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_260705_E12_best\c_test\dispersion_overlay_decoded_truth_test\dispersion_losses.csv  (1000 geometries)
+  MAE  mean=2.935785e+01, min=1.055611e+01, max=3.627401e+02
+  MSE  mean=2.090927e+03, min=1.878137e+02, max=2.429766e+05
+  NMAE mean=2.108566e-02, min=8.973355e-03, max=2.255770e-01
+  NMSE mean=1.156642e-03, min=1.380899e-04, max=8.724535e-02
+Contour grid pts : 37 along path (36 unique k of 325)
+Saved plots to: D:\Research\NO-2D-Metamaterials\PLOTS\NO_I3O5_BCF16_NMAE_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_260705_E12_best\c_test\dispersion_overlay_decoded_truth_test
+>> dispersion_overlay_decoded_truth_test_c_test DONE 2026-07-13 15:57:53
+
+========== b_test overlay_decoded_truth_test ==========
+
+>> dispersion_overlay_decoded_truth_test_b_test START 2026-07-13 15:57:53
+True eigenvalues : d:\Research\NO-2D-Metamaterials\INFERENCE\_decoded_truth\b_test\eigenvalue_data_full.pt  shape=(1000, 325, 6)
+Pred eigenvalues : d:\Research\NO-2D-Metamaterials\INFERENCE\NO_I3O5_BCF16_NMAE_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_260705_E12_best\b_test\eigenvalues_predictions_full.pt  shape=(1000, 325, 6)
+Plotting 1000 structures -> D:\Research\NO-2D-Metamaterials\PLOTS\NO_I3O5_BCF16_NMAE_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_260705_E12_best\b_test\dispersion_overlay_decoded_truth_test
+Saved losses CSV : D:\Research\NO-2D-Metamaterials\PLOTS\NO_I3O5_BCF16_NMAE_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_260705_E12_best\b_test\dispersion_overlay_decoded_truth_test\dispersion_losses.csv  (1000 geometries)
+  MAE  mean=3.475755e+01, min=2.776799e+00, max=6.753602e+02
+  MSE  mean=6.417286e+03, min=1.559983e+01, max=5.368849e+05
+  NMAE mean=7.427526e-02, min=1.328321e-02, max=1.155229e+00
+  NMSE mean=2.046729e-02, min=2.827425e-04, max=1.326026e+00
+Contour grid pts : 37 along path (36 unique k of 325)
+Saved plots to: D:\Research\NO-2D-Metamaterials\PLOTS\NO_I3O5_BCF16_NMAE_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_260705_E12_best\b_test\dispersion_overlay_decoded_truth_test
+>> dispersion_overlay_decoded_truth_test_b_test DONE 2026-07-13 15:59:43
+
+ALL_DISPERSION_OVERLAY_DECODED_TRUTH_TEST_DONE 2026-07-13 15:59:43
+**********************
+Windows PowerShell transcript end
+End time: 20260713155943
+**********************
+**********************
+Windows PowerShell transcript start
+Start time: 20260713160454
+Username: WIN\hz283
+RunAs User: WIN\hz283
+Configuration Name: 
+Machine: BRINSON-LAB-000 (Microsoft Windows NT 10.0.26200.0)
+Host Application: C:\WINDOWS\System32\WindowsPowerShell\v1.0\powershell.exe -NoProfile -ExecutionPolicy Bypass -File d:\Research\NO-2D-Metamaterials\_run_dispersion_overlay_decoded_truth_test.ps1
+Process ID: 140296
+PSVersion: 5.1.26100.8655
+PSEdition: Desktop
+PSCompatibleVersions: 1.0, 2.0, 3.0, 4.0, 5.0, 5.1.26100.8655
+BuildVersion: 10.0.26100.8655
+CLRVersion: 4.0.30319.42000
+WSManStackVersion: 3.0
+PSRemotingProtocolVersion: 2.3
+SerializationVersion: 1.1.0.1
+**********************
+=== dispersion_overlay_decoded_truth_test regen ===
+Model: NO_I3O5_BCF16_NMAE_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_260705_E12_best
+
+========== c_test overlay_decoded_truth_test ==========
+
+>> dispersion_overlay_decoded_truth_test_c_test START 2026-07-13 16:04:54
+True eigenvalues : d:\Research\NO-2D-Metamaterials\INFERENCE\_decoded_truth\c_test\eigenvalue_data_full.pt  shape=(1000, 325, 6)
+Pred eigenvalues : d:\Research\NO-2D-Metamaterials\INFERENCE\NO_I3O5_BCF16_NMAE_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_260705_E12_best\c_test\eigenvalues_predictions_full.pt  shape=(1000, 325, 6)
+Plotting 1000 structures -> D:\Research\NO-2D-Metamaterials\PLOTS\NO_I3O5_BCF16_NMAE_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_260705_E12_best\c_test\dispersion_overlay_decoded_truth_test
+Saved losses CSV : D:\Research\NO-2D-Metamaterials\PLOTS\NO_I3O5_BCF16_NMAE_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_260705_E12_best\c_test\dispersion_overlay_decoded_truth_test\dispersion_losses.csv  (1000 geometries)
+  MAE  mean=2.935785e+01, min=1.055611e+01, max=3.627401e+02
+  MSE  mean=2.090927e+03, min=1.878137e+02, max=2.429766e+05
+  NMAE mean=2.108566e-02, min=8.973355e-03, max=2.255770e-01
+  NMSE mean=1.156642e-03, min=1.380899e-04, max=8.724535e-02
+Contour grid pts : 37 along path (36 unique k of 325)
+Saved plots to: D:\Research\NO-2D-Metamaterials\PLOTS\NO_I3O5_BCF16_NMAE_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_260705_E12_best\c_test\dispersion_overlay_decoded_truth_test
+>> dispersion_overlay_decoded_truth_test_c_test DONE 2026-07-13 16:06:28
+
+========== b_test overlay_decoded_truth_test ==========
+
+>> dispersion_overlay_decoded_truth_test_b_test START 2026-07-13 16:06:28
+True eigenvalues : d:\Research\NO-2D-Metamaterials\INFERENCE\_decoded_truth\b_test\eigenvalue_data_full.pt  shape=(1000, 325, 6)
+Pred eigenvalues : d:\Research\NO-2D-Metamaterials\INFERENCE\NO_I3O5_BCF16_NMAE_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_260705_E12_best\b_test\eigenvalues_predictions_full.pt  shape=(1000, 325, 6)
+Plotting 1000 structures -> D:\Research\NO-2D-Metamaterials\PLOTS\NO_I3O5_BCF16_NMAE_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_260705_E12_best\b_test\dispersion_overlay_decoded_truth_test
+Saved losses CSV : D:\Research\NO-2D-Metamaterials\PLOTS\NO_I3O5_BCF16_NMAE_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_260705_E12_best\b_test\dispersion_overlay_decoded_truth_test\dispersion_losses.csv  (1000 geometries)
+  MAE  mean=3.475755e+01, min=2.776799e+00, max=6.753602e+02
+  MSE  mean=6.417286e+03, min=1.559983e+01, max=5.368849e+05
+  NMAE mean=7.427526e-02, min=1.328321e-02, max=1.155229e+00
+  NMSE mean=2.046729e-02, min=2.827425e-04, max=1.326026e+00
+Contour grid pts : 37 along path (36 unique k of 325)
+Saved plots to: D:\Research\NO-2D-Metamaterials\PLOTS\NO_I3O5_BCF16_NMAE_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_260705_E12_best\b_test\dispersion_overlay_decoded_truth_test
+>> dispersion_overlay_decoded_truth_test_b_test DONE 2026-07-13 16:07:59
+
+ALL_DISPERSION_OVERLAY_DECODED_TRUTH_TEST_DONE 2026-07-13 16:07:59
+**********************
+Windows PowerShell transcript end
+End time: 20260713160759
+**********************

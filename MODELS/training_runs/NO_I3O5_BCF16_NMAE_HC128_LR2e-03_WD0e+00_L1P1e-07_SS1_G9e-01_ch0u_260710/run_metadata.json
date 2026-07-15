@@ -1,0 +1,24 @@
+{
+  "run_name": "NO_I3O5_BCF16_NMAE_HC128_LR2e-03_WD0e+00_L1P1e-07_SS1_G9e-01_ch0u_260710",
+  "run_id": "NO_I3O5_BCF16_NMAE_HC128_LR2e-03_WD0e+00_L1P1e-07_SS1_G9e-01_ch0u_260710",
+  "status": "completed",
+  "started_at_utc": "2026-07-10T20:46:13.368800+00:00",
+  "git": {
+    "git_commit": "954e0348719beb607029f59a5447f0cde0f186c5",
+    "git_dirty": "true"
+  },
+  "environment": {
+    "python_version": "3.12.3",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "torch_version": "2.5.1",
+    "cuda_available": true,
+    "cuda_version": "11.8",
+    "cudnn_version": 90100,
+    "device_count": 1,
+    "device_name_0": "NVIDIA GeForce RTX 4080 SUPER"
+  },
+  "ended_at_utc": "2026-07-11T04:25:59.554255+00:00",
+  "duration_sec": 27586.185455,
+  "best_val_loss": 0.33887961436510083,
+  "best_epoch": 2
+}

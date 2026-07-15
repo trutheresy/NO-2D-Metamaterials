@@ -1,0 +1,16 @@
+2026-07-10 16:46:13,368 | INFO | Perf backends | tf32=True cudnn_benchmark=True matmul_precision=high amp=bf16
+2026-07-10 16:46:24,181 | INFO | L1 weight penalty lambda=1.000000e-07 (added to training loss)
+2026-07-10 16:46:24,182 | INFO | NMAE epsilon=1.000000e-05
+2026-07-10 16:46:24,182 | INFO | Loss logging: active=nmae; every epoch records train/val nmae, MAE, and MSE
+2026-07-10 16:46:24,591 | INFO | Run started | run_name=NO_I3O5_BCF16_NMAE_HC128_LR2e-03_WD0e+00_L1P1e-07_SS1_G9e-01_ch0u_260710 run_id=NO_I3O5_BCF16_NMAE_HC128_LR2e-03_WD0e+00_L1P1e-07_SS1_G9e-01_ch0u_260710 device=cuda train_samples=18720000 test_samples=3900000 val_index_source=indices_full epoch_range=1..2
+2026-07-10 16:46:24,591 | INFO | Fault diagnostics | main_fault_log=D:\Research\NO-2D-Metamaterials\MODELS\training_runs\NO_I3O5_BCF16_NMAE_HC128_LR2e-03_WD0e+00_L1P1e-07_SS1_G9e-01_ch0u_260710\main_process_fault.log
+2026-07-10 20:59:46,325 | INFO | Saved 10 diagnostic panel(s) under D:\Research\NO-2D-Metamaterials\MODELS\training_runs\NO_I3O5_BCF16_NMAE_HC128_LR2e-03_WD0e+00_L1P1e-07_SS1_G9e-01_ch0u_260710\diagnostics\epoch_001
+2026-07-10 20:59:47,800 | INFO | epoch=1/2 loss=nmae train_nmae=3.885957e-01 val_nmae=3.411541e-01 train_mae=3.746763e-03 val_mae=2.972777e-03 train_mse=9.037940e-05 val_mse=6.812509e-05 lr=1.800e-03 train_sps=1302.3
+2026-07-10 20:59:47,800 | INFO | epoch=1/2 loss_ch_nmae train=2.608e-02 4.406e-01 4.576e-01 5.081e-01 5.106e-01 val=1.653e-02 3.762e-01 4.071e-01 4.513e-01 4.546e-01
+2026-07-10 20:59:47,800 | INFO | epoch=1/2 mae_ch train=1.666e-03 4.062e-03 3.914e-03 4.663e-03 4.428e-03 val=1.016e-03 3.222e-03 3.162e-03 3.839e-03 3.625e-03 mse_ch train=2.442e-05 9.789e-05 9.267e-05 1.249e-04 1.120e-04 val=3.814e-06 7.350e-05 7.049e-05 1.027e-04 9.008e-05
+2026-07-11 00:25:57,814 | INFO | Saved 10 diagnostic panel(s) under D:\Research\NO-2D-Metamaterials\MODELS\training_runs\NO_I3O5_BCF16_NMAE_HC128_LR2e-03_WD0e+00_L1P1e-07_SS1_G9e-01_ch0u_260710\diagnostics\epoch_002
+2026-07-11 00:25:59,268 | INFO | epoch=2/2 loss=nmae train_nmae=2.946935e-01 val_nmae=3.388796e-01 train_mae=2.809631e-03 val_mae=2.970534e-03 train_mse=6.507662e-05 val_mse=6.263870e-05 lr=1.620e-03 train_sps=1621.6
+2026-07-11 00:25:59,268 | INFO | epoch=2/2 loss_ch_nmae train=1.711e-02 3.274e-01 3.393e-01 3.954e-01 3.943e-01 val=1.946e-02 3.945e-01 3.654e-01 4.258e-01 4.891e-01
+2026-07-11 00:25:59,268 | INFO | epoch=2/2 mae_ch train=1.090e-03 3.016e-03 2.898e-03 3.627e-03 3.417e-03 val=1.235e-03 3.298e-03 2.864e-03 3.605e-03 3.851e-03 mse_ch train=1.409e-05 6.742e-05 6.437e-05 9.523e-05 8.427e-05 val=4.337e-06 6.769e-05 6.318e-05 9.364e-05 8.434e-05
+2026-07-11 00:25:59,556 | INFO | Run complete | run_name=NO_I3O5_BCF16_NMAE_HC128_LR2e-03_WD0e+00_L1P1e-07_SS1_G9e-01_ch0u_260710 run_id=NO_I3O5_BCF16_NMAE_HC128_LR2e-03_WD0e+00_L1P1e-07_SS1_G9e-01_ch0u_260710 best_val_loss=3.388796e-01
+2026-07-11 00:25:59,556 | INFO | Artifacts saved to: D:\Research\NO-2D-Metamaterials\MODELS\training_runs\NO_I3O5_BCF16_NMAE_HC128_LR2e-03_WD0e+00_L1P1e-07_SS1_G9e-01_ch0u_260710

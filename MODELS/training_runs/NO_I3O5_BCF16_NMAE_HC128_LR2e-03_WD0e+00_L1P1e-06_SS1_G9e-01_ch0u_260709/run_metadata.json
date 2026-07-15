@@ -16,5 +16,13 @@
     "cudnn_version": 90100,
     "device_count": 1,
     "device_name_0": "NVIDIA GeForce RTX 4080 SUPER"
-  }
+  },
+  "ended_at_utc": "2026-07-10T17:45:14.588116+00:00",
+  "duration_sec": 52098.06731,
+  "best_val_loss": 0.34042604956626893,
+  "best_epoch": 6,
+  "resumed_at_utc": "2026-07-10T20:43:16.567438+00:00",
+  "resume_extend_epochs": 2,
+  "resume_from_epoch": 2,
+  "resume_target_total_epochs": 6
 }

@@ -214,21 +214,44 @@ def plot_geometry(sample_geometry, sample_index):
     plt.show()
 
 
+def _format_sci_compact(x, _pos=None):
+    """Scientific notation with 3 significant digits and compact exponents (``1.23e-4``)."""
+    if not np.isfinite(x):
+        return ""
+    mant, exp = f"{x:.2e}".split("e")
+    sign = exp[0]
+    digits = exp[1:].lstrip("0") or "0"
+    return f"{mant}e{sign}{digits}"
+
+
+def _format_decimal_one(x, _pos=None):
+    """Fixed-point label with one decimal place (``0.0`` … ``1.0``)."""
+    if not np.isfinite(x):
+        return ""
+    return f"{x:.1f}"
+
+
 def _sci_formatter():
-    """Tick formatter: scientific notation with 3 significant digits (e.g. 1.23e-04)."""
-    return FuncFormatter(lambda x, _pos=None: f"{x:.2e}")
+    """Tick formatter: 3-sig scientific notation with compact exponents (e.g. 1.23e-4)."""
+    return FuncFormatter(_format_sci_compact)
 
 
-def _colorbar_tick_dense_nice(cb):
+def _decimal_formatter():
+    return FuncFormatter(_format_decimal_one)
+
+
+def _colorbar_tick_dense_nice(cb, labelsize=None):
     cb.locator = MaxNLocator(nbins=10, steps=[1, 1.5, 2, 2.5, 3, 4, 5, 6, 8, 10])
     cb.formatter = _sci_formatter()
     cb.update_ticks()
+    if labelsize is not None:
+        cb.ax.tick_params(labelsize=labelsize)
 
 
-def _colorbar_dense_nice(im, ax=None, shrink=0.8):
+def _colorbar_dense_nice(im, ax=None, shrink=0.8, labelsize=None):
     """Colorbar with denser tick marks while keeping Matplotlib's 'nice' step choices."""
     cb = plt.colorbar(im, ax=ax, shrink=shrink)
-    _colorbar_tick_dense_nice(cb)
+    _colorbar_tick_dense_nice(cb, labelsize=labelsize)
 
 
 def _symmetrize_vlim_around(vmin, vmax, center):
@@ -264,15 +287,36 @@ def _imshow_comparison(
     return ax.imshow(arr)
 
 
-def _colorbar_dense_nice_cax(fig, mappable, cax, uniform_ticks=11):
+def _colorbar_dense_nice_cax(
+    fig,
+    mappable,
+    cax,
+    uniform_ticks=11,
+    labelsize=None,
+    tick_format="sci",
+):
     """Colorbar in a dedicated axes (figure / GridSpec slot).
 
-    Tick positions are *uniformly spaced in data value* (``np.linspace`` from clim), so ticks
-    are evenly distributed along the colorbar for linear / symmetric TwoSlope norms.
+    ``tick_format``:
+      - ``"sci"``: evenly spaced ``linspace`` ticks with 3-digit compact scientific labels
+      - ``"decimal"``: unit-interval style ticks labeled ``0.0`` … ``1.0`` (no ``e`` notation)
     """
     cb = fig.colorbar(mappable, cax=cax, aspect=6)
     vmin, vmax = mappable.get_clim()
-    if (
+    if tick_format == "decimal":
+        # Inputs pane: plain 0.0–1.0 labels (data are abs-normalized encodings in [0, 1]).
+        lo = 0.0 if (vmin is None or not np.isfinite(vmin)) else float(vmin)
+        hi = 1.0 if (vmax is None or not np.isfinite(vmax)) else float(vmax)
+        # Prefer a true 0–1 bar when the data already span that interval.
+        if abs(lo) <= 1e-6 and abs(hi - 1.0) <= 1e-2:
+            lo, hi = 0.0, 1.0
+            mappable.set_clim(lo, hi)
+        n = max(int(uniform_ticks), 2)
+        # Keep a modest number of decimal ticks (0.0, 0.2, …, 1.0).
+        n_dec = 6 if abs(hi - lo - 1.0) <= 1e-6 and abs(lo) <= 1e-6 else min(n, 6)
+        cb.set_ticks(np.linspace(lo, hi, n_dec))
+        cb.formatter = _decimal_formatter()
+    elif (
         uniform_ticks >= 2
         and vmin is not None
         and vmax is not None
@@ -281,12 +325,69 @@ def _colorbar_dense_nice_cax(fig, mappable, cax, uniform_ticks=11):
         and vmax > vmin
     ):
         cb.set_ticks(np.linspace(vmin, vmax, int(uniform_ticks)))
+        cb.formatter = _sci_formatter()
     else:
-        _colorbar_tick_dense_nice(cb)
-    cb.formatter = _sci_formatter()
+        _colorbar_tick_dense_nice(cb, labelsize=labelsize)
+        cb.formatter = _sci_formatter()
     cb.update_ticks()
+    if labelsize is not None:
+        cb.ax.tick_params(labelsize=labelsize)
+    # Labels on the left, in the pad between the image and the colorbar.
     cb.ax.yaxis.set_ticks_position("left")
     cb.ax.yaxis.set_label_position("left")
+
+
+# Per-column GridSpec widths: image | label pad | colorbar | trailing gap.
+# Label pad (left of colorbar) holds tick labels; trailing is space before the next image.
+# Trailing is kept small so the next column sits close to this colorbar.
+_PANEL_COL_WIDTH_RATIOS = (17.18, 2.97, 1.10, 0.18)
+# Absolute figure inches per column group — shared by inputs and fields panes.
+_PANEL_COL_FIGWIDTH = 5.0
+
+
+def _panel_column_width_ratios(n_cols: int) -> list[float]:
+    ratios: list[float] = []
+    for _ in range(n_cols):
+        ratios.extend(_PANEL_COL_WIDTH_RATIOS)
+    return ratios
+
+
+def _apply_axis_tick_style(ax, hide_axis_ticks=False, hide_x_ticks=False, hide_y_ticks=False):
+    """Optionally omit pixel-index ticks. ``hide_axis_ticks`` hides both axes."""
+    if hide_axis_ticks:
+        hide_x_ticks = True
+        hide_y_ticks = True
+    if hide_x_ticks:
+        ax.set_xticks([])
+        ax.tick_params(axis="x", which="both", bottom=False, top=False, labelbottom=False, length=0)
+    else:
+        # Inward ticks stay visible on imshow panels (outward ticks are easy to clip).
+        ax.tick_params(
+            axis="x",
+            which="major",
+            bottom=True,
+            top=False,
+            labelbottom=True,
+            length=4,
+            width=1.0,
+            direction="in",
+            pad=2,
+        )
+    if hide_y_ticks:
+        ax.set_yticks([])
+        ax.tick_params(axis="y", which="both", left=False, right=False, labelleft=False, length=0)
+    else:
+        ax.tick_params(
+            axis="y",
+            which="major",
+            left=True,
+            right=False,
+            labelleft=True,
+            length=5,
+            width=1.1,
+            direction="out",
+            pad=2,
+        )
 
 
 def visualize_sample(
@@ -298,6 +399,11 @@ def visualize_sample(
     field_cmap=DEFAULT_FIELD_CMAP,
     diverge_center=DEFAULT_DIVERGE_CENTER,
     show_eigfreq=True,
+    hide_axis_ticks=False,
+    hide_x_ticks=False,
+    hide_y_ticks=False,
+    title_fontsize=None,
+    colorbar_labelsize=None,
 ):
     """
     Visualize input and output tensors from a single sample.
@@ -315,18 +421,45 @@ def visualize_sample(
         diverge_center: When ``field_cmap`` is set, if this value lies strictly between the panel's
             vmin and vmax, colors use TwoSlopeNorm with limits **symmetrized** around
             *diverge_center* so the neutral color sits at the bar midpoint and ± ranges span equal
-            physical length on the colorbar. Per-column unified colorbars use evenly spaced tick
-            positions (``np.linspace`` over clim) along the bar.
+            physical length on the colorbar. Per-column unified colorbars use evenly spaced
+            ``linspace`` ticks with 3-digit compact scientific labels.
         show_eigfreq: If True (default), plot the eigenfrequency channel (channel 0) as the first
             column. If False, channel 0 is dropped from the target/output/diff grid (and from the
             outputs-only fallback), so only the remaining channels are shown.
+        hide_axis_ticks: If True, omit pixel-index ticks on both axes of image panels.
+        hide_x_ticks / hide_y_ticks: Per-axis control (``hide_axis_ticks`` forces both True).
+        title_fontsize: Optional panel title font size (paper figures typically want larger text).
+        colorbar_labelsize: Optional colorbar tick label size.
     """
-    input_titles = ["Geometry", "Wavevector (Encoded)", "Band (Encoded)"]
+    input_titles = ["Geometry", "Wavevector", "Band"]
+    title_kw = {} if title_fontsize is None else {"fontsize": title_fontsize}
+    tick_kw = dict(
+        hide_axis_ticks=hide_axis_ticks,
+        hide_x_ticks=hide_x_ticks,
+        hide_y_ticks=hide_y_ticks,
+    )
+    omit_y = hide_axis_ticks or hide_y_ticks
+    omit_x = hide_axis_ticks or hide_x_ticks
+    panel_wspace = 0.015 if (omit_x and omit_y) else (0.03 if omit_y else 0.10)
+    panel_left = 0.03 if omit_y else 0.06
+    panel_bottom = 0.07 if omit_x else 0.10
 
-    # Create figure for input components
-    fig1 = plt.figure(figsize=(12, 4))
+    # Create figure for input components (same per-column colorbar geometry as fields pane).
+    n_inputs = 3
+    fig1 = plt.figure(figsize=(n_inputs * _PANEL_COL_FIGWIDTH, _PANEL_COL_FIGWIDTH * 0.85))
+    gs_in = GridSpec(
+        1,
+        4 * n_inputs,
+        figure=fig1,
+        width_ratios=_panel_column_width_ratios(n_inputs),
+        wspace=panel_wspace,
+        left=panel_left,
+        right=0.98,
+        top=0.88,
+        bottom=panel_bottom,
+    )
     input_arrays = []
-    for i in range(3):
+    for i in range(n_inputs):
         tensor_data = input_tensor[i].abs()
         if tensor_data.dtype in [torch.float8_e4m3fn, torch.float16]:
             tensor_data = tensor_data.float()
@@ -334,11 +467,12 @@ def visualize_sample(
     if field_cmap is not None:
         input_vmin = min(float(np.min(a)) for a in input_arrays)
         input_vmax = max(float(np.max(a)) for a in input_arrays)
-    for i in range(3):
-        plt.subplot(1, 3, i + 1)
+    for i in range(n_inputs):
+        ax = fig1.add_subplot(gs_in[0, 4 * i])
+        cax = fig1.add_subplot(gs_in[0, 4 * i + 2])
         if field_cmap is not None:
             im = _imshow_comparison(
-                plt.gca(),
+                ax,
                 input_arrays[i],
                 vmin=input_vmin,
                 vmax=input_vmax,
@@ -346,10 +480,12 @@ def visualize_sample(
                 diverge_center=diverge_center,
             )
         else:
-            im = plt.imshow(input_arrays[i])
-        _colorbar_dense_nice(im)
-        plt.title(input_titles[i])
-    plt.tight_layout()
+            im = ax.imshow(input_arrays[i])
+        _colorbar_dense_nice_cax(
+            fig1, im, cax, labelsize=colorbar_labelsize, tick_format="decimal"
+        )
+        _apply_axis_tick_style(ax, **tick_kw)
+        ax.set_title(input_titles[i], **title_kw)
     plt.show()
 
     channel_titles_default = [
@@ -378,30 +514,27 @@ def visualize_sample(
 
         n_rows = 3 if diffs else 2
         if unified_colorbar:
-            # Interleave image columns and narrow colorbar columns (like fig.add_axes + cax in
-            # figures_continuous_* notebooks): colorbars do not steal space from image axes.
-            fig = plt.figure(figsize=(4 * num_cols + 0.75 * num_cols, 4 * n_rows))
-            width_ratios = []
-            for _ in range(num_cols):
-                width_ratios.extend([20, 1.55])
+            # Per channel: image | label pad | colorbar | trailing gap (shared with inputs pane).
+            fig = plt.figure(figsize=(num_cols * _PANEL_COL_FIGWIDTH, n_rows * _PANEL_COL_FIGWIDTH * 0.85))
+            hspace = 0.22 if (omit_x and omit_y) else (0.32 if not omit_x else 0.30)
             gs = GridSpec(
                 n_rows,
-                2 * num_cols,
+                4 * num_cols,
                 figure=fig,
-                width_ratios=width_ratios,
-                wspace=0.38,
-                hspace=0.30,
-                left=0.06,
+                width_ratios=_panel_column_width_ratios(num_cols),
+                wspace=panel_wspace,
+                hspace=hspace,
+                left=panel_left,
                 right=0.98,
                 top=0.90,
-                bottom=0.07,
+                bottom=panel_bottom,
             )
             axs = np.empty((n_rows, num_cols), dtype=object)
             unified_caxes = []
             for c in range(num_cols):
                 for r in range(n_rows):
-                    axs[r, c] = fig.add_subplot(gs[r, 2 * c])
-                unified_caxes.append(fig.add_subplot(gs[:, 2 * c + 1]))
+                    axs[r, c] = fig.add_subplot(gs[r, 4 * c])
+                unified_caxes.append(fig.add_subplot(gs[:, 4 * c + 2]))
         else:
             fig, axs = plt.subplots(n_rows, num_cols, figsize=(4 * num_cols, 4 * n_rows))
             if num_cols == 1:
@@ -461,8 +594,9 @@ def visualize_sample(
             )
             column_mappable[col] = im
             if not unified_colorbar:
-                _colorbar_dense_nice(im, ax=ax)
-            ax.set_title(f"Target {channel_titles[ch]}")
+                _colorbar_dense_nice(im, ax=ax, labelsize=colorbar_labelsize)
+            _apply_axis_tick_style(ax, **tick_kw)
+            ax.set_title(f"Target {channel_titles[ch]}", **title_kw)
 
         # Row 2: outputs
         for col, ch in enumerate(channel_indices):
@@ -480,8 +614,9 @@ def visualize_sample(
             )
             column_mappable[col] = im
             if not unified_colorbar:
-                _colorbar_dense_nice(im, ax=ax)
-            ax.set_title(f"Output {channel_titles[ch]}")
+                _colorbar_dense_nice(im, ax=ax, labelsize=colorbar_labelsize)
+            _apply_axis_tick_style(ax, **tick_kw)
+            ax.set_title(f"Output {channel_titles[ch]}", **title_kw)
 
         # Row 3: absolute differences (with same per-channel scales as rows 1-2)
         if diffs:
@@ -512,12 +647,15 @@ def visualize_sample(
                     )
                 column_mappable[col] = im
                 if not unified_colorbar:
-                    _colorbar_dense_nice(im, ax=ax)
-                ax.set_title(f"Diff {channel_titles[ch]}")
+                    _colorbar_dense_nice(im, ax=ax, labelsize=colorbar_labelsize)
+                _apply_axis_tick_style(ax, **tick_kw)
+                ax.set_title(f"Diff {channel_titles[ch]}", **title_kw)
 
         if unified_colorbar:
             for c in range(num_cols):
-                _colorbar_dense_nice_cax(fig, column_mappable[c], unified_caxes[c])
+                _colorbar_dense_nice_cax(
+                    fig, column_mappable[c], unified_caxes[c], labelsize=colorbar_labelsize
+                )
         else:
             plt.tight_layout()
         plt.show()
@@ -533,18 +671,19 @@ def visualize_sample(
         num_cols = len(channel_indices)
         fig2 = plt.figure(figsize=(4 * num_cols, 4))
         for col, ch in enumerate(channel_indices):
-            plt.subplot(1, num_cols, col + 1)
+            ax = plt.subplot(1, num_cols, col + 1)
             tensor_data = output_tensor[ch].abs()
             if tensor_data.dtype in [torch.float8_e4m3fn, torch.float16]:
                 tensor_data = tensor_data.float()
             im = _imshow_comparison(
-                plt.gca(),
+                ax,
                 tensor_data.numpy(),
                 cmap=field_cmap,
                 diverge_center=diverge_center,
             )
-            _colorbar_dense_nice(im)
-            plt.title(f"Output {channel_titles[ch]}")
+            _colorbar_dense_nice(im, labelsize=colorbar_labelsize)
+            _apply_axis_tick_style(ax, **tick_kw)
+            ax.set_title(f"Output {channel_titles[ch]}", **title_kw)
         plt.tight_layout()
         plt.show()
 

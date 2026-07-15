@@ -62,6 +62,7 @@ import torch
 from tqdm import tqdm
 
 from output_layout import resolve_script_output_dir
+from wave_mode_filters import degenerate_pivot_wave_indices, shear_mode_wave_indices
 
 
 DEFAULT_SCORING_CHANNELS = [0, 1, 2, 3, 4]
@@ -585,6 +586,24 @@ def main() -> None:
     )
     p.add_argument("--device", default="cpu", choices=("auto", "cuda", "cpu"),
                    help="Compute device (default: cpu). Use 'cuda' or 'auto' to opt into GPU.")
+    p.add_argument(
+        "--exclude-wave-indices",
+        default="",
+        help="Comma-separated wavevector indices to omit before saving arrays / percentile reports.",
+    )
+    p.add_argument(
+        "--exclude-shear-modes",
+        action="store_true",
+        help="Omit ky=0 and kx=0 wavevectors (dead phase-pivot lines; see wave_mode_filters.py).",
+    )
+    p.add_argument(
+        "--exclude-degenerate-pivot-cases",
+        action="store_true",
+        help=(
+            "Omit ky=0, kx=0, and TRIM (k≡-k) wavevectors including M corners "
+            "(see degenerate_pivot_wave_indices in wave_mode_filters.py)."
+        ),
+    )
     args = p.parse_args()
 
     thread_cap = configure_cpu_threads(args.threads)
@@ -633,6 +652,14 @@ def main() -> None:
         + " (aliases l1->mae, l2->mse, rmse->rms, nl1->nmae, nl2->nmse, nrmse->nrms)"
     )
     print(f"Field     : {field_h}x{field_w}   Device: {device}")
+    exclude_waves = parse_index_list(args.exclude_wave_indices, "--exclude-wave-indices")
+    if args.exclude_shear_modes:
+        exclude_waves = sorted(set(exclude_waves) | set(shear_mode_wave_indices()))
+    if args.exclude_degenerate_pivot_cases:
+        exclude_waves = sorted(set(exclude_waves) | set(degenerate_pivot_wave_indices()))
+    if exclude_waves:
+        print(f"Excluding wave indices: {len(exclude_waves)} wavevectors")
+
     print(f"Samples   : {total}  (n_geom={n_geom}, n_waveforms={n_wv}, n_bands={n_bands})")
     print(f"Output dir: {out_dir}")
 
@@ -679,6 +706,15 @@ def main() -> None:
             nmse_eps=args.nmse_eps,
             sources=sources,
         )
+        if exclude_waves:
+            keep = ~np.isin(wave, np.array(exclude_waves, dtype=INDEX_DTYPE))
+            n_kept = int(keep.sum())
+            print(f"Sample count after wave exclusion: {n_kept} / {total}")
+            combined = combined[keep]
+            geom = geom[keep]
+            wave = wave[keep]
+            band = band[keep]
+            per_sample = {loss: arr[keep] for loss, arr in per_sample.items()}
         save_loss_arrays(
             per_sample=per_sample,
             losses=losses,

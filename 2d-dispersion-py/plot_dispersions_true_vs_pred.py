@@ -187,7 +187,22 @@ def save_dispersion_losses_csv(
     return csv_path
 
 
-def plot_overlay(ax, contour_info, true_c, pred_c, title, ylabel, mark_points):
+def plot_overlay(
+    ax,
+    contour_info,
+    true_c,
+    pred_c,
+    title,
+    ylabel,
+    mark_points,
+    xlabel: str = "Wavevector Contour Parameter",
+    label_fontsize: float = 12,
+    title_fontsize: float = 14,
+    legend_fontsize: float = 10,
+    tick_fontsize: float = 10,
+    legend_loc: str = "upper right",
+    legend_ncol: int = 1,
+):
     x = contour_info["wavevector_parameter"]
     n_bands = min(true_c.shape[1], pred_c.shape[1])
     for b in range(n_bands):
@@ -207,16 +222,23 @@ def plot_overlay(ax, contour_info, true_c, pred_c, title, ylabel, mark_points):
         ax.set_xticks(vertex_positions)
         ax.set_xticklabels(contour_info["vertex_labels"])
 
-    ax.set_xlabel("Wavevector Contour Parameter", fontsize=12)
-    ax.set_ylabel(ylabel, fontsize=12)
-    ax.set_title(title, fontsize=14)
+    ax.set_xlabel(xlabel, fontsize=label_fontsize)
+    ax.set_ylabel(ylabel, fontsize=label_fontsize)
+    if title:
+        ax.set_title(title, fontsize=title_fontsize)
+    ax.tick_params(axis="both", labelsize=tick_fontsize)
     ax.grid(True, alpha=0.3)
 
     legend_handles = [
         Line2D([0], [0], color="k", linestyle="-", linewidth=2, label="True"),
         Line2D([0], [0], color="k", linestyle="--", linewidth=2, label="Predicted"),
     ]
-    ax.legend(handles=legend_handles, loc="upper right", fontsize=10)
+    legend_kw = dict(handles=legend_handles, loc=legend_loc, fontsize=legend_fontsize, ncol=legend_ncol)
+    if legend_loc == "lower center":
+        # Sit legend at the center-bottom of the axes (inside the plot area).
+        legend_kw["bbox_to_anchor"] = (0.5, 0.02)
+        legend_kw["framealpha"] = 0.92
+    ax.legend(**legend_kw)
 
 
 def main(
@@ -231,6 +253,10 @@ def main(
     nmse_eps: float = DEFAULT_NMSE_EPS,
     rank_primary: str = DEFAULT_RANK_LOSS_PRIMARY,
     rank_secondary: str = DEFAULT_RANK_LOSS_SECONDARY,
+    square: bool = False,
+    xlabel: str = "Wavevector Contour Parameter",
+    larger_fonts: bool = False,
+    legend_loc: str = "upper right",
 ) -> None:
     geometries, wavevectors, eigen_true, true_pt = load_true_dir(true_dir)
     eigen_pred, pred_path = load_pred(pred)
@@ -275,13 +301,36 @@ def main(
         f"({contour_info['n_unique_contour_points']} unique k of {wavevectors.shape[1]})"
     )
 
+    # Square default 8x8; narrowed width ≈0.8*8 → 6.5 (keep square proportions).
+    figsize = (6.5, 6.5) if square else (10.0, 6.0)
+    label_fs = 18.0 if larger_fonts else 12.0
+    title_fs = 17.0 if larger_fonts else 14.0
+    legend_fs = 16.0 if larger_fonts else 10.0
+    tick_fs = 16.0 if larger_fonts else 10.0
+    legend_ncol = 2 if legend_loc == "lower center" else 1
+
     for struct_idx in range(n_plot):
         true_c = eigenvalues_on_contour(eigen_true[struct_idx], contour_indices)
         pred_c = eigenvalues_on_contour(eigen_pred[struct_idx], contour_indices)
 
-        fig = plt.figure(figsize=(10, 6))
+        fig = plt.figure(figsize=figsize)
         ax = fig.add_subplot(111)
-        plot_overlay(ax, contour_info, true_c, pred_c, title, ylabel, mark_points)
+        plot_overlay(
+            ax,
+            contour_info,
+            true_c,
+            pred_c,
+            title,
+            ylabel,
+            mark_points,
+            xlabel=xlabel,
+            label_fontsize=label_fs,
+            title_fontsize=title_fs,
+            legend_fontsize=legend_fs,
+            tick_fontsize=tick_fs,
+            legend_loc=legend_loc,
+            legend_ncol=legend_ncol,
+        )
         png_name = plot_filename(struct_idx, ranks, rank_primary, rank_secondary)
         fig.savefig(out_dir / png_name, dpi=150, bbox_inches="tight")
         plt.close(fig)
@@ -317,6 +366,25 @@ if __name__ == "__main__":
         help="Loss used for the second rank segment in PNG filenames (default: nmse).",
     )
     parser.add_argument("--mark-points", action="store_true", help="Add markers on the true bands.")
+    parser.add_argument("--square", action="store_true", help="Use a square figure aspect ratio.")
+    parser.add_argument(
+        "--xlabel",
+        type=str,
+        default="Wavevector Contour Parameter",
+        help='X-axis label (default: "Wavevector Contour Parameter").',
+    )
+    parser.add_argument(
+        "--larger-fonts",
+        action="store_true",
+        help="Slightly larger axis/title/legend/tick fonts.",
+    )
+    parser.add_argument(
+        "--legend-loc",
+        type=str,
+        default="upper right",
+        choices=("upper right", "lower center", "upper left", "lower left", "lower right", "best"),
+        help="Legend location (default: upper right).",
+    )
     args = parser.parse_args()
     output_dir = args.output_dir
     if output_dir is None and args.model_name:
@@ -339,4 +407,8 @@ if __name__ == "__main__":
         args.nmse_eps,
         args.rank_primary,
         args.rank_secondary,
+        args.square,
+        args.xlabel,
+        args.larger_fonts,
+        args.legend_loc,
     )
