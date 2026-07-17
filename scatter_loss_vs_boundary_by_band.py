@@ -15,7 +15,7 @@ Inputs match per_sample_loss.py:
 
 Outputs (to --output-dir, default <inference-dir>/boundary_length_vs_loss_by_band):
   - one scatter PNG per loss
-  - per_geometry_band_boundary_vs_loss.csv (geom_idx, boundary_length, <loss>_b0..b5 ...)
+  - per_geometry_band_boundary_vs_loss.csv (geom_idx, boundary_length, <loss>_b1..b6 ...)
 """
 
 from __future__ import annotations
@@ -152,7 +152,7 @@ def main() -> None:
     cols = [geom_idx.astype(INDEX_DTYPE), blen.astype(np.float32, copy=False)]
     for loss in losses:
         for b in range(n_bands):
-            header.append(f"{loss}_b{b}")
+            header.append(f"{loss}_b{b + 1}")
             cols.append(per_geom_band[loss][:, b].astype(np.float32, copy=False))
     table = np.stack(cols, axis=1)
     csv_path = out_dir / f"per_geometry_band_boundary_vs_loss{tag}.csv"
@@ -171,8 +171,8 @@ def main() -> None:
             rho = spearmanr(blen[finite], yb[finite])[0] if finite.sum() > 2 else float("nan")
             color = cmap(b % cmap.N)
             ax.scatter(blen[finite], yb[finite], s=12, alpha=0.5, color=color,
-                       edgecolors="none", label=f"band {b}, \u03c1 = {rho:.3f}")
-            print(f"    band {b}: Spearman rho = {rho:.4f}")
+                       edgecolors="none", label=f"band {b + 1}, \u03c1 = {rho:.3f}")
+            print(f"    band {b + 1}: Spearman rho = {rho:.4f}")
         ax.set_xlabel(xlabel, fontsize=label_fs)
         ax.set_ylabel(LOSS_YLABEL.get(loss, f"Mean (Over Wavevectors) {loss.upper()}"), fontsize=label_fs)
         ax.tick_params(axis="both", labelsize=tick_fs)

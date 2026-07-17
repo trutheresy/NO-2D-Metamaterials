@@ -1,10 +1,10 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.29 (TeX Live 2026) (preloaded format=pdflatex 2026.7.15)  15 JUL 2026 05:39
+This is pdfTeX, Version 3.141592653-2.6-1.40.29 (TeX Live 2026) (preloaded format=pdflatex 2026.7.15)  16 JUL 2026 23:03
 entering extended mode
  restricted \write18 enabled.
  file:line:error style messages enabled.
  %&-line parsing enabled.
-**"d:/Research/Projects/NO 2D Metamaterials/LATEX/Neural_Operators_for_Acoustic_Metamaterials/draft3.tex"
-(d:/Research/Projects/NO 2D Metamaterials/LATEX/Neural_Operators_for_Acoustic_Metamaterials/draft3.tex
+**d:/Research/NO-2D-Metamaterials/LATEX/Neural_Operators_for_Acoustic_Metamaterials/draft3.tex
+(d:/Research/NO-2D-Metamaterials/LATEX/Neural_Operators_for_Acoustic_Metamaterials/draft3.tex
 LaTeX2e <2026-06-01>
 L3 programming layer <2026-06-18>
 (c:/texlive/2026/texmf-dist/tex/latex/elsarticle/elsarticle.cls
@@ -722,22 +722,7 @@ Package: uniquecounter 2019/12/15 v1.4 Provide unlimited unique counter (HO)
 Package uniquecounter Info: New unique counter `rerunfilecheck' on input line 284.
 )
 \Hy@SectionHShift=\skip90
-) (c:/texlive/2026/texmf-dist/tex/latex/cleveref/cleveref.sty
-Package: cleveref 2018/03/27 v0.21.4 Intelligent cross-referencing
-Package cleveref Info: `hyperref' support loaded on input line 2370.
-LaTeX Info: Redefining \cref on input line 2370.
-LaTeX Info: Redefining \Cref on input line 2370.
-LaTeX Info: Redefining \crefrange on input line 2370.
-LaTeX Info: Redefining \Crefrange on input line 2370.
-LaTeX Info: Redefining \cpageref on input line 2370.
-LaTeX Info: Redefining \Cpageref on input line 2370.
-LaTeX Info: Redefining \cpagerefrange on input line 2370.
-LaTeX Info: Redefining \Cpagerefrange on input line 2370.
-LaTeX Info: Redefining \labelcref on input line 2370.
-LaTeX Info: Redefining \labelcpageref on input line 2370.
-)
-==> First Aid for cleveref.sty applied!
-(c:/texlive/2026/texmf-dist/tex/latex/microtype/microtype.sty
+) (c:/texlive/2026/texmf-dist/tex/latex/microtype/microtype.sty
 Package: microtype 2026/03/01 v3.2d Micro-typographical refinements (RS)
 \MT@toks=\toks51
 \MT@tempbox=\box85
@@ -838,41 +823,28 @@ Package: xspace 2014/10/28 v1.13 Space after command names (DPC,MH)
 ) (c:/texlive/2026/texmf-dist/tex/latex/setspace/setspace.sty
 Package: setspace 2022/12/04 v6.7b set line spacing
 )
-Package translations Info: No language package found. I am going to use `english' as default language. on input line 106.
- (./draft3.aux
-
-LaTeX Warning: Label `fig:dispersion_c_percentiles' multiply defined.
-
-
-LaTeX Warning: Label `fig:dispersion_c_percentiles@cref' multiply defined.
-
-
-LaTeX Warning: Label `fig:eigenfrequency_encoding' multiply defined.
-
-
-LaTeX Warning: Label `fig:eigenfrequency_encoding@cref' multiply defined.
-
-)
+Package translations Info: No language package found. I am going to use `english' as default language. on input line 105.
+ (./draft3.aux)
 \openout1 = `draft3.aux'.
 
-LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 106.
-LaTeX Font Info:    ... okay on input line 106.
-LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 106.
-LaTeX Font Info:    ... okay on input line 106.
-LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 106.
-LaTeX Font Info:    ... okay on input line 106.
-LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 106.
-LaTeX Font Info:    ... okay on input line 106.
-LaTeX Font Info:    Checking defaults for TS1/cmr/m/n on input line 106.
-LaTeX Font Info:    ... okay on input line 106.
-LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 106.
-LaTeX Font Info:    ... okay on input line 106.
-LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 106.
-LaTeX Font Info:    ... okay on input line 106.
-LaTeX Font Info:    Checking defaults for PD1/pdf/m/n on input line 106.
-LaTeX Font Info:    ... okay on input line 106.
-LaTeX Font Info:    Checking defaults for PU/pdf/m/n on input line 106.
-LaTeX Font Info:    ... okay on input line 106.
+LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 105.
+LaTeX Font Info:    ... okay on input line 105.
+LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 105.
+LaTeX Font Info:    ... okay on input line 105.
+LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 105.
+LaTeX Font Info:    ... okay on input line 105.
+LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 105.
+LaTeX Font Info:    ... okay on input line 105.
+LaTeX Font Info:    Checking defaults for TS1/cmr/m/n on input line 105.
+LaTeX Font Info:    ... okay on input line 105.
+LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 105.
+LaTeX Font Info:    ... okay on input line 105.
+LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 105.
+LaTeX Font Info:    ... okay on input line 105.
+LaTeX Font Info:    Checking defaults for PD1/pdf/m/n on input line 105.
+LaTeX Font Info:    ... okay on input line 105.
+LaTeX Font Info:    Checking defaults for PU/pdf/m/n on input line 105.
+LaTeX Font Info:    ... okay on input line 105.
  (c:/texlive/2026/texmf-dist/tex/context/base/mkii/supp-pdf.mkii
 [Loading MPS to PDF converter (version 2006.09.02).]
 \scratchcounter=\count405
@@ -936,21 +908,19 @@ Package caption Info: End \AtBeginDocument code.
 
 Package pgfplots notification 'compat/show suggested version=true': document has been generated with the most recent feature set (\pgfplotsset{compat=1.18}).
 
-Package hyperref Info: Link coloring OFF on input line 106.
-(./draft3.out) (./draft3.out)
+Package hyperref Info: Link coloring OFF on input line 105.
 \@outlinefile=\write5
 \openout5 = `draft3.out'.
 
-LaTeX Info: Redefining \microtypecontext on input line 106.
-Package microtype Info: Applying patch `item' on input line 106.
-Package microtype Info: Applying patch `toc' on input line 106.
-Package microtype Info: Applying patch `eqnum' on input line 106.
+LaTeX Info: Redefining \microtypecontext on input line 105.
+Package microtype Info: Applying patch `item' on input line 105.
+Package microtype Info: Applying patch `toc' on input line 105.
+Package microtype Info: Applying patch `eqnum' on input line 105.
 
+Package microtype Warning: Unable to apply patch `footnote' on input line 105.
 
-Package microtype Warning: Unable to apply patch `footnote' on input line 106.
-
-Package microtype Info: Applying patch `verbatim' on input line 106.
-LaTeX Info: Redefining \microtypesetup on input line 106.
+Package microtype Info: Applying patch `verbatim' on input line 105.
+LaTeX Info: Redefining \microtypesetup on input line 105.
 Package microtype Info: Generating PDF output.
 Package microtype Info: Character protrusion enabled (level 2).
 Package microtype Info: Using default protrusion set `alltext'.
@@ -966,473 +936,624 @@ File: mt-cmr.cfg 2013/05/19 v2.2 microtype config. file: Computer Modern Roman (
 ) (c:/texlive/2026/texmf-dist/tex/latex/translations/translations-basic-dictionary-english.trsl
 File: translations-basic-dictionary-english.trsl (english translation file `translations-basic-dictionary')
 )
-Package translations Info: loading dictionary `translations-basic-dictionary' for `english'. on input line 106.
+Package translations Info: loading dictionary `translations-basic-dictionary' for `english'. on input line 105.
 
 
-Package todonotes Warning: The length marginparwidth is less than 2cm and will most likely cause issues with the appearance of inserted todonotes. The issue can be solved by adding a line like \setlength {\marginparwidth }{2cm} prior to loading the todonotes package. on input line 106.
-
-Package hyperref Info: bookmark level for unknown todo defaults to 0 on input line 144.
-
-Overfull \hbox (11.53525pt too wide) in paragraph at lines 144--144
-[][][]\T1/cmr/m/n/12 (-20) Rephrase 
- []
+Package todonotes Warning: The length marginparwidth is less than 2cm and will most likely cause issues with the appearance of inserted todonotes. The issue can be solved by adding a line like \setlength {\marginparwidth }{2cm} prior to loading the todonotes package. on input line 105.
 
 
-Overfull \hbox (11.53525pt too wide) in paragraph at lines 144--144
-[][][]\T1/cmr/m/n/12 (-20) Rephrase 
- []
+d:/Research/NO-2D-Metamaterials/LATEX/Neural_Operators_for_Acoustic_Metamaterials/draft3.tex:163: LaTeX Error: There's no line here to end.
 
-
-LaTeX Warning: Marginpar on page 1 moved.
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.163 \author
+             [Mech]{Johann Guilleminot}
+Your command was ignored.
+Type  I <command> <return>  to replace it with another command,
+or  <return>  to continue without it.
 
 Package microtype Info: Loading generic protrusion settings for font family
 (microtype)             `cmss' (encoding: T1).
 (microtype)             For optimal results, create family-specific settings.
 (microtype)             See the microtype manual for details.
-[1
-
-{c:/texlive/2026/texmf-var/fonts/map/pdftex/updmap/pdftex.map}{c:/texlive/2026/texmf-dist/fonts/enc/dvips/cm-super/cm-super-t1.enc}]
-LaTeX Font Info:    Trying to load font information for U+msa on input line 211.
- (c:/texlive/2026/texmf-dist/tex/latex/amsfonts/umsa.fd
+LaTeX Font Info:    Trying to load font information for U+msa on input line 216.
+(c:/texlive/2026/texmf-dist/tex/latex/amsfonts/umsa.fd
 File: umsa.fd 2013/01/14 v3.01 AMS symbols A
 ) (c:/texlive/2026/texmf-dist/tex/latex/microtype/mt-msa.cfg
 File: mt-msa.cfg 2006/02/04 v1.1 microtype config. file: AMS symbols (a) (RS)
 )
-LaTeX Font Info:    Trying to load font information for U+msb on input line 211.
+LaTeX Font Info:    Trying to load font information for U+msb on input line 216.
  (c:/texlive/2026/texmf-dist/tex/latex/amsfonts/umsb.fd
 File: umsb.fd 2013/01/14 v3.01 AMS symbols B
 ) (c:/texlive/2026/texmf-dist/tex/latex/microtype/mt-msb.cfg
 File: mt-msb.cfg 2005/06/01 v1.0 microtype config. file: AMS symbols (b) (RS)
 )
-LaTeX Font Info:    Trying to load font information for U+rsfs on input line 211.
+LaTeX Font Info:    Trying to load font information for U+rsfs on input line 216.
  (c:/texlive/2026/texmf-dist/tex/latex/jknapltx/ursfs.fd
 File: ursfs.fd 1998/03/24 rsfs font definition file (jk)
 )
-LaTeX Font Info:    Calculating math sizes for size <> on input line 211.
+LaTeX Font Info:    Calculating math sizes for size <> on input line 216.
 
 
 LaTeX Font Warning: Font shape `OT1/cmr/m/n' in size <> not available
-(Font)              size <5> substituted on input line 211.
+(Font)              size <5> substituted on input line 216.
 
 
 LaTeX Font Warning: Font shape `OT1/cmr/m/n' in size <0.7> not available
-(Font)              size <5> substituted on input line 211.
+(Font)              size <5> substituted on input line 216.
 
 
 LaTeX Font Warning: Font shape `OT1/cmr/m/n' in size <0.5> not available
-(Font)              size <5> substituted on input line 211.
+(Font)              size <5> substituted on input line 216.
 
 
 LaTeX Font Warning: Font shape `OML/cmm/m/it' in size <> not available
-(Font)              size <5> substituted on input line 211.
+(Font)              size <5> substituted on input line 216.
 
 
 LaTeX Font Warning: Font shape `OML/cmm/m/it' in size <0.7> not available
-(Font)              size <5> substituted on input line 211.
+(Font)              size <5> substituted on input line 216.
 
 
 LaTeX Font Warning: Font shape `OML/cmm/m/it' in size <0.5> not available
-(Font)              size <5> substituted on input line 211.
+(Font)              size <5> substituted on input line 216.
 
 
 LaTeX Font Warning: Font shape `OMS/cmsy/m/n' in size <> not available
-(Font)              size <5> substituted on input line 211.
+(Font)              size <5> substituted on input line 216.
 
 
 LaTeX Font Warning: Font shape `OMS/cmsy/m/n' in size <0.7> not available
-(Font)              size <5> substituted on input line 211.
+(Font)              size <5> substituted on input line 216.
 
 
 LaTeX Font Warning: Font shape `OMS/cmsy/m/n' in size <0.5> not available
-(Font)              size <5> substituted on input line 211.
+(Font)              size <5> substituted on input line 216.
 
 
 LaTeX Font Warning: Font shape `OT1/cmr/bx/n' in size <> not available
-(Font)              size <5> substituted on input line 211.
+(Font)              size <5> substituted on input line 216.
 
 
 LaTeX Font Warning: Font shape `OT1/cmr/bx/n' in size <0.7> not available
-(Font)              size <5> substituted on input line 211.
+(Font)              size <5> substituted on input line 216.
 
 
 LaTeX Font Warning: Font shape `OT1/cmr/bx/n' in size <0.5> not available
-(Font)              size <5> substituted on input line 211.
+(Font)              size <5> substituted on input line 216.
 
 
 LaTeX Font Warning: Font shape `OML/cmm/b/it' in size <> not available
-(Font)              size <5> substituted on input line 211.
+(Font)              size <5> substituted on input line 216.
 
 
 LaTeX Font Warning: Font shape `OML/cmm/b/it' in size <0.7> not available
-(Font)              size <5> substituted on input line 211.
+(Font)              size <5> substituted on input line 216.
 
 
 LaTeX Font Warning: Font shape `OML/cmm/b/it' in size <0.5> not available
-(Font)              size <5> substituted on input line 211.
+(Font)              size <5> substituted on input line 216.
 
 
 LaTeX Font Warning: Font shape `OMS/cmsy/b/n' in size <> not available
-(Font)              size <5> substituted on input line 211.
+(Font)              size <5> substituted on input line 216.
 
 
 LaTeX Font Warning: Font shape `OMS/cmsy/b/n' in size <0.7> not available
-(Font)              size <5> substituted on input line 211.
+(Font)              size <5> substituted on input line 216.
 
 
 LaTeX Font Warning: Font shape `OMS/cmsy/b/n' in size <0.5> not available
-(Font)              size <5> substituted on input line 211.
+(Font)              size <5> substituted on input line 216.
 
 
 LaTeX Font Warning: Font shape `U/rsfs/m/n' in size <> not available
-(Font)              size <5> substituted on input line 211.
+(Font)              size <5> substituted on input line 216.
 
 
 LaTeX Font Warning: Font shape `U/rsfs/m/n' in size <0.7> not available
-(Font)              size <5> substituted on input line 211.
+(Font)              size <5> substituted on input line 216.
 
 
 LaTeX Font Warning: Font shape `U/rsfs/m/n' in size <0.5> not available
-(Font)              size <5> substituted on input line 211.
+(Font)              size <5> substituted on input line 216.
 
-(./draft3.toc [2
+[1
 
-])
+
+{c:/texlive/2026/texmf-var/fonts/map/pdftex/updmap/pdftex.map}{c:/texlive/2026/texmf-dist/fonts/enc/dvips/cm-super/cm-super-t1.enc}]
+No file draft3.toc.
 \tf@toc=\write6
 \openout6 = `draft3.toc'.
 
- [3]
-Overfull \hbox (6.83643pt too wide) in paragraph at lines 230--230
+[2]
+Package hyperref Info: bookmark level for unknown todo defaults to 0 on input line 235.
+
+Overfull \hbox (6.83643pt too wide) in paragraph at lines 235--235
 [][][]\T1/cmr/m/n/12 (-20) Citation 
  []
 
 
-Overfull \hbox (6.83643pt too wide) in paragraph at lines 230--230
+Overfull \hbox (6.83643pt too wide) in paragraph at lines 235--235
 [][][]\T1/cmr/m/n/12 (-20) Citation 
  []
 
 
-Overfull \hbox (6.83643pt too wide) in paragraph at lines 232--232
+Overfull \hbox (6.83643pt too wide) in paragraph at lines 237--237
 [][][]\T1/cmr/m/n/12 (-20) Citation 
  []
 
 
-Overfull \hbox (6.83643pt too wide) in paragraph at lines 232--232
+Overfull \hbox (6.83643pt too wide) in paragraph at lines 237--237
 [][][]\T1/cmr/m/n/12 (-20) Citation 
  []
 
 
-Overfull \hbox (6.83643pt too wide) in paragraph at lines 232--232
+Overfull \hbox (6.83643pt too wide) in paragraph at lines 237--237
 [][][]\T1/cmr/m/n/12 (-20) Citation 
  []
 
 
-Overfull \hbox (6.83643pt too wide) in paragraph at lines 232--232
+Overfull \hbox (6.83643pt too wide) in paragraph at lines 237--237
 [][][]\T1/cmr/m/n/12 (-20) Citation 
  []
 
 
-LaTeX Warning: Marginpar on page 4 moved.
+LaTeX Warning: Marginpar on page 3 moved.
 
 
-Overfull \hbox (6.83643pt too wide) in paragraph at lines 234--234
+Overfull \hbox (6.83643pt too wide) in paragraph at lines 239--239
 [][][]\T1/cmr/m/n/12 (-20) Citation 
  []
 
 
-Overfull \hbox (6.83643pt too wide) in paragraph at lines 234--234
+Overfull \hbox (6.83643pt too wide) in paragraph at lines 239--239
 [][][]\T1/cmr/m/n/12 (-20) Citation 
  []
 
 
-Overfull \hbox (6.83643pt too wide) in paragraph at lines 236--236
+Overfull \hbox (6.83643pt too wide) in paragraph at lines 241--241
 [][][]\T1/cmr/m/n/12 (-20) Citation 
  []
 
 
-Overfull \hbox (6.83643pt too wide) in paragraph at lines 236--236
+Overfull \hbox (6.83643pt too wide) in paragraph at lines 241--241
 [][][]\T1/cmr/m/n/12 (-20) Citation 
  []
 
 
-Overfull \hbox (6.83643pt too wide) in paragraph at lines 236--236
+Overfull \hbox (6.83643pt too wide) in paragraph at lines 241--241
 [][][]\T1/cmr/m/n/12 (-20) Citation 
  []
 
 
-Overfull \hbox (6.83643pt too wide) in paragraph at lines 236--236
+Overfull \hbox (6.83643pt too wide) in paragraph at lines 241--241
 [][][]\T1/cmr/m/n/12 (-20) Citation 
  []
 
-[4]
-Overfull \hbox (6.83643pt too wide) in paragraph at lines 245--245
-[][][]\T1/cmr/m/n/12 (-20) Citation 
- []
-
-
-Overfull \hbox (1.36626pt too wide) in paragraph at lines 245--245
-\T1/cmr/m/n/12 (-20) needed, 
- []
-
-
-Overfull \hbox (7.54001pt too wide) in paragraph at lines 245--245
-\T1/cmr/m/n/12 (-20) rephrase 
- []
-
-
-Overfull \hbox (6.83643pt too wide) in paragraph at lines 245--245
-[][][]\T1/cmr/m/n/12 (-20) Citation 
- []
-
-
-Overfull \hbox (1.36626pt too wide) in paragraph at lines 245--245
-\T1/cmr/m/n/12 (-20) needed, 
- []
-
-
-Overfull \hbox (7.54001pt too wide) in paragraph at lines 245--245
-\T1/cmr/m/n/12 (-20) rephrase 
- []
-
-[5]
-Overfull \hbox (3.63858pt too wide) in paragraph at lines 267--267
+[3] [4]
+Overfull \hbox (3.63858pt too wide) in paragraph at lines 272--272
 [][][]\T1/cmr/m/n/12 (-20) citation[]  
  []
 
 
-Overfull \hbox (3.63858pt too wide) in paragraph at lines 267--267
+Overfull \hbox (3.63858pt too wide) in paragraph at lines 272--272
 [][][]\T1/cmr/m/n/12 (-20) citation[]  
  []
 
-[6] [7]
-<Figures/Methods/FNO_architecture.png, id=197, 949.29657pt x 338.76563pt>
+[5] [6]
+
+LaTeX Warning: Reference `fig:FNO_architecture' on page 7 undefined on input line 320.
+
+
+LaTeX Warning: Reference `tab:training_hyperparameters' on page 7 undefined on input line 320.
+
+
+LaTeX Warning: Reference `ssec:training_procedure' on page 7 undefined on input line 320.
+
+[7]
+<Figures/Methods/FNO_architecture.png, id=78, 949.29657pt x 338.76563pt>
 File: Figures/Methods/FNO_architecture.png Graphic file (type png)
 <use Figures/Methods/FNO_architecture.png>
-Package pdftex.def Info: Figures/Methods/FNO_architecture.png  used on input line 319.
+Package pdftex.def Info: Figures/Methods/FNO_architecture.png  used on input line 324.
 (pdftex.def)             Requested size: 430.00462pt x 153.4511pt.
- [8]
 
-LaTeX Warning: `h' float specifier changed to `ht'.
 
-[9 <./Figures/Methods/FNO_architecture.png (PNG copy)>]
-<Figures/Methods/continuous_and_binary_geometry_example.png, id=213, 238.491pt x 123.3408pt>
+LaTeX Warning: Reference `tab:parameter_ranges' on page 8 undefined on input line 335.
+
+[8 <./Figures/Methods/FNO_architecture.png (PNG copy)>]
+<Figures/Methods/continuous_and_binary_geometry_example.png, id=86, 238.491pt x 123.3408pt>
 File: Figures/Methods/continuous_and_binary_geometry_example.png Graphic file (type png)
 <use Figures/Methods/continuous_and_binary_geometry_example.png>
-Package pdftex.def Info: Figures/Methods/continuous_and_binary_geometry_example.png  used on input line 353.
+Package pdftex.def Info: Figures/Methods/continuous_and_binary_geometry_example.png  used on input line 358.
 (pdftex.def)             Requested size: 215.0023pt x 111.19576pt.
- [10 <./Figures/Methods/continuous_and_binary_geometry_example.png>] [11]
-<Figures/Methods/distilled_FEA_process.png, id=235, 962.84718pt x 590.95781pt>
+ [9 <./Figures/Methods/continuous_and_binary_geometry_example.png>]
+
+LaTeX Warning: Reference `fig:FEA_full_process' on page 10 undefined on input line 379.
+
+
+LaTeX Warning: Reference `ssec:fourier_neural_operator' on page 10 undefined on input line 379.
+
+
+LaTeX Warning: Reference `sec:Repository' on page 10 undefined on input line 381.
+
+[10]
+
+LaTeX Warning: Reference `fig:FEA_full_process' on page 11 undefined on input line 389.
+
+<Figures/Methods/distilled_FEA_process.png, id=104, 962.84718pt x 590.95781pt>
 File: Figures/Methods/distilled_FEA_process.png Graphic file (type png)
 <use Figures/Methods/distilled_FEA_process.png>
-Package pdftex.def Info: Figures/Methods/distilled_FEA_process.png  used on input line 388.
+Package pdftex.def Info: Figures/Methods/distilled_FEA_process.png  used on input line 393.
 (pdftex.def)             Requested size: 430.00462pt x 263.9177pt.
- [12 <./Figures/Methods/distilled_FEA_process.png (PNG copy)>]
-<Figures/Methods/1D wavelet encoding.png, id=248, 1089.8316pt x 192.2382pt>
+
+LaTeX Warning: Reference `eqn:eig_PDE' on page 11 undefined on input line 394.
+
+
+LaTeX Warning: Reference `eqn:eig_PDE' on page 11 undefined on input line 394.
+
+
+LaTeX Warning: Reference `ssec:band_wavevector_encoding' on page 11 undefined on input line 401.
+
+[11 <./Figures/Methods/distilled_FEA_process.png (PNG copy)>]
+
+LaTeX Warning: Reference `alg:1d_gabor_embedding' on page 12 undefined on input line 403.
+
+
+LaTeX Warning: Reference `alg:2d_gabor_embedding' on page 12 undefined on input line 403.
+
+<Figures/Methods/1D wavelet encoding.png, id=116, 1089.8316pt x 192.2382pt>
 File: Figures/Methods/1D wavelet encoding.png Graphic file (type png)
 <use Figures/Methods/1D wavelet encoding.png>
-Package pdftex.def Info: Figures/Methods/1D wavelet encoding.png  used on input line 404.
+Package pdftex.def Info: Figures/Methods/1D wavelet encoding.png  used on input line 409.
 (pdftex.def)             Requested size: 430.00462pt x 75.84964pt.
-<Figures/Methods/1D wavelet encoding fft.png, id=249, 1084.05pt x 192.2382pt>
+<Figures/Methods/1D wavelet encoding fft.png, id=117, 1084.05pt x 192.2382pt>
 File: Figures/Methods/1D wavelet encoding fft.png Graphic file (type png)
 <use Figures/Methods/1D wavelet encoding fft.png>
-Package pdftex.def Info: Figures/Methods/1D wavelet encoding fft.png  used on input line 410.
+Package pdftex.def Info: Figures/Methods/1D wavelet encoding fft.png  used on input line 415.
 (pdftex.def)             Requested size: 430.00462pt x 76.25444pt.
-<Figures/Methods/2D wavelet encoding.png, id=254, 1357.59195pt x 253.6677pt>
+
+LaTeX Warning: Reference `fig:1D_wavelet_encoding_spatial' on page 12 undefined on input line 419.
+
+
+LaTeX Warning: Reference `fig:1D_wavelet_encoding_fft' on page 12 undefined on input line 419.
+
+
+LaTeX Warning: Reference `fig:1D_wavelet_encoding_spatial' on page 12 undefined on input line 419.
+
+
+LaTeX Warning: Reference `fig:1D_wavelet_encoding_fft' on page 12 undefined on input line 419.
+
+<Figures/Methods/2D wavelet encoding.png, id=118, 1357.59195pt x 253.6677pt>
 File: Figures/Methods/2D wavelet encoding.png Graphic file (type png)
 <use Figures/Methods/2D wavelet encoding.png>
-Package pdftex.def Info: Figures/Methods/2D wavelet encoding.png  used on input line 422.
+Package pdftex.def Info: Figures/Methods/2D wavelet encoding.png  used on input line 427.
 (pdftex.def)             Requested size: 430.00462pt x 80.347pt.
-<Figures/Methods/2D wavelet encoding fft.png, id=255, 1351.81035pt x 276.43275pt>
+<Figures/Methods/2D wavelet encoding fft.png, id=119, 1351.81035pt x 276.43275pt>
 File: Figures/Methods/2D wavelet encoding fft.png Graphic file (type png)
 <use Figures/Methods/2D wavelet encoding fft.png>
-Package pdftex.def Info: Figures/Methods/2D wavelet encoding fft.png  used on input line 428.
+Package pdftex.def Info: Figures/Methods/2D wavelet encoding fft.png  used on input line 433.
 (pdftex.def)             Requested size: 430.00462pt x 87.93303pt.
- [13 <./Figures/Methods/1D wavelet encoding.png> <./Figures/Methods/1D wavelet encoding fft.png>]
-<Figures/Methods/distilled_input_tensorization.png, id=271, 512.66531pt x 358.33875pt>
+
+LaTeX Warning: Reference `fig:2D_wavelet_encoding_spatial' on page 12 undefined on input line 437.
+
+
+LaTeX Warning: Reference `fig:2D_wavelet_encoding_fft' on page 12 undefined on input line 437.
+
+
+LaTeX Warning: Reference `fig:2D_wavelet_encoding_spatial' on page 12 undefined on input line 437.
+
+
+LaTeX Warning: Reference `fig:2D_wavelet_encoding_fft' on page 12 undefined on input line 437.
+
+[12 <./Figures/Methods/1D wavelet encoding.png> <./Figures/Methods/1D wavelet encoding fft.png>]
+
+LaTeX Warning: Reference `alg:2d_gabor_embedding' on page 13 undefined on input line 441.
+
+
+LaTeX Warning: Reference `fig:wavevector_encoding_similarity' on page 13 undefined on input line 441.
+
+<Figures/Methods/fft_log_cosine_similarity_heatmap_fscale41_offset2p2_sigma0p5_kx13_ky25.png, id=127, 597.432pt x 500.6705pt>
+File: Figures/Methods/fft_log_cosine_similarity_heatmap_fscale41_offset2p2_sigma0p5_kx13_ky25.png Graphic file (type png)
+<use Figures/Methods/fft_log_cosine_similarity_heatmap_fscale41_offset2p2_sigma0p5_kx13_ky25.png>
+Package pdftex.def Info: Figures/Methods/fft_log_cosine_similarity_heatmap_fscale41_offset2p2_sigma0p5_kx13_ky25.png  used on input line 445.
+(pdftex.def)             Requested size: 322.50346pt x 270.274pt.
+
+LaTeX Warning: Reference `alg:2d_gabor_embedding' on page 13 undefined on input line 446.
+
+
+LaTeX Warning: Reference `alg:2d_gabor_embedding' on page 13 undefined on input line 446.
+
+[13 <./Figures/Methods/2D wavelet encoding.png> <./Figures/Methods/2D wavelet encoding fft.png>]
+<Figures/Methods/distilled_input_tensorization.png, id=136, 512.66531pt x 358.33875pt>
 File: Figures/Methods/distilled_input_tensorization.png Graphic file (type png)
 <use Figures/Methods/distilled_input_tensorization.png>
-Package pdftex.def Info: Figures/Methods/distilled_input_tensorization.png  used on input line 450.
+Package pdftex.def Info: Figures/Methods/distilled_input_tensorization.png  used on input line 464.
 (pdftex.def)             Requested size: 179.43553pt x 125.42044pt.
-<Figures/Methods/distilled_output_tensorization2.png, id=272, 484.05844pt x 350.81062pt>
+<Figures/Methods/distilled_output_tensorization2.png, id=137, 484.05844pt x 350.81062pt>
 File: Figures/Methods/distilled_output_tensorization2.png Graphic file (type png)
 <use Figures/Methods/distilled_output_tensorization2.png>
-Package pdftex.def Info: Figures/Methods/distilled_output_tensorization2.png  used on input line 458.
+Package pdftex.def Info: Figures/Methods/distilled_output_tensorization2.png  used on input line 472.
 (pdftex.def)             Requested size: 169.42299pt x 122.78555pt.
- [14 <./Figures/Methods/2D wavelet encoding.png> <./Figures/Methods/2D wavelet encoding fft.png>] [15 <./Figures/Methods/distilled_input_tensorization.png (PNG copy)> <./Figures/Methods/distilled_output_tensorization2.png (PNG copy)>] [16]
-<Figures/Fields C/c_test_nmae_p25_g452_w224_b1_input.png, id=300, 1028.643pt x 290.0436pt>
+
+
+LaTeX Warning: Hyper reference `fig:input_dataset_construction' on page 14 undefined on input line 477.
+
+
+LaTeX Warning: Reference `sub@fig:input_dataset_construction' on page 14 undefined on input line 477.
+
+
+LaTeX Warning: Hyper reference `fig:output_dataset_construction' on page 14 undefined on input line 477.
+
+
+LaTeX Warning: Reference `sub@fig:output_dataset_construction' on page 14 undefined on input line 477.
+
+
+LaTeX Warning: Reference `ssec:metamaterial_design_space' on page 14 undefined on input line 477.
+
+
+LaTeX Warning: Reference `ssec:wave_propagration_simulations' on page 14 undefined on input line 477.
+
+
+LaTeX Warning: Hyper reference `fig:input_dataset_construction' on page 14 undefined on input line 477.
+
+
+LaTeX Warning: Reference `sub@fig:input_dataset_construction' on page 14 undefined on input line 477.
+
+
+LaTeX Warning: Hyper reference `fig:output_dataset_construction' on page 14 undefined on input line 477.
+
+
+LaTeX Warning: Reference `sub@fig:output_dataset_construction' on page 14 undefined on input line 477.
+
+
+LaTeX Warning: Reference `ssec:metamaterial_design_space' on page 14 undefined on input line 477.
+
+
+LaTeX Warning: Reference `ssec:wave_propagration_simulations' on page 14 undefined on input line 477.
+
+[14 <./Figures/Methods/fft_log_cosine_similarity_heatmap_fscale41_offset2p2_sigma0p5_kx13_ky25.png>]
+
+LaTeX Warning: Reference `sec:Methodology' on page 15 undefined on input line 486.
+
+
+LaTeX Warning: Reference `tab:training_hyperparameters' on page 15 undefined on input line 564.
+
+
+LaTeX Warning: Reference `sec:supplement' on page 15 undefined on input line 564.
+
+[15 <./Figures/Methods/distilled_input_tensorization.png (PNG copy)> <./Figures/Methods/distilled_output_tensorization2.png (PNG copy)>] [16]
+<Figures/Fields C/c_test_nmae_p25_g452_w224_b1_input.png, id=157, 1028.643pt x 290.0436pt>
 File: Figures/Fields C/c_test_nmae_p25_g452_w224_b1_input.png Graphic file (type png)
 <use Figures/Fields C/c_test_nmae_p25_g452_w224_b1_input.png>
-Package pdftex.def Info: Figures/Fields C/c_test_nmae_p25_g452_w224_b1_input.png  used on input line 609.
+Package pdftex.def Info: Figures/Fields C/c_test_nmae_p25_g452_w224_b1_input.png  used on input line 623.
 (pdftex.def)             Requested size: 322.50346pt x 90.9349pt.
-<Figures/Fields C/c_test_nmae_p25_g452_w224_b1_fields.png, id=301, 1358.676pt x 806.0514pt>
+<Figures/Fields C/c_test_nmae_p25_g452_w224_b1_fields.png, id=158, 1358.676pt x 806.0514pt>
 File: Figures/Fields C/c_test_nmae_p25_g452_w224_b1_fields.png Graphic file (type png)
 <use Figures/Fields C/c_test_nmae_p25_g452_w224_b1_fields.png>
-Package pdftex.def Info: Figures/Fields C/c_test_nmae_p25_g452_w224_b1_fields.png  used on input line 616.
+Package pdftex.def Info: Figures/Fields C/c_test_nmae_p25_g452_w224_b1_fields.png  used on input line 630.
 (pdftex.def)             Requested size: 430.00462pt x 255.10057pt.
  [17]
-<Figures/Fields C/c_test_nmae_p50_g183_w41_b3_input.png, id=307, 1028.643pt x 290.0436pt>
+<Figures/Fields C/c_test_nmae_p50_g183_w41_b3_input.png, id=165, 1028.643pt x 290.0436pt>
 File: Figures/Fields C/c_test_nmae_p50_g183_w41_b3_input.png Graphic file (type png)
 <use Figures/Fields C/c_test_nmae_p50_g183_w41_b3_input.png>
-Package pdftex.def Info: Figures/Fields C/c_test_nmae_p50_g183_w41_b3_input.png  used on input line 626.
+Package pdftex.def Info: Figures/Fields C/c_test_nmae_p50_g183_w41_b3_input.png  used on input line 640.
 (pdftex.def)             Requested size: 322.50346pt x 90.9349pt.
-<Figures/Fields C/c_test_nmae_p50_g183_w41_b3_fields.png, id=308, 1358.676pt x 806.0514pt>
+<Figures/Fields C/c_test_nmae_p50_g183_w41_b3_fields.png, id=166, 1358.676pt x 806.0514pt>
 File: Figures/Fields C/c_test_nmae_p50_g183_w41_b3_fields.png Graphic file (type png)
 <use Figures/Fields C/c_test_nmae_p50_g183_w41_b3_fields.png>
-Package pdftex.def Info: Figures/Fields C/c_test_nmae_p50_g183_w41_b3_fields.png  used on input line 633.
+Package pdftex.def Info: Figures/Fields C/c_test_nmae_p50_g183_w41_b3_fields.png  used on input line 647.
 (pdftex.def)             Requested size: 430.00462pt x 255.10057pt.
  [18 <./Figures/Fields C/c_test_nmae_p25_g452_w224_b1_input.png> <./Figures/Fields C/c_test_nmae_p25_g452_w224_b1_fields.png>]
-<Figures/Fields C/c_test_nmae_p75_g279_w229_b3_input.png, id=316, 1028.643pt x 290.0436pt>
+<Figures/Fields C/c_test_nmae_p75_g279_w229_b3_input.png, id=174, 1028.643pt x 290.0436pt>
 File: Figures/Fields C/c_test_nmae_p75_g279_w229_b3_input.png Graphic file (type png)
 <use Figures/Fields C/c_test_nmae_p75_g279_w229_b3_input.png>
-Package pdftex.def Info: Figures/Fields C/c_test_nmae_p75_g279_w229_b3_input.png  used on input line 643.
+Package pdftex.def Info: Figures/Fields C/c_test_nmae_p75_g279_w229_b3_input.png  used on input line 657.
 (pdftex.def)             Requested size: 322.50346pt x 90.9349pt.
-<Figures/Fields C/c_test_nmae_p75_g279_w229_b3_fields.png, id=317, 1358.676pt x 806.0514pt>
+<Figures/Fields C/c_test_nmae_p75_g279_w229_b3_fields.png, id=175, 1358.676pt x 806.0514pt>
 File: Figures/Fields C/c_test_nmae_p75_g279_w229_b3_fields.png Graphic file (type png)
 <use Figures/Fields C/c_test_nmae_p75_g279_w229_b3_fields.png>
-Package pdftex.def Info: Figures/Fields C/c_test_nmae_p75_g279_w229_b3_fields.png  used on input line 650.
+Package pdftex.def Info: Figures/Fields C/c_test_nmae_p75_g279_w229_b3_fields.png  used on input line 664.
 (pdftex.def)             Requested size: 430.00462pt x 255.10057pt.
  [19 <./Figures/Fields C/c_test_nmae_p50_g183_w41_b3_input.png> <./Figures/Fields C/c_test_nmae_p50_g183_w41_b3_fields.png>]
 
-LaTeX Warning: Reference `fig:loss_histogram_continuous' on page 20 undefined on input line 655.
+LaTeX Warning: Reference `fig:disp_loss_histogram_continuous' on page 20 undefined on input line 669.
 
 [20 <./Figures/Fields C/c_test_nmae_p75_g279_w229_b3_input.png> <./Figures/Fields C/c_test_nmae_p75_g279_w229_b3_fields.png>]
-<Figures/Fields B/b_test_nmae_p25_g283_w234_b1_input.png, id=334, 1028.643pt x 290.0436pt>
+<Figures/Fields B/b_test_nmae_p25_g283_w234_b1_input.png, id=193, 1028.643pt x 290.0436pt>
 File: Figures/Fields B/b_test_nmae_p25_g283_w234_b1_input.png Graphic file (type png)
 <use Figures/Fields B/b_test_nmae_p25_g283_w234_b1_input.png>
-Package pdftex.def Info: Figures/Fields B/b_test_nmae_p25_g283_w234_b1_input.png  used on input line 662.
+Package pdftex.def Info: Figures/Fields B/b_test_nmae_p25_g283_w234_b1_input.png  used on input line 676.
 (pdftex.def)             Requested size: 322.50346pt x 90.9349pt.
-<Figures/Fields B/b_test_nmae_p25_g283_w234_b1_fields.png, id=335, 1358.676pt x 806.0514pt>
+<Figures/Fields B/b_test_nmae_p25_g283_w234_b1_fields.png, id=194, 1358.676pt x 806.0514pt>
 File: Figures/Fields B/b_test_nmae_p25_g283_w234_b1_fields.png Graphic file (type png)
 <use Figures/Fields B/b_test_nmae_p25_g283_w234_b1_fields.png>
-Package pdftex.def Info: Figures/Fields B/b_test_nmae_p25_g283_w234_b1_fields.png  used on input line 669.
+Package pdftex.def Info: Figures/Fields B/b_test_nmae_p25_g283_w234_b1_fields.png  used on input line 683.
 (pdftex.def)             Requested size: 430.00462pt x 255.10057pt.
-<Figures/Fields B/b_test_nmae_p50_g550_w257_b4_input.png, id=336, 1028.643pt x 290.0436pt>
+<Figures/Fields B/b_test_nmae_p50_g550_w257_b4_input.png, id=195, 1028.643pt x 290.0436pt>
 File: Figures/Fields B/b_test_nmae_p50_g550_w257_b4_input.png Graphic file (type png)
 <use Figures/Fields B/b_test_nmae_p50_g550_w257_b4_input.png>
-Package pdftex.def Info: Figures/Fields B/b_test_nmae_p50_g550_w257_b4_input.png  used on input line 679.
+Package pdftex.def Info: Figures/Fields B/b_test_nmae_p50_g550_w257_b4_input.png  used on input line 693.
 (pdftex.def)             Requested size: 322.50346pt x 90.9349pt.
-<Figures/Fields B/b_test_nmae_p50_g550_w257_b4_fields.png, id=337, 1358.676pt x 806.0514pt>
+<Figures/Fields B/b_test_nmae_p50_g550_w257_b4_fields.png, id=196, 1358.676pt x 806.0514pt>
 File: Figures/Fields B/b_test_nmae_p50_g550_w257_b4_fields.png Graphic file (type png)
 <use Figures/Fields B/b_test_nmae_p50_g550_w257_b4_fields.png>
-Package pdftex.def Info: Figures/Fields B/b_test_nmae_p50_g550_w257_b4_fields.png  used on input line 686.
+Package pdftex.def Info: Figures/Fields B/b_test_nmae_p50_g550_w257_b4_fields.png  used on input line 700.
 (pdftex.def)             Requested size: 430.00462pt x 255.10057pt.
  [21 <./Figures/Fields B/b_test_nmae_p25_g283_w234_b1_input.png> <./Figures/Fields B/b_test_nmae_p25_g283_w234_b1_fields.png>]
-<Figures/Fields B/b_test_nmae_p75_g234_w145_b1_input.png, id=345, 1028.643pt x 290.0436pt>
+<Figures/Fields B/b_test_nmae_p75_g234_w145_b1_input.png, id=204, 1028.643pt x 290.0436pt>
 File: Figures/Fields B/b_test_nmae_p75_g234_w145_b1_input.png Graphic file (type png)
 <use Figures/Fields B/b_test_nmae_p75_g234_w145_b1_input.png>
-Package pdftex.def Info: Figures/Fields B/b_test_nmae_p75_g234_w145_b1_input.png  used on input line 696.
+Package pdftex.def Info: Figures/Fields B/b_test_nmae_p75_g234_w145_b1_input.png  used on input line 710.
 (pdftex.def)             Requested size: 322.50346pt x 90.9349pt.
-<Figures/Fields B/b_test_nmae_p75_g234_w145_b1_fields.png, id=346, 1358.676pt x 806.0514pt>
+<Figures/Fields B/b_test_nmae_p75_g234_w145_b1_fields.png, id=205, 1358.676pt x 806.0514pt>
 File: Figures/Fields B/b_test_nmae_p75_g234_w145_b1_fields.png Graphic file (type png)
 <use Figures/Fields B/b_test_nmae_p75_g234_w145_b1_fields.png>
-Package pdftex.def Info: Figures/Fields B/b_test_nmae_p75_g234_w145_b1_fields.png  used on input line 703.
+Package pdftex.def Info: Figures/Fields B/b_test_nmae_p75_g234_w145_b1_fields.png  used on input line 717.
 (pdftex.def)             Requested size: 430.00462pt x 255.10057pt.
  [22 <./Figures/Fields B/b_test_nmae_p50_g550_w257_b4_input.png> <./Figures/Fields B/b_test_nmae_p50_g550_w257_b4_fields.png>]
 
-LaTeX Warning: Reference `fig:loss_histogram_discrete' on page 23 undefined on input line 709.
+LaTeX Warning: Reference `fig:disp_loss_histogram_discrete' on page 23 undefined on input line 723.
 
 
-LaTeX Warning: Reference `fig:loss_histograms' on page 23 undefined on input line 712.
+LaTeX Warning: Reference `fig:disp_loss_histograms' on page 23 undefined on input line 726.
 
 [23 <./Figures/Fields B/b_test_nmae_p75_g234_w145_b1_input.png> <./Figures/Fields B/b_test_nmae_p75_g234_w145_b1_fields.png>]
-<Figures/Statistics/displacement_loss_histogram_mae_c_test.png, id=361, 361.35pt x 289.08pt>
+<Figures/Statistics/displacement_loss_histogram_mae_c_test.png, id=221, 361.35pt x 289.08pt>
 File: Figures/Statistics/displacement_loss_histogram_mae_c_test.png Graphic file (type png)
 <use Figures/Statistics/displacement_loss_histogram_mae_c_test.png>
-Package pdftex.def Info: Figures/Statistics/displacement_loss_histogram_mae_c_test.png  used on input line 722.
+Package pdftex.def Info: Figures/Statistics/displacement_loss_histogram_mae_c_test.png  used on input line 736.
 (pdftex.def)             Requested size: 210.70462pt x 168.56194pt.
-<Figures/Statistics/displacement_loss_histogram_mae_b_test.png, id=362, 361.35pt x 289.08pt>
+<Figures/Statistics/displacement_loss_histogram_mae_b_test.png, id=222, 361.35pt x 289.08pt>
 File: Figures/Statistics/displacement_loss_histogram_mae_b_test.png Graphic file (type png)
 <use Figures/Statistics/displacement_loss_histogram_mae_b_test.png>
-Package pdftex.def Info: Figures/Statistics/displacement_loss_histogram_mae_b_test.png  used on input line 729.
+Package pdftex.def Info: Figures/Statistics/displacement_loss_histogram_mae_b_test.png  used on input line 743.
 (pdftex.def)             Requested size: 210.70462pt x 168.56194pt.
  [24]
-<Figures/Dispersion C/NMAE753_NMSE730_g597.png, id=367, 447.5922pt x 420.1296pt>
+<Figures/Dispersion C/NMAE753_NMSE730_g597.png, id=227, 447.5922pt x 420.1296pt>
 File: Figures/Dispersion C/NMAE753_NMSE730_g597.png Graphic file (type png)
 <use Figures/Dispersion C/NMAE753_NMSE730_g597.png>
-Package pdftex.def Info: Figures/Dispersion C/NMAE753_NMSE730_g597.png  used on input line 743.
+Package pdftex.def Info: Figures/Dispersion C/NMAE753_NMSE730_g597.png  used on input line 757.
 (pdftex.def)             Requested size: 137.60461pt x 129.16183pt.
-<Figures/Dispersion C/NMAE502_NMSE443_g182.png, id=368, 447.5922pt x 420.1296pt>
+<Figures/Dispersion C/NMAE502_NMSE443_g182.png, id=228, 447.5922pt x 420.1296pt>
 File: Figures/Dispersion C/NMAE502_NMSE443_g182.png Graphic file (type png)
 <use Figures/Dispersion C/NMAE502_NMSE443_g182.png>
-Package pdftex.def Info: Figures/Dispersion C/NMAE502_NMSE443_g182.png  used on input line 750.
+Package pdftex.def Info: Figures/Dispersion C/NMAE502_NMSE443_g182.png  used on input line 764.
 (pdftex.def)             Requested size: 137.60461pt x 129.16183pt.
-<Figures/Dispersion C/NMAE250_NMSE250_g928.png, id=369, 447.5922pt x 420.1296pt>
+<Figures/Dispersion C/NMAE250_NMSE250_g928.png, id=229, 447.5922pt x 420.1296pt>
 File: Figures/Dispersion C/NMAE250_NMSE250_g928.png Graphic file (type png)
 <use Figures/Dispersion C/NMAE250_NMSE250_g928.png>
-Package pdftex.def Info: Figures/Dispersion C/NMAE250_NMSE250_g928.png  used on input line 757.
+Package pdftex.def Info: Figures/Dispersion C/NMAE250_NMSE250_g928.png  used on input line 771.
 (pdftex.def)             Requested size: 137.60461pt x 129.16183pt.
  [25 <./Figures/Statistics/displacement_loss_histogram_mae_c_test.png> <./Figures/Statistics/displacement_loss_histogram_mae_b_test.png> <./Figures/Dispersion C/NMAE753_NMSE730_g597.png> <./Figures/Dispersion C/NMAE502_NMSE443_g182.png> <./Figures/Dispersion C/NMAE250_NMSE250_g928.png>]
-<Figures/Dispersion B/NMAE754_NMSE754_g690.png, id=384, 437.4744pt x 420.1296pt>
+<Figures/Dispersion B/NMAE754_NMSE754_g690.png, id=244, 437.4744pt x 420.1296pt>
 File: Figures/Dispersion B/NMAE754_NMSE754_g690.png Graphic file (type png)
 <use Figures/Dispersion B/NMAE754_NMSE754_g690.png>
-Package pdftex.def Info: Figures/Dispersion B/NMAE754_NMSE754_g690.png  used on input line 770.
+Package pdftex.def Info: Figures/Dispersion B/NMAE754_NMSE754_g690.png  used on input line 784.
 (pdftex.def)             Requested size: 137.60461pt x 132.1492pt.
-<Figures/Dispersion B/NMAE499_NMSE514_g975.png, id=385, 437.4744pt x 420.1296pt>
+<Figures/Dispersion B/NMAE499_NMSE514_g975.png, id=245, 437.4744pt x 420.1296pt>
 File: Figures/Dispersion B/NMAE499_NMSE514_g975.png Graphic file (type png)
 <use Figures/Dispersion B/NMAE499_NMSE514_g975.png>
-Package pdftex.def Info: Figures/Dispersion B/NMAE499_NMSE514_g975.png  used on input line 777.
+Package pdftex.def Info: Figures/Dispersion B/NMAE499_NMSE514_g975.png  used on input line 791.
 (pdftex.def)             Requested size: 137.60461pt x 132.1492pt.
-<Figures/Dispersion B/NMAE252_NMSE328_g729.png, id=386, 437.4744pt x 420.1296pt>
+<Figures/Dispersion B/NMAE252_NMSE328_g729.png, id=246, 437.4744pt x 420.1296pt>
 File: Figures/Dispersion B/NMAE252_NMSE328_g729.png Graphic file (type png)
 <use Figures/Dispersion B/NMAE252_NMSE328_g729.png>
-Package pdftex.def Info: Figures/Dispersion B/NMAE252_NMSE328_g729.png  used on input line 784.
+Package pdftex.def Info: Figures/Dispersion B/NMAE252_NMSE328_g729.png  used on input line 798.
 (pdftex.def)             Requested size: 137.60461pt x 132.1492pt.
-<Figures/Statistics/freq_loss_histogram_mae_c_test.png, id=387, 361.35pt x 289.08pt>
+<Figures/Statistics/freq_loss_histogram_mae_c_test.png, id=247, 361.35pt x 289.08pt>
 File: Figures/Statistics/freq_loss_histogram_mae_c_test.png Graphic file (type png)
 <use Figures/Statistics/freq_loss_histogram_mae_c_test.png>
-Package pdftex.def Info: Figures/Statistics/freq_loss_histogram_mae_c_test.png  used on input line 797.
+Package pdftex.def Info: Figures/Statistics/freq_loss_histogram_mae_c_test.png  used on input line 811.
 (pdftex.def)             Requested size: 210.70462pt x 168.56194pt.
-<Figures/Statistics/freq_loss_histogram_mae_b_test.png, id=388, 361.35pt x 289.08pt>
+<Figures/Statistics/freq_loss_histogram_mae_b_test.png, id=248, 361.35pt x 289.08pt>
 File: Figures/Statistics/freq_loss_histogram_mae_b_test.png Graphic file (type png)
 <use Figures/Statistics/freq_loss_histogram_mae_b_test.png>
-Package pdftex.def Info: Figures/Statistics/freq_loss_histogram_mae_b_test.png  used on input line 804.
+Package pdftex.def Info: Figures/Statistics/freq_loss_histogram_mae_b_test.png  used on input line 818.
 (pdftex.def)             Requested size: 210.70462pt x 168.56194pt.
- [26 <./Figures/Dispersion B/NMAE754_NMSE754_g690.png> <./Figures/Dispersion B/NMAE499_NMSE514_g975.png> <./Figures/Dispersion B/NMAE252_NMSE328_g729.png>] [27 <./Figures/Statistics/freq_loss_histogram_mae_c_test.png> <./Figures/Statistics/freq_loss_histogram_mae_b_test.png>]
-<Figures/Statistics/boundary_vs_mae_by_band_b_test.png, id=407, 542.025pt x 361.35pt>
+ [26 <./Figures/Dispersion B/NMAE754_NMSE754_g690.png> <./Figures/Dispersion B/NMAE499_NMSE514_g975.png> <./Figures/Dispersion B/NMAE252_NMSE328_g729.png>]
+
+LaTeX Warning: Reference `fig:disp_loss_histograms' on page 27 undefined on input line 830.
+
+
+LaTeX Warning: Reference `fig:freq_loss_histograms' on page 27 undefined on input line 830.
+
+
+LaTeX Warning: Reference `fig:boundary_vs_mae_by_band' on page 27 undefined on input line 831.
+
+[27 <./Figures/Statistics/freq_loss_histogram_mae_c_test.png> <./Figures/Statistics/freq_loss_histogram_mae_b_test.png>]
+<Figures/Statistics/boundary_vs_mae_by_band_b_test.png, id=265, 542.025pt x 361.35pt>
 File: Figures/Statistics/boundary_vs_mae_by_band_b_test.png Graphic file (type png)
 <use Figures/Statistics/boundary_vs_mae_by_band_b_test.png>
-Package pdftex.def Info: Figures/Statistics/boundary_vs_mae_by_band_b_test.png  used on input line 821.
+Package pdftex.def Info: Figures/Statistics/boundary_vs_mae_by_band_b_test.png  used on input line 835.
 (pdftex.def)             Requested size: 430.00462pt x 286.68192pt.
- [28 <./Figures/Statistics/boundary_vs_mae_by_band_b_test.png>] [29] [30] [31]
+
+
+LaTeX Warning: Reference `fig:boundary_vs_mae_by_band' on page 28 undefined on input line 841.
+
+[28 <./Figures/Statistics/boundary_vs_mae_by_band_b_test.png>]
+
+LaTeX Warning: Reference `eqn:eig_PDE' on page 29 undefined on input line 846.
+
+
+LaTeX Warning: Reference `ssec:input_wavelet_encoding' on page 29 undefined on input line 846.
+
+[29] [30] [31]
 Package microtype Info: Loading generic protrusion settings for font family
 (microtype)             `cmtt' (encoding: T1).
 (microtype)             For optimal results, create family-specific settings.
 (microtype)             See the microtype manual for details.
- (./draft3.bbl
+
+Overfull \hbox (32.5026pt too wide) in paragraph at lines 886--888
+[]\T1/cmr/m/n/12 (-20) MATLAB FEA code can be found at []$\T1/cmtt/m/n/12 https : / / github . com / aco8ogren / 2D-[]dispersion .
+ []
+
+[32] (./draft3.bbl
 
 Package natbib Warning: Empty `thebibliography' environment on input line 8.
 
-) [32] [33
+) [33] [34
 
-{c:/texlive/2026/texmf-dist/fonts/enc/dvips/cm-super/cm-super-ts1.enc}] [34]
-Overfull \hbox (16.42892pt too wide) detected at line 1122
+{c:/texlive/2026/texmf-dist/fonts/enc/dvips/cm-super/cm-super-ts1.enc}] [35]
+Overfull \hbox (16.42892pt too wide) detected at line 981
 \OML/cmm/m/it/12 ^^V[] \OT1/cmr/m/n/12 = [] [] [] \OML/cmm/m/it/12 u[]\OT1/cmr/m/n/12 (\OML/cmm/m/it/12 i; j\OT1/cmr/m/n/12 )\OML/cmm/m/it/12 ;  ^^[[] \OT1/cmr/m/n/12 = [] [] [] [] []
  []
 
-[35] [36] [37]
-<Figures/Methods/eigenfrequency_encoding.png, id=465, 1710.6309pt x 286.9119pt>
+[36] [37] [38]
+Package hyperref Info: bookmark level for unknown algorithm defaults to 0 on input line 1045.
+ [39]
+
+LaTeX Warning: Reference `alg:1d_gabor_embedding' on page 40 undefined on input line 1078.
+
+[40]
+
+LaTeX Warning: Reference `alg:2d_gabor_embedding' on page 41 undefined on input line 1115.
+
+[41]
+
+LaTeX Warning: Reference `alg:eigenfrequency_wavelet_encoding' on page 42 undefined on input line 1119.
+
+
+LaTeX Warning: Reference `alg:eigenfrequency_wavelet_decoding' on page 42 undefined on input line 1119.
+
+
+LaTeX Warning: Reference `fig:eigenfrequency_encoding' on page 42 undefined on input line 1119.
+
+
+LaTeX Warning: Reference `fig:eigenfrequency_decode_error' on page 42 undefined on input line 1119.
+
+<Figures/Methods/eigenfrequency_encoding.png, id=365, 833.9958pt x 580.3281pt>
 File: Figures/Methods/eigenfrequency_encoding.png Graphic file (type png)
 <use Figures/Methods/eigenfrequency_encoding.png>
-Package pdftex.def Info: Figures/Methods/eigenfrequency_encoding.png  used on input line 1197.
-(pdftex.def)             Requested size: 430.00462pt x 72.11742pt.
- [38]
-<Figures/Methods/eigenvalue_encode_decode_error_test.png, id=470, 1003.1076pt x 353.4003pt>
+Package pdftex.def Info: Figures/Methods/eigenfrequency_encoding.png  used on input line 1123.
+(pdftex.def)             Requested size: 430.00462pt x 299.22208pt.
+[42]
+<Figures/Methods/eigenvalue_encode_decode_error_test.png, id=371, 713.66624pt x 355.92975pt>
 File: Figures/Methods/eigenvalue_encode_decode_error_test.png Graphic file (type png)
 <use Figures/Methods/eigenvalue_encode_decode_error_test.png>
-Package pdftex.def Info: Figures/Methods/eigenvalue_encode_decode_error_test.png  used on input line 1204.
-(pdftex.def)             Requested size: 430.00462pt x 151.49pt.
-Package hyperref Info: bookmark level for unknown algorithm defaults to 0 on input line 1212.
- [39 <./Figures/Methods/eigenfrequency_encoding.png> <./Figures/Methods/eigenvalue_encode_decode_error_test.png>] [40] [41] [42]
-Overfull \hbox (14.93063pt too wide) detected at line 1333
+Package pdftex.def Info: Figures/Methods/eigenvalue_encode_decode_error_test.png  used on input line 1130.
+(pdftex.def)             Requested size: 430.00462pt x 214.45561pt.
+ [43 <./Figures/Methods/eigenfrequency_encoding.png>] [44 <./Figures/Methods/eigenvalue_encode_decode_error_test.png>]
+Overfull \hbox (14.93063pt too wide) detected at line 1184
 []\OT1/cmr/m/n/12 (\OML/cmm/m/it/12 k[]; k[]\OT1/cmr/m/n/12 ) \OMS/cmsy/m/n/12   [] [] \OML/cmm/m/it/12  []\OT1/cmr/m/n/12 (\OML/cmm/m/it/12 m; n\OT1/cmr/m/n/12 )  []  [] \OML/cmm/m/it/12 ;  F\OT1/cmr/m/n/12 (\OML/cmm/m/it/12 k[]; k[]\OT1/cmr/m/n/12 ) \OMS/cmsy/m/n/12   j[]\OT1/cmr/m/n/12 (\OML/cmm/m/it/12 k[]; k[]\OT1/cmr/m/n/12 )\OMS/cmsy/m/n/12 j
  []
 
-[43]
+[45]
 Overfull \vbox (31.035pt too high) has occurred while \output is active []
 
 
 Overfull \vbox (31.035pt too high) has occurred while \output is active []
 
- [44] [45] (./draft3.aux)
+ [46]
+
+LaTeX Warning: Reference `alg:eigenfrequency_wavelet_encoding' on page 47 undefined on input line 1213.
+
+
+LaTeX Warning: Reference `alg:eigenfrequency_wavelet_decoding' on page 47 undefined on input line 1213.
+
+[47] (./draft3.aux)
  ***********
 LaTeX2e <2026-06-01>
 L3 programming layer <2026-06-18>
@@ -1446,24 +1567,30 @@ LaTeX Font Warning: Size substitutions with differences
 LaTeX Warning: There were undefined references.
 
 
-LaTeX Warning: There were multiply-defined labels.
+LaTeX Warning: Label(s) may have changed. Rerun to get cross-references right.
 
-Package rerunfilecheck Info: File `draft3.out' has not changed.
-(rerunfilecheck)             Checksum: CC8D9B06365B6BBFAC09E1DD5C625E40;4369.
+
+Package rerunfilecheck Warning: File `draft3.out' has changed.
+(rerunfilecheck)                Rerun to get outlines right
+(rerunfilecheck)                or use package `bookmark'.
+
+Package rerunfilecheck Info: Checksums for `draft3.out':
+(rerunfilecheck)             Before: <no file>
+(rerunfilecheck)             After:  8DAD8A4D6E9338C06C41FD7C801C5154;4063.
  ) 
 Here is how much of TeX's memory you used:
- 45880 strings out of 467168
- 1065478 string characters out of 5413705
- 1649893 words of memory out of 5000000
- 74046 multiletter control sequences out of 15000+600000
- 660797 words of font info for 248 fonts, out of 8000000 for 9000
+ 44145 strings out of 467168
+ 1024766 string characters out of 5413705
+ 1594057 words of memory out of 5000000
+ 72308 multiletter control sequences out of 15000+600000
+ 661919 words of font info for 255 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
- 84i,13n,94p,2117b,1263s stack positions out of 10000i,1000n,20000p,200000b,200000s
-<c:/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx10.pfb><c:/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx12.pfb><c:/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx8.pfb><c:/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmex10.pfb><c:/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi10.pfb><c:/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi12.pfb><c:/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi6.pfb><c:/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi7.pfb><c:/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi8.pfb><c:/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmr10.pfb><c:/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmr12.pfb><c:/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmr6.pfb><c:/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmr7.pfb><c:/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmr8.pfb><c:/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy10.pfb><c:/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy6.pfb><c:/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy7.pfb><c:/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy8.pfb><c:/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/symbols/msbm10.pfb><c:/texlive/2026/texmf-dist/fonts/type1/public/cm-super/sfbx1200.pfb><c:/texlive/2026/texmf-dist/fonts/type1/public/cm-super/sfrm0800.pfb><c:/texlive/2026/texmf-dist/fonts/type1/public/cm-super/sfrm1000.pfb><c:/texlive/2026/texmf-dist/fonts/type1/public/cm-super/sfrm1200.pfb><c:/texlive/2026/texmf-dist/fonts/type1/public/cm-super/sfrm1728.pfb><c:/texlive/2026/texmf-dist/fonts/type1/public/cm-super/sfss0800.pfb><c:/texlive/2026/texmf-dist/fonts/type1/public/cm-super/sfti0700.pfb><c:/texlive/2026/texmf-dist/fonts/type1/public/cm-super/sfti1000.pfb><c:/texlive/2026/texmf-dist/fonts/type1/public/cm-super/sfti1200.pfb><c:/texlive/2026/texmf-dist/fonts/type1/public/cm-super/sftt1200.pfb><c:/texlive/2026/texmf-dist/fonts/type1/urw/zapfding/uzdr.pfb>
-Output written on draft3.pdf (45 pages, 3472374 bytes).
+ 84i,13n,94p,1546b,1247s stack positions out of 10000i,1000n,20000p,200000b,200000s
+<c:/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx10.pfb><c:/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx12.pfb><c:/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx8.pfb><c:/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmex10.pfb><c:/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi10.pfb><c:/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi12.pfb><c:/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi6.pfb><c:/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi7.pfb><c:/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi8.pfb><c:/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmr10.pfb><c:/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmr12.pfb><c:/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmr6.pfb><c:/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmr7.pfb><c:/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmr8.pfb><c:/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy10.pfb><c:/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy6.pfb><c:/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy7.pfb><c:/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy8.pfb><c:/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/symbols/msbm10.pfb><c:/texlive/2026/texmf-dist/fonts/type1/public/cm-super/sfbx1000.pfb><c:/texlive/2026/texmf-dist/fonts/type1/public/cm-super/sfbx1200.pfb><c:/texlive/2026/texmf-dist/fonts/type1/public/cm-super/sfrm0800.pfb><c:/texlive/2026/texmf-dist/fonts/type1/public/cm-super/sfrm1000.pfb><c:/texlive/2026/texmf-dist/fonts/type1/public/cm-super/sfrm1200.pfb><c:/texlive/2026/texmf-dist/fonts/type1/public/cm-super/sfrm1728.pfb><c:/texlive/2026/texmf-dist/fonts/type1/public/cm-super/sfss0800.pfb><c:/texlive/2026/texmf-dist/fonts/type1/public/cm-super/sfti0700.pfb><c:/texlive/2026/texmf-dist/fonts/type1/public/cm-super/sfti1000.pfb><c:/texlive/2026/texmf-dist/fonts/type1/public/cm-super/sfti1200.pfb><c:/texlive/2026/texmf-dist/fonts/type1/public/cm-super/sftt1200.pfb>
+Output written on draft3.pdf (47 pages, 3947432 bytes).
 PDF statistics:
- 717 PDF objects out of 1000 (max. 8388607)
- 530 compressed objects within 6 object streams
+ 585 PDF objects out of 1000 (max. 8388607)
+ 404 compressed objects within 5 object streams
  159 named destinations out of 1000 (max. 500000)
- 60279 words of extra memory for PDF output out of 61914 (max. 10000000)
+ 62140 words of extra memory for PDF output out of 74296 (max. 10000000)
 

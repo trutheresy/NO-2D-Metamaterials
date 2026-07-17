@@ -861,7 +861,7 @@ def embed_2const_wavelet(
     size : int
         Output patch side length.
     freq_range : float
-        Envelope scale; larger values narrow the Gaussian (σ = 0.4 / freq_range).
+        Envelope scale; larger values narrow the Gaussian (σ = 0.5 / freq_range).
     """
     kx = np.asarray(kx)
     ky = np.asarray(ky)

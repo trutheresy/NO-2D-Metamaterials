@@ -1,7 +1,7 @@
 {
   "run_name": "NO_I3O5_BCF16_NMAE_HC128_LR2e-03_WD0e+00_L1P1e-08_SS1_G9e-01_ch0u_260711",
   "run_id": "NO_I3O5_BCF16_NMAE_HC128_LR2e-03_WD0e+00_L1P1e-08_SS1_G9e-01_ch0u_260711",
-  "status": "running",
+  "status": "completed",
   "started_at_utc": "2026-07-11T06:54:17.777251+00:00",
   "git": {
     "git_commit": "954e0348719beb607029f59a5447f0cde0f186c5",
@@ -17,14 +17,14 @@
     "device_count": 1,
     "device_name_0": "NVIDIA GeForce RTX 4080 SUPER"
   },
-  "ended_at_utc": "2026-07-15T02:33:44.461034+00:00",
-  "duration_sec": 90107.455663,
-  "best_val_loss": 0.2351106538499395,
-  "best_epoch": 17,
-  "resumed_at_utc": "2026-07-15T03:40:05.674025+00:00",
-  "resume_extend_epochs": 4,
-  "resume_from_epoch": 14,
-  "resume_target_total_epochs": 20,
+  "ended_at_utc": "2026-07-17T00:45:15.487817+00:00",
+  "duration_sec": 24889.784173,
+  "best_val_loss": 0.23188663245290517,
+  "best_epoch": 26,
+  "resumed_at_utc": "2026-07-16T17:50:25.703644+00:00",
+  "resume_extend_epochs": 2,
+  "resume_from_epoch": 26,
+  "resume_target_total_epochs": 28,
   "error_type": "RuntimeError",
-  "error_message": "DataLoader worker (pid(s) 135176, 121684) exited unexpectedly"
+  "error_message": "DataLoader worker (pid(s) 13108) exited unexpectedly"
 }

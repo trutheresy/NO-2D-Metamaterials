@@ -22,7 +22,7 @@
 %% Use the option review to obtain double line spacing
 % \documentclass[authoryear,preprint,review,12pt]{elsarticle}
 
-\documentclass[preprint,review,12pt]{elsarticle}
+\documentclass[preprint,review,12pt,numafflabel]{elsarticle}
 
 %% Use the options 1p,twocolumn; 3p; 3p,twocolumn; 5p; or 5p,twocolumn
 %% for a journal layout:
@@ -72,7 +72,6 @@
 
 % Hyperlinks and References
 \usepackage{hyperref}
-\usepackage{cleveref}
 
 % Bibliography
 %\usepackage[backend=bibtex,style=numeric]{biblatex}
@@ -140,8 +139,7 @@
 
 %\title{The use of wavelet encodings to allow Fourier neural operators to toggle between modes when computing deformation fields}
 
-\title{Fourier Neural Operators using Wavelet Encodings for Solving Eigenvalue PDEs To Simulate Acoustic Metamaterial Displacement Fields}
-\todo{Rephrase title to be more impactful}
+\title{Learning Metamaterial Eigenmodes with Wavelet-Encoded Fourier Neural Operators}
 
 %% use optional labels to link authors explicitly to addresses:
 %% \author[label1,label2]{}
@@ -160,7 +158,8 @@
 %%             country={}}
 
 \author[Mech]{Han Zhang}
-\author[Comp]{Cynthia Rudin}
+\author[Caltech]{Alexander Ogren}
+\author[Comp]{Cynthia Rudin}\\
 \author[Mech]{Johann Guilleminot}
 \author[Mech]{L. Catherine Brinson}
 \affiliation[Mech]{organization={Department of Mechanical Engineering and Materials Science, Duke University},%Department and Organization
@@ -168,6 +167,12 @@
             city={Durham},
             %postcode={}, 
             state={NC},
+            country={USA}}
+\affiliation[Caltech]{organization={Department of Mechanical Engineering, California Institute of Technology},%Department and Organization
+            %addressline={}, 
+            city={Pasadena},
+            %postcode={}, 
+            state={CA},
             country={USA}}
 \affiliation[Comp]{organization={Department of Electrical and Computer Engineering, Duke University},%Department and Organization
             %addressline={}, 
@@ -183,7 +188,7 @@
 %             country={USA}}
 \begin{abstract}
 %% Text of abstract
-Neural operator models have in recent years demonstrated impressive capabilities in solving linear and non-linear non-eigenvalue PDEs, but the ability for these operator models to solve eigenvalue PDEs, where the PDE constants must simultaneously be solved along with a solution field, has not yet been demonstrated. In this paper, we illustrate the effectiveness of Fourier Neural Operators (FNOs) combined with wavelet-based encoding techniques for PDE parameters to simultaneously and inexpensively solve multiple eigenmodes of the wave equation for elastic solids, corresponding to multiple deformation modes from acoustic waves propagating through arbitrary metamaterial geometries. In this paper a novel wavelet encoding schema for PDE constants is shown, which allows the FNO model to be used to provide multiple valid solutions to an eigenvalue PDE, as opposed to the typical single solution of previous works. This paper also demonstrates and explains why a purely spatial or reciprocal encoding of the same parameters will not result in an FNO model with the same eigenvalue PDE solving capability.
+Machine learning surrogates based on neural operators have shown broad applicability in solving forward PDE problems. However, eigenvalue problems, in which an eigenparameter and one of several valid eigenmodes must be simultaneously solved, remain difficult because standard operator learning formulations assume a unique input--output map. This work demonstrates that Fourier Neural Operators (FNOs), combined with wavelet-based encodings of PDE inputs, can learn and inexpensively predict multiple eigenmodes of the elastic wave equation, corresponding to deformation modes of acoustic waves propagating through arbitrary metamaterial geometries. We provide theoretical motivation and experimental evidence for why wavelet encodings are well matched to the dual spatial--spectral structure of the FNO, enabling deterministic mode selection on both continuous and discretely valued geometries within a single model, and for why prediction accuracy varies with geometric discontinuities. These results carry broader implications for designing input encodings in other multi-mode PDE solvers based on spectral neural operators.
 
 \end{abstract}
 
@@ -200,7 +205,7 @@ Neural operator models have in recent years demonstrated impressive capabilities
 
 \begin{keyword}
 %% keywords here, in the form: keyword \sep keyword, up to a maximum of 6 keywords
-Neural Operator \sep Metamaterials \sep Acoustics \sep Wavelet Transform \sep Machine Learning
+Neural Operator \sep Metamaterials \sep Wavelets \sep Eigenmodes \sep Machine Learning
 %% PACS codes here, in the form: \PACS code \sep code
 
 %% MSC codes here, in the form: \MSC code \sep code
@@ -216,13 +221,13 @@ Neural Operator \sep Metamaterials \sep Acoustics \sep Wavelet Transform \sep Ma
 
 %% main text
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\newpage
 \section*{Table of Contents}
-\addcontentsline{toc}{section}{Table of Contents}
 \begingroup
   \renewcommand{\contentsname}{}
   \tableofcontents
 \endgroup
-\pagebreak
+\newpage
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Introduction}
 \label{introduction}
@@ -237,16 +242,16 @@ Acoustic metamaterials provide a particularly compelling example of this challen
 
 However, extending neural operators to eigenvalue PDEs is nontrivial. Standard operator-learning formulations implicitly assume a one-to-one mapping between inputs and outputs, whereas eigenvalue problems admit multiple valid solutions for a given geometry. As a result, existing FNO architectures lack a mechanism for deterministically selecting among different eigenmodes. Furthermore, the representation of eigenvalue-related information must be compatible with the spectral architecture of the FNO, which processes information jointly in both spatial and frequency domains.
 
-In this work, we introduce a framework that enables Fourier Neural Operators to solve eigenvalue PDEs associated with elastic wave propagation in acoustic metamaterials. The key idea is to augment the model inputs with wavelet-based encodings of PDE parameters that uniquely identify individual eigenmodes while remaining compatible with the FNO architecture. We demonstrate that these encodings allow a single neural operator to learn multiple valid solutions corresponding to distinct deformation modes and to reproduce those modes deterministically on demand. We further show that conventional spatial encodings and purely spectral encodings do not provide the same capability, highlighting the importance of the proposed wavelet representation.
+In this work, we introduce a framework that enables Fourier Neural Operators to solve eigenvalue PDEs associated with elastic wave propagation in acoustic metamaterials. The key idea is to augment the model inputs with wavelet-based encodings of PDE parameters that uniquely identify individual eigenmodes while remaining compatible with the FNO architecture. We demonstrate that these encodings allow a single neural operator to learn multiple valid solutions corresponding to distinct deformation modes and to reproduce those modes deterministically on demand. We further show that conventional spatial encodings and purely spectral encodings do not provide the same capability, highlighting the importance of the proposed wavelet representation. We also evaluate the same model on continuous- and discrete-valued geometries, recovering both displacement fields and eigenfrequencies, and examine how geometric discontinuities interact with the truncated spectral structure of the FNO.
 
 The contributions of this paper are threefold:
 
 \begin{enumerate}
-    \item We demonstrate, to the best of our knowledge, the first application of Fourier Neural Operators to the solution of eigenvalue PDEs involving unknown modal parameters. \todo{Citation needed, rephrase to be sharp and up to date, indicate usefulness}
+    \item We demonstrate that a single Fourier Neural Operator can learn multiple eigenmodes across continuous and discrete metamaterial geometries, recovering both eigenvectors (displacement fields) and eigenvalues (eigenfrequencies).
     
-    \item We introduce a wavelet-based encoding strategy that enables deterministic selection among multiple eigenmodes within a single neural operator framework.
+    \item We introduce wavelet encodings of modal parameters and explain theoretically why their spatial--spectral structure enables deterministic mode selection in FNOs.
     
-    \item We investigate the interaction between input representations and the dual spatial-spectral structure of the FNO, providing insight into why wavelet encodings are effective whereas purely spatial or purely reciprocal representations are not.
+    \item We show that prediction accuracy degrades with geometric discontinuities and interpret this through spectral truncation, with implications for applying FNOs to problems with sharp interfaces.
 \end{enumerate}
 
 Together, these results extend the applicability of neural operators beyond conventional forward PDE problems and establish a pathway toward efficient surrogate modeling of eigenvalue-driven physical systems, including acoustic metamaterials and other wave-based engineering applications.
@@ -393,7 +398,7 @@ The overall finite element data-generation procedure is summarized in Figure \re
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection{Input Wavelet Encoding}
 \label{ssec:input_wavelet_encoding}
-To allow the FNO model to toggle between PDE solutions for a given geometry, information must be fed to the model indicating which excitation waveform (wavevectors) and deformation mode (band) we are looking for a solution to. This information is given in the form of a wavevector embedding, which we have found to yield superior results compared with a constant field embedding (2D matrices of the same value) or a sinusoidal embedding (2D sinusoidal fields with constants encoded as the sinusoidal frequency). A discussion on why wavelet encodings are superior is found in the results \todo{add section reference here} presented later in this paper.
+To allow the FNO model to toggle between PDE solutions for a given geometry, information must be fed to the model indicating which excitation waveform (wavevectors) and deformation mode (band) we are looking for a solution to. This information is given in the form of a wavevector embedding, which we have found to yield superior results compared with a constant field embedding (2D matrices of the same value) or a sinusoidal embedding (2D sinusoidal fields with constants encoded as the sinusoidal frequency). A discussion on why wavelet encodings are superior is found in Section~\ref{ssec:band_wavevector_encoding}.
 
 For the wavelet encodings, we use a 1D Gabor wavelet transform to map band numbers to unique wavelet images (see Algorithm \ref{alg:1d_gabor_embedding}), and a 2D Gabor wavelet transform to map x and y wavevectors to another set of unique wavelet images (see Algorithm \ref{alg:2d_gabor_embedding}). These representations show rich variation both in the spatial domain and in the Fourier domain, which allows for FNO model weights of both branches to richly interact with the wavelet representation, leading to better learning outcomes. 
 
@@ -431,6 +436,15 @@ For the wavelet encodings, we use a 1D Gabor wavelet transform to map band numbe
     \end{subfigure}
     \caption{The wavelet encoding of the $x$ and $y$ wavevectors (\ref{fig:2D_wavelet_encoding_spatial}) and its FFT \ref{fig:2D_wavelet_encoding_fft}. The actual wavevectors are shown in the subplot titles. For each $k_x$ and $k_y$ value pair, there is a unique mapping in both the spatial and spectral domain representations.}
     \label{fig:2D_wavelet_encoding}
+\end{figure}
+
+When encoding continuous constants with oscillatory functions on a finite grid, it is important to verify that distinct parameter values do not alias into nearly identical patches. Otherwise the model cannot distinguish neighboring wavevectors, and mode selection collapses. We therefore checked pairwise cosine similarity of the mean-centered $\log_{10}|\mathrm{FFT}|$ spectra of all $325$ IBZ wavevector encodings produced by Algorithm~\ref{alg:2d_gabor_embedding} (Supplementary Information). The resulting similarity matrix is shown in Figure~\ref{fig:wavevector_encoding_similarity}; the maximum off-diagonal similarity is $0.862$, well below near-duplicate levels, confirming that the chosen encoding constants introduce no appreciable aliasing across the IBZ grid.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.75\textwidth]{Figures/Methods/fft_log_cosine_similarity_heatmap_fscale41_offset2p2_sigma0p5_kx13_ky25.png}
+  \caption{Pairwise cosine similarity of mean-centered $\log_{10}|\mathrm{FFT}|$ spectra for the $325$ IBZ wavevector encodings generated by Algorithm~\ref{alg:2d_gabor_embedding}. The maximum off-diagonal similarity is $0.862$, indicating that distinct $(k_x,k_y)$ pairs remain spectrally separable on the $32\times32$ grid.}
+  \label{fig:wavevector_encoding_similarity}
 \end{figure}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -585,15 +599,15 @@ It was found that final model performance did not appreciably change for changes
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Results and Discussion}
-This section presents the final model results in the following cases:
-\begin{itemize}
-    \item[\checked] Performance on displacement field prediction
-    \item[\checked] Performance on eigenvalue prediction
-    \item[\checked] Performance across multiple geometries
-    \item[\checked] Performance variation with binary geometry discontinuity measures
-    \item[\unchecked] Performance variation with encoding strategies
-    \item[\unchecked] Performance variation with training hyperparameters and loss function
-\end{itemize}
+% This section presents the final model results in the following cases:
+% \begin{itemize}
+%     \item[\checked] Performance on displacement field prediction
+%     \item[\checked] Performance on eigenvalue prediction
+%     \item[\checked] Performance across multiple geometries
+%     \item[\checked] Performance variation with binary geometry discontinuity measures
+%     \item[\checked] Performance variation with encoding strategies
+%     \item[\unchecked] Performance variation with training hyperparameters and loss function
+% \end{itemize}
 
 % In our search through the best encoding scheme for inputs, datatype representation for outputs, model architecture hyperparameters, and training hyperparameters for our FNO eigenvalue PDE solver, we discovered the following notable results.  
 
@@ -652,7 +666,7 @@ We next evaluate the trained Fourier Neural Operator on its predictions of the B
         \label{fig:c_p75_output}
     \end{subfigure}
 \end{figure}
-These results demonstrate that with wavelet encodings, the FNO model performs well on continuous geometries, faithfully reproducing the displacement fields in most cases. Model predictions in the top three quartiles match targets well in structure and scale, with decreasing average pixel relative errors in the scale of $~10^{-2}$ smoothly decreasing down to $~10^{-4}$ with increasing percentile performance. (See Figure \ref{fig:loss_histogram_continuous} for more detailed statistics.)
+These results demonstrate that with wavelet encodings, the FNO model performs well on continuous geometries, faithfully reproducing the displacement fields in most cases. Model predictions in the top three quartiles match targets well in structure and scale, with decreasing average pixel relative errors in the scale of $~10^{-2}$ smoothly decreasing down to $~10^{-4}$ with increasing percentile performance. (See Figure \ref{fig:disp_loss_histogram_continuous} for more detailed statistics.)
 
 \subsubsection{Discrete Geometries}
 \begin{figure}[H]
@@ -706,10 +720,10 @@ These results demonstrate that with wavelet encodings, the FNO model performs we
     \end{subfigure}
 \end{figure}
 
-Like with the continuous geometry case, these results demonstrate that with wavelet encodings, the FNO model performs well on discrete geometries, faithfully reproducing the displacement fields in most cases. Model predictions in the top three quartiles match targets well in structure and scale, with decreasing average pixel relative errors in the scale of $~10^{-2}$ smoothly decreasing down to $~10^{-4}$ with increasing percentile performance. (See Figure \ref{fig:loss_histogram_discrete} for more detailed statistics.)
+Like with the continuous geometry case, these results demonstrate that with wavelet encodings, the FNO model performs well on discrete geometries, faithfully reproducing the displacement fields in most cases. Model predictions in the top three quartiles match targets well in structure and scale, with decreasing average pixel relative errors in the scale of $~10^{-2}$ smoothly decreasing down to $~10^{-4}$ with increasing percentile performance. (See Figure \ref{fig:disp_loss_histogram_discrete} for more detailed statistics.)
 
 \subsubsection{Continuous Versus Discrete Performance}
-The model being able to simultaneously predict well on both continuous and discrete geometries is a non-trivial and important takeaway for the capabilities of FNOs with paired with wavelet encodings. Prior encoding strategies of constant fields and sinusoidal fields delivered far worse results with grainy structures or mode collapse issues because conditioning constants (wavevector and band) information could not propagate well through the spectral branch of the FNO layers. The performance over all unseen samples in the test set are shown in \ref{fig:loss_histograms}. 
+The model being able to simultaneously predict well on both continuous and discrete geometries is a non-trivial and important takeaway for the capabilities of FNOs with paired with wavelet encodings. Prior encoding strategies of constant fields and sinusoidal fields delivered far worse results with grainy structures or mode collapse issues because conditioning constants (wavevector and band) information could not propagate well through the spectral branch of the FNO layers. The performance over all unseen samples in the test set are shown in \ref{fig:disp_loss_histograms}. 
 
 The poorer performance on binarized geometries is consistent with basic operator-learning theory. Continuous material fields lie in smoother function classes, whereas binary two-phase designs contain jump discontinuities with nonexistent derivatives at material interfaces. Since an FNO approximates the FEA operator $\mathcal{G}: \mathcal{U}\to\mathcal{V}$ through truncated Fourier representations, it is naturally advantaged when both inputs and outputs are comparatively smooth. Discrete geometries thus perform worse due to sharp boundaries, localized gradients, and broadband high-wavenumber content that are poorly captured on a fixed $32\times32$ grid and are mismatched to smooth wavelet encodings. Additionally, because continuous geometries have a greater tendency to have large sections of fields with zero or low displacements, a small spike is seen in relative error performance due to the near zero displacements which results in a small denominator.
 
@@ -786,7 +800,7 @@ These plots represent the eigenfrequency predictions of the model across all 325
         \label{fig:dispersion_b_p75}
     \end{subfigure}
     \caption{Predicted and ground-truth dispersion bands for representative unseen discrete valued geometries spanning the 25th, 50th, and 75th percentiles of prediction performance.}
-    \label{fig:dispersion_c_percentiles}
+    \label{fig:dispersion_b_percentiles}
 \end{figure}
 Like with the continuous geometry figures, these plots represent the eigenfrequency predictions of the model across all 325 wavevectors forming the half plane for discrete valued geometries, downselected to be the horizontal, vertical, and diagonal traversal of the IBZ. Overall, the model performance is quite good at predictions in the encoded eigenfrequency, showing an average of $<1\%$ prediction error across all unseen samples.
 
@@ -823,199 +837,57 @@ If this spectral-truncation explanation is correct, then even among discrete geo
   \label{fig:boundary_vs_mae_by_band}
 \end{figure}
 
-Two complementary trends are apparent. First, for every band there is a positive monotonic association between boundary length and MAE, with Spearman correlations ranging from $\rho=0.644$ for band~$0$ to $\rho\approx0.42$--$0.56$ for the higher bands. Geometries with short interfaces are concentrated at lower absolute error, while geometries with long, meandering phase boundaries systematically occupy the upper portion of the cloud. This supports the interpretation that the hard cases for the learned operator are those for which the truncated Fourier representation must resolve more extensive sharp material transitions on the fixed $32\times32$ grid.
-Second, absolute error itself increases with band index. Averaged over the test geometries, the mean wavevector-averaged MAE rises from approximately $1.6\times10^{-3}$ for band~$0$ to approximately $3.8\times10^{-3}$ for band~$5$. Higher bands correspond to more rapidly oscillating Bloch modes that concentrate energy nearer material interfaces and therefore inherit more of the geometric difficulty encoded by boundary length. Together with the continuous-versus-discrete comparisons above, Figure~\ref{fig:boundary_vs_mae_by_band} indicates that prediction difficulty on discrete designs is organized both by band (modal complexity) and by interface measure (geometric complexity), as expected when a spectral surrogate retains only a portion of the broadband Fourier content generated by discontinuities.
+Two complementary trends are apparent. First, for every band there is a positive monotonic association between boundary length and MAE, with Spearman correlations ranging from $\rho=0.644$ for band~$1$ to $\rho\approx0.42$--$0.56$ for the higher bands. Geometries with short interfaces are concentrated at lower absolute error, while geometries with long, meandering phase boundaries systematically occupy the upper portion of the cloud. This supports the interpretation that the hard cases for the learned operator are those for which the truncated Fourier representation must resolve more extensive sharp material transitions on the fixed $32\times32$ grid.
+Second, absolute error itself increases with band index. Averaged over the test geometries, the mean wavevector-averaged MAE rises from approximately $1.6\times10^{-3}$ for band~$1$ to approximately $3.8\times10^{-3}$ for band~$6$. Higher bands correspond to more rapidly oscillating Bloch modes that concentrate energy nearer material interfaces and therefore inherit more of the geometric difficulty encoded by boundary length. Together with the continuous-versus-discrete comparisons above, Figure~\ref{fig:boundary_vs_mae_by_band} indicates that prediction difficulty on discrete designs is organized both by band (modal complexity) and by interface measure (geometric complexity), as expected when a spectral surrogate retains only a portion of the broadband Fourier content generated by discontinuities.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection{Band and Wavevector Encoding}
-In solving this eigenvalue PDE with a FNO model, the first problem to solve was how to represent the constant parameters fed into the PDE. Specifically, for our PDE in equation \ref{eqn:eig_PDE}, we must specify the wavevectors, as well as which of the eigenvalue solutions (band) the model needs to solve. (The PDE has multiple eigenvalues and eigenvectors that satisfy it, corresponding to different deformation modes at different time frequencies.) Three encoding strategies were tried. The first is a constant-field representation, which can be considered the naive default option. In this representation, the two wavevectors $k_x$, $k_y$ and band $b$ are represented as $3 \times 32 \times 32$ images with constant pixel values, which would be stacked into a tensor and fed into the FNO. The problem with this approach is that the FNO model with this representation tends to experience mode collapse, being unable to learn anything, and outputting also constant field solutions. The reason for this is that a Fourier transform of a constant field would result in only one frequency (the constant frequency of 0) having a non-zero coefficient. Likewise, The resulting matrix from a fast Fourier transform (FFT) which is what is used in FNO, results in a matrix with all 0 values except for the center pixel which corresponds to the 0 frequency. This renders the frequency space branch of the Fourier layers shown in figure \ref{fig:FNO_architecture} effectively unable to contain or propagate information with this representation past the first layer. This in turn causes the Fourier branch to not be able to contribute at all to the model predictive power as it never contributes to any loss and thus cannot be trained. The remaining spatial domain branch of the FNO appears unable to handle the complexity of the problem. This is not surprising as it is essentially a standard CNN of shallow depth, which has not been shown in literature to be able to learn complex eigenvalue PDEs.
+\label{ssec:band_wavevector_encoding}
+For the FNO to ingest the conditioning constants of the eigenvalue PDE in equation \ref{eqn:eig_PDE}, namely the wavevectors $k_x$, $k_y$ and the band index $b$ that selects which eigenmode to return, these scalars must be represented as matrices or tensors compatible with the existing channel wise input structure. Alternatives that inject scalars through specialized pathways would require heavy architectural alterations, which are hard to justify given that FNO theory suggests eigenvalue PDEs should be solvable with existing hyperparameter combinations. We therefore compared three strategies for encoding these constants as input fields: constant valued fields, spatial sinusoids, and the Gabor wavelet encoding described in Section \ref{ssec:input_wavelet_encoding}.
 
-With this insight, the next embedding tried was a sinusoidal encoding, which does have unique representations that are not scaled versions of each other in the spectral domain. Here, we used a spatial domain sinusoid with the $x$ and $y$ frequencies a function of $b$ for the band encoding, and a function of $k_x$ and $k_y$ for the wavevector encodings. The resulting spatial domain encoding and its FFT are shown below.
+The constant field representation is the naive default: $k_x$, $k_y$, and $b$ are each broadcast to a constant $S\times S$ channel with $S = 32$. For the wavevectors, whose physical values lie in $[-\pi,\pi]$, these constants were normalized to the interval $[-1,1]$ before broadcasting. Band indices $\{1,2,3,4,5,6\}$ were likewise normalized to the range $[0.1,0.6]$. This representation fails by mode collapse, with the FNO outputting near constant fields regardless of conditioning inputs. The cause is spectral: the FFT of a constant field is zero everywhere except at the DC coefficient, so the frequency domain branch of each Fourier layer receives no information to propagate or train on past the first layer. The Fourier branch therefore cannot contribute to the prediction, leaving only the shallow spatial domain branch, which behaves like a shallow CNN and is unable to capture the complexity of the eigenvalue problem.
 
-% \begin{figure}[H]
-%     \centering
-%     \begin{subfigure}{\textwidth}
-%         \centering
-%         \includegraphics[width=\textwidth]{Figures/Methods/1D sinusoidal encoding.png}
-%         \caption{The sinusoidal spatial encoding for band integer.}
-%         \label{fig:1D_sinusoidal_encoding_spatial}
-%     \end{subfigure}  
-%     \begin{subfigure}{\textwidth}
-%         \centering
-%         \includegraphics[width=\textwidth]{Figures/Methods/1D sinusoidal encoding fft.png}
-%         \caption{The FFT of the above sinusoidal spatial encodings.}
-%         \label{fig:1D_sinusoidal_encoding_fft}
-%     \end{subfigure}
-%     \caption{The sinusoidal encoding of the band integer (fig. \ref{fig:1D_sinusoidal_encoding_spatial}) and its FFT (fig. \ref{fig:1D_sinusoidal_encoding_fft}). 4 frequencies in the FFT show up as non-zero, corresponding to the +/- and x/y frequencies matching the encoded frequency. This encoding is intuitive, as visually one can count the peaks in the spatial domain to recover the band integer, and serves to carry information both in the spectral and in the spatial domains.}
-%     \label{fig:1D_sinusoidal_encoding}
-% \end{figure}
+A spatial sinusoidal encoding restores unique and nondegenerate representations in the spectral domain and allows the FNO to learn the problem. On pixel coordinates $(x,y)\in\{0,\ldots,S-1\}$, wavevector and band were encoded as
+\[
+I_k(x,y)=\cos\!\left(\frac{k_x}{S}x+\frac{k_y}{S}y\right),\qquad k_x,k_y\in[-\pi,\pi].
+\]
+\[
+I_b(x,y)=\tfrac{1}{2}\left[\cos\!\left(\frac{2\pi b x}{S}\right)+\cos\!\left(\frac{2\pi b y}{S}\right)\right],\qquad b\in\{1,2,3,4,5,6\}.
+\]
+However, because a sinusoid is spectrally sparse, with energy concentrated at only a few wavenumbers, the Fourier branch remains weakly utilized, and predictions exhibit a persistent grainy, under resolved structure relative to ground truth. Increasing model depth and width did not remove this graininess, indicating the bottleneck was the encoding rather than model capacity.
 
-% \begin{figure}[H]
-%     \centering
-%     \begin{subfigure}{\textwidth}
-%         \centering
-%         \includegraphics[width=\textwidth]{Figures/Methods/2D sinusoidal encoding.png}
-%         \caption{The sinusoidal spatial encoding for $x$ and $y$ wavevectors.}
-%         \label{fig:2D_sinusoidal_encoding_spatial}
-%     \end{subfigure}  
-%     \begin{subfigure}{\textwidth}
-%         \centering
-%         \includegraphics[width=\textwidth]{Figures/Methods/2D sinusoidal encoding fft.png}
-%         \caption{The FFT of the above sinusoidal spatial encodings.}
-%         \label{fig:2D_sinusoidal_encoding_fft}
-%     \end{subfigure}
-%     \caption{The sinusoidal encoding of the $x$ and $y$ wavevectors (\ref{fig:2D_sinusoidal_encoding_spatial}) and its FFT \ref{fig:2D_sinusoidal_encoding_fft}. The actual wavevectors are shown in the subplot titles. While the encoding is fairly intuitive as the $k_x$ and $k_y$ are scaled by $1/\pi$ and the resulting image is essentially what the waveform actually looks like physically. The FFT of many waveforms is similar in which pixels are non-zero, but different brightness for the +/-, x/y quadrants of the image, corresponding to a fairly intuitive image of the frequencies present. This similarity may not be a problem, as in general similar images can still be distinguished by CNN type models so long as there are sufficient differences, and an FNO architecture contains in one branch, the CNN architecture.}
-%     \label{fig:2D_sinusoidal_encoding}
-% \end{figure}
+The Gabor wavelet encoding resolves this by design. Wavelets are constructed to trade certainty between the spatial and spectral domains: neither representation is infinitely sharp, but both remain informationally rich. As a result, the conditioning inputs populate both branches of each Fourier layer with usable structure, both branches can train and contribute, and the model yields the accurate, well resolved predictions reported above while enabling deterministic mode selection. These observations support the broader conclusion that input encodings should be matched to the spatial and spectral structure of the operator: encodings that populate only one domain underuse the FNO's Fourier branch, whereas wavelet encodings exercise both.
 
-% With the sinusoidal encoding, the FNO model was able to learn fairly well the PDE problem, but tended to have a "fuzzy" structure where sharper edges would occur in the ground truth. See two random representative cases of unseen data inference showcasing the issue in figures \ref{fig:sinusoidal_s3} and \ref{fig:sinusoidal_s5} . At first, this was taken to be a symptom of underparameterization, as the model was grasping the problem in crude contours but could not learn the finer scale details well. 
-
-% \begin{figure}[H]
-%     \centering
-%     \begin{subfigure}{0.48\textwidth}
-%         \centering
-%         \includegraphics[width=\textwidth]{Figures/sinusoid/output_prediction3_hc64_lr1e-02_wd1e-02_ss10_gamma1e-01_e120_cropped.png}
-%         \caption{FNO predictions}
-%         \label{fig:sinusoidal_s3_prediction}
-%     \end{subfigure}%
-%     \hfill
-%     \begin{subfigure}{0.48\textwidth}
-%         \centering
-%         \includegraphics[width=\textwidth]{Figures/sinusoid/output_sample3_hc64_lr1e-02_wd1e-02_ss10_gamma1e-01_e120_cropped.png}
-%         \caption{Ground truth}
-%         \label{fig:sinusoidal_s3_truth}
-%     \end{subfigure}%
-%     \caption{The FNO predictions (left) and the ground truth FEA simulation (right) for a representative sample. The course structure is learned by the FNO, but the finer nuances are not grasped.}
-%     \label{fig:sinusoidal_s3}
-% \end{figure}
-
-% \begin{figure}[H]
-%     \centering
-%     \begin{subfigure}{0.48\textwidth}
-%         \centering
-%         \includegraphics[width=\textwidth]{Figures/sinusoid/output_prediction5_hc64_lr1e-02_wd1e-02_ss10_gamma1e-01_e120_cropped.png}
-%         \caption{FNO predictions}
-%         \label{fig:sinusoidal_s5_prediction}
-%     \end{subfigure}%
-%     \hfill
-%     \begin{subfigure}{0.48\textwidth}
-%         \centering
-%         \includegraphics[width=\textwidth]{Figures/sinusoid/output_sample5_hc64_lr1e-02_wd1e-02_ss10_gamma1e-01_e120_cropped.png}
-%         \caption{Ground truth}
-%         \label{fig:sinusoidal_s5_truth}
-%     \end{subfigure}%
-%     \caption{The FNO predictions (left) and the ground truth FEA simulation (right) for another representative sample. The course structure is learned by the FNO, but the finer nuances are not grasped.}
-%     \label{fig:sinusoidal_s5}
-% \end{figure}
-
-% Upon further investigation however by increasing the number of Fourier layers from 4 to 6, 8, and 10, and also increasing the number of hidden channels per layer from 64 to 128 and 256, it became clear the issue was not the number of parameters. The FNO representation of inputs past the first layer barely differed, which suggesting that some information was not being well propagated through the first layer, effectively leading to the same symptoms as underparameterization due to later layer parameters not playing much of a predictive role.
-
-% It was hypothesized that although the sinusoidal encodings lead to unique and meaningful representations in both the spatial and spectral domains, the sparsity of the spectral domain matrix meant that the Fourier branch of the FNO was still not playing much of a role, and an encoding where the Fourier branch of the FNO was richly interacting with the input data would likely perform better. From this, the custom wavelet encoding schema described in section \ref{sec:Methodology} was developed. See figures \ref{fig:1D_wavelet_encoding} and \ref{fig:2D_wavelet_encoding} for examples of band and wavevectors representations under the wavelet encoding.
-
-% \begin{figure}[H]
-%     \centering
-%     \begin{subfigure}{\textwidth}
-%         \centering
-%         \includegraphics[width=\textwidth]{Figures/Methods/1D wavelet encoding.png}
-%         \caption{The wavelet spatial encoding for band integer.}
-%         \label{fig:1D_wavelet_encoding_spatial}
-%     \end{subfigure}  
-%     \begin{subfigure}{\textwidth}
-%         \centering
-%         \includegraphics[width=\textwidth]{Figures/Methods/1D wavelet encoding fft.png}
-%         \caption{The FFT of the above wavelet spatial encodings.}
-%         \label{fig:1D_wavelet_encoding_fft}
-%     \end{subfigure}
-%     \caption{The wavelet encoding of the band integer (fig. \ref{fig:1D_wavelet_encoding_spatial}) and its FFT (fig. \ref{fig:1D_wavelet_encoding_fft}). Each band corresponds to a unique wavelet with representation in both spatial and spectral domains. Compared with the sinusoidal embeddings in fig. \ref{fig:1D_sinusoidal_encoding_spatial} and \ref{fig:1D_sinusoidal_encoding_fft}, the information distribution is also much more balanced between the two domains, with much more of the spectral domain pixels being utilized for each case. This in turn allows for both greater discernibility and richer interactions between the FNO weights and the band parameter input.}
-%     \label{fig:1D_wavelet_encoding}
-% \end{figure}
-
-% \begin{figure}[H]
-%     \centering
-%     \begin{subfigure}{\textwidth}
-%         \centering
-%         \includegraphics[width=\textwidth]{Figures/Methods/2D wavelet encoding.png}
-%         \caption{The wavelet spatial encoding for $x$ and $y$ wavevectors.}
-%         \label{fig:2D_wavelet_encoding_spatial}
-%     \end{subfigure}  
-%     \begin{subfigure}{\textwidth}
-%         \centering
-%         \includegraphics[width=\textwidth]{Figures/Methods/2D wavelet encoding fft.png}
-%         \caption{The FFT of the above wavelet spatial encodings.}
-%         \label{fig:2D_wavelet_encoding_fft}
-%     \end{subfigure}
-%     \caption{The wavelet encoding of the $x$ and $y$ wavevectors (\ref{fig:2D_wavelet_encoding_spatial}) and its FFT \ref{fig:2D_wavelet_encoding_fft}. The actual wavevectors are shown in the subplot titles. For each $k_x$ and $k_y$ value pair, there is a unique mapping in both the spatial and spectral domain representations. Compared with the sinusoidal embeddings in fig. \ref{fig:2D_sinusoidal_encoding_spatial} and \ref{fig:2D_sinusoidal_encoding_fft}, the wavelet embedding has less pixel overlap and utilizes much more of the pixel space for different $k_x$ and $k_y$ values which leads to greater differentiation and thus more possible and more orthogonal interactions between the FNO weights in both branches and the input.}
-%     \label{fig:2D_wavelet_encoding}
-% \end{figure}
-
-% The encoding proved to be substantially more effective for the model's learning outcomes, for all tried combinations of model and training hyperparameters. See figures \ref{fig:wavelet_s1} and \ref{fig:wavelet_s2} for random representative samples of model performance using the wavelet encoding for band and wavevectors.
-
-% \begin{figure}[H]
-%     \centering
-%     \begin{subfigure}{0.8\textwidth}
-%         \centering
-%         \includegraphics[width=\textwidth]{Figures/input2.png}
-%         \caption{Random sample inputs}
-%         \label{fig:wavelet_s1_input}
-%     \end{subfigure}%
-%     \hfill
-%     \begin{subfigure}{\textwidth}
-%         \centering
-%         \includegraphics[width=\textwidth]{Figures/output2.png}
-%         \caption{Random sample outputs, targets, and differences}
-%         \label{fig:wavelet_s1_output}
-%     \end{subfigure}%
-%     \caption{Performance of the FNO model with wavelet embedding on unencountered geometries. Inputs are shown in fig. \ref{fig:wavelet_s1_input} and outputs, targets, and differences are shown in fig. \ref{fig:wavelet_s1_output}}
-%     \label{fig:wavelet_s1}
-% \end{figure}
-
-% \begin{figure}[H]
-%     \centering
-%     \begin{subfigure}{0.8\textwidth}
-%         \centering
-%         \includegraphics[width=\textwidth]{Figures/input4.png}
-%         \caption{Random sample inputs}
-%         \label{fig:wavelet_s2_inputs}
-%     \end{subfigure}%
-%     \hfill
-%     \begin{subfigure}{\textwidth}
-%         \centering
-%         \includegraphics[width=\textwidth]{Figures/output4.png}
-%         \caption{Random sample outputs, targets, and differences}
-%         \label{fig:wavelet_s2_outputs}
-%     \end{subfigure}%
-%     \caption{Performance of the FNO model with wavelet embedding on unencountered geometries. Inputs are shown in fig. \ref{fig:wavelet_s2_input} and outputs, targets, and differences are shown in fig. \ref{fig:wavelet_s2_output}}
-%     \label{fig:wavelet_s2}
-% \end{figure}
-
-\subsection{Output Datatype}
-\label{ssec:output_datatype}
-The natural representation of the output data is a complex field for both x and y displacements. However, it was found that the models trained on a $2\times 32 \times 32$ complex64 tensor representation did not perform statistically significantly differently compared with a $4\times 32 \times 32$ float16 tensor representation across any hyperparameter setting. In both cases, it takes within 20 epochs for training to converge, and final accuracies evaluated on an unseen test set are within 10\% relative difference for all combinations of hyperparameters. There is only one major difference between the two cases, which is that the complex64 case consistently takes $1.5$ to $2 \times$ longer to train, which is a notable disadvantage. If there was a complex32 data format in Python, it might be competitive against float16, but in its absence, even for a naturally complex tensor, we recommend float16 as the training datatype unless higher precision is absolutely necessary. 
 
 \section{Conclusions}
 \label{sec:Conclusion}
-In this work, we have demonstrated that Fourier Neural Operators, when combined with structured wavelet encodings of PDE parameters, can serve as efficient and accurate surrogates for eigenvalue PDE solvers, allowing for user toggling between the different solutions deterministically and repeatably by choice of PDE parameters in inputs. The specific example is of a non-trivial 2D PDE based on acoustic wave propagation through metamaterial geometries. It is evident from this work that the choice of embedding when using neural networks or neural operators that have specific transforms built into its architecture should be matched to the transforms. In this particular case, the FNO is actually somewhat of a misnomer, because it contains both a spatial and spectral learned kernel interacting with a spatial and spectral representation of the layer input. In this sense, it is more like a Wavelet Neural Operator. Because of this spatial and frequency domain duality and the FNO simultaneously computing and learning in both domains, wavelet embeddings which preserve both spatial and frequency domain information outperform embeddings which only use one of the two domains.
+This work demonstrates that a single Fourier Neural Operator can learn multiple eigenmodes of the elastic wave equation across both continuous and discrete metamaterial geometries, recovering the eigenvectors as complex displacement fields and the eigenvalues as eigenfrequencies. For unseen geometries of both types, displacement predictions achieve relative errors typically between $10^{-2}$ and $10^{-4}$ and dispersion reconstructions average below $1\%$ error, showing that one model can span two very different geometry distributions and output predictions of multiple orders of magnitude while allowing the user to select any eigenmode deterministically and repeatably through arbitrary choice of conditioning inputs. This capability crucially rests on how the conditioning constants are encoded. Constant field encodings collapse to a single DC coefficient in the spectral domain, preventing the Fourier branch of the FNO from propagating information and causing mode collapse. Sinusoidal encodings are able to train meaningfully but yield grainy, under resolved predictions due to spectral model sparsity. Gabor wavelet encodings, by contrast, trade decreasing certainty in the spatial and spectral representations to maintain informationally rich representations in both domains, allowing both branches of each Fourier layer to richly interact with the data, leading to superior learning speed and prediction performance.
 
-The ability for FNOs paired with wavelet encodings to solve eigenvalue PDEs and generalize well past its training geometries to novel geometries, opens up many opportunities in the metamaterial research field directly, but also many other fields of computational mechanics and physics that also have their own eigenvalue PDEs with input parameters that toggle between different solutions. This model, at 2 GB of size with float16 precision, is very lightweight compared to enterprise FEA software and processes inputs on the order of milliseconds, making it a compelling tool for surrogate modeling and/or iterative design for myriad materials and structure engineering problems. Future work to expand on usability could include generalization tests to different resolutions, using physics informed losses to further enhance performance and/or generalizability, and allowing more parameters such as material constants to be used as toggles for solutions, expanding the problem and solution space to more dimensions.
+The same spectral perspective explains the limits we observe. Prediction error grows with the interface length of discrete geometries and with band index, consistent with the truncated Fourier representation struggling to resolve the broadband content generated by sharp material interfaces and rapidly oscillating modes. Practitioners applying FNOs to interface rich problems should therefore expect accuracy to track geometric discontinuity. Even so, the trained model is lightweight, roughly 2\,GB at float16 precision, and evaluates in about 1\,ms per sample on CPU, compared with about 1\,s per sample for the corresponding MATLAB FEA solve on CPU. This makes the FNO a compelling surrogate for iterative design and analysis in metamaterials and other fields governed by eigenvalue PDEs. Future work includes generalization to other resolutions, physics informed losses, and additional conditioning parameters such as material constants, expanding the accessible problem and solution space.
 
 \section*{AI Usage Disclosure}
-\todo{Add disclosure for how AI was used in this project}
+Generative AI tools were used to assist with coding of experiments, translating MATLAB code to Python, and automating training pipelines. AI tools were also used for light editing of the manuscript. All scientific claims, results, and final wording were reviewed and approved by the authors.
 
 \section*{Declaration of Competing Interest}
 The authors declare that they have no known competing financial interests or personal relationships that could have appeared to influence the work reported in this paper.
 
 \section*{CRediT authorship contribution statement}
-
+\noindent\textbf{Han Zhang:} Conceptualization, Data curation, Formal analysis, Investigation, Methodology, Software, Validation, Visualization, Writing -- original draft, Writing -- review and editing.\\
+\noindent\textbf{Alexander Ogren:} Data curation, Software.\\
+\noindent\textbf{Cynthia Rudin:} Supervision, Writing -- review and editing.\\
+\noindent\textbf{Johann Guilleminot:} Formal analysis, Methodology, Supervision, Writing -- review and editing.\\
+\noindent\textbf{L. Catherine Brinson:} Conceptualization, Funding acquisition, Methodology, Project administration, Resources, Software, Supervision, Visualization, Writing -- review and editing.
 
 \section*{Data availability}
 \label{sec:Repository}
-The code and data in this article can be found at this GitHub repository:
+Python code and experiments can be found at
 \url{https://github.com/trutheresy/NO-2D-Metamaterials}.
 
-The code for FEA computations can be found at this GitHub Repository:
+MATLAB FEA code can be found at
 \url{https://github.com/aco8ogren/2D-dispersion.git}.
 
 \section*{Acknowledgements}
+This work was supported by the NSERC Postgraduate Scholarship -- Doctoral (PGSD-599307-2025) and the NSF AI for Understanding and Designing Materials Research Traineeship (DGE-2022040).
 
 %% If you have bibdatabase file and want bibtex to generate the
 %% bibitems, please use
@@ -1098,27 +970,14 @@ Experimentally, this training schedule consistently outperformed training with e
 \frac{1}{5}
 \sum_{c=0}^{4}
 \frac{
-\left(2\mu_{u_c}\mu_{\hat{u}_c}+C_1\right)
-\left(2\sigma_{u_c\hat{u}_c}+C_2\right)
+\left(2\mu_{u_c}\mu_{\hat{u}_c}+C_1\right)\left(2\sigma_{u_c\hat{u}_c}+C_2\right)
 }{
-\left(\mu_{u_c}^2+\mu_{\hat{u}_c}^2+C_1\right)
-\left(\sigma_{u_c}^2+\sigma_{\hat{u}_c}^2+C_2\right) 
+\left(\mu_{u_c}^2+\mu_{\hat{u}_c}^2+C_1\right)\left(\sigma_{u_c}^2+\sigma_{\hat{u}_c}^2+C_2\right)
 }, \quad \text{where}
 \end{equation*}
 \begin{equation*}
-\mu_{u_c}
-=
-\frac{1}{HW}
-\sum_{i=0}^{H-1}
-\sum_{j=0}^{W-1}
-u_c(i,j), \quad 
-\sigma_{u_c\hat{u}_c}
-=
-\frac{1}{HW}
-\sum_{i=0}^{H-1}
-\sum_{j=0}^{W-1}
-\left(u_c(i,j)-\mu_{u_c}\right)
-\left(\hat{u}_c(i,j)-\mu_{\hat{u}_c}\right)
+\mu_{u_c}=\frac{1}{HW}\sum_{i=0}^{H-1}\sum_{j=0}^{W-1}u_c(i,j), \quad
+\sigma_{u_c\hat{u}_c}=\frac{1}{HW}\sum_{i=0}^{H-1}\sum_{j=0}^{W-1}\left(u_c(i,j)-\mu_{u_c}\right)\left(\hat{u}_c(i,j)-\mu_{\hat{u}_c}\right)
 \end{equation*}
 
 A significant limitation of SSIM arises when it is applied to signed-valued fields. Unlike its original application to nonnegative image intensities, a perfect sign-reversed field ($\hat{u}=-u$) can achieve nearly the same SSIM score as a perfect reconstruction ($\hat{u}=u$). Consequently, a model trained solely with SSIM may converge to physically incorrect solutions containing polarity inversions while still minimizing the loss. The following derivation demonstrates the mathematical origin of this ambiguity.
@@ -1144,23 +1003,13 @@ the SSIM score is
 =1.
 \end{equation*}
 
-Now consider a sign-reversed reconstruction,
+Now consider a sign-reversed reconstruction. The field and its mean reverse sign,
 \begin{equation*}
-    u_c^{(-)}=-u_c.
+    u_c^{(-)}=-u_c, \qquad \mu_{u_c^{(-)}}=-\mu_{u_c},
 \end{equation*}
-The mean reverses sign,
+while the covariance reverses sign and the variance remains unchanged,
 \begin{equation*}
-    \mu_{u_c^{(-)}}=-\mu_{u_c},
-\end{equation*}
-the covariance likewise reverses sign,
-\begin{equation*}
-    \sigma_{u_c,u_c^{(-)}}
-    =
-    -\sigma_{u_c,u_c},
-\end{equation*}
-while the variance is unchanged,
-\begin{equation*}
-    \sigma_{u_c^{(-)}}^2=\sigma_{u_c}^2.
+    \sigma_{u_c,u_c^{(-)}}=-\sigma_{u_c,u_c}, \qquad \sigma_{u_c^{(-)}}^2=\sigma_{u_c}^2.
 \end{equation*}
 Substituting these relationships into the SSIM expression gives
 \begin{equation*}
@@ -1189,30 +1038,14 @@ Similar to NMAE, NMSE normalizes the prediction error by the magnitude of the ta
 Experimentally, NMSE reduced the relative error in low-amplitude regions compared with standard MSE. However, this improvement was accompanied by increased overall validation MAE and MSE, performing worse than conventional MSE optimization. As with NMAE, the objective of this work was to minimize the absolute prediction error rather than the relative error. Consequently, the increased emphasis placed on low-magnitude regions did not translate into improved overall predictive performance, making NMSE less appropriate for the present application.
 \end{itemize}
 
-\subsection{Output Wavelet Encoding}
-\label{ssec:output_wavelet_encoding}
-Unlike with the input wavelets encodings which we already know all the possible decoded quantities, model outputs can fall anywhere within a range of valid values. There are two types of output fields. One is a displacement field, which is directly represented as its raw displacement values and requires no encoding. Four of the five output channels contain this type of information (real and imaginary x and y displacements). The fifth channel however, representing eigenfrequency, carries the same issue as wavevector and band of being a scalar valued quantity by nature. For this quantity, we need a way to encode into a wavelet form that the model can train on effectively and decode back to a numerical representation subsequently.
-\begin{figure}[H]
-  \centering
-  \includegraphics[width=\textwidth]{Figures/Methods/eigenfrequency_encoding.png}
-  \caption{Log scale spaced examples of encoded frequencies from a min of 1Hz to a max of 8000Hz}
-  \label{fig:eigenfrequency_encoding}
-\end{figure}
-
-\begin{figure}[H]
-  \centering
-  \includegraphics[width=\textwidth]{Figures/Methods/eigenvalue_encode_decode_error_test.png}
-  \caption{Decoding error of encoded frequencies from a min of 1Hz to a max of 8000Hz}
-  \label{fig:eigenfrequency_encoding}
-\end{figure}
-
-\subsection{Algorithms for Gabor Wavelet Encoding}
-This encoding strategy is used for mapping band integers to a 2D wavelet image.
+\subsection{Algorithms for Input Wavelet Encoding}
+\label{ssec:input_wavelet_algorithms}
+The band and wavevector conditioning channels used by the FNO are generated by the Gabor wavelet embeddings below, which match the implementations in the accompanying code.
 \begin{algorithm}[H]
-\caption{1D Gabor Wavelet Embedding from Scalar Input}
+\caption{1D Gabor Wavelet Embedding from Band Index}
 \label{alg:1d_gabor_embedding}
 \begin{algorithmic}[1]
-\STATE \textbf{INPUT:} Integer \( b \); grid size \( S \leftarrow 32 \); frequency scale \( r \leftarrow 2.0 \)
+\STATE \textbf{INPUT:} Band index \( b \); grid size \( S \leftarrow 32 \); frequency scale \( r \leftarrow 2.0 \)
 \STATE Create linspace vectors \( x, y \in [-1, 1] \) with \( S \) points
 \STATE Construct meshgrid \( X, Y \leftarrow \text{meshgrid}(x, y) \)
 \STATE Compute base frequency:
@@ -1242,22 +1075,23 @@ Y_\theta \leftarrow -X \sin \theta + Y \cos \theta
 \end{algorithmic}
 \end{algorithm}
 
-In Algorithm \ref{alg:1d_gabor_embedding}, a grid size of 32 is used so that the image size matches that of the geometry, for ease of ingestion of the FNO model. The base frequency is set to 8, which allows for up to the first 8 bands to be encoded as unique rotations and wavelet spatial frequencies in the domain. The frequency scale $r$ and constants such as 16 and 0.3 were picked so that the images utilized most of the domain and showed sufficient scale variation across the domain.
+In Algorithm \ref{alg:1d_gabor_embedding}, the grid size \(S=32\) matches the geometry resolution used by the FNO. For this resolution the base frequency is \(f=(1+|b|)\,S/8\), so successive bands increase both carrier frequency and orientation. The modulo in \(\theta\) repeats orientation every eight bands, while \(f\) continues to increase, so embeddings remain distinguishable beyond eight bands. The constants \(r=2.0\), \(S/16\), and \(0.3\) were chosen so that the wavelets occupy most of the spatial domain and remain visually distinct across bands.
 
 \begin{algorithm}[H]
 \caption{2D Gabor Wavelet Embedding for Wavevectors}
 \label{alg:2d_gabor_embedding}
 \begin{algorithmic}[1]
-\STATE \textbf{INPUT:} Integers \( k_x, k_y \); grid size \( S \leftarrow 32 \); frequency scale \( r \leftarrow 1.0 \)
+\STATE \textbf{INPUT:} Wavevector components \( k_x, k_y \) (radians); grid size \( S \leftarrow 32 \); frequency scale \( r \leftarrow 1.0 \)
+\STATE Set constants \( f_0 \leftarrow 2.20 \), \( \alpha \leftarrow 41 \), \( N_x \leftarrow 13 \), \( N_y \leftarrow 25 \)
 \STATE Create linspace vectors \( x, y \in [-1, 1] \) with \( S \) points
 \STATE Construct meshgrid \( X, Y \leftarrow \text{meshgrid}(x, y) \)
 \STATE Compute frequencies:
 \[
-f_x \leftarrow (1.01 + k_x) \cdot \frac{S}{2}, \quad f_y \leftarrow (1.01 + k_y) \cdot \frac{S}{2}
+f_x \leftarrow (f_0 + k_x)\,\alpha, \quad f_y \leftarrow (f_0 + k_y)\,\alpha
 \]
 \STATE Compute rotation angles:
 \[
-\theta_x \leftarrow (k_x \bmod 5) \cdot \frac{\pi}{5}, \quad \theta_y \leftarrow (k_y \bmod 7) \cdot \frac{\pi}{7}
+\theta_x \leftarrow (k_x \bmod N_x) \cdot \frac{\pi}{N_x}, \quad \theta_y \leftarrow (k_y \bmod N_y) \cdot \frac{\pi}{N_y}
 \]
 \STATE Rotate coordinates:
 \[
@@ -1266,7 +1100,7 @@ Y_\theta \leftarrow -X \sin \theta_x + Y \cos \theta_y
 \]
 \STATE Set Gaussian envelope widths:
 \[
-\sigma_x \leftarrow \sigma_y \leftarrow \frac{0.4}{r}
+\sigma_x \leftarrow \sigma_y \leftarrow \frac{0.5}{r}
 \]
 \STATE Compute Gabor wavelet embedding:
 \[
@@ -1278,14 +1112,31 @@ Y_\theta \leftarrow -X \sin \theta_x + Y \cos \theta_y
 \end{algorithmic}
 \end{algorithm}
 
-Like with Algorithm \ref{alg:1d_gabor_embedding}, in Algorithm \ref{alg:2d_gabor_embedding}, a grid size of 32 is used for FNO model ease of ingestion. The wavevectors are used to compute the base frequency and rotation angle, with different modulo numbers chosen for $x$ and $y$ to eliminate wavelet image aliasing from $x$ and $y$ being swapped. The frequency scale $r$ of 0.4 was chosen so that the images used most of the domain and showed sufficient scale variation throughout the domain.
+In Algorithm \ref{alg:2d_gabor_embedding}, \(k_x\) and \(k_y\) enter as continuous radian valued wavevector components. Distinct modulo periods \(N_x=13\) and \(N_y=25\) reduce aliasing under interchange of the two components. The offset \(f_0\) and scale \(\alpha\) map the physical range of \(k\) into carrier frequencies that remain well resolved on the \(S\times S\) grid, while \(\sigma=0.5/r\) sets the envelope width so that the patterns remain spatially localized yet informative in both domains.
 
-Unlike with the other quantities, which are only on the input side and always known, this quantity is on the output side, and must be computed, then interpreted. Thus, in addition to an encoding strategy for model ease of learning, we also need a decoding compliment, to transform the model friendly format back to a simple numeric quantity - the frequency response of the material $\omega$ at that spatial wave input.
+\subsection{Wavelet Decoding}
+\label{ssec:wavelet_decoding}
+For purposes of checking general applicability, an experiment was run to check if a positive scalar may be embedded in a Gabor wavelet image and recovered after pixelization, storage, or inference. Algorithms \ref{alg:eigenfrequency_wavelet_encoding} and \ref{alg:eigenfrequency_wavelet_decoding} implement this encode--decode pair by spectral peak detection with centroid refinement. In the experiment, we test recovery over \([1,8000]\), spanning about four orders of magnitude. Despite discretization onto a finite \(S\times S\) grid and limited numeric precision associated with float16 storage and arithmetic, the decoded values remain accurate across the full range. Figures \ref{fig:eigenfrequency_encoding} and \ref{fig:eigenfrequency_decode_error} show representative encodings and the corresponding round trip error.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{Figures/Methods/eigenfrequency_encoding.png}
+  \caption{Log spaced Gabor wavelet encodings of scalars from 1 to 8000. Alternating rows show the spatial wavelet images and the corresponding Fourier magnitude spectra.}
+  \label{fig:eigenfrequency_encoding}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{Figures/Methods/eigenvalue_encode_decode_error_test.png}
+  \caption{Encode--decode error for scalars from a minimum of 1 to a maximum of 8000.}
+  \label{fig:eigenfrequency_decode_error}
+\end{figure}
+
 \begin{algorithm}[H]
-\caption{Eigenfrequency Wavelet Encoding}
+\caption{Scalar Wavelet Encoding}
 \label{alg:eigenfrequency_wavelet_encoding}
 \begin{algorithmic}[1]
-\STATE \textbf{INPUT:} Eigenfrequency \( s>0 \); image size \( S \leftarrow 32 \); frequency bounds \( [s_{\min}, s_{\max}] \); spectral-index bounds \( [k_{\min}, k_{\max}] \)
+\STATE \textbf{INPUT:} Scalar \( s>0 \); image size \( S \leftarrow 32 \); bounds \( [s_{\min}, s_{\max}] \); spectral-index bounds \( [k_{\min}, k_{\max}] \)
 \STATE Set constants \( \gamma \leftarrow 1,\ \phi \leftarrow 0,\ \sigma \leftarrow 8,\ \theta_{\min}\leftarrow \pi/30,\ \theta_{\max}\leftarrow \pi/2-\pi/30 \)
 \STATE Compute log-domain values:
 \[
@@ -1320,7 +1171,7 @@ Y_\theta \leftarrow -X\sin\theta + Y\cos\theta
 \end{algorithm}
 
 \begin{algorithm}[H]
-\caption{Eigenfrequency Wavelet Decoding}
+\caption{Scalar Wavelet Decoding}
 \label{alg:eigenfrequency_wavelet_decoding}
 \begin{algorithmic}[1]
 \STATE \textbf{INPUT:} Wavelet image \( \psi \in \mathbb{R}^{S\times S} \); bounds \( [s_{\min}, s_{\max}] \), \( [k_{\min}, k_{\max}] \), \( [\theta_{\min}, \theta_{\max}] \)
@@ -1338,7 +1189,7 @@ F(k_x,k_y)\leftarrow |\hat{\psi}(k_x,k_y)|
 k_{\mathrm{ext}} \leftarrow \sqrt{k_x^2+k_y^2},\quad
 \theta_{\mathrm{ext}} \leftarrow \operatorname{atan2}(k_y,k_x)\bmod \pi
 \]
-\STATE Map extracted \(k\) to approximate log-frequency:
+\STATE Map extracted \(k\) to approximate log value:
 \[
 \ell_{\mathrm{approx}} \leftarrow \ell_{\min} + \mathrm{clip}\!\left(\frac{k_{\mathrm{ext}}-k_{\min}}{k_{\max}-k_{\min}},0,1\right)\,(\ell_{\max}-\ell_{\min})
 \]
@@ -1347,7 +1198,7 @@ k_{\mathrm{ext}} \leftarrow \sqrt{k_x^2+k_y^2},\quad
 \alpha \leftarrow \mathrm{clip}\!\left(\frac{\theta_{\mathrm{ext}}-\theta_{\min}}{\theta_{\max}-\theta_{\min}},0,1\right),\quad
 \delta_\ell \leftarrow \alpha\,\Delta_\ell
 \]
-\STATE Find nearest consistent log-frequency by testing neighboring bands \(b-1,b,b+1\):
+\STATE Find nearest consistent log value by testing neighboring bands \(b-1,b,b+1\):
 \[
 \ell^\star \leftarrow \arg\min_{\ell \in \{\ell_{\min} + j\Delta_\ell + \delta_\ell\}} |\ell-\ell_{\mathrm{approx}}|
 \]
@@ -1359,8 +1210,7 @@ s_{\mathrm{ext}} \leftarrow \exp(\ell^\star)
 \end{algorithmic}
 \end{algorithm}
 
-Algorithms \ref{alg:eigenfrequency_wavelet_encoding} and \ref{alg:eigenfrequency_wavelet_decoding} summarize the forward and inverse mapping used for eigenfrequency wavelet images. The forward mapping places eigenfrequency on a log scale and jointly encodes magnitude and orientation into a Gabor-like pattern. The inverse mapping recovers an estimate by spectral peak detection with centroid refinement, followed by a consistency step that combines extracted magnitude and angle to reconstruct the most likely log-frequency.
-
+Algorithms \ref{alg:eigenfrequency_wavelet_encoding} and \ref{alg:eigenfrequency_wavelet_decoding} summarize the forward and inverse mapping used in this experiment. The forward mapping places the scalar on a log scale and jointly encodes magnitude and orientation into a Gabor-like pattern. The inverse mapping recovers an estimate by spectral peak detection with centroid refinement, followed by a consistency step that combines extracted magnitude and angle to reconstruct the most likely log value.
 
 \end{document}
 

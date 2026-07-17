@@ -1,0 +1,18 @@
+2026-07-16 00:17:31 | Watcher started; waiting for ep25 (metrics=24, trainPid=155956)
+2026-07-16 00:17:31 | waiting... metrics_epochs=24 train_alive=True gpu check skipped
+2026-07-16 00:19:31 | waiting... metrics_epochs=24 train_alive=True gpu check skipped
+2026-07-16 00:21:31 | waiting... metrics_epochs=24 train_alive=True gpu check skipped
+2026-07-16 00:23:31 | waiting... metrics_epochs=24 train_alive=True gpu check skipped
+2026-07-16 00:25:31 | waiting... metrics_epochs=24 train_alive=True gpu check skipped
+2026-07-16 00:27:31 | waiting... metrics_epochs=24 train_alive=True gpu check skipped
+2026-07-16 00:29:31 | waiting... metrics_epochs=24 train_alive=True gpu check skipped
+2026-07-16 00:31:31 | waiting... metrics_epochs=24 train_alive=True gpu check skipped
+2026-07-16 00:33:31 | waiting... metrics_epochs=24 train_alive=True gpu check skipped
+2026-07-16 00:35:31 | waiting... metrics_epochs=24 train_alive=True gpu check skipped
+2026-07-16 00:37:32 | waiting... metrics_epochs=24 train_alive=True gpu check skipped
+2026-07-16 00:39:32 | waiting... metrics_epochs=24 train_alive=True gpu check skipped
+2026-07-16 00:41:32 | waiting... metrics_epochs=24 train_alive=True gpu check skipped
+2026-07-16 00:43:32 | waiting... metrics_epochs=24 train_alive=True gpu check skipped
+2026-07-16 00:45:32 | waiting... metrics_epochs=24 train_alive=True gpu check skipped
+2026-07-16 00:47:32 | ep25 complete (metrics=25); launching epochs 26-28
+2026-07-16 00:47:35 | Started ep26-28 PID=165052 log=D:\Research\NO-2D-Metamaterials\MODELS\training_runs\nmae_l1_0711_extend_ep26-28.log

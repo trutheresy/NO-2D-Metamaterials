@@ -1,0 +1,162 @@
+Add-Content : The process cannot access the file 
+'D:\Research\NO-2D-Metamaterials\MODELS\training_runs\nmae_l1_0711_watch_ep28.log' because it is being used by another 
+process.
+At D:\Research\NO-2D-Metamaterials\MODELS\training_runs\_watch_then_extend_0711_ep28.ps1:13 char:5
++     Add-Content -Path $watchLog -Value $line
++     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : WriteError: (D:\Research\NO-..._watch_ep28.log:String) [Add-Content], IOException
+    + FullyQualifiedErrorId : GetContentWriterIOError,Microsoft.PowerShell.Commands.AddContentCommand
+ 
+Add-Content : The process cannot access the file 
+'D:\Research\NO-2D-Metamaterials\MODELS\training_runs\nmae_l1_0711_watch_ep28.log' because it is being used by another 
+process.
+At D:\Research\NO-2D-Metamaterials\MODELS\training_runs\_watch_then_extend_0711_ep28.ps1:13 char:5
++     Add-Content -Path $watchLog -Value $line
++     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : WriteError: (D:\Research\NO-..._watch_ep28.log:String) [Add-Content], IOException
+    + FullyQualifiedErrorId : GetContentWriterIOError,Microsoft.PowerShell.Commands.AddContentCommand
+ 
+Add-Content : The process cannot access the file 
+'D:\Research\NO-2D-Metamaterials\MODELS\training_runs\nmae_l1_0711_watch_ep28.log' because it is being used by another 
+process.
+At D:\Research\NO-2D-Metamaterials\MODELS\training_runs\_watch_then_extend_0711_ep28.ps1:13 char:5
++     Add-Content -Path $watchLog -Value $line
++     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : WriteError: (D:\Research\NO-..._watch_ep28.log:String) [Add-Content], IOException
+    + FullyQualifiedErrorId : GetContentWriterIOError,Microsoft.PowerShell.Commands.AddContentCommand
+ 
+Add-Content : The process cannot access the file 
+'D:\Research\NO-2D-Metamaterials\MODELS\training_runs\nmae_l1_0711_watch_ep28.log' because it is being used by another 
+process.
+At D:\Research\NO-2D-Metamaterials\MODELS\training_runs\_watch_then_extend_0711_ep28.ps1:13 char:5
++     Add-Content -Path $watchLog -Value $line
++     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : WriteError: (D:\Research\NO-..._watch_ep28.log:String) [Add-Content], IOException
+    + FullyQualifiedErrorId : GetContentWriterIOError,Microsoft.PowerShell.Commands.AddContentCommand
+ 
+Add-Content : The process cannot access the file 
+'D:\Research\NO-2D-Metamaterials\MODELS\training_runs\nmae_l1_0711_watch_ep28.log' because it is being used by another 
+process.
+At D:\Research\NO-2D-Metamaterials\MODELS\training_runs\_watch_then_extend_0711_ep28.ps1:13 char:5
++     Add-Content -Path $watchLog -Value $line
++     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : WriteError: (D:\Research\NO-..._watch_ep28.log:String) [Add-Content], IOException
+    + FullyQualifiedErrorId : GetContentWriterIOError,Microsoft.PowerShell.Commands.AddContentCommand
+ 
+Add-Content : The process cannot access the file 
+'D:\Research\NO-2D-Metamaterials\MODELS\training_runs\nmae_l1_0711_watch_ep28.log' because it is being used by another 
+process.
+At D:\Research\NO-2D-Metamaterials\MODELS\training_runs\_watch_then_extend_0711_ep28.ps1:13 char:5
++     Add-Content -Path $watchLog -Value $line
++     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : WriteError: (D:\Research\NO-..._watch_ep28.log:String) [Add-Content], IOException
+    + FullyQualifiedErrorId : GetContentWriterIOError,Microsoft.PowerShell.Commands.AddContentCommand
+ 
+Add-Content : The process cannot access the file 
+'D:\Research\NO-2D-Metamaterials\MODELS\training_runs\nmae_l1_0711_watch_ep28.log' because it is being used by another 
+process.
+At D:\Research\NO-2D-Metamaterials\MODELS\training_runs\_watch_then_extend_0711_ep28.ps1:13 char:5
++     Add-Content -Path $watchLog -Value $line
++     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : WriteError: (D:\Research\NO-..._watch_ep28.log:String) [Add-Content], IOException
+    + FullyQualifiedErrorId : GetContentWriterIOError,Microsoft.PowerShell.Commands.AddContentCommand
+ 
+Add-Content : The process cannot access the file 
+'D:\Research\NO-2D-Metamaterials\MODELS\training_runs\nmae_l1_0711_watch_ep28.log' because it is being used by another 
+process.
+At D:\Research\NO-2D-Metamaterials\MODELS\training_runs\_watch_then_extend_0711_ep28.ps1:13 char:5
++     Add-Content -Path $watchLog -Value $line
++     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : WriteError: (D:\Research\NO-..._watch_ep28.log:String) [Add-Content], IOException
+    + FullyQualifiedErrorId : GetContentWriterIOError,Microsoft.PowerShell.Commands.AddContentCommand
+ 
+Add-Content : The process cannot access the file 
+'D:\Research\NO-2D-Metamaterials\MODELS\training_runs\nmae_l1_0711_watch_ep28.log' because it is being used by another 
+process.
+At D:\Research\NO-2D-Metamaterials\MODELS\training_runs\_watch_then_extend_0711_ep28.ps1:13 char:5
++     Add-Content -Path $watchLog -Value $line
++     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : WriteError: (D:\Research\NO-..._watch_ep28.log:String) [Add-Content], IOException
+    + FullyQualifiedErrorId : GetContentWriterIOError,Microsoft.PowerShell.Commands.AddContentCommand
+ 
+Add-Content : The process cannot access the file 
+'D:\Research\NO-2D-Metamaterials\MODELS\training_runs\nmae_l1_0711_watch_ep28.log' because it is being used by another 
+process.
+At D:\Research\NO-2D-Metamaterials\MODELS\training_runs\_watch_then_extend_0711_ep28.ps1:13 char:5
++     Add-Content -Path $watchLog -Value $line
++     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : WriteError: (D:\Research\NO-..._watch_ep28.log:String) [Add-Content], IOException
+    + FullyQualifiedErrorId : GetContentWriterIOError,Microsoft.PowerShell.Commands.AddContentCommand
+ 
+Add-Content : The process cannot access the file 
+'D:\Research\NO-2D-Metamaterials\MODELS\training_runs\nmae_l1_0711_watch_ep28.log' because it is being used by another 
+process.
+At D:\Research\NO-2D-Metamaterials\MODELS\training_runs\_watch_then_extend_0711_ep28.ps1:13 char:5
++     Add-Content -Path $watchLog -Value $line
++     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : WriteError: (D:\Research\NO-..._watch_ep28.log:String) [Add-Content], IOException
+    + FullyQualifiedErrorId : GetContentWriterIOError,Microsoft.PowerShell.Commands.AddContentCommand
+ 
+Add-Content : The process cannot access the file 
+'D:\Research\NO-2D-Metamaterials\MODELS\training_runs\nmae_l1_0711_watch_ep28.log' because it is being used by another 
+process.
+At D:\Research\NO-2D-Metamaterials\MODELS\training_runs\_watch_then_extend_0711_ep28.ps1:13 char:5
++     Add-Content -Path $watchLog -Value $line
++     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : WriteError: (D:\Research\NO-..._watch_ep28.log:String) [Add-Content], IOException
+    + FullyQualifiedErrorId : GetContentWriterIOError,Microsoft.PowerShell.Commands.AddContentCommand
+ 
+Add-Content : The process cannot access the file 
+'D:\Research\NO-2D-Metamaterials\MODELS\training_runs\nmae_l1_0711_watch_ep28.log' because it is being used by another 
+process.
+At D:\Research\NO-2D-Metamaterials\MODELS\training_runs\_watch_then_extend_0711_ep28.ps1:13 char:5
++     Add-Content -Path $watchLog -Value $line
++     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : WriteError: (D:\Research\NO-..._watch_ep28.log:String) [Add-Content], IOException
+    + FullyQualifiedErrorId : GetContentWriterIOError,Microsoft.PowerShell.Commands.AddContentCommand
+ 
+Add-Content : The process cannot access the file 
+'D:\Research\NO-2D-Metamaterials\MODELS\training_runs\nmae_l1_0711_watch_ep28.log' because it is being used by another 
+process.
+At D:\Research\NO-2D-Metamaterials\MODELS\training_runs\_watch_then_extend_0711_ep28.ps1:13 char:5
++     Add-Content -Path $watchLog -Value $line
++     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : WriteError: (D:\Research\NO-..._watch_ep28.log:String) [Add-Content], IOException
+    + FullyQualifiedErrorId : GetContentWriterIOError,Microsoft.PowerShell.Commands.AddContentCommand
+ 
+Add-Content : The process cannot access the file 
+'D:\Research\NO-2D-Metamaterials\MODELS\training_runs\nmae_l1_0711_watch_ep28.log' because it is being used by another 
+process.
+At D:\Research\NO-2D-Metamaterials\MODELS\training_runs\_watch_then_extend_0711_ep28.ps1:13 char:5
++     Add-Content -Path $watchLog -Value $line
++     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : WriteError: (D:\Research\NO-..._watch_ep28.log:String) [Add-Content], IOException
+    + FullyQualifiedErrorId : GetContentWriterIOError,Microsoft.PowerShell.Commands.AddContentCommand
+ 
+Add-Content : The process cannot access the file 
+'D:\Research\NO-2D-Metamaterials\MODELS\training_runs\nmae_l1_0711_watch_ep28.log' because it is being used by another 
+process.
+At D:\Research\NO-2D-Metamaterials\MODELS\training_runs\_watch_then_extend_0711_ep28.ps1:13 char:5
++     Add-Content -Path $watchLog -Value $line
++     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : WriteError: (D:\Research\NO-..._watch_ep28.log:String) [Add-Content], IOException
+    + FullyQualifiedErrorId : GetContentWriterIOError,Microsoft.PowerShell.Commands.AddContentCommand
+ 
+Add-Content : The process cannot access the file 
+'D:\Research\NO-2D-Metamaterials\MODELS\training_runs\nmae_l1_0711_watch_ep28.log' because it is being used by another 
+process.
+At D:\Research\NO-2D-Metamaterials\MODELS\training_runs\_watch_then_extend_0711_ep28.ps1:13 char:5
++     Add-Content -Path $watchLog -Value $line
++     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : WriteError: (D:\Research\NO-..._watch_ep28.log:String) [Add-Content], IOException
+    + FullyQualifiedErrorId : GetContentWriterIOError,Microsoft.PowerShell.Commands.AddContentCommand
+ 
+Add-Content : The process cannot access the file 
+'D:\Research\NO-2D-Metamaterials\MODELS\training_runs\nmae_l1_0711_watch_ep28.log' because it is being used by another 
+process.
+At D:\Research\NO-2D-Metamaterials\MODELS\training_runs\_watch_then_extend_0711_ep28.ps1:13 char:5
++     Add-Content -Path $watchLog -Value $line
++     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : WriteError: (D:\Research\NO-..._watch_ep28.log:String) [Add-Content], IOException
+    + FullyQualifiedErrorId : GetContentWriterIOError,Microsoft.PowerShell.Commands.AddContentCommand
+ 

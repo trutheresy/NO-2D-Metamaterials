@@ -249,16 +249,19 @@ def save_similarity_heatmap(out_path: Path, sim: np.ndarray, dpi: int) -> None:
     n = sim.shape[0]
     fig, ax = plt.subplots(figsize=(8, 7), dpi=dpi, constrained_layout=True)
     im = ax.imshow(sim, cmap="viridis", vmin=-1.0, vmax=1.0, origin="lower", interpolation="nearest")
-    ax.set_xlabel("wave index j")
-    ax.set_ylabel("wave index i")
-    ax.set_title("FFT log-magnitude cosine similarity (325 × 325)")
+    ax.set_xlabel("wave index j", fontsize=12)
+    ax.set_ylabel("wave index i", fontsize=12)
+    ax.set_title("FFT log-magnitude cosine similarity (325 × 325)", fontsize=14)
     tick_step = 25
     ticks = list(range(0, n, tick_step))
     if ticks[-1] != n - 1:
         ticks.append(n - 1)
     ax.set_xticks(ticks)
     ax.set_yticks(ticks)
-    fig.colorbar(im, ax=ax, fraction=0.046, pad=0.04, label="cosine similarity")
+    ax.tick_params(axis="both", labelsize=11)
+    cbar = fig.colorbar(im, ax=ax, fraction=0.046, pad=0.04)
+    cbar.set_label("cosine similarity", fontsize=12)
+    cbar.ax.tick_params(labelsize=11)
     out_path.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(out_path, bbox_inches="tight")
     plt.close(fig)
