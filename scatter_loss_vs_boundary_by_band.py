@@ -38,6 +38,7 @@ from per_sample_loss import (
     prepare_scoring_data,
     resolve_device,
 )
+from NO_utilities import EIGENFREQUENCY_ENCODING_FILES, resolve_eigenfrequency_encoding
 from compute_boundary_length import load_geometries, to_binary, boundary_length
 from output_layout import resolve_script_output_dir
 
@@ -53,6 +54,12 @@ LOSS_YLABEL = {
 def main() -> None:
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("--dataset-pt-dir", required=True, help="Dataset *_pt folder with displacements_dataset.pt.")
+    p.add_argument(
+        "--eigen-encoding",
+        choices=tuple(EIGENFREQUENCY_ENCODING_FILES),
+        default="uniform",
+        help="Channel-0 truth encoding: uniform or fft (wavelet). Default: uniform.",
+    )
     p.add_argument("--inference", required=True, help="Dense prediction tensor (.pt), shape (n_geom*n_wv*n_bands, C, H, W).")
     p.add_argument("--geometries", required=True, help="Discrete geometries tensor (.pt), shape (n_geom, H, W), binary {0,1}.")
     p.add_argument("--losses", nargs="+", default=["mae", "mse", "nmae", "nmse"], help="Loss criteria (default: all four).")
@@ -97,6 +104,7 @@ def main() -> None:
 
     channels = parse_channels(args.channels)
     device = resolve_device(args.device)
+    eigen_encoding = resolve_eigenfrequency_encoding(args.eigen_encoding)
     dataset_pt_dir = Path(args.dataset_pt_dir)
     infer_path = Path(args.inference)
     out_dir = resolve_script_output_dir(
@@ -110,7 +118,7 @@ def main() -> None:
 
     predictions = torch.load(infer_path, map_location="cpu", mmap=True, weights_only=True)
     truth_flat, n_geom, n_wv, n_bands, field_h, field_w, channels = prepare_scoring_data(
-        dataset_pt_dir, predictions, channels
+        dataset_pt_dir, predictions, channels, eigen_encoding=eigen_encoding
     )
 
     gb = to_binary(load_geometries(Path(args.geometries)), None)
@@ -119,7 +127,8 @@ def main() -> None:
     blen = boundary_length(gb, args.periodic, 1.0)  # (n_geom,)
 
     print(f"Dataset    : {dataset_pt_dir}")
-    print(f"Truth      : eigenfrequency_uniform + displacements  shape={tuple(truth_flat.shape)}")
+    print(f"Eigen enc  : {eigen_encoding}")
+    print(f"Truth      : eigenfrequency_{eigen_encoding} + displacements  shape={tuple(truth_flat.shape)}")
     print(f"Inference  : {infer_path}  shape={tuple(predictions.shape)}")
     print(f"Channels   : {channels}")
     print(f"Geometries : {n_geom}   n_wv={n_wv}   n_bands={n_bands}")

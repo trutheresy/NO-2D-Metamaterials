@@ -1,6 +1,13 @@
 """
-Recompute 2D wavelet embeddings for all IBZ wavevectors, save arrays, and plot
+Recompute 2D wavevector embeddings for all IBZ wavevectors, save arrays, and plot
 a 13×25 mosaic aligned with the half-plane grid (symmetry_type='none', 25×13).
+
+Supports:
+  --encoding wavelet                : embed_2const_wavelet (default; Gabor)
+  --encoding sinusoidal             : embed_wavevector_sinusoidal (paper cos(kx x/S + ky y/S))
+  --encoding wavevectors_to_spatial : same as sinusoidal (paper formula via wavevectors_to_spatial)
+  --encoding plane_wave             : embed_wavevector_plane_wave (official: sin, cycles_at_pi=1;
+                                      dir ∥ k, freq ∝ |k|)
 
 Use for visual / numerical inspection of aliasing and patch distinctiveness.
 
@@ -93,12 +100,45 @@ def load_wavevectors(pt_dir: Path) -> np.ndarray:
 
 
 def compute_embeddings(
-    kxy: np.ndarray, size: int, freq_range: float, embed_overrides: dict | None = None,
+    kxy: np.ndarray,
+    size: int,
+    freq_range: float,
+    encoding: str = "wavelet",
+    length_scale: float = 1.0,
+    cycles_at_pi: float = 1.0,
+    plane_wave_kind: str = "sin",
+    embed_overrides: dict | None = None,
 ) -> np.ndarray:
     overrides = embed_overrides or {}
-    emb = NU.embed_2const_wavelet(
-        kxy[:, 0], kxy[:, 1], size=size, freq_range=freq_range, verbose=False, **overrides
-    )
+    if encoding == "sinusoidal":
+        emb = NU.embed_wavevector_sinusoidal(kxy[:, 0], kxy[:, 1], size=size, verbose=False)
+    elif encoding == "plane_wave":
+        emb = NU.embed_wavevector_plane_wave(
+            kxy[:, 0],
+            kxy[:, 1],
+            size=size,
+            cycles_at_pi=cycles_at_pi,
+            kind=plane_wave_kind,
+            verbose=False,
+        )
+    elif encoding == "wavevectors_to_spatial":
+        # API expects (N, W, 2); use W=1 so output is (N, 1, S, S).
+        waves = NU.wavevectors_to_spatial(
+            kxy[:, None, :],
+            design_res=size,
+            length_scale=length_scale,
+            plot_sample=False,
+        )
+        emb = waves[:, 0]
+    elif encoding == "wavelet":
+        emb = NU.embed_2const_wavelet(
+            kxy[:, 0], kxy[:, 1], size=size, freq_range=freq_range, verbose=False, **overrides
+        )
+    else:
+        raise ValueError(
+            f"Unknown encoding: {encoding!r} "
+            "(expected 'wavelet', 'sinusoidal', 'plane_wave', or 'wavevectors_to_spatial')"
+        )
     return emb.astype(np.float32)
 
 
@@ -186,22 +226,28 @@ def save_arrays(
     per_wave = out_dir / "per_wave"
     per_wave.mkdir(parents=True, exist_ok=True)
 
-    np.savez_compressed(
-        out_dir / "embeddings_all.npz",
-        embeddings=embeddings,
-        fft_log_magnitude=fft_log_mag,
-        kx=kxy[:, 0],
-        ky=kxy[:, 1],
-        wave_indices=np.arange(embeddings.shape[0], dtype=np.int32),
-        size=np.int32(embed_cfg["size"]),
-        freq_range=np.float32(embed_cfg["freq_range"]),
-        freq_scale=np.float32(embed_cfg["freq_scale"]),
-        freq_offset=np.float32(embed_cfg["freq_offset"]),
-        sigma_numerator=np.float32(embed_cfg["sigma_numerator"]),
-        sigma=np.float32(embed_cfg["sigma"]),
-        kx_cycles=np.int32(embed_cfg["kx_cycles"]),
-        ky_cycles=np.int32(embed_cfg["ky_cycles"]),
-    )
+    npz_payload: dict = {
+        "embeddings": embeddings,
+        "fft_log_magnitude": fft_log_mag,
+        "kx": kxy[:, 0],
+        "ky": kxy[:, 1],
+        "wave_indices": np.arange(embeddings.shape[0], dtype=np.int32),
+    }
+    for key, dtype in (
+        ("size", np.int32),
+        ("length_scale", np.float32),
+        ("cycles_at_pi", np.float32),
+        ("freq_range", np.float32),
+        ("freq_scale", np.float32),
+        ("freq_offset", np.float32),
+        ("sigma_numerator", np.float32),
+        ("sigma", np.float32),
+        ("kx_cycles", np.int32),
+        ("ky_cycles", np.int32),
+    ):
+        if key in embed_cfg and isinstance(embed_cfg[key], (int, float, np.integer, np.floating)):
+            npz_payload[key] = dtype(embed_cfg[key])
+    np.savez_compressed(out_dir / "embeddings_all.npz", **npz_payload)
     torch.save(
         {
             "embeddings": torch.from_numpy(embeddings),
@@ -351,13 +397,26 @@ def save_ibz_grid_plot(
     plt.close(fig)
 
 
+def _encoding_label(encoding: str, plane_wave_kind: str = "cos") -> str:
+    if encoding == "sinusoidal":
+        return "Sinusoidal (paper)"
+    if encoding == "wavevectors_to_spatial":
+        return "wavevectors_to_spatial"
+    if encoding == "plane_wave":
+        return f"Plane-wave {plane_wave_kind} (dir∥k, f∝|k|)"
+    return "Wavelet"
+
+
 def save_spatial_ibz_grid_plot(
     out_path: Path,
     embeddings: np.ndarray,
     kxy: np.ndarray,
     per_patch_vmax: bool,
     dpi: int,
+    encoding: str = "wavelet",
+    plane_wave_kind: str = "cos",
 ) -> None:
+    label = _encoding_label(encoding, plane_wave_kind=plane_wave_kind)
     save_ibz_grid_plot(
         out_path,
         embeddings,
@@ -365,7 +424,7 @@ def save_spatial_ibz_grid_plot(
         per_patch_vmax=per_patch_vmax,
         dpi=dpi,
         suptitle=(
-            "Wavelet embeddings on IBZ grid (25 × 13)\n"
+            f"{label} embeddings on IBZ grid (25 × 13)\n"
             "bottom row: ky = 0  |  top row: ky = π  |  columns: kx from −π to +π"
         ),
         cmap="RdBu_r",
@@ -379,7 +438,10 @@ def save_fft_ibz_grid_plot(
     kxy: np.ndarray,
     per_patch_vmax: bool,
     dpi: int,
+    encoding: str = "wavelet",
+    plane_wave_kind: str = "cos",
 ) -> None:
+    label = _encoding_label(encoding, plane_wave_kind=plane_wave_kind).lower()
     save_ibz_grid_plot(
         out_path,
         fft_log_mag,
@@ -387,7 +449,7 @@ def save_fft_ibz_grid_plot(
         per_patch_vmax=per_patch_vmax,
         dpi=dpi,
         suptitle=(
-            "2D FFT magnitude (log₁₀|·|) of wavelet embeddings on IBZ grid (25 × 13)\n"
+            f"2D FFT magnitude (log₁₀|·|) of {label} embeddings on IBZ grid (25 × 13)\n"
             "bottom row: ky = 0  |  top row: ky = π  |  columns: kx from −π to +π"
         ),
         cmap="magma",
@@ -399,12 +461,39 @@ def parse_args() -> argparse.Namespace:
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--pt-dir", type=Path, default=DEFAULT_PT_DIR, help="Dataset folder with wavevectors_full.pt")
     p.add_argument("--out-dir", type=Path, default=None, help="Output directory (default: auto from embed params)")
+    p.add_argument(
+        "--encoding",
+        choices=("wavelet", "sinusoidal", "wavevectors_to_spatial", "plane_wave"),
+        default="wavelet",
+        help=(
+            "Wavevector embedding: Gabor wavelet (default), paper sinusoid, "
+            "wavevectors_to_spatial, or directed plane_wave"
+        ),
+    )
     p.add_argument("--size", type=int, default=32, help="Embedding patch size")
-    p.add_argument("--freq-range", type=float, default=1.0, help="embed_2const_wavelet freq_range")
+    p.add_argument("--freq-range", type=float, default=1.0, help="embed_2const_wavelet freq_range (wavelet only)")
+    p.add_argument(
+        "--length-scale",
+        type=float,
+        default=1.0,
+        help="Domain length L for wavevectors_to_spatial (unused by paper formula; default 1)",
+    )
+    p.add_argument(
+        "--cycles-at-pi",
+        type=float,
+        default=1.0,
+        help="For plane_wave: cycles across the patch at |k|=π (default 1; official)",
+    )
+    p.add_argument(
+        "--plane-wave-kind",
+        choices=("cos", "sin"),
+        default="sin",
+        help="For plane_wave: use cos or sin of the directed phase (default sin; official)",
+    )
     p.add_argument(
         "--compare-stored",
         action="store_true",
-        help="Compare against waveforms_full.pt if present",
+        help="Compare against waveforms_full.pt if present (wavelet encoding only)",
     )
     p.add_argument(
         "--per-patch-vmax",
@@ -425,8 +514,12 @@ def run_inspection(
     *,
     pt_dir: Path = DEFAULT_PT_DIR,
     out_dir: Path | None = None,
+    encoding: str = "wavelet",
     size: int = 32,
     freq_range: float = 1.0,
+    length_scale: float = 1.0,
+    cycles_at_pi: float = 1.0,
+    plane_wave_kind: str = "sin",
     embed_overrides: dict | None = None,
     compare_stored: bool = False,
     per_patch_vmax: bool = False,
@@ -436,36 +529,86 @@ def run_inspection(
 ) -> dict:
     """Run full embedding inspection; return distinctiveness report + paths."""
     overrides = embed_overrides or {}
-    embed_cfg = NU.embed_2const_wavelet_params(size=size, freq_range=freq_range, **overrides)
-    resolved_out = out_dir if out_dir is not None else output_dir_from_cfg(embed_cfg)
+    if encoding == "sinusoidal":
+        embed_cfg: dict = {"encoding": "sinusoidal", "size": size}
+        resolved_out = out_dir if out_dir is not None else OUT_PARENT / f"sinusoidal_S{size}"
+    elif encoding == "plane_wave":
+        kind = str(plane_wave_kind).lower()
+        embed_cfg = {
+            "encoding": "plane_wave",
+            "size": size,
+            "cycles_at_pi": cycles_at_pi,
+            "kind": kind,
+        }
+        cyc_token = format_param_token(cycles_at_pi)
+        resolved_out = (
+            out_dir
+            if out_dir is not None
+            else OUT_PARENT / f"plane_wave_S{size}_cyc{cyc_token}_{kind}"
+        )
+    elif encoding == "wavevectors_to_spatial":
+        embed_cfg = {
+            "encoding": "wavevectors_to_spatial",
+            "size": size,
+            "length_scale": length_scale,
+        }
+        ls_token = format_param_token(length_scale)
+        resolved_out = (
+            out_dir
+            if out_dir is not None
+            else OUT_PARENT / f"wavevectors_to_spatial_S{size}_L{ls_token}"
+        )
+    elif encoding == "wavelet":
+        embed_cfg = {
+            "encoding": "wavelet",
+            **NU.embed_2const_wavelet_params(size=size, freq_range=freq_range, **overrides),
+        }
+        resolved_out = out_dir if out_dir is not None else output_dir_from_cfg(embed_cfg)
+    else:
+        raise ValueError(f"Unknown encoding: {encoding!r}")
+
     resolved_out.mkdir(parents=True, exist_ok=True)
     if not quiet:
+        print(f"Encoding: {encoding}")
         print(f"Output directory: {resolved_out}")
 
     kxy = load_wavevectors(pt_dir)
-    embeddings = compute_embeddings(kxy, size=size, freq_range=freq_range, embed_overrides=overrides)
+    embeddings = compute_embeddings(
+        kxy,
+        size=size,
+        freq_range=freq_range,
+        encoding=encoding,
+        length_scale=length_scale,
+        cycles_at_pi=cycles_at_pi,
+        plane_wave_kind=plane_wave_kind,
+        embed_overrides=overrides,
+    )
     fft_mag = compute_fft_magnitude(embeddings)
     fft_log_mag = compute_fft_log_magnitude(fft_mag)
     spectral_energy = compute_fft_spectral_energy(fft_mag)
 
     if compare_stored:
-        stored_path = pt_dir / "waveforms_full.pt"
-        if stored_path.exists():
-            stored = torch.load(stored_path, map_location="cpu", weights_only=False).numpy().astype(np.float32)
-            diff = np.abs(stored - embeddings)
-            compare = {
-                "max_abs_diff": float(diff.max()),
-                "mean_abs_diff": float(diff.mean()),
-                "stored_path": str(stored_path),
-            }
+        if encoding != "wavelet":
             if not quiet:
-                print(f"Stored vs recomputed: max |diff| = {compare['max_abs_diff']:.6g}")
+                print("--compare-stored ignored (only meaningful for --encoding wavelet)")
         else:
-            compare = {"error": f"{stored_path} not found"}
-            if not quiet:
-                print(compare["error"])
-        with open(resolved_out / "stored_comparison.json", "w", encoding="utf-8") as f:
-            json.dump(compare, f, indent=2)
+            stored_path = pt_dir / "waveforms_full.pt"
+            if stored_path.exists():
+                stored = torch.load(stored_path, map_location="cpu", weights_only=False).numpy().astype(np.float32)
+                diff = np.abs(stored - embeddings)
+                compare = {
+                    "max_abs_diff": float(diff.max()),
+                    "mean_abs_diff": float(diff.mean()),
+                    "stored_path": str(stored_path),
+                }
+                if not quiet:
+                    print(f"Stored vs recomputed: max |diff| = {compare['max_abs_diff']:.6g}")
+            else:
+                compare = {"error": f"{stored_path} not found"}
+                if not quiet:
+                    print(compare["error"])
+            with open(resolved_out / "stored_comparison.json", "w", encoding="utf-8") as f:
+                json.dump(compare, f, indent=2)
 
     save_arrays(resolved_out, embeddings, fft_log_mag, kxy, embed_cfg)
 
@@ -481,10 +624,22 @@ def run_inspection(
 
     save_similarity_heatmap(resolved_out / "fft_log_cosine_similarity_heatmap.png", sim, dpi=dpi)
     save_spatial_ibz_grid_plot(
-        resolved_out / "embeddings_ibz_grid.png", embeddings, kxy, per_patch_vmax=per_patch_vmax, dpi=dpi
+        resolved_out / "embeddings_ibz_grid.png",
+        embeddings,
+        kxy,
+        per_patch_vmax=per_patch_vmax,
+        dpi=dpi,
+        encoding=encoding,
+        plane_wave_kind=plane_wave_kind,
     )
     save_fft_ibz_grid_plot(
-        resolved_out / "embeddings_fft_ibz_grid.png", fft_log_mag, kxy, per_patch_vmax=per_patch_vmax, dpi=dpi
+        resolved_out / "embeddings_fft_ibz_grid.png",
+        fft_log_mag,
+        kxy,
+        per_patch_vmax=per_patch_vmax,
+        dpi=dpi,
+        encoding=encoding,
+        plane_wave_kind=plane_wave_kind,
     )
     save_spectral_energy_histogram(resolved_out / "fft_spectral_energy_histogram.png", spectral_energy, dpi=dpi)
 
@@ -507,8 +662,12 @@ def main() -> None:
     run_inspection(
         pt_dir=args.pt_dir,
         out_dir=args.out_dir,
+        encoding=args.encoding,
         size=args.size,
         freq_range=args.freq_range,
+        length_scale=args.length_scale,
+        cycles_at_pi=args.cycles_at_pi,
+        plane_wave_kind=args.plane_wave_kind,
         embed_overrides=overrides,
         compare_stored=args.compare_stored,
         per_patch_vmax=args.per_patch_vmax,

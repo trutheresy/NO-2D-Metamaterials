@@ -44,7 +44,7 @@ This document maps MATLAB scripts from `2D-dispersion-han` to their equivalent P
 | `get_design2.m` | `get_design2.py` → `get_design2()` | Generate design from design_parameters object |
 | `design_parameters.m` | `design_parameters.py` → `DesignParameters` class | Design parameter class |
 | `convert_design.m` | `design_conversion.py` → `convert_design()` | Convert design between formats |
-| `apply_steel_rubber_paradigm.m` | `design_conversion.py` → `apply_steel_rubber_paradigm()` | Apply steel-rubber material paradigm |
+| `apply_steel_polymer_paradigm.m` | `design_conversion.py` → `apply_steel_polymer_paradigm()` | Apply steel-polymer material paradigm |
 
 ## Kernel Functions (for Correlated Designs)
 

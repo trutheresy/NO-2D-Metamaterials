@@ -13,7 +13,8 @@ No decoding to physical units is performed.
 
 Inputs
 ------
---dataset-pt-dir : folder with ``eigenfrequency_uniform_full.pt`` (truth for channel 0)
+--dataset-pt-dir : folder with ``eigenfrequency_{uniform|fft}_full.pt`` (truth for channel 0;
+                   select with ``--eigen-encoding``)
                    and ``displacements_dataset.pt`` (4 tensors, truth for channels 1–4).
 --inference      : dense prediction tensor from ``run_model_inference.py`` with shape
                    ``(n_geom*n_wv*n_bands, out_channels, H, W)`` indexed as
@@ -61,6 +62,7 @@ import numpy as np
 import torch
 from tqdm import tqdm
 
+from NO_utilities import EIGENFREQUENCY_ENCODING_FILES, eigenfrequency_full_filename, resolve_eigenfrequency_encoding
 from output_layout import resolve_script_output_dir
 from wave_mode_filters import degenerate_pivot_wave_indices, shear_mode_wave_indices
 
@@ -204,15 +206,20 @@ class ScoringSources:
     field_w: int
 
 
-def load_dataset_layout(dataset_pt_dir: Path) -> tuple[int, int, int, int, int]:
+def load_dataset_layout(
+    dataset_pt_dir: Path,
+    eigen_encoding: str = "uniform",
+) -> tuple[int, int, int, int, int]:
     """Return (n_geom, n_wv, n_bands, field_h, field_w) from the eigenfrequency grid."""
-    eigen_path = dataset_pt_dir / "eigenfrequency_uniform_full.pt"
+    encoding = resolve_eigenfrequency_encoding(eigen_encoding)
+    eigen_name = eigenfrequency_full_filename(encoding)
+    eigen_path = dataset_pt_dir / eigen_name
     if not eigen_path.is_file():
         raise FileNotFoundError(f"Missing layout tensor: {eigen_path}")
     eigen = torch.load(eigen_path, map_location="cpu", mmap=True, weights_only=True)
     if eigen.ndim != 5:
         raise ValueError(
-            f"Expected eigenfrequency_uniform_full shape (n_geom, n_wv, n_bands, H, W); "
+            f"Expected {eigen_name} shape (n_geom, n_wv, n_bands, H, W); "
             f"got {tuple(eigen.shape)}."
         )
     return tuple(int(s) for s in eigen.shape)  # type: ignore[return-value]
@@ -236,14 +243,16 @@ def load_truth_stack(
     channels: list[int],
     total: int,
     field_hw: tuple[int, int],
+    eigen_encoding: str = "uniform",
 ) -> torch.Tensor:
     """Stack truth fields for the requested prediction channels into (total, C, H, W).
 
-    Channel 0 truth comes from eigenfrequency_uniform_full.pt; channels 1–4 from
-    displacements_dataset.pt tensors 0–3.
+    Channel 0 truth comes from ``eigenfrequency_{uniform|fft}_full.pt`` (see
+    ``eigen_encoding``); channels 1–4 from displacements_dataset.pt tensors 0–3.
     """
     field_h, field_w = field_hw
-    eigen_path = dataset_pt_dir / "eigenfrequency_uniform_full.pt"
+    encoding = resolve_eigenfrequency_encoding(eigen_encoding)
+    eigen_path = dataset_pt_dir / eigenfrequency_full_filename(encoding)
     eigen = torch.load(eigen_path, map_location="cpu", mmap=True, weights_only=True)
     eigen_flat = eigen.reshape(total, field_h, field_w)
 
@@ -272,10 +281,12 @@ def open_scoring_sources(
     total: int,
     field_hw: tuple[int, int],
     need_displacements: bool,
+    eigen_encoding: str = "uniform",
 ) -> ScoringSources:
     """Open mmap eigenfrequency and optionally load displacement targets once."""
     field_h, field_w = field_hw
-    eigen_path = dataset_pt_dir / "eigenfrequency_uniform_full.pt"
+    encoding = resolve_eigenfrequency_encoding(eigen_encoding)
+    eigen_path = dataset_pt_dir / eigenfrequency_full_filename(encoding)
     eigen = torch.load(eigen_path, map_location="cpu", mmap=True, weights_only=True)
     eigen_flat = eigen.reshape(total, field_h, field_w)
 
@@ -331,13 +342,15 @@ def prepare_scoring_data(
     dataset_pt_dir: Path,
     predictions: torch.Tensor,
     channels: list[int] | None = None,
+    eigen_encoding: str = "uniform",
 ) -> tuple[torch.Tensor, int, int, int, int, int, list[int]]:
     """Load truth fields and validate alignment with dense predictions."""
     if channels is None:
         channels = list(DEFAULT_SCORING_CHANNELS)
 
     dataset_pt_dir = Path(dataset_pt_dir)
-    n_geom, n_wv, n_bands, field_h, field_w = load_dataset_layout(dataset_pt_dir)
+    encoding = resolve_eigenfrequency_encoding(eigen_encoding)
+    n_geom, n_wv, n_bands, field_h, field_w = load_dataset_layout(dataset_pt_dir, encoding)
     total = n_geom * n_wv * n_bands
 
     if predictions.ndim != 4:
@@ -353,7 +366,9 @@ def prepare_scoring_data(
         )
     validate_channels(channels, int(predictions.shape[1]))
 
-    truth_flat = load_truth_stack(dataset_pt_dir, channels, total, (field_h, field_w))
+    truth_flat = load_truth_stack(
+        dataset_pt_dir, channels, total, (field_h, field_w), eigen_encoding=encoding
+    )
     return truth_flat, n_geom, n_wv, n_bands, field_h, field_w, channels
 
 
@@ -537,7 +552,19 @@ def main() -> None:
     p.add_argument(
         "--dataset-pt-dir",
         required=True,
-        help="Dataset *_pt folder with displacements_dataset.pt and eigenfrequency_uniform_full.pt.",
+        help=(
+            "Dataset *_pt folder with displacements_dataset.pt and "
+            "eigenfrequency_{uniform|fft}_full.pt (see --eigen-encoding)."
+        ),
+    )
+    p.add_argument(
+        "--eigen-encoding",
+        choices=tuple(EIGENFREQUENCY_ENCODING_FILES),
+        default="uniform",
+        help=(
+            "Channel-0 truth encoding: uniform or fft (wavelet). "
+            "Must match the model / eigenfrequency_*_full.pt file. Default: uniform."
+        ),
     )
     p.add_argument("--inference", required=True, help="Dense prediction tensor (.pt), shape (n_geom*n_wv*n_bands, C, H, W).")
     p.add_argument(
@@ -623,6 +650,7 @@ def main() -> None:
 
     device = resolve_device(args.device)
     dataset_pt_dir = Path(args.dataset_pt_dir)
+    eigen_encoding = resolve_eigenfrequency_encoding(args.eigen_encoding)
     infer_path = Path(args.inference)
     out_dir = resolve_script_output_dir(
         explicit=args.output_dir or None,
@@ -634,7 +662,7 @@ def main() -> None:
     )
 
     predictions = torch.load(infer_path, map_location="cpu", mmap=True, weights_only=True)
-    n_geom, n_wv, n_bands, field_h, field_w = load_dataset_layout(dataset_pt_dir)
+    n_geom, n_wv, n_bands, field_h, field_w = load_dataset_layout(dataset_pt_dir, eigen_encoding)
     total = n_geom * n_wv * n_bands
 
     if predictions.shape[0] != total:
@@ -644,6 +672,7 @@ def main() -> None:
         )
 
     print(f"Dataset   : {dataset_pt_dir}")
+    print(f"Eigen enc : {eigen_encoding} ({eigenfrequency_full_filename(eigen_encoding)})")
     print(f"Inference : {infer_path}  shape={tuple(predictions.shape)} dtype={predictions.dtype}")
     print(f"Losses    : {', '.join(losses)}")
     print(
@@ -682,7 +711,11 @@ def main() -> None:
     validate_channels(all_channels, int(predictions.shape[1]))
     need_displacements = any(ch >= 1 for ch in all_channels)
     sources = open_scoring_sources(
-        dataset_pt_dir, total, (field_h, field_w), need_displacements
+        dataset_pt_dir,
+        total,
+        (field_h, field_w),
+        need_displacements,
+        eigen_encoding=eigen_encoding,
     )
     truth_mode = "batched mmap/slice" if sources else "full stack"
     print(

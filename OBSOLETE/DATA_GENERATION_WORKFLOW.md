@@ -125,7 +125,7 @@ The generator prepends `2d-dispersion-py` to `sys.path` and imports:
 - `get_design`, `get_design2`
 - `get_IBZ_wavevectors`
 - `DesignParameters`
-- `convert_design`, `design_to_explicit`, `apply_steel_rubber_paradigm`
+- `convert_design`, `design_to_explicit`, `apply_steel_polymer_paradigm`
 - `get_transformation_matrix`
 - `validate_constants`, `check_contour_analysis`
 
@@ -238,7 +238,7 @@ Nested calls:
    - applies symmetry (`p4mm` -> `symmetry.apply_p4mm_symmetry`)
    - optional discretization by `N_value` (here `inf`, so no quantization).
 7. `convert_design(... linear -> const['design_scale'])`
-8. `apply_steel_rubber_paradigm(design, const)` channel-wise remapping.
+8. `apply_steel_polymer_paradigm(design, const)` channel-wise remapping.
 9. Optional binarization:
    - `np.round(design)` if `--binarize`.
 

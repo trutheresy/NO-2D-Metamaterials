@@ -1,0 +1,127 @@
+2026-07-25 04:39:15,625 | INFO | Perf backends | tf32=False cudnn_benchmark=False matmul_precision=highest amp=none
+2026-07-25 04:39:27,522 | INFO | NMAE epsilon=1.000000e-05
+2026-07-25 04:39:27,523 | INFO | Loss logging: active=nmae; every epoch records train/val nmae, MAE, and MSE
+2026-07-25 04:39:28,076 | INFO | Run started | run_name=NO_I4O5_BCF16_NMAE_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_inconst_260725 run_id=NO_I4O5_BCF16_NMAE_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_inconst_260725 device=cuda train_samples=18720000 test_samples=3900000 val_index_source=indices_full epoch_range=1..4
+2026-07-25 04:39:28,076 | INFO | Fault diagnostics | main_fault_log=D:\Research\NO-2D-Metamaterials\MODELS\training_runs\NO_I4O5_BCF16_NMAE_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_inconst_260725\main_process_fault.log
+2026-07-25 08:09:26,980 | ERROR | Diagnostic panel export failed (training continues)
+Traceback (most recent call last):
+  File "D:\Research\NO-2D-Metamaterials\train_from_disk.py", line 2573, in main
+    paths = save_random_test_diagnostic_panels(
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\ProgramData\anaconda3\envs\NO_2D_Metamaterials\Lib\site-packages\torch\utils\_contextlib.py", line 116, in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Research\NO-2D-Metamaterials\diagnostic_panels.py", line 202, in save_random_test_diagnostic_panels
+    raise ValueError(f"bad input shape at idx={idx}: {tuple(x.shape)}")
+ValueError: bad input shape at idx=2489406: (4, 32, 32)
+2026-07-25 08:09:28,448 | INFO | epoch=1/4 loss=nmae train_nmae=3.459683e-01 val_nmae=3.183856e-01 train_mae=3.354129e-03 val_mae=2.757823e-03 train_mse=7.895205e-05 val_mse=6.215712e-05 lr=1.800e-03 train_sps=1595.4
+2026-07-25 08:09:28,448 | INFO | epoch=1/4 loss_ch_nmae train=2.503e-02 3.896e-01 4.032e-01 4.567e-01 4.553e-01 val=1.475e-02 3.595e-01 3.656e-01 4.274e-01 4.247e-01
+2026-07-25 08:09:28,448 | INFO | epoch=1/4 mae_ch train=1.594e-03 3.591e-03 3.447e-03 4.191e-03 3.947e-03 val=9.076e-04 3.046e-03 2.852e-03 3.606e-03 3.377e-03 mse_ch train=2.335e-05 8.337e-05 7.903e-05 1.105e-04 9.849e-05 val=3.539e-06 6.668e-05 6.375e-05 9.355e-05 8.326e-05
+2026-07-25 11:42:05,163 | ERROR | Diagnostic panel export failed (training continues)
+Traceback (most recent call last):
+  File "D:\Research\NO-2D-Metamaterials\train_from_disk.py", line 2573, in main
+    paths = save_random_test_diagnostic_panels(
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\ProgramData\anaconda3\envs\NO_2D_Metamaterials\Lib\site-packages\torch\utils\_contextlib.py", line 116, in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Research\NO-2D-Metamaterials\diagnostic_panels.py", line 202, in save_random_test_diagnostic_panels
+    raise ValueError(f"bad input shape at idx={idx}: {tuple(x.shape)}")
+ValueError: bad input shape at idx=3603225: (4, 32, 32)
+2026-07-25 11:42:06,637 | INFO | epoch=2/4 loss=nmae train_nmae=2.585888e-01 val_nmae=2.925047e-01 train_mae=2.481966e-03 val_mae=2.521332e-03 train_mse=5.536311e-05 val_mse=5.714521e-05 lr=1.620e-03 train_sps=1573.9
+2026-07-25 11:42:06,637 | INFO | epoch=2/4 loss_ch_nmae train=1.662e-02 2.857e-01 2.933e-01 3.507e-01 3.466e-01 val=1.175e-02 3.218e-01 3.390e-01 3.945e-01 3.954e-01
+2026-07-25 11:42:06,637 | INFO | epoch=2/4 mae_ch train=1.055e-03 2.632e-03 2.504e-03 3.216e-03 3.003e-03 val=7.177e-04 2.752e-03 2.644e-03 3.353e-03 3.140e-03 mse_ch train=1.363e-05 5.592e-05 5.321e-05 8.180e-05 7.226e-05 val=2.603e-06 6.074e-05 5.811e-05 8.700e-05 7.727e-05
+2026-07-25 15:13:33,343 | ERROR | Diagnostic panel export failed (training continues)
+Traceback (most recent call last):
+  File "D:\Research\NO-2D-Metamaterials\train_from_disk.py", line 2573, in main
+    [
+      
+  File "C:\ProgramData\anaconda3\envs\NO_2D_Metamaterials\Lib\site-packages\torch\utils\_contextlib.py", line 116, in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Research\NO-2D-Metamaterials\diagnostic_panels.py", line 202, in save_random_test_diagnostic_panels
+    raise ValueError(f"bad input shape at idx={idx}: {tuple(x.shape)}")
+ValueError: bad input shape at idx=595841: (4, 32, 32)
+2026-07-25 15:13:34,773 | INFO | epoch=3/4 loss=nmae train_nmae=2.339528e-01 val_nmae=2.867959e-01 train_mae=2.243387e-03 val_mae=2.501582e-03 train_mse=4.902282e-05 val_mse=5.539459e-05 lr=1.458e-03 train_sps=1584.8
+2026-07-25 15:13:34,774 | INFO | epoch=3/4 loss_ch_nmae train=1.484e-02 2.566e-01 2.622e-01 3.206e-01 3.154e-01 val=1.495e-02 3.146e-01 3.350e-01 3.866e-01 3.829e-01
+2026-07-25 15:13:34,774 | INFO | epoch=3/4 mae_ch train=9.424e-04 2.363e-03 2.238e-03 2.941e-03 2.732e-03 val=9.226e-04 2.668e-03 2.618e-03 3.267e-03 3.033e-03 mse_ch train=1.295e-05 4.851e-05 4.582e-05 7.354e-05 6.429e-05 val=3.455e-06 5.866e-05 5.607e-05 8.427e-05 7.451e-05
+2026-07-25 18:43:53,455 | ERROR | Diagnostic panel export failed (training continues)
+Traceback (most recent call last):
+  File "D:\Research\NO-2D-Metamaterials\train_from_disk.py", line 2573, in main
+    [
+      
+  File "C:\ProgramData\anaconda3\envs\NO_2D_Metamaterials\Lib\site-packages\torch\utils\_contextlib.py", line 116, in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Research\NO-2D-Metamaterials\diagnostic_panels.py", line 202, in save_random_test_diagnostic_panels
+    raise ValueError(f"bad input shape at idx={idx}: {tuple(x.shape)}")
+ValueError: bad input shape at idx=3423461: (4, 32, 32)
+2026-07-25 18:43:54,894 | INFO | epoch=4/4 loss=nmae train_nmae=2.184130e-01 val_nmae=2.712793e-01 train_mae=2.091211e-03 val_mae=2.325929e-03 train_mse=4.512290e-05 val_mse=5.419437e-05 lr=1.312e-03 train_sps=1592.9
+2026-07-25 18:43:54,894 | INFO | epoch=4/4 loss_ch_nmae train=1.357e-02 2.384e-01 2.429e-01 3.016e-01 2.956e-01 val=1.036e-02 2.980e-01 3.118e-01 3.671e-01 3.691e-01
+2026-07-25 18:43:54,894 | INFO | epoch=4/4 mae_ch train=8.611e-04 2.195e-03 2.073e-03 2.766e-03 2.561e-03 val=6.311e-04 2.545e-03 2.423e-03 3.110e-03 2.921e-03 mse_ch train=1.257e-05 4.400e-05 4.127e-05 6.844e-05 5.934e-05 val=2.574e-06 5.783e-05 5.486e-05 8.252e-05 7.318e-05
+2026-07-25 18:43:55,191 | INFO | Run complete | run_name=NO_I4O5_BCF16_NMAE_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_inconst_260725 run_id=NO_I4O5_BCF16_NMAE_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_inconst_260725 best_val_loss=2.712793e-01
+2026-07-25 18:43:55,191 | INFO | Artifacts saved to: D:\Research\NO-2D-Metamaterials\MODELS\training_runs\NO_I4O5_BCF16_NMAE_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_inconst_260725
+2026-07-27 09:56:46,902 | INFO | Perf backends | tf32=False cudnn_benchmark=False matmul_precision=highest amp=none
+2026-07-27 09:56:59,419 | INFO | NMAE epsilon=1.000000e-05
+2026-07-27 09:56:59,421 | INFO | Loss logging: active=nmae; every epoch records train/val nmae, MAE, and MSE
+2026-07-27 09:57:00,533 | INFO | Resumed full state from D:\Research\NO-2D-Metamaterials\MODELS\training_runs\NO_I4O5_BCF16_NMAE_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_inconst_260725\training_state_latest.pt at epoch=4
+2026-07-27 09:57:00,538 | INFO | Run started | run_name=NO_I4O5_BCF16_NMAE_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_inconst_260725 run_id=NO_I4O5_BCF16_NMAE_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_inconst_260725 device=cuda train_samples=18720000 test_samples=3900000 val_index_source=indices_full epoch_range=5..8
+2026-07-27 09:57:00,538 | INFO | Fault diagnostics | main_fault_log=D:\Research\NO-2D-Metamaterials\MODELS\training_runs\NO_I4O5_BCF16_NMAE_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_inconst_260725\main_process_fault.log
+2026-07-27 13:25:59,356 | ERROR | Diagnostic panel export failed (training continues)
+Traceback (most recent call last):
+  File "d:\Research\NO-2D-Metamaterials\train_from_disk.py", line 2541, in main
+    paths = save_random_test_diagnostic_panels(
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\ProgramData\anaconda3\envs\NO_2D_Metamaterials\Lib\site-packages\torch\utils\_contextlib.py", line 116, in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "d:\Research\NO-2D-Metamaterials\diagnostic_panels.py", line 202, in save_random_test_diagnostic_panels
+    raise ValueError(f"bad input shape at idx={idx}: {tuple(x.shape)}")
+ValueError: bad input shape at idx=2575342: (4, 32, 32)
+2026-07-27 13:26:00,882 | INFO | epoch=5/8 loss=nmae train_nmae=2.065539e-01 val_nmae=2.651057e-01 train_mae=1.975602e-03 val_mae=2.270417e-03 train_mse=4.219931e-05 val_mse=5.299301e-05 lr=1.181e-03 train_sps=1603.9
+2026-07-27 13:26:00,883 | INFO | epoch=5/8 loss_ch_nmae train=1.263e-02 2.246e-01 2.281e-01 2.870e-01 2.804e-01 val=1.016e-02 2.887e-01 3.051e-01 3.617e-01 3.599e-01
+2026-07-27 13:26:00,883 | INFO | epoch=5/8 mae_ch train=8.019e-04 2.068e-03 1.947e-03 2.632e-03 2.429e-03 val=6.221e-04 2.461e-03 2.369e-03 3.058e-03 2.842e-03 mse_ch train=1.232e-05 4.064e-05 3.785e-05 6.457e-05 5.561e-05 val=2.380e-06 5.583e-05 5.324e-05 8.145e-05 7.206e-05
+2026-07-27 17:00:17,476 | ERROR | Diagnostic panel export failed (training continues)
+Traceback (most recent call last):
+  File "d:\Research\NO-2D-Metamaterials\train_from_disk.py", line 2541, in main
+    paths = save_random_test_diagnostic_panels(
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\ProgramData\anaconda3\envs\NO_2D_Metamaterials\Lib\site-packages\torch\utils\_contextlib.py", line 116, in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "d:\Research\NO-2D-Metamaterials\diagnostic_panels.py", line 202, in save_random_test_diagnostic_panels
+    raise ValueError(f"bad input shape at idx={idx}: {tuple(x.shape)}")
+ValueError: bad input shape at idx=2093164: (4, 32, 32)
+2026-07-27 17:00:18,949 | INFO | epoch=6/8 loss=nmae train_nmae=1.969287e-01 val_nmae=2.634724e-01 train_mae=1.881553e-03 val_mae=2.286479e-03 train_mse=3.990465e-05 val_mse=5.261224e-05 lr=1.063e-03 train_sps=1560.8
+2026-07-27 17:00:18,950 | INFO | epoch=6/8 loss_ch_nmae train=1.185e-02 2.133e-01 2.163e-01 2.749e-01 2.683e-01 val=1.284e-02 2.874e-01 3.072e-01 3.552e-01 3.548e-01
+2026-07-27 17:00:18,950 | INFO | epoch=6/8 mae_ch train=7.527e-04 1.964e-03 1.846e-03 2.522e-03 2.324e-03 val=8.022e-04 2.447e-03 2.376e-03 3.008e-03 2.800e-03 mse_ch train=1.216e-05 3.800e-05 3.524e-05 6.144e-05 5.268e-05 val=2.590e-06 5.538e-05 5.260e-05 8.114e-05 7.135e-05
+2026-07-27 20:35:40,395 | ERROR | Diagnostic panel export failed (training continues)
+Traceback (most recent call last):
+  File "d:\Research\NO-2D-Metamaterials\train_from_disk.py", line 2541, in main
+    paths = save_random_test_diagnostic_panels(
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\ProgramData\anaconda3\envs\NO_2D_Metamaterials\Lib\site-packages\torch\utils\_contextlib.py", line 116, in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "d:\Research\NO-2D-Metamaterials\diagnostic_panels.py", line 202, in save_random_test_diagnostic_panels
+    raise ValueError(f"bad input shape at idx={idx}: {tuple(x.shape)}")
+ValueError: bad input shape at idx=3246622: (4, 32, 32)
+2026-07-27 20:35:41,847 | INFO | epoch=7/8 loss=nmae train_nmae=1.887728e-01 val_nmae=2.595445e-01 train_mae=1.800071e-03 val_mae=2.251142e-03 train_mse=3.797947e-05 val_mse=5.256484e-05 lr=9.566e-04 train_sps=1552.4
+2026-07-27 20:35:41,847 | INFO | epoch=7/8 loss_ch_nmae train=1.103e-02 2.040e-01 2.064e-01 2.646e-01 2.578e-01 val=1.260e-02 2.823e-01 2.945e-01 3.546e-01 3.537e-01
+2026-07-27 20:35:41,847 | INFO | epoch=7/8 mae_ch train=7.006e-04 1.878e-03 1.761e-03 2.427e-03 2.233e-03 val=7.689e-04 2.408e-03 2.289e-03 2.999e-03 2.791e-03 mse_ch train=1.200e-05 3.583e-05 3.309e-05 5.875e-05 5.023e-05 val=2.758e-06 5.523e-05 5.256e-05 8.111e-05 7.117e-05
+2026-07-28 00:11:10,625 | ERROR | Diagnostic panel export failed (training continues)
+Traceback (most recent call last):
+  File "d:\Research\NO-2D-Metamaterials\train_from_disk.py", line 2541, in main
+    paths = save_random_test_diagnostic_panels(
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\ProgramData\anaconda3\envs\NO_2D_Metamaterials\Lib\site-packages\torch\utils\_contextlib.py", line 116, in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "d:\Research\NO-2D-Metamaterials\diagnostic_panels.py", line 202, in save_random_test_diagnostic_panels
+    raise ValueError(f"bad input shape at idx={idx}: {tuple(x.shape)}")
+ValueError: bad input shape at idx=3084757: (4, 32, 32)
+2026-07-28 00:11:12,131 | INFO | epoch=8/8 loss=nmae train_nmae=1.817289e-01 val_nmae=2.580756e-01 train_mae=1.730857e-03 val_mae=2.225692e-03 train_mse=3.629826e-05 val_mse=5.279310e-05 lr=8.609e-04 train_sps=1552.6
+2026-07-28 00:11:12,131 | INFO | epoch=8/8 loss_ch_nmae train=1.044e-02 1.960e-01 1.982e-01 2.554e-01 2.487e-01 val=1.157e-02 2.813e-01 2.919e-01 3.505e-01 3.551e-01
+2026-07-28 00:11:12,132 | INFO | epoch=8/8 mae_ch train=6.625e-04 1.804e-03 1.691e-03 2.343e-03 2.154e-03 val=7.035e-04 2.396e-03 2.268e-03 2.967e-03 2.795e-03 mse_ch train=1.188e-05 3.399e-05 3.131e-05 5.626e-05 4.805e-05 val=2.588e-06 5.522e-05 5.269e-05 8.154e-05 7.193e-05
+2026-07-28 00:11:12,420 | INFO | Run complete | run_name=NO_I4O5_BCF16_NMAE_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_inconst_260725 run_id=NO_I4O5_BCF16_NMAE_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_inconst_260725 best_val_loss=2.580756e-01
+2026-07-28 00:11:12,420 | INFO | Artifacts saved to: D:\Research\NO-2D-Metamaterials\MODELS\training_runs\NO_I4O5_BCF16_NMAE_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_inconst_260725

@@ -9,7 +9,7 @@ This document verifies that every MATLAB file in `2D-dispersion-han` has a corre
 | MATLAB File | Python File | Status | Notes |
 |------------|-------------|--------|-------|
 | `apply_p4mm_symmetry.m` | `symmetry.py` → `apply_p4mm_symmetry()` | ✅ | Function exists in symmetry.py |
-| `apply_steel_rubber_paradigm.m` | `design_conversion.py` → `apply_steel_rubber_paradigm()` | ✅ | Function exists in design_conversion.py |
+| `apply_steel_polymer_paradigm.m` | `design_conversion.py` → `apply_steel_polymer_paradigm()` | ✅ | Function exists in design_conversion.py |
 | `check_contour_analysis.m` | `utils.py` → `check_contour_analysis()` | ✅ | Function exists in utils.py |
 | `convert_design.m` | `design_conversion.py` → `convert_design()` | ✅ | Function exists in design_conversion.py |
 | `demo_create_Kr_and_Mr.m` | `demo_create_Kr_and_Mr.py` | ✅ | Direct match |

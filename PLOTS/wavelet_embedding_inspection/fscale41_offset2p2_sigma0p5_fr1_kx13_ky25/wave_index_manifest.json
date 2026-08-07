@@ -5,6 +5,7 @@
     "layout": "row-major meshgrid, ky=0 bottom"
   },
   "embed_config": {
+    "encoding": "wavelet",
     "size": 32,
     "freq_range": 1.0,
     "freq_scale": 41.0,

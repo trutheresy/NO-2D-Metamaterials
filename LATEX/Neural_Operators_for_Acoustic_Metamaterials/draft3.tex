@@ -66,9 +66,10 @@
 
 % Lists and Enumerations
 \usepackage{enumitem}
-\usepackage{pifont}
-\newcommand{\checked}{\ding{51}}    % ✓
-\newcommand{\unchecked}{\ding{55}}  % ✗
+% Checklist symbols (inactive; kept commented for arXiv compatibility)
+%\usepackage{pifont}
+%\newcommand{\checked}{\ding{51}}    % ✓
+%\newcommand{\unchecked}{\ding{55}}  % ✗
 
 % Hyperlinks and References
 \usepackage{hyperref}
@@ -159,8 +160,8 @@
 
 \author[Mech]{Han Zhang}
 \author[Caltech]{Alexander Ogren}
-\author[Comp]{Cynthia Rudin}\\
-\author[Mech]{Johann Guilleminot}
+\author[Comp]{Cynthia Rudin}
+\author[Mech]{\protect\\Johann Guilleminot}
 \author[Mech]{L. Catherine Brinson}
 \affiliation[Mech]{organization={Department of Mechanical Engineering and Materials Science, Duke University},%Department and Organization
             %addressline={}, 
@@ -232,13 +233,13 @@ Neural Operator \sep Metamaterials \sep Wavelets \sep Eigenmodes \sep Machine Le
 \section{Introduction}
 \label{introduction}
 
-The numerical solution of partial differential equations (PDEs) underpins modern scientific computing and engineering design. Applications ranging from structural mechanics and fluid dynamics to wave propagation and materials engineering routinely rely on computationally intensive numerical methods such as finite element analysis (FEA) to obtain accurate solutions. While these methods are highly reliable, their computational cost can become prohibitive in settings that require repeated evaluations, such as optimization, uncertainty quantification, inverse design, and real-time control. \todo{Citation needed}
+The numerical solution of partial differential equations (PDEs) underpins modern scientific computing and engineering design. Applications ranging from structural mechanics and fluid dynamics to wave propagation and materials engineering routinely rely on computationally intensive numerical methods such as finite element analysis (FEA) to obtain accurate solutions. While these methods are highly reliable, their computational cost can become prohibitive in settings that require repeated evaluations, such as optimization, uncertainty quantification, inverse design, and real-time control.
 
-Recent advances in machine learning have introduced neural operators as a promising alternative to traditional numerical solvers. Unlike conventional neural networks that learn mappings between finite-dimensional vectors, neural operators learn mappings between function spaces, allowing them to approximate entire solution operators for families of PDEs. Models such as the Fourier Neural Operator (FNO) have demonstrated remarkable accuracy and computational efficiency across a variety of linear and nonlinear PDE problems while maintaining strong generalization capabilities across discretizations and geometries. \todo{Citation needed} These developments have generated significant interest in using neural operators as surrogate models for computational physics applications. \todo{Citation needed}
+Recent advances in machine learning have introduced neural operators as a promising alternative to traditional numerical solvers. Unlike conventional neural networks that learn mappings between finite-dimensional vectors, neural operators learn mappings between function spaces, allowing them to approximate entire solution operators for families of PDEs. Models such as the Fourier Neural Operator (FNO) have demonstrated remarkable accuracy and computational efficiency across a variety of linear and nonlinear PDE problems while maintaining strong generalization capabilities across discretizations and geometries. These developments have generated significant interest in using neural operators as surrogate models for computational physics applications.
 
-Despite this progress, existing neural operator architectures have primarily been developed and evaluated on PDEs whose governing parameters are known a priori and whose solutions are uniquely determined by the provided inputs. A large class of physically important problems, however, are governed by eigenvalue PDEs, in which both the solution field and one or more unknown PDE parameters must be determined simultaneously. Examples include vibration analysis, quantum mechanics, photonics, acoustics, and wave propagation in metamaterials. \todo{Citation needed} In these problems, multiple valid solutions may exist for the same physical domain, corresponding to different eigenvalue-eigenvector pairs. The ability to represent and distinguish among these multiple solutions is essential for accurately modeling the underlying physics.
+Despite this progress, existing neural operator architectures have primarily been developed and evaluated on PDEs whose governing parameters are known a priori and whose solutions are uniquely determined by the provided inputs. A large class of physically important problems, however, are governed by eigenvalue PDEs, in which both the solution field and one or more unknown PDE parameters must be determined simultaneously. Examples include vibration analysis, quantum mechanics, photonics, acoustics, and wave propagation in metamaterials. In these problems, multiple valid solutions may exist for the same physical domain, corresponding to different eigenvalue-eigenvector pairs. The ability to represent and distinguish among these multiple solutions is essential for accurately modeling the underlying physics.
 
-Acoustic metamaterials provide a particularly compelling example of this challenge. These architected materials derive their properties from geometric structure rather than composition alone, enabling engineered interactions with propagating waves. \todo{Citation needed} Understanding and designing such systems often requires computing multiple deformation modes associated with different resonant frequencies and wave behaviors. Traditionally, these modes are obtained through computationally expensive eigenvalue analysis using finite element methods. \todo{Citation needed} A neural operator capable of accurately predicting multiple deformation modes directly from material geometry would significantly accelerate such iterative design and analysis processes.
+Acoustic metamaterials provide a particularly compelling example of this challenge. These architected materials derive their properties from geometric structure rather than composition alone, enabling engineered interactions with propagating waves. Understanding and designing such systems often requires computing multiple deformation modes associated with different resonant frequencies and wave behaviors. Traditionally, these modes are obtained through computationally expensive eigenvalue analysis using finite element methods. A neural operator capable of accurately predicting multiple deformation modes directly from material geometry would significantly accelerate such iterative design and analysis processes.
 
 However, extending neural operators to eigenvalue PDEs is nontrivial. Standard operator-learning formulations implicitly assume a one-to-one mapping between inputs and outputs, whereas eigenvalue problems admit multiple valid solutions for a given geometry. As a result, existing FNO architectures lack a mechanism for deterministically selecting among different eigenmodes. Furthermore, the representation of eigenvalue-related information must be compatible with the spectral architecture of the FNO, which processes information jointly in both spatial and frequency domains.
 
@@ -259,7 +260,7 @@ Together, these results extend the applicability of neural operators beyond conv
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Methodology}
 \label{sec:Methodology}
-This body of work involves several different methods for generating and then training with data to enable FNO models to simulate acoustic metamaterials, a practical and nontrivial eigenvalue PDE problem. Each method is detailed in separate subsections, starting with the materials simulation side of the procedure, and then moving into the machine learning aspects. The reader is encouraged to read or skip any of these subsections depending on their interest in technical details.
+This section describes the methods used to generate data and train Fourier Neural Operators for acoustic metamaterial eigenmode prediction. We first summarize the FNO architecture, then define the metamaterial design space and the Bloch--FEA simulations used for supervised labels. We next introduce the wavelet encodings of modal parameters, describe dataset construction, and detail the training procedure.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection{Fourier Neural Operator}
@@ -269,7 +270,7 @@ The principal theoretical motivation for Fourier Neural Operators is their unive
 \begin{equation}
 \mathcal{G}:\mathcal{A}\rightarrow\mathcal{U}
 \end{equation}
-be a continuous nonlinear operator. It has been shown that, given sufficient latent width and Fourier modes, an FNO can approximate $\mathcal{G}$ arbitrarily well on compact subsets of $\mathcal{A}$ \todo{citation}. Unlike conventional neural networks, which approximate finite-dimensional functions, FNOs approximate operators between infinite-dimensional function spaces by learning a sequence of global integral operators parameterized in the Fourier domain.
+be a continuous nonlinear operator. It has been shown that, given sufficient latent width and Fourier modes, an FNO can approximate $\mathcal{G}$ arbitrarily well on compact subsets of $\mathcal{A}$. Unlike conventional neural networks, which approximate finite-dimensional functions, FNOs approximate operators between infinite-dimensional function spaces by learning a sequence of global integral operators parameterized in the Fourier domain.
 
 This theoretical framework assumes that both the input and output are continuous fields of infinite resolution. In practice, however, these fields are sampled on a finite computational grid. The continuous Fourier transform is therefore replaced by a discrete Fourier transform (DFT), and only a finite number of Fourier modes are retained during training. Consequently, the learned model approximates the continuous solution operator through its discrete representation while preserving the same spectral operator-learning architecture.
 
@@ -345,13 +346,13 @@ The dataset is restricted to two-dimensional acoustic metamaterials composed of 
     $\text{Value}$ & $1 \times 10^6$ & $2 \times 10^{9}$ & $1200$ & $8000$ & $0.45$ & $0.3$ \\
     \hline
   \end{tabular}
-  \caption{Ranges for material parameters. The hard material is chosen to be a common steel alloy and the soft material a rubbery polymer.}
+  \caption{Material parameters. The hard material is chosen to be a common steel alloy and the soft material a rubbery polymer.}
   \label{tab:parameter_ranges}
 \end{table}
 
 Unit-cell geometries are synthesized by sampling a Gaussian process with a periodic covariance kernel and subsequently enforcing eight-fold symmetry. This procedure produces smoothly varying spatial material distributions while ensuring compatibility with periodically tiled square lattices. The sampled field assumes values between $0$ and $1$, where $0$ represents pure polymer, $1$ represents pure steel, and intermediate values denote an effective mixture of the two materials below the spatial resolution of the discretization.
 
-To investigate the influence of geometry representation on model performance, two classes of unit cells were generated. The first consists of the continuous-valued Gaussian process realizations described above and is referred to as the \emph{continuous geometry} dataset. The second is obtained by thresholding the Gaussian process samples to binary numbers, producing geometries composed exclusively of polymer and steel. This second collection is referred to as the \emph{discrete geometry} dataset. Each representation comprises approximately one-half of the total dataset.
+To investigate the influence of geometry representation on model performance, two classes of unit cells were generated. The first consists of the continuous-valued Gaussian process realizations described above and is referred to as the \emph{continuous geometry} dataset. The second is obtained by thresholding the Gaussian process samples to binary values, producing geometries composed exclusively of polymer and steel. This second collection is referred to as the \emph{discrete geometry} dataset. Each representation comprises approximately one-half of the total dataset.
 
 \begin{figure}[H]
   \centering
@@ -378,7 +379,7 @@ where $\omega$ is the angular eigenfrequency, $\mathbf{u}$ is the corresponding 
 \end{equation}
 with $(\cdot)^{\dagger}$ the Hermitian transpose. Here $\mathbf{T}(\mathbf{k})$ maps the full mesh degrees of freedom to an independent set while applying phase factors $\mathrm{e}^{i\mathbf{k}\cdot\mathbf{R}}$ across periodic faces of the unit cell; $\mathbf{K}$ and $\mathbf{M}$ themselves depend only on the material field and are assembled once per geometry. These intermediate matrices are described briefly so the reader can compare the explicit FEA pipeline (Figure~\ref{fig:FEA_full_process}) with the Fourier neural operator architecture in Section~\ref{ssec:fourier_neural_operator}; they are not inputs to the neural operator.
 
-The IBZ is discretized into $25$ $x$ wave numbers and $13$ $y$ wave numbers, totaling $25 \times 13 = 325$ unique wavevectors covering the IBZ half plane. For each wavevector, the six lowest eigenfrequencies (bands) were computed using a custom FEA MATLAB script (see Section~\ref{sec:Repository} for implementation details). 
+The IBZ is discretized into $25$ $x$-direction and $13$ $y$-direction wave numbers, totaling $25 \times 13 = 325$ unique wavevectors covering the IBZ half-plane. For each wavevector, the six lowest eigenfrequencies (bands) were computed using a custom FEA MATLAB script (see Section~\ref{sec:Repository} for implementation details). 
 
 Each eigenvector $\mathbf{u}$ consists of two complex-valued displacement fields, $(u_x,u_y)$, which are separated into their real and imaginary components to produce four real-valued output channels, $(u_{x,real},u_{x,imag},u_{y,real},u_{y,imag})$. The corresponding eigenfrequency $\omega$ is encoded as a spatially uniform fifth channel, resulting in a target tensor of size $5\times32\times32$. Combined with the three-channel material representation described in the previous subsection, each simulation therefore produces a supervised learning sample mapping
 \begin{equation*}
@@ -386,7 +387,7 @@ Each eigenvector $\mathbf{u}$ consists of two complex-valued displacement fields
 \rightarrow
 \mathbb{R}^{5\times32\times32}.
 \end{equation*}
-The overall finite element data-generation procedure is summarized in Figure \ref{fig:FEA_full_process}.
+The overall finite element data-generation procedure is summarized in Figure~\ref{fig:FEA_full_process}.
 
 \begin{figure}[H]
   \centering
@@ -416,7 +417,7 @@ For the wavelet encodings, we use a 1D Gabor wavelet transform to map band numbe
         \caption{The FFT of the above wavelet spatial encodings.}
         \label{fig:1D_wavelet_encoding_fft}
     \end{subfigure}
-    \caption{The wavelet encoding of the band integer (fig. \ref{fig:1D_wavelet_encoding_spatial}) and its FFT (fig. \ref{fig:1D_wavelet_encoding_fft}). Each band corresponds to a unique wavelet with representation in both spatial and spectral domains.}
+    \caption{The wavelet encoding of the band integer (Fig.~\ref{fig:1D_wavelet_encoding_spatial}) and its FFT (Fig.~\ref{fig:1D_wavelet_encoding_fft}). Each band corresponds to a unique wavelet with representation in both spatial and spectral domains.}
     \label{fig:1D_wavelet_encoding}
 \end{figure}
 
@@ -434,7 +435,7 @@ For the wavelet encodings, we use a 1D Gabor wavelet transform to map band numbe
         \caption{The FFT of the above wavelet spatial encodings.}
         \label{fig:2D_wavelet_encoding_fft}
     \end{subfigure}
-    \caption{The wavelet encoding of the $x$ and $y$ wavevectors (\ref{fig:2D_wavelet_encoding_spatial}) and its FFT \ref{fig:2D_wavelet_encoding_fft}. The actual wavevectors are shown in the subplot titles. For each $k_x$ and $k_y$ value pair, there is a unique mapping in both the spatial and spectral domain representations.}
+    \caption{The wavelet encoding of the $x$ and $y$ wavevectors (Fig.~\ref{fig:2D_wavelet_encoding_spatial}) and its FFT (Fig.~\ref{fig:2D_wavelet_encoding_fft}). The physical wavevectors are shown in the subplot titles. For each $(k_x,k_y)$ pair there is a unique mapping in both the spatial and spectral domains.}
     \label{fig:2D_wavelet_encoding}
 \end{figure}
 
@@ -453,7 +454,7 @@ When encoding continuous constants with oscillatory functions on a finite grid, 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection{Dataset Construction} 
 \label{ssec:dataset_construction}
-Our full dataset contains 24000 geometries, randomly generated as described in prior subsections. Half are discrete valued with only 0s or 1s in each pixel location representing one of the two materials, while the other half are continuous valued with any value between 0 and 1 inclusive at each pixel location, representing blended materials at each pixel location. Each geometry has 6 possible bands each with 325 possible wavevectors (representing a mesh grid the IBZ half plane) per band, resulting in $24000 \times 6 \times 325 = 46,800,000$ sample pairs of inputs with shape $(3 \times 32 \times 32)$ and outputs of shape $(5 \times 32 \times 32)$. The data is stored with float16 datatype format in PyTorch tensors. 
+Our full dataset contains 24{,}000 geometries, randomly generated as described in prior subsections. Half are discrete-valued, with only 0s or 1s in each pixel location representing one of the two materials, while the other half are continuous-valued, with any value in $[0,1]$ at each pixel representing a blended material. Each geometry has six bands and 325 wavevectors per band (a mesh grid of the IBZ half-plane), resulting in $24000 \times 6 \times 325 = 46{,}800{,}000$ sample pairs of inputs with shape $(3 \times 32 \times 32)$ and outputs of shape $(5 \times 32 \times 32)$. The data are stored as float16 PyTorch tensors. 
 
 % Due to computational and memory constraints, for each of the 9600 geometries, a random 1/4 of the 325 waveforms and 1/2 of the 6 deformation modes (i.e., 3 bands) were retained for FNO training. This stochastic downsampling maintains a diverse sampling of wave-structure interactions while reducing the size of the training dataset by a factor of 8.
 
@@ -474,7 +475,7 @@ Our full dataset contains 24000 geometries, randomly generated as described in p
     \caption{Construction of the output tensors}
     \label{fig:output_dataset_construction}
   \end{subfigure}
-  \caption{Subfigure \subref{fig:input_dataset_construction} and \subref{fig:output_dataset_construction} shows the process of input data from subsection \ref{ssec:metamaterial_design_space} and output data from subsection \ref{ssec:wave_propagration_simulations} being tensorized for ingestion to the FNO model respectively. Note the wavelet embedding steps on fundamentally scalar quantities.}
+  \caption{Subfigures~\subref{fig:input_dataset_construction} and~\subref{fig:output_dataset_construction} show the processes by which input data from Section~\ref{ssec:metamaterial_design_space} and output data from Section~\ref{ssec:wave_propagration_simulations} are tensorized for ingestion by the FNO model. Note the wavelet embedding steps applied to fundamentally scalar quantities.}
   \label{fig:dataset_construction}
 \end{figure}
 
@@ -485,7 +486,7 @@ Our full dataset contains 24000 geometries, randomly generated as described in p
 \label{ssec:training_procedure}
 The Fourier Neural Operator was trained using supervised learning on paired inputs and outputs described in Section \ref{sec:Methodology}. Each training sample consists of a $3 \times 32 \times 32$ input tensor (geometry and wavelet embeddings) and a $5 \times 32 \times 32$ output tensor (displacement field components and eigenfrequency).
 
-6 loss functions were trialed as performance evaluation criterion: mean absolute error (MAE), mean squared error (MSE), normalized MAE, normalized MSE, Huber (smooth L1), and structural similarity index (SSI). Losses were evaluated and aggregated across all 5 output channels. The best performing loss criterion is the Huber loss and is shown below. Details on the other loss functions trialed can be found in Supplemental Information.
+Six loss functions were evaluated as training objectives: mean absolute error (MAE), mean squared error (MSE), normalized MAE, normalized MSE, Huber (smooth L1), and structural similarity index (SSIM). Losses were aggregated across all five output channels. Huber loss yielded the best overall performance and was used for all reported results; its definition is given below. Details on the other loss functions are provided in the Supplementary Information.
 % \begin{equation*}
 %     \mathcal{L}_{\text{MAE}} = \frac{1}{HW} \sum_{i=0}^{H-1} \sum_{j=0}^{W-1} \sum_{c=0}^{4} \left| \hat{u}_{c}(i,j) - u_{c}(i,j) \right|
 % \end{equation*}
@@ -561,13 +562,13 @@ The Fourier Neural Operator was trained using supervised learning on paired inpu
 
 where $H = W = 32$ (pixels) and $c \in \{0,1,2,3,4\}$ corresponds to the 5 output channels: eigenfrequency, followed by real and imaginary components of x and y displacements.
 
-For training the FNO model, combinations of model layers, hidden channels, activation function, loss function, optimizer, and training hyperparameters were trialed. The ADAMW optimizer was found to achieve the best performance compared with other flavors of momentum based optimizers and SGD. The model and training hyperparameters tuned are showed in table \ref{tab:training_hyperparameters} in \ref{sec:supplement}, with the best performing combination italicized.
+For training the FNO model, combinations of model layers, hidden channels, activation function, loss function, optimizer, and training hyperparameters were evaluated. The AdamW optimizer achieved the best performance compared with Adam, other momentum-based optimizers, and SGD. The candidate settings and selected values are reported in Table~\ref{tab:training_hyperparameters} in Section~\ref{sec:supplement}, with the selected values italicized.
 
 % Training was performed on a randomly down-selected subset of the full dataset. Each of the 9600 geometries was paired 81 waveforms (randomly sampled from the full 325) and 3 dispersion bands (randomly sampled from the full 6), resulting in reduced memory overhead and faster training convergence while maintaining diversity across samples.
 
 
 
-The best combination for model hyperparameters was found to be 4 Fourier layers, 128 hidden channels, and GELU nonlinear activation function. At this layer count and hidden channel count, performance was asymptotic and greater amounts of either would drive the model further into the overfit region as well as add on additional training time. The best combination for trianing hyperparameters were the Huber loss, which is to use a which would was found to be 12 epochs, Different hyperparameters of FNO model tried in combinations. 4 Fourier layers, with 64 hidden channels and GELU activation function were found to be where performance started to asymptote with increasing model complexity, and so it was not worth the computational costs in training to use more layers or hidden channels. These are the final combination of model hyperparameters from which all data presented in this article is generated.
+The selected architecture uses four Fourier layers, 128 hidden channels, and GELU activations. Increasing the depth or width beyond these values did not appreciably improve validation performance and increased both training cost and the tendency to overfit. The selected training configuration uses Huber loss throughout, AdamW optimization, a learning rate of $2\times10^{-3}$, a batch size of 512, and 12 epochs. All results reported in this article were generated using this configuration.
 
 % \begin{figure}[H]
 %     \centering
@@ -595,7 +596,7 @@ The best combination for model hyperparameters was found to be 4 Fourier layers,
 %     \label{fig:training_and_evaluation}
 % \end{figure}
 
-It was found that final model performance did not appreciably change for changes in step size or batch size fairly early on, so those two parameters were left fixed at 4 and 256 respectively for the remainder of the training runs. Learning rate and epochs to convergence as expected, had an inverse correlation. The higher the learning rate, the faster convergence happened, but there are two problems with high learning rates. The first is that the model may arrive at a more suboptimal combination of weights if the training rate is too high, because the movements in weight space during each backward pass remain too large to arrive close in weight space to where the loss minima would occur. The second, more interesting phenomena, is that if the learning rate is set higher than $\approx 10^{-2}$, there is instability introduced in the training, whereby at certain epochs, the loss would spike, and never come back down, usually plateauing, in all later epochs. This sort of spike is documented in other applications of ADAM family optimizers indicating the model is pushed into a region of weight space where the loss was flat for movements in any direction.
+Final model performance did not appreciably change with modest variations in scheduler step size or batch size, so these parameters were fixed at 4 and 512, respectively, for the remaining training runs. Learning rate and time to convergence were inversely related: higher learning rates accelerated convergence but produced less stable optimization. In particular, learning rates above approximately $10^{-2}$ occasionally caused an abrupt, irreversible increase in loss, after which training plateaued. We therefore selected a learning rate of $2\times10^{-3}$, which provided the best balance between convergence speed and stability.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Results and Discussion}
@@ -613,7 +614,7 @@ It was found that final model performance did not appreciably change for changes
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection{Displacement Field Prediction}
-We next evaluate the trained Fourier Neural Operator on its predictions of the Bloch displacement fields $(u_x,u_y)$. For each unseen test sample, the prediction error is measured by the normalized mean absolute error (NMAE) over the four real-valued displacement channels, $(u_{x,\mathrm{real}},u_{x,\mathrm{imag}},u_{y,\mathrm{real}},u_{y,\mathrm{imag}})$. Ranking samples by this NMAE defines a performance distribution from which we select representative cases at the $25$th, $50$th, and $75$th percentiles, corresponding to relatively weak, median, and relatively strong predictions. The same percentile comparison is shown for both the binarized and continuous material datasets, allowing direct visual assessment of how well the model recovers the spatial structure of the displacement modes across contrasting geometry regimes.
+We next evaluate the trained Fourier Neural Operator on its predictions of the Bloch displacement fields $(u_x,u_y)$. For each unseen test sample, the prediction error is measured by the normalized mean absolute error (NMAE) over the four real-valued displacement channels, $(u_{x,\mathrm{real}},u_{x,\mathrm{imag}},u_{y,\mathrm{real}},u_{y,\mathrm{imag}})$. Samples are ranked by performance, defined inversely with NMAE, so larger losses correspond to lower performance percentiles. We select representative cases at the $25$th, $50$th, and $75$th performance percentiles, corresponding to relatively weak, median, and relatively strong predictions. The same percentile comparison is shown for both the binarized and continuous material datasets, allowing direct visual assessment of how well the model recovers the spatial structure of the displacement modes across contrasting geometry regimes.
 
 \subsubsection{Continuous Geometries}
 \begin{figure}[H]
@@ -621,14 +622,14 @@ We next evaluate the trained Fourier Neural Operator on its predictions of the B
     \begin{subfigure}[c]{0.75\textwidth}
         \centering
         \includegraphics[width=\textwidth]{Figures/Fields C/c_test_nmae_p25_g452_w224_b1_input.png}
-        \caption{Input sample at the 25th percentile of performance for unseen continuous valued geometries.}
+        \caption{Input sample at the 25th percentile of performance for unseen continuous-valued geometries.}
         \label{fig:c_p25_input}
     \end{subfigure}
     \vspace{1em}
     \begin{subfigure}[c]{\textwidth}
     \centering
         \includegraphics[width=\textwidth]{Figures/Fields C/c_test_nmae_p25_g452_w224_b1_fields.png}
-        \caption{Output predictions at the 25th percentile of performance for unseen continuous valued geometries. The first row are target fields, followed by prediction fields on the second row, and difference fields on the third. At the 25th percentile, prediction outcomes are already fairly good, with accurate representations of scale and structure.}
+        \caption{Output predictions at the 25th percentile of performance for unseen continuous-valued geometries. The first row shows target fields, the second row shows predictions, and the third row shows difference fields. At the 25th percentile, prediction outcomes are already fairly good, with accurate representations of scale and structure.}
         \label{fig:c_p25_output}
     \end{subfigure}
 \end{figure}
@@ -638,14 +639,14 @@ We next evaluate the trained Fourier Neural Operator on its predictions of the B
     \begin{subfigure}[c]{0.75\textwidth}
         \centering
         \includegraphics[width=\textwidth]{Figures/Fields C/c_test_nmae_p50_g183_w41_b3_input.png}
-        \caption{Input sample at the 50th percentile of performance for unseen continuous valued geometries.}
+        \caption{Input sample at the 50th percentile of performance for unseen continuous-valued geometries.}
         \label{fig:c_p50_input}
     \end{subfigure}
     \vspace{1em}
     \begin{subfigure}[c]{\textwidth}
     \centering
         \includegraphics[width=\textwidth]{Figures/Fields C/c_test_nmae_p50_g183_w41_b3_fields.png}
-        \caption{Output predictions at the 50th percentile of performance for unseen continuous valued geometries. The first row are target fields, followed by prediction fields on the second row, and difference fields on the third. Predictions are able to consistently capture complex structures without graininess.}
+        \caption{Output predictions at the 50th percentile of performance for unseen continuous-valued geometries. The first row shows target fields, the second row shows predictions, and the third row shows difference fields. Predictions are able to consistently capture complex structures without graininess.}
         \label{fig:c_p50_output}
     \end{subfigure}
 \end{figure}
@@ -655,18 +656,18 @@ We next evaluate the trained Fourier Neural Operator on its predictions of the B
     \begin{subfigure}[c]{0.75\textwidth}
         \centering
         \includegraphics[width=\textwidth]{Figures/Fields C/c_test_nmae_p75_g279_w229_b3_input.png}
-        \caption{Input sample at the 75th percentile of performance for unseen continuous valued geometries.}
+        \caption{Input sample at the 75th percentile of performance for unseen continuous-valued geometries.}
         \label{fig:c_p75_input}
     \end{subfigure}
     \vspace{1em}
     \begin{subfigure}[c]{\textwidth}
     \centering
         \includegraphics[width=\textwidth]{Figures/Fields C/c_test_nmae_p75_g279_w229_b3_fields.png}
-        \caption{Output predictions at the 75th percentile of performance for unseen continuous valued geometries. The first row are target fields, followed by prediction fields on the second row, and difference fields on the third. At this point, the target and prediction are virtually indistinguishable by eye.}
+        \caption{Output predictions at the 75th percentile of performance for unseen continuous-valued geometries. The first row shows target fields, the second row shows predictions, and the third row shows difference fields. At this point, the target and prediction are virtually indistinguishable by eye.}
         \label{fig:c_p75_output}
     \end{subfigure}
 \end{figure}
-These results demonstrate that with wavelet encodings, the FNO model performs well on continuous geometries, faithfully reproducing the displacement fields in most cases. Model predictions in the top three quartiles match targets well in structure and scale, with decreasing average pixel relative errors in the scale of $~10^{-2}$ smoothly decreasing down to $~10^{-4}$ with increasing percentile performance. (See Figure \ref{fig:disp_loss_histogram_continuous} for more detailed statistics.)
+These results demonstrate that with wavelet encodings the FNO performs well on continuous geometries, faithfully reproducing the displacement fields in most cases. Model predictions in the upper performance quartiles match the targets well in structure and scale, with average pixel relative errors decreasing smoothly from on the order of $10^{-2}$ to $10^{-4}$ as performance percentile increases (see Figure~\ref{fig:disp_loss_histogram_continuous} for detailed statistics).
 
 \subsubsection{Discrete Geometries}
 \begin{figure}[H]
@@ -674,14 +675,14 @@ These results demonstrate that with wavelet encodings, the FNO model performs we
     \begin{subfigure}[c]{\textwidth}
         \centering
         \includegraphics[width=0.75\textwidth]{Figures/Fields B/b_test_nmae_p25_g283_w234_b1_input.png}
-        \caption{Input sample at the 25th percentile of performance for unseen discrete valued geometries.}
+        \caption{Input sample at the 25th percentile of performance for unseen discrete-valued geometries.}
         \label{fig:b_p25_input}
     \end{subfigure}
     \vspace{1em}
     \begin{subfigure}[c]{\textwidth}
     \centering
         \includegraphics[width=\textwidth]{Figures/Fields B/b_test_nmae_p25_g283_w234_b1_fields.png}
-        \caption{Output predictions at the 25th percentile of performance for unseen discrete valued geometries. The first row are target fields, followed by prediction fields on the second row, and difference fields on the third. Due to the nature of the loss function training, for this particular sample, the model would have prioritized the two imaginary displacement fields, because they are 1 to 2 orders of magnitude larger in scale compared to the two real displacement fields. In other words, absolute error is low at this point, but relative error is not for some channels of small scale than other channels. (Note that the colorbars for each column are independently scaled.)}
+        \caption{Output predictions at the 25th percentile of performance for unseen discrete-valued geometries. The first row shows target fields, the second row shows predictions, and the third row shows difference fields. Because Huber loss penalizes absolute residuals, for this sample the model prioritizes the two imaginary displacement channels, which are one to two orders of magnitude larger than the real channels. Absolute error is therefore low overall, but relative error remains large on the smaller-magnitude channels. (Note that the colorbars for each column are independently scaled.)}
         \label{fig:b_p25_output}
     \end{subfigure}
 \end{figure}
@@ -691,14 +692,14 @@ These results demonstrate that with wavelet encodings, the FNO model performs we
     \begin{subfigure}[c]{\textwidth}
         \centering
         \includegraphics[width=0.75\textwidth]{Figures/Fields B/b_test_nmae_p50_g550_w257_b4_input.png}
-        \caption{Input sample at the 50th percentile of performance for unseen discrete valued geometries.}
+        \caption{Input sample at the 50th percentile of performance for unseen discrete-valued geometries.}
         \label{fig:b_p50_input}
     \end{subfigure}
     \vspace{1em}
     \begin{subfigure}[c]{\textwidth}
     \centering
         \includegraphics[width=\textwidth]{Figures/Fields B/b_test_nmae_p50_g550_w257_b4_fields.png}
-        \caption{Output predictions at the 50th percentile of performance for unseen discrete valued geometries. The first row are target fields, followed by prediction fields on the second row, and difference fields on the third. At this point, absolute and relative errors are low and there is high agreement in structural and scale between targets and predictions.}
+        \caption{Output predictions at the 50th percentile of performance for unseen discrete-valued geometries. The first row shows target fields, the second row shows predictions, and the third row shows difference fields. Absolute and relative errors are low, with strong agreement in structure and scale between targets and predictions.}
         \label{fig:b_p50_output}
     \end{subfigure}
 \end{figure}
@@ -708,26 +709,26 @@ These results demonstrate that with wavelet encodings, the FNO model performs we
     \begin{subfigure}[c]{\textwidth}
         \centering
         \includegraphics[width=0.75\textwidth]{Figures/Fields B/b_test_nmae_p75_g234_w145_b1_input.png}
-        \caption{Input sample at the 75th percentile of performance for unseen discrete valued geometries.}
+        \caption{Input sample at the 75th percentile of performance for unseen discrete-valued geometries.}
         \label{fig:b_p75_input}
     \end{subfigure}
     \vspace{1em}
     \begin{subfigure}[c]{\textwidth}
     \centering
         \includegraphics[width=\textwidth]{Figures/Fields B/b_test_nmae_p75_g234_w145_b1_fields.png}
-        \caption{Output predictions at the 75th percentile of performance for unseen discrete valued geometries. The first row are target fields, followed by prediction fields on the second row, and difference fields on the third. At this point, disagreements between targets and predictions become very hard to see by eye.}
+        \caption{Output predictions at the 75th percentile of performance for unseen discrete-valued geometries. The first row shows target fields, the second row shows predictions, and the third row shows difference fields. At this point, disagreements between targets and predictions become very hard to see by eye.}
         \label{fig:b_p75_output}
     \end{subfigure}
 \end{figure}
 
-Like with the continuous geometry case, these results demonstrate that with wavelet encodings, the FNO model performs well on discrete geometries, faithfully reproducing the displacement fields in most cases. Model predictions in the top three quartiles match targets well in structure and scale, with decreasing average pixel relative errors in the scale of $~10^{-2}$ smoothly decreasing down to $~10^{-4}$ with increasing percentile performance. (See Figure \ref{fig:disp_loss_histogram_discrete} for more detailed statistics.)
+As in the continuous-geometry case, these results demonstrate that with wavelet encodings the FNO performs well on discrete geometries, faithfully reproducing the displacement fields in most cases. Model predictions in the upper performance quartiles match the targets well in structure and scale, with average pixel relative errors decreasing smoothly from on the order of $10^{-2}$ to $10^{-4}$ as performance percentile increases (see Figure~\ref{fig:disp_loss_histogram_discrete} for detailed statistics).
 
 \subsubsection{Continuous Versus Discrete Performance}
-The model being able to simultaneously predict well on both continuous and discrete geometries is a non-trivial and important takeaway for the capabilities of FNOs with paired with wavelet encodings. Prior encoding strategies of constant fields and sinusoidal fields delivered far worse results with grainy structures or mode collapse issues because conditioning constants (wavevector and band) information could not propagate well through the spectral branch of the FNO layers. The performance over all unseen samples in the test set are shown in \ref{fig:disp_loss_histograms}. 
+That a single model predicts well on both continuous and discrete geometries is a nontrivial result for FNOs paired with wavelet encodings. Prior encoding strategies based on constant fields and sinusoidal fields performed far worse, producing grainy structures or mode collapse, because conditioning information for the wavevector and band could not propagate effectively through the spectral branch of the FNO layers. Performance over all unseen samples in the test set is shown in Figure~\ref{fig:disp_loss_histograms}. 
 
-The poorer performance on binarized geometries is consistent with basic operator-learning theory. Continuous material fields lie in smoother function classes, whereas binary two-phase designs contain jump discontinuities with nonexistent derivatives at material interfaces. Since an FNO approximates the FEA operator $\mathcal{G}: \mathcal{U}\to\mathcal{V}$ through truncated Fourier representations, it is naturally advantaged when both inputs and outputs are comparatively smooth. Discrete geometries thus perform worse due to sharp boundaries, localized gradients, and broadband high-wavenumber content that are poorly captured on a fixed $32\times32$ grid and are mismatched to smooth wavelet encodings. Additionally, because continuous geometries have a greater tendency to have large sections of fields with zero or low displacements, a small spike is seen in relative error performance due to the near zero displacements which results in a small denominator.
+The poorer performance on binarized geometries is consistent with basic operator-learning theory. Continuous material fields lie in smoother function classes, whereas binary two-phase designs contain jump discontinuities with nonexistent derivatives at material interfaces. Since an FNO approximates the FEA operator $\mathcal{G}: \mathcal{U}\to\mathcal{V}$ through truncated Fourier representations, it is naturally advantaged when both inputs and outputs are comparatively smooth. Discrete geometries thus perform worse due to sharp boundaries, localized gradients, and broadband high-wavenumber content that are poorly captured on a fixed $32\times32$ grid and are mismatched to smooth wavelet encodings. Additionally, continuous geometries more often contain large regions of near-zero displacement, which inflate relative error through a small denominator.
 
-These results indicate two important takeaways. The first is that it is possible for FNOs with wavelet encodings to learn multiple deformation modes for each geometry which the user can toggle between arbitrarily by setting the wavevector and band inputs. This is to our knowledge the first demonstration of FNOs on solving eigenvalue PDEs. The second, is that it is possible for that same model to simultaneously learn very different distributions of geometries (continuous valued and discrete valued), indicating it might be possible to distill out a generalized understanding of the PDE itself independent of geometry distributions and statistical artifacts. This is a possible subject for future work.
+These results indicate two important takeaways. The first is that FNOs with wavelet encodings can learn multiple deformation modes for each geometry, which the user can select by setting the wavevector and band inputs. The second is that the same model can learn across continuous and discrete geometry distributions, suggesting that some aspects of the underlying eigenvalue problem may be captured in a geometry-agnostic way. Exploring that possibility more systematically is left for future work.
 
 \begin{figure}[H]
     \centering
@@ -772,10 +773,10 @@ These results indicate two important takeaways. The first is that it is possible
         \caption{75th percentile performance.}
         \label{fig:dispersion_c_p75}
     \end{subfigure}
-    \caption{Predicted and ground-truth dispersion bands for representative unseen continuous valued geometries spanning the 25th, 50th, and 75th percentiles of prediction performance.}
+    \caption{Predicted and ground-truth dispersion bands for representative unseen continuous-valued geometries spanning the 25th, 50th, and 75th percentiles of prediction performance.}
     \label{fig:dispersion_c_percentiles}
 \end{figure}
-These plots represent the eigenfrequency predictions of the model across all 325 wavevectors forming the half plane for continuous valued geometries, downselected to be the horizontal, vertical, and diagonal traversal of the IBZ. Note that because the encoding of the eigenfrequency into a field has a log operation (to allow the model to learn relationships at multiple scales), errors tend to be relative to the scale of the target, and thus higher bands may seem to be more deviant on a linear scale plot. Overall, the model performance is quite good at predictions in the encoded eigenfrequency, showing an average of < 1\% prediction error across all unseen samples.
+These plots show eigenfrequency predictions across all 325 wavevectors of the IBZ half-plane for continuous-valued geometries, restricted to the horizontal, vertical, and diagonal IBZ traversals. Because the eigenfrequency is encoded with a logarithmic transform to support multi-scale learning, errors tend to scale with the target magnitude, and higher bands can appear more deviant on a linear plot. Overall, the model achieves an average prediction error below $1\%$ on the encoded eigenfrequency across unseen samples.
 
 \begin{figure}[H]
     \centering
@@ -799,10 +800,10 @@ These plots represent the eigenfrequency predictions of the model across all 325
         \caption{75th percentile performance.}
         \label{fig:dispersion_b_p75}
     \end{subfigure}
-    \caption{Predicted and ground-truth dispersion bands for representative unseen discrete valued geometries spanning the 25th, 50th, and 75th percentiles of prediction performance.}
+    \caption{Predicted and ground-truth dispersion bands for representative unseen discrete-valued geometries spanning the 25th, 50th, and 75th percentiles of prediction performance.}
     \label{fig:dispersion_b_percentiles}
 \end{figure}
-Like with the continuous geometry figures, these plots represent the eigenfrequency predictions of the model across all 325 wavevectors forming the half plane for discrete valued geometries, downselected to be the horizontal, vertical, and diagonal traversal of the IBZ. Overall, the model performance is quite good at predictions in the encoded eigenfrequency, showing an average of $<1\%$ prediction error across all unseen samples.
+As in the continuous-geometry figures, these plots show eigenfrequency predictions across all 325 wavevectors of the IBZ half-plane for discrete-valued geometries, restricted to the horizontal, vertical, and diagonal IBZ traversals. Overall, the model again achieves an average prediction error below $1\%$ on the encoded eigenfrequency across unseen samples.
 
 \begin{figure}[H]
     \centering
@@ -849,21 +850,22 @@ The constant field representation is the naive default: $k_x$, $k_y$, and $b$ ar
 
 A spatial sinusoidal encoding restores unique and nondegenerate representations in the spectral domain and allows the FNO to learn the problem. On pixel coordinates $(x,y)\in\{0,\ldots,S-1\}$, wavevector and band were encoded as
 \[
-I_k(x,y)=\cos\!\left(\frac{k_x}{S}x+\frac{k_y}{S}y\right),\qquad k_x,k_y\in[-\pi,\pi].
+I_k(x,y)=\sin\!\left(\frac{2}{S}\bigl(k_x x+k_y y\bigr)\right),\qquad k_x,k_y\in[-\pi,\pi].
 \]
 \[
 I_b(x,y)=\tfrac{1}{2}\left[\cos\!\left(\frac{2\pi b x}{S}\right)+\cos\!\left(\frac{2\pi b y}{S}\right)\right],\qquad b\in\{1,2,3,4,5,6\}.
 \]
-However, because a sinusoid is spectrally sparse, with energy concentrated at only a few wavenumbers, the Fourier branch remains weakly utilized, and predictions exhibit a persistent grainy, under resolved structure relative to ground truth. Increasing model depth and width did not remove this graininess, indicating the bottleneck was the encoding rather than model capacity.
+The wavevector field is a directed plane wave: its phase gradient is parallel to $(k_x,k_y)$, so wavefronts propagate along the physical wavevector, and the spatial frequency scales with $|\mathbf{k}|$. The prefactor $2/S$ places about one cycle across the patch at the IBZ boundary $|\mathbf{k}|=\pi$, which keeps neighboring $(k_x,k_y)$ pairs visually and spectrally distinct on the $S\times S$ grid while avoiding severe aliasing. A sine rather than a cosine is used so that the $\Gamma$ point $(\mathbf{k}=\mathbf{0})$ maps to the zero field instead of a constant DC patch.
+However, because a sinusoid is spectrally sparse, with energy concentrated at only a few wavenumbers, the Fourier branch remains weakly utilized, and predictions exhibit a persistent grainy, under-resolved structure relative to ground truth. Increasing model depth and width did not remove this graininess, indicating that the bottleneck was the encoding rather than model capacity.
 
-The Gabor wavelet encoding resolves this by design. Wavelets are constructed to trade certainty between the spatial and spectral domains: neither representation is infinitely sharp, but both remain informationally rich. As a result, the conditioning inputs populate both branches of each Fourier layer with usable structure, both branches can train and contribute, and the model yields the accurate, well resolved predictions reported above while enabling deterministic mode selection. These observations support the broader conclusion that input encodings should be matched to the spatial and spectral structure of the operator: encodings that populate only one domain underuse the FNO's Fourier branch, whereas wavelet encodings exercise both.
+The Gabor wavelet encoding resolves this by design. Wavelets are constructed to trade certainty between the spatial and spectral domains: neither representation is infinitely sharp, but both remain informationally rich. As a result, the conditioning inputs populate both branches of each Fourier layer with usable structure, both branches can train and contribute, and the model yields the accurate, well-resolved predictions reported above while enabling deterministic mode selection. These observations support the broader conclusion that input encodings should be matched to the spatial and spectral structure of the operator: encodings that populate only one domain underuse the FNO's Fourier branch, whereas wavelet encodings exercise both.
 
 
 \section{Conclusions}
 \label{sec:Conclusion}
-This work demonstrates that a single Fourier Neural Operator can learn multiple eigenmodes of the elastic wave equation across both continuous and discrete metamaterial geometries, recovering the eigenvectors as complex displacement fields and the eigenvalues as eigenfrequencies. For unseen geometries of both types, displacement predictions achieve relative errors typically between $10^{-2}$ and $10^{-4}$ and dispersion reconstructions average below $1\%$ error, showing that one model can span two very different geometry distributions and output predictions of multiple orders of magnitude while allowing the user to select any eigenmode deterministically and repeatably through arbitrary choice of conditioning inputs. This capability crucially rests on how the conditioning constants are encoded. Constant field encodings collapse to a single DC coefficient in the spectral domain, preventing the Fourier branch of the FNO from propagating information and causing mode collapse. Sinusoidal encodings are able to train meaningfully but yield grainy, under resolved predictions due to spectral model sparsity. Gabor wavelet encodings, by contrast, trade decreasing certainty in the spatial and spectral representations to maintain informationally rich representations in both domains, allowing both branches of each Fourier layer to richly interact with the data, leading to superior learning speed and prediction performance.
+This work demonstrates that a single Fourier Neural Operator can learn multiple eigenmodes of the elastic wave equation across both continuous and discrete metamaterial geometries, recovering the eigenvectors as complex displacement fields and the eigenvalues as eigenfrequencies. For unseen geometries of both types, displacement predictions achieve relative errors typically between $10^{-2}$ and $10^{-4}$ and dispersion reconstructions average below $1\%$ error, showing that one model can span two very different geometry distributions and output predictions of multiple orders of magnitude while allowing the user to select any eigenmode deterministically and repeatably through arbitrary choice of conditioning inputs. This capability crucially rests on how the conditioning constants are encoded. Constant field encodings collapse to a single DC coefficient in the spectral domain, preventing the Fourier branch of the FNO from propagating information and causing mode collapse. Sinusoidal encodings are able to train meaningfully but yield grainy, under-resolved predictions due to spectral sparsity. Gabor wavelet encodings, by contrast, trade decreasing certainty in the spatial and spectral representations to maintain informationally rich representations in both domains, allowing both branches of each Fourier layer to richly interact with the data, leading to superior learning speed and prediction performance.
 
-The same spectral perspective explains the limits we observe. Prediction error grows with the interface length of discrete geometries and with band index, consistent with the truncated Fourier representation struggling to resolve the broadband content generated by sharp material interfaces and rapidly oscillating modes. Practitioners applying FNOs to interface rich problems should therefore expect accuracy to track geometric discontinuity. Even so, the trained model is lightweight, roughly 2\,GB at float16 precision, and evaluates in about 1\,ms per sample on CPU, compared with about 1\,s per sample for the corresponding MATLAB FEA solve on CPU. This makes the FNO a compelling surrogate for iterative design and analysis in metamaterials and other fields governed by eigenvalue PDEs. Future work includes generalization to other resolutions, physics informed losses, and additional conditioning parameters such as material constants, expanding the accessible problem and solution space.
+The same spectral perspective explains the limits we observe. Prediction error grows with the interface length of discrete geometries and with band index, consistent with the truncated Fourier representation struggling to resolve the broadband content generated by sharp material interfaces and rapidly oscillating modes. Practitioners applying FNOs to interface-rich problems should therefore expect accuracy to track geometric discontinuity. Even so, the trained model is lightweight, roughly 2\,GB at float16 precision, and evaluates in about 1\,ms per sample on CPU, compared with about 1\,s per sample for the corresponding MATLAB FEA solve on CPU. This makes the FNO a compelling surrogate for iterative design and analysis in metamaterials and other fields governed by eigenvalue PDEs. Future work includes generalization to other resolutions, physics-informed losses, and additional conditioning parameters such as material constants, expanding the accessible problem and solution space.
 
 \section*{AI Usage Disclosure}
 Generative AI tools were used to assist with coding of experiments, translating MATLAB code to Python, and automating training pipelines. AI tools were also used for light editing of the manuscript. All scientific claims, results, and final wording were reviewed and approved by the authors.
@@ -927,7 +929,7 @@ This work was supported by the NSERC Postgraduate Scholarship -- Doctoral (PGSD-
         \textbf{Activation Function} & ReLU & \textit{GELU} & tanh & Sigmoid \\ \hline
         \textbf{Loss Criterion} & L1 & L2 & \textit{Huber} & SSIM \\ \hline
         \textbf{Epochs} & 8 & \textit{12} & 16 & 20 \\ \hline
-        \textbf{Learning Rate} & $10^{-4}$ & \textit{$10^{-3}$} & $10^{-2}$ & $10^{-1}$ \\ \hline
+        \textbf{Learning Rate} & $10^{-4}$ & \textit{$2\times10^{-3}$} & $10^{-2}$ & $10^{-1}$ \\ \hline
         \textbf{Weight Decay} & 0 & \textit{$10^{-4}$} & $10^{-3}$ & $10^{-2}$ \\ \hline
         \textbf{Gamma} & 0 & 0.01 & \textit{0.1} & 0.5 \\ \hline
         \textbf{Step Size} & 0 & 1 & \textit{4} & 10 \\ \hline
@@ -939,7 +941,7 @@ This work was supported by the NSERC Postgraduate Scholarship -- Doctoral (PGSD-
 \end{table}
 
 \subsection{Loss Criterion}
-In the exploration of optimal training protocols for the FNO model, other loss functions were trialed as training criterion: mean absolute error (MAE), mean squared error (MSE), normalized MAE, normalized MSE, Huber (smooth L1), and structural similarity index (SSI). For purposes of comparison, the validation criterion was chosen to be MAE and MSE. Broadly speaking, models that performed the best in terms of MSE also performed the best in MAE. The training criterion that yielded the lowest MAE and MSE loss was the Huber loss. All criterion followed a learning rate of $2\times10^{-3}$ with a decay factor per epoch of $0.9$. The mathematical definitions for each area as follows. Losses were evaluated and aggregated across all 5 output channels. 
+In the exploration of optimal training protocols for the FNO model, several loss functions were evaluated as training objectives: mean absolute error (MAE), mean squared error (MSE), normalized MAE, normalized MSE, Huber (smooth L1), and structural similarity index (SSIM). For comparison, validation performance was measured with MAE and MSE. Broadly speaking, models that performed best in MSE also performed best in MAE. The training objective that yielded the lowest MAE and MSE was Huber loss, which was used for all reported results. All comparisons used a learning rate of $2\times10^{-3}$ with a per-epoch decay factor of $0.9$. The mathematical definitions of each loss follow. Losses were evaluated and aggregated across all five output channels. 
 
 \begin{itemize}
     \item The mean absolute error (MAE) loss is defined as
@@ -1026,7 +1028,7 @@ The numerator therefore differs from that of a correct reconstruction by two fac
 \end{equation*}
 Unlike MAE, NMAE weights each prediction error by the inverse magnitude of the target value, causing the optimization to place greater emphasis on regions where the ground-truth solution is small in scale. Consequently, the loss seeks to minimize relative error rather than absolute error, preventing low-magnitude features from being dominated by high-magnitude regions during training.
 
-Experimentally, NMAE successfully reduced the relative error in low-amplitude portions of the solution. However, this improvement came at the expense of increased overall MAE and MSE compared with training using the standard MAE loss. For the present application, the absolute magnitude of the prediction error was determined to be of greater practical importance than the relative error. As a result, the improved accuracy in low-valued regions did not outweigh the degradation in overall numerical accuracy, making NMAE a less suitable optimization criterion for the objectives of this work. However, for other applications, NMAE can be a valid and superior training criterion than standard MAE.
+Experimentally, NMAE successfully reduced the relative error in low-amplitude portions of the solution. However, this improvement came at the expense of increased overall MAE and MSE compared with training using the standard MAE loss. For the present application, the absolute magnitude of the prediction error was determined to be of greater practical importance than the relative error. As a result, the improved accuracy in low-valued regions did not outweigh the degradation in overall numerical accuracy, making NMAE a less suitable optimization criterion for the objectives of this work. In other applications, however, NMAE can be a valid and sometimes preferable alternative to standard MAE.
 
 \item The normalized mean squared error (NMSE) loss is defined as
 \begin{equation*}

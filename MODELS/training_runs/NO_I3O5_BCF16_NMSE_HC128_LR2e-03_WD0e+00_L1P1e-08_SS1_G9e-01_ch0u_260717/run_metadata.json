@@ -1,0 +1,30 @@
+{
+  "run_name": "NO_I3O5_BCF16_NMSE_HC128_LR2e-03_WD0e+00_L1P1e-08_SS1_G9e-01_ch0u_260717",
+  "run_id": "NO_I3O5_BCF16_NMSE_HC128_LR2e-03_WD0e+00_L1P1e-08_SS1_G9e-01_ch0u_260717",
+  "status": "completed",
+  "started_at_utc": "2026-07-17T21:46:49.437993+00:00",
+  "git": {
+    "git_commit": "473d5a9866ece9e6279f7b009f4bef168e785385",
+    "git_dirty": "true"
+  },
+  "environment": {
+    "python_version": "3.12.3",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "torch_version": "2.5.1",
+    "cuda_available": true,
+    "cuda_version": "11.8",
+    "cudnn_version": 90100,
+    "device_count": 1,
+    "device_name_0": "NVIDIA GeForce RTX 4080 SUPER"
+  },
+  "ended_at_utc": "2026-07-19T08:20:22.688708+00:00",
+  "duration_sec": 66607.529934,
+  "best_val_loss": 0.21868227831249434,
+  "best_epoch": 8,
+  "resumed_at_utc": "2026-07-18T13:50:15.158774+00:00",
+  "resume_extend_epochs": 5,
+  "inherited_epochs_through": 3,
+  "resume_from_epoch_checkpoint": "D:\\Research\\NO-2D-Metamaterials\\MODELS\\training_runs\\NO_I3O5_BCF16_NMSE_HC128_LR2e-03_WD0e+00_L1P1e-08_SS1_G9e-01_ch0u_260717\\NO_I3O5_BCF16_NMSE_HC128_LR2e-03_WD0e+00_L1P1e-08_SS1_G9e-01_ch0u_260717_E3.pth",
+  "resume_from_epoch": 3,
+  "resume_target_total_epochs": 8
+}

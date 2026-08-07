@@ -165,7 +165,7 @@ EIGENVECTOR_DATA = EIGENVECTOR_DATA_combined.transpose(0, 2, 1, 3)
 
 ---
 
-### PHASE 3: Design Conversion (Steel-Rubber Paradigm)
+### PHASE 3: Design Conversion (steel-polymer Paradigm)
 
 #### 3.1 Extract Design for Structure
 **Operation**: Index single design
@@ -188,7 +188,7 @@ design_param = design_param.astype(np.float64)
 
 **Variable**: `design_param` - dtype: float64
 
-#### 3.3 Apply Steel-Rubber Paradigm
+#### 3.3 Apply steel-polymer Paradigm
 **Operation**: Convert single-channel to 3-channel design
 ```python
 const_for_paradigm = {
@@ -199,10 +199,10 @@ const_for_paradigm = {
     'poisson_min': nu_min,
     'poisson_max': nu_max
 }
-design_3ch = apply_steel_rubber_paradigm(design_param, const_for_paradigm)
+design_3ch = apply_steel_polymer_paradigm(design_param, const_for_paradigm)
 ```
 
-**Inside `apply_steel_rubber_paradigm` function**:
+**Inside `apply_steel_polymer_paradigm` function**:
 
 **3.3.1 Hardcoded Material Values**
 ```python
@@ -903,7 +903,7 @@ Kr = T_sparse.conj().T @ K_sparse @ T_sparse
 
 ### 4. **Design Conversion Issues**
 
-#### 4.1 Steel-Rubber Paradigm Parameter Mismatch
+#### 4.1 steel-polymer Paradigm Parameter Mismatch
 **Location**: Phase 3.3
 **Issue**: If E_min, E_max, rho_min, rho_max, nu_min, nu_max don't match between original and reconstruction, design_3ch will be different, leading to different K and M.
 

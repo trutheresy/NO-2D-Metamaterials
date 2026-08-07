@@ -1,17 +1,22 @@
-% Core bibliography for Neural Operators for Acoustic Metamaterials
-% Pruned from inherited Litmaps export (UQ / topology-opt / device papers removed).
+% Bibliography for Neural Operators for Acoustic Metamaterials
+
+%------------------------------------------------------------------------------
+% Acoustic metamaterials and phononics
+%------------------------------------------------------------------------------
 
 @article{cummer2016controlling,
-    title={Controlling sound with acoustic metamaterials},
-    author={Cummer, Steven A and Christensen, Johan and Al{\`u}, Andrea},
-    journal={Nature Reviews Materials},
-    volume={1},
-    number={3},
-    pages={1--13},
-    year={2016}
+  abstract = {Acoustic metamaterials can manipulate and control sound waves in ways that are not possible in conventional materials. Metamaterials with zero, or even negative, refractive index for sound offer new possibilities for acoustic imaging and for the control of sound at subwavelength scales. The combination of transformation acoustics theory and highly anisotropic acoustic metamaterials enables precise control over the deformation of sound fields, which can be used, for example, to hide or cloak objects from incident acoustic energy. Active acoustic metamaterials use external control to create effective material properties that are not possible with passive structures and have led to the development of dynamically reconfigurable, loss-compensating and parity-time-symmetric materials for sound manipulation. Challenges remain, including the development of efficient techniques for fabricating large-scale metamaterial structures and converting laboratory experiments into useful devices.},
+  title={Controlling sound with acoustic metamaterials},
+  author={Cummer, Steven A and Christensen, Johan and Al{\`u}, Andrea},
+  journal={Nature Reviews Materials},
+  volume={1},
+  number={3},
+  pages={1--13},
+  year={2016}
 }
 
 @article{liao2021acoustic,
+  abstract = {Acoustic metamaterials (AMs), which are materials composed of subwavelength periodic artificial structures with specific designs, have drawn significant research attention. This is because of the extraordinary abilities of AMs to manipulate acoustic waves compared with those of traditional acoustic materials. In this review, current advances in AM research are comprehensively investigated and summarized. First, major theories regarding AMs, including the acoustic wave equation, crystal lattice and energy band theory, effective medium theory, and general Snell's law, are explained in detail. Existing AM structures are then described and divided into several categories based on their structural characteristics and responses to acoustic waves. Furthermore, to bridge the gap between design and practical application, both conventional and advanced AM manufacturing methods are summarized. The applications of AMs in the fields of acoustic cloaking, acoustic lensing, acoustic absorption, noise reduction, and supernormal sound transmission are particularly delineated. Finally, contemporary challenges, trends, and strategies relevant to AMs are discussed. This review aims to provide a comprehensive collection of AM-related knowledge, including information regarding physical theories, structures, fabrication approaches, and applications, which will help promote the further development of AMs.},
   title={Acoustic metamaterials: A review of theories, structures, fabrication approaches, and applications},
   author={Liao, Guangxin and Luan, Congcong and Wang, Zhenwei and Liu, Jiapeng and Yao, Xinhua and Fu, Jianzhong},
   journal={Advanced Materials Technologies},
@@ -21,58 +26,241 @@
   year={2021}
 }
 
-@article{bilal2011ultrawide,
-  title={Ultrawide phononic band gap for combined in-plane and out-of-plane waves},
-  author={Bilal, Osama R and Hussein, Mahmoud I},
-  journal={Physical Review E},
-  volume={84},
-  number={6},
-  pages={065701},
-  year={2011}
+@article{hussein2014dynamics,
+  abstract = {The study of phononic materials and structures is an emerging discipline that lies at the crossroads of vibration and acoustics engineering and condensed matter physics. Broadly speaking, a phononic medium is a material or structural system that usually exhibits some form of periodicity, which can be in the constituent material phases, or the internal geometry, or even the boundary conditions. As such, its overall dynamical characteristics are compactly described by a frequency band structure, in analogy to an electronic band diagram. With roots extended to early studies of periodic systems by Newton and Rayleigh, the field has grown to encompass engineering configurations ranging from trusses and ribbed shells to phononic crystals and metamaterials. While applied research in this area has been abundant in recent years, treatment from a fundamental mechanics perspective, and particularly from the standpoint of dynamical systems, is needed to advance the field in new directions. For example, techniques already developed for the incorporation of damping and nonlinearities have recently been applied to wave propagation in phononic materials and structures. Similarly, numerical and experimental approaches originally developed for the characterization of conventional materials and structures are now being employed toward better understanding and exploitation of phononic systems. This article starts with an overview of historical developments and follows with an in-depth literature and technical review of recent progress in the field with special consideration given to aspects pertaining to the fundamentals of dynamics, vibrations, and acoustics. Finally, an outlook is projected onto the future on the basis of the current trajectories of the field.},
+  title={Dynamics of phononic materials and structures: Historical origins, recent progress, and future outlook},
+  author={Hussein, Mahmoud I and Leamy, Michael J and Ruzzene, Massimo},
+  journal={Applied Mechanics Reviews},
+  volume={66},
+  number={4},
+  pages={040802},
+  year={2014}
 }
 
-@article{celli2019bandgap,
-  title={Bandgap widening by disorder in rainbow metamaterials},
-  author={Celli, Paolo and Yousefzadeh, Behrooz and Daraio, Chiara and Gonella, Stefano},
-  journal={Applied Physics Letters},
-  volume={114},
-  number={9},
+@article{kushwaha1993acoustic,
+  abstract = {We present the first full band-structure calculations for periodic, elastic composites. For transverse polarization of the vibrations we obtain a ``phononic'' band gap which extends throughout the Brillouin zone. A complete acoustic gap or a low density of states should have important consequences for the suppression of zero-point motion and for the localization of phonons, and may lead to improvements in transducers and in the creation of a vibrationless environment.},
+  title={Acoustic band structure of periodic elastic composites},
+  author={Kushwaha, Manvir S and Halevi, P and Dobrzynski, L and Djafari-Rouhani, Bahram},
+  journal={Physical Review Letters},
+  volume={71},
+  number={13},
+  pages={2022--2025},
+  year={1993}
+}
+
+@article{Zhang2024uq,
+  abstract = {This paper studies the utility of techniques within uncertainty quantification, namely spectral projection and polynomial chaos expansion, in reducing sampling needs for characterizing acoustic metamaterial dispersion band responses given stochastic material properties and geometric defects. A novel method of encoding geometric defects in an interpretable, resolution-independent way is showcased in the formation of input space probability distributions. Orders of magnitude sampling reductions down to ~10^0 and ~10^1 are achieved in the 1D and 7D input space scenarios respectively while maintaining accurate output space probability distributions through combining Monte Carlo, quadrature rule, and sparse grid sampling with surrogate model fitting.},
+  title={Uncertainty quantification of acoustic metamaterial bandgaps with stochastic material properties and geometric defects},
+  author={Zhang, Han and Karimi Mahabadi, Rayehe and Rudin, Cynthia and Guilleminot, Johann and Brinson, L. Catherine},
+  journal={Computers \& Structures},
+  volume={305},
+  pages={107511},
+  year={2024}
+}
+
+%------------------------------------------------------------------------------
+% Neural operators, FNO theory, and spectral limitations
+%------------------------------------------------------------------------------
+
+@inproceedings{li2021fno,
+  abstract = {The classical development of neural networks has primarily focused on learning mappings between finite-dimensional Euclidean spaces. Recently, this has been generalized to neural operators that learn mappings between function spaces. For partial differential equations (PDEs), neural operators directly learn the mapping from any functional parametric dependence to the solution. Thus, they learn an entire family of PDEs, in contrast to classical methods which solve one instance of the equation. In this work, we formulate a new neural operator by parameterizing the integral kernel directly in Fourier space, allowing for an expressive and efficient architecture. We perform experiments on Burgers' equation, Darcy flow, and Navier-Stokes equation. The Fourier neural operator is the first ML-based method to successfully model turbulent flows with zero-shot super-resolution. It is up to three orders of magnitude faster compared to traditional PDE solvers. Additionally, it achieves superior accuracy compared to previous learning-based solvers under fixed resolution.},
+  title={Fourier Neural Operator for Parametric Partial Differential Equations},
+  author={Li, Zongyi and Kovachki, Nikola and Azizzadenesheli, Kamyar and Liu, Burigede and Bhattacharya, Kaushik and Stuart, Andrew and Anandkumar, Anima},
+  booktitle={International Conference on Learning Representations},
+  year={2021}
+}
+
+@article{kovachki2023neural,
+  abstract = {The classical development of neural networks has primarily focused on learning mappings between finite dimensional Euclidean spaces or finite sets. We propose a generalization of neural networks to learn operators, termed neural operators, that map between infinite dimensional function spaces. We formulate the neural operator as a composition of linear integral operators and nonlinear activation functions. We prove a universal approximation theorem for our proposed neural operator, showing that it can approximate any given nonlinear continuous operator. The proposed neural operators are also discretization-invariant, i.e., they share the same model parameters among different discretization of the underlying function spaces. Furthermore, we introduce four classes of efficient parameterization, viz., graph neural operators, multi-pole graph neural operators, low-rank neural operators, and Fourier neural operators. An important application for neural operators is learning surrogate maps for the solution operators of partial differential equations (PDEs). We consider standard PDEs such as the Burgers, Darcy subsurface flow, and the Navier-Stokes equations, and show that the proposed neural operators have superior performance compared to existing machine learning based methodologies, while being several orders of magnitude faster than conventional PDE solvers.},
+  title={Neural Operator: Learning Maps Between Function Spaces With Applications to {PDEs}},
+  author={Kovachki, Nikola and Li, Zongyi and Liu, Burigede and Azizzadenesheli, Kamyar and Bhattacharya, Kaushik and Stuart, Andrew and Anandkumar, Anima},
+  journal={Journal of Machine Learning Research},
+  volume={24},
+  number={89},
+  pages={1--97},
+  year={2023}
+}
+
+@article{lu2021deeponet,
+  abstract = {It is widely known that neural networks (NNs) are universal approximators of continuous functions. However, a less known but powerful result is that a NN with a single hidden layer can accurately approximate any nonlinear continuous operator. This universal approximation theorem of operators is suggestive of the structure and potential of deep neural networks (DNNs) in learning continuous operators or complex systems from streams of scattered data. Here, we thus extend this theorem to DNNs. We design a new network with small generalization error, the deep operator network (DeepONet), which consists of a DNN for encoding the discrete input function space (branch net) and another DNN for encoding the domain of the output functions (trunk net). We demonstrate that DeepONet can learn various explicit operators, such as integrals and fractional Laplacians, as well as implicit operators that represent deterministic and stochastic differential equations. We study different formulations of the input function space and its effect on the generalization error for 16 different diverse applications.},
+  title={Learning nonlinear operators via {DeepONet} based on the universal approximation theorem of operators},
+  author={Lu, Lu and Jin, Pengzhan and Pang, Guofei and Zhang, Zhongqiang and Karniadakis, George Em},
+  journal={Nature Machine Intelligence},
+  volume={3},
+  number={3},
+  pages={218--229},
+  year={2021}
+}
+
+@article{wang2021pidon,
+  abstract = {Enabling the rapid emulation of parametric differential equations with physics-informed deep operator networks.},
+  title={Learning the solution operator of parametric partial differential equations with physics-informed {DeepONet}s},
+  author={Wang, Sifan and Wang, Hanwen and Perdikaris, Paris},
+  journal={Science Advances},
+  volume={7},
+  number={40},
+  pages={eabi8605},
+  year={2021}
+}
+
+@inproceedings{rahaman2019spectral,
+  abstract = {Neural networks are known to be a class of highly expressive functions able to fit even random input-output mappings with 100 percent accuracy. In this work, we present properties of neural networks that complement this aspect of expressivity. By using tools from Fourier analysis, we show that deep ReLU networks are biased towards low frequency functions, meaning that they cannot have local fluctuations without affecting their global behavior. Intuitively, this property is in line with the observation that over-parameterized networks find simple patterns that generalize across data samples. We also investigate how the shape of the data manifold affects expressivity by showing evidence that learning high frequencies gets easier with increasing manifold complexity, and present a theoretical understanding of this behavior. Finally, we study the robustness of the frequency components with respect to parameter perturbation, to develop the intuition that the parameters must be finely tuned to express high frequency functions.},
+  title={On the Spectral Bias of Neural Networks},
+  author={Rahaman, Nasim and Baratin, Aristide and Arpit, Devansh and Draxler, Felix and Lin, Min and Hamprecht, Fred and Bengio, Yoshua and Courville, Aaron},
+  booktitle={Proceedings of the 36th International Conference on Machine Learning},
+  pages={5301--5310},
   year={2019},
-  publisher={AIP Publishing}
+  volume={97},
+  series={Proceedings of Machine Learning Research}
 }
 
-@article{ZHU2023107013,
-title = {An improvement of generalized Bloch mode synthesis method-based model order reduction technique for band-structure computation of periodic structures},
-journal = {Computers \& Structures},
-volume = {281},
-pages = {107013},
-year = {2023},
-issn = {0045-7949},
-author = {Xiaosong Zhu and Chenyang Xi and Hui Zheng}
+@article{qin2024spectralfno,
+  abstract = {In solving partial differential equations (PDEs), Fourier Neural Operators (FNOs) have exhibited notable effectiveness. However, FNO is observed to be ineffective with large Fourier kernels that parameterize more frequencies. Current solutions rely on setting small kernels, restricting FNO's ability to capture complex PDE data in real-world applications. This paper offers empirical insights into FNO's difficulty with large kernels through spectral analysis: FNO exhibits a unique Fourier parameterization bias, excelling at learning dominant frequencies in target data while struggling with non-dominant frequencies. To mitigate such a bias, we propose SpecB-FNO to enhance the capture of non-dominant frequencies by adopting additional residual modules to learn from the previous ones' prediction residuals iteratively. By effectively utilizing large Fourier kernels, SpecB-FNO achieves better prediction accuracy on diverse PDE applications, with an average improvement of 50%.},
+  title={Toward a Better Understanding of {Fourier} Neural Operators from a Spectral Perspective},
+  author={Qin, Shaoxiang and Lyu, Fuyuan and Peng, Wenhui and Geng, Tianyu and Pang, Jun and Wang, Yingxue and Deng, Cheng and Liu, Xue},
+  journal={arXiv preprint arXiv:2404.07200},
+  year={2024}
+}
+
+@article{cavallazzi2026whno,
+  abstract = {Neural operators have emerged as powerful tools for learning solution operators of partial differential equations (PDEs). However, standard spectral methods based on Fourier transforms struggle with problems involving discontinuous coefficients due to the Gibbs phenomenon and poor representation of sharp interfaces. We introduce the Walsh-Hadamard Neural Operator (WHNO), which leverages Walsh-Hadamard transforms-a spectral basis of rectangular wave functions naturally suited for piecewise constant fields-combined with learnable spectral weights that transform low-sequency Walsh coefficients to capture global dependencies efficiently. We validate WHNO on three problems: steady-state Darcy flow (preliminary validation), heat conduction with discontinuous thermal conductivity, and the 2D Burgers equation with discontinuous initial conditions. In controlled comparisons with Fourier Neural Operators (FNO) under identical conditions, WHNO demonstrates superior accuracy with better preservation of sharp solution features at material interfaces. Critically, we discover that weighted ensemble combinations of WHNO and FNO achieve substantial improvements over either model alone: for both heat conduction and Burgers equation, optimal ensembles reduce mean squared error by 35-40 percent and maximum error by up to 25 percent compared to individual models. This demonstrates that Walsh-Hadamard and Fourier representations capture complementary aspects of discontinuous PDE solutions, with WHNO excelling at sharp interfaces while FNO captures smooth features effectively.},
+  title={{Walsh}--{Hadamard} Neural Operators for Solving {PDEs} with Discontinuous Coefficients},
+  author={Cavallazzi, Giorgio M. and P{\'e}rez Cuadrado, Miguel and Pinelli, Alfredo},
+  journal={Journal of Computational Physics},
+  year={2026},
+  note={Also available as arXiv:2511.07347}
+}
+
+@inproceedings{loshchilov2019adamw,
+  abstract = {L2 regularization and weight decay regularization are equivalent for standard stochastic gradient descent (when rescaled by the learning rate), but as we demonstrate this is not the case for adaptive gradient algorithms, such as Adam. While common implementations of these algorithms employ L2 regularization (often calling it weight decay), we propose a simple modification to recover the original formulation of weight decay regularization by decoupling the weight decay from the optimization steps taken with respect to the loss function. We provide empirical evidence that our proposed modification (i) decouples the optimal choice of weight decay factor from the setting of the learning rate for both standard SGD and Adam and (ii) substantially improves Adam's generalization performance.},
+  title={Decoupled Weight Decay Regularization},
+  author={Loshchilov, Ilya and Hutter, Frank},
+  booktitle={International Conference on Learning Representations},
+  year={2019}
+}
+
+@inproceedings{kingma2015adam,
+  abstract = {We introduce Adam, an algorithm for first-order gradient-based optimization of stochastic objective functions, based on adaptive estimates of lower-order moments. The method is straightforward to implement, is computationally efficient, has little memory requirements, is invariant to diagonal rescaling of the gradients, and is well suited for problems that are large in terms of data and/or parameters. The method is also appropriate for non-stationary objectives and problems with very noisy and/or sparse gradients. The hyper-parameters have intuitive interpretations and typically require little tuning. Some connections to related algorithms, on which Adam was inspired, are discussed. We also analyze the theoretical convergence properties of the algorithm and provide a regret bound on the convergence rate that is comparable to the best known results under the online convex optimization framework. Empirical results demonstrate that Adam works well in practice and compares favorably to other stochastic optimization methods. Finally, we discuss AdaMax, a variant of Adam based on the infinity norm.},
+  title={Adam: A Method for Stochastic Optimization},
+  author={Kingma, Diederik P. and Ba, Jimmy},
+  booktitle={International Conference on Learning Representations},
+  year={2015}
+}
+
+%------------------------------------------------------------------------------
+% Machine learning for phononic and acoustic metamaterials
+%------------------------------------------------------------------------------
+
+@article{liu2019dispersion,
+  abstract = {In this paper, deep back propagation neural networks (DBP-NNs) and radial basis function neural networks (RBF-NNs) are employed to predict the dispersion relations (DRs) of one-dimensional (1D) phononic crystals (PCs). The data sets generated by transfer matrix method (TMM) are used to train the NNs and detect their prediction accuracy. In our work, filling fractions, mass density ratios and shear modulus ratios of PCs are considered as the input values of NNs. The results show that both the DBP-NNs and the RBF-NNs exhibit good performances in predicting the DRs of PCs. For one-parameter prediction, the RBF-NNs have shorter training time and remarkable prediction accuracy, for two- and three-parameter prediction, the DBP-NNs have more stable performance. The present work confirms the feasibility of predicting the DRs of PCs by NNs, and provides a useful reference for the application of NNs in the design of PCs and metamaterials.},
+  title={Predicting the Dispersion Relations of One-Dimensional Phononic Crystals by Neural Networks},
+  author={Liu, Chen-Xu and Yu, Gui-Lan},
+  journal={Scientific Reports},
+  volume={9},
+  pages={15322},
+  year={2019}
+}
+
+@article{finol2019eigenvalue,
+  abstract = {Summary We show that deep convolutional neural networks (CNNs) can massively outperform traditional densely connected neural networks (NNs) (both deep or shallow) in predicting eigenvalue problems in mechanics. In this sense, we strike out in a new direction in mechanics computations with strongly predictive NNs whose success depends not only on architectures being deep but also being fundamentally different from the widely used to date. We consider a model problem: predicting the eigenvalues of one-dimensional (1D) and two-dimensional (2D) phononic crystals. For the 1D case, the optimal CNN architecture reaches 98% accuracy level on unseen data when trained with just 20 000 samples, compared to 85% accuracy even with 100 000 samples for the typical network of choice in mechanics research. We show that, with relatively high data efficiency, CNNs have the capability to generalize well and automatically learn deep symmetry operations, easily extending to higher dimensions and our 2D case. Most importantly, we show how CNNs can naturally represent mechanical material tensors, with its convolution kernels serving as local receptive fields, which is a natural representation of mechanical response. Strategies proposed are applicable to other mechanics' problems and may, in the future, be used to sidestep cumbersome algorithms with purely data-driven approaches based upon modern deep architectures.},
+  title={Deep convolutional neural networks for eigenvalue problems in mechanics},
+  author={Finol, David and Lu, Yan and Mahadevan, Vijay and Srivastava, Ankit},
+  journal={International Journal for Numerical Methods in Engineering},
+  volume={118},
+  number={5},
+  pages={258--275},
+  year={2019}
+}
+
+@article{Ogren2024gpr,
+  abstract = {The ability to design materials for wave propagation behaviors has high potential for impact in medical imaging, telecommunications, and signal processing. The dispersion relation is the key mathematical object that describes linear elastic wave propagation behavior in a material. To date, the design of wave propagation behavior in materials has been limited to one or two design objectives, for example, designing for one or two bandgaps or wavespeeds. This is a result of the complicated relationship between a material and its dispersion relation},
+  title={Gaussian process regression as a surrogate model for the computation of dispersion relations},
+  author={Ogren, Alexander C. and Feng, Berthy T. and Bouman, Katherine L. and Daraio, Chiara},
+  journal={Computer Methods in Applied Mechanics and Engineering},
+  volume={420},
+  pages={116661},
+  year={2024}
+}
+
+@inproceedings{wagner2024neural,
+  abstract = {Neural operators serve as efficient, data-driven surrogate models for complex physical and engineering problems. In this work, we demonstrate that neural operators can directly learn the key properties of sonic crystals, a type of acoustic metamaterial consisting of a lattice of parameterized shapes. We predict the transmission loss curve, a critical characteristic in applications, bypassing the expensive meshing and solving steps typical of classical techniques. We evaluate established architectures, DeepONet (DON) and Fourier Neural Operator (FNO), alongside two new ones, Deep Neural Operator (DNO) and Deep Cat Operator (DCO), which demonstrate significant performance improvements. In our experiments, all models achieve high accuracy, while being up to 10^6 times faster than the traditional method, significantly advancing practical real-time metamaterial design.},
+  title={Neural Operators as Fast Surrogate Models for the Transmission Loss of Parameterized Sonic Crystals},
+  author={Wagner, Jakob Elias and Burbulla, Samuel and de Benito Delgado, Miguel and Schmid, Johannes D.},
+  booktitle={NeurIPS 2024 Workshop on Data-driven and Differentiable Simulations, Surrogates, and Solvers},
+  year={2024}
+}
+
+@article{liu2026hybridfno,
+  abstract = {This work introduces a wave-vector-explicit Hybrid Fourier Neural Operator for mesh-independent prediction of phononic-crystal band structures. The architecture conditions on wavevector information to predict eigenfrequencies / dispersion relations across resolutions, aiming to bypass repeated expensive mesh-based Bloch eigenvalue solves for parameterized phononic unit cells while retaining accuracy comparable to classical numerical band-structure computations.},
+  title={Mesh-independent band structure prediction of phononic crystals via a wave-vector explicit Hybrid {Fourier} Neural Operator},
+  author={Liu, Chengjin and Ning, Shaowu and Li, Xiang and Hong, Yang and Qi, Tianming and Kai, Yadong},
+  journal={Computers \& Structures},
+  year={2026}
 }
 
 @article{CHEN2022101895,
-    title = {How to see hidden patterns in metamaterials with interpretable machine learning},
-    journal = {Extreme Mechanics Letters},
-    volume = {57},
-    pages = {101895},
-    year = {2022},
-    author = {Zhi Chen and Alexander Ogren and Chiara Daraio and L. Catherine Brinson and Cynthia Rudin}
+  abstract = {Machine learning models can assist with metamaterials design by approximating computationally expensive simulators or solving inverse design problems. However, past work has usually relied on black box deep neural networks, whose reasoning processes are opaque and require enormous datasets that are expensive to obtain. In this work, we develop two novel machine learning approaches to metamaterials discovery that have neither of these disadvantages. These approaches, called shape-frequency features and unit-cell templates, can discover 2D metamaterials with user-specified frequency band gaps. Our approaches provide logical rule-based conditions on metamaterial unit-cells that allow for interpretable reasoning processes, and generalize well across design spaces of different resolutions. The templates also provide design flexibility where users can almost freely design the fine resolution features of a unit-cell without affecting the user's desired band gap.},
+  title={How to see hidden patterns in metamaterials with interpretable machine learning},
+  author={Chen, Zhi and Ogren, Alexander and Daraio, Chiara and Brinson, L. Catherine and Rudin, Cynthia},
+  journal={Extreme Mechanics Letters},
+  volume={57},
+  pages={101895},
+  year={2022}
 }
 
-@article{Bastawrous2024,
-title = {Phononic materials with effectively scale-separated hierarchical features using interpretable machine learning},
-journal = {NJP-computational materials (submitted)},
-year = {2024},
-author = {Bastawrous, MV and Chen, Zhi and Ogren, Alexander and Daraio, Chiara and Rudin, Cynthia and Brinson, Lynda Catherine}
+@article{Bastawrous2025,
+  abstract = {Manipulating the dispersive characteristics of vibrational waves is beneficial for many applications, e.g., high-precision instruments. Architected hierarchical phononic materials have sparked promise for tunability of elastodynamic waves and vibrations over multiple frequency ranges. In this article, hierarchical unit-cells are obtained, where features at each length scale result in a band gap within a targeted frequency range. Our novel approach, the hierarchical unit-cell template method, is an interpretable machine-learning approach that uncovers global unit-cell shape/topology patterns corresponding to predefined band-gap objectives. A scale-separation effect is observed where the coarse-scale band-gap objective is mostly unaffected by the fine-scale features despite the closeness of their length scales, thus enabling an efficient hierarchical algorithm.},
+  title={A multiscale design method using interpretable machine learning for phononic materials with closely interacting scales},
+  author={Bastawrous, Mary V. and Chen, Zhi and Ogren, Alexander C. and Daraio, Chiara and Rudin, Cynthia and Brinson, L. Catherine},
+  journal={Computer Methods in Applied Mechanics and Engineering},
+  volume={440},
+  pages={117833},
+  year={2025}
 }
 
-@article{mazzotti2023bio,
-  title={Bio-inspired non self-similar hierarchical elastic metamaterials},
-  author={Mazzotti, Matteo and Foehr, Andr{\'e} and Bilal, Osama R and Bergamini, Andrea and Bosia, Federico and Daraio, Chiara and Pugno, Nicola M and Miniaci, Marco},
-  journal={International Journal of Mechanical Sciences},
-  volume={241},
-  pages={107915},
-  year={2023},
-  publisher={Elsevier}
+@article{liu2023deeplearning,
+  abstract = {The computer revolution coming by way of data provides an innovative approach for the design of phononic crystals (PnCs) and elastic metamaterials (EMs). By establishing an analytical surrogate model for PnCs/EMs, deep learning based on artificial neural networks possesses the superiorities of rapidity and accuracy in design, making up for the shortcomings of traditional design methods. Here, the recent progresses on deep learning for forward prediction, parameter design, and topology design of PnCs and EMs are reviewed. The challenges and perspectives in this emerging field are also commented.},
+  title={Deep learning for the design of phononic crystals and elastic metamaterials},
+  author={Liu, Chen-Xu and Yu, Gui-Lan},
+  journal={Journal of Computational Design and Engineering},
+  volume={10},
+  number={2},
+  pages={602--614},
+  year={2023}
+}
+
+@article{jin2022intelligent,
+  abstract = {With the growing interest in the field of artificial materials, more advanced and sophisticated functionalities are required from phononic crystals and acoustic metamaterials. This implies a high computational effort and cost, and still the efficiency of the designs may be not sufficient. With the help of third-wave artificial intelligence technologies, the design schemes of these materials are undergoing a new revolution. As an important branch of artificial intelligence, machine learning paves the way to new technological innovations by stimulating the exploration of structural design. Machine learning provides a powerful means of achieving an efficient and accurate design process by exploring nonlinear physical patterns in high-dimensional space, based on data sets of candidate structures. Many advanced machine learning algorithms, such as deep neural networks, unsupervised manifold clustering, reinforcement learning and so forth, have been widely and deeply investigated for structural design. In this review, we summarize the recent works on the combination of phononic metamaterials and machine learning. We provide an overview of machine learning on structural design. Then discuss machine learning driven on-demand design of phononic metamaterials for acoustic and elastic waves functions, topological phases and atomic-scale phonon properties. Finally, we summarize the current state of the art and provide a prospective of the future development directions.},
+  title={Intelligent on-demand design of phononic metamaterials},
+  author={Jin, Yabin and He, Liangshu and Wen, Zhihui and Mortazavi, Bohayra and Guo, Hongwei and Torrent, Daniel and Djafari-Rouhani, Bahram and Rabczuk, Timon and Zhuang, Xiaoying and Li, Yan},
+  journal={Nanophotonics},
+  volume={11},
+  number={3},
+  pages={439--460},
+  year={2022}
+}
+
+@article{muhammad2022ml,
+  abstract = {Machine learning (ML), as a component of artificial intelligence, encourages structural design exploration which leads to new technological advancements. By developing and generating data-driven methodologies that supplement conventional physics and formula-based approaches, deep learning (DL), a subset of machine learning, offers an efficient way to understand and harness artificial materials and structures. Recently, acoustic and mechanics communities have observed a surge of research interest in implementing machine learning and deep learning methods in the design and optimization of artificial materials. In this review we evaluate the recent developments and present a state-of-the-art literature survey in machine learning and deep learning based phononic crystals and metamaterial designs by giving historical context, discussing network architectures and working principles.},
+  title={Machine learning and deep learning in phononic crystals and metamaterials -- A review},
+  author={Muhammad and Kennedy, John and Lim, C. W.},
+  journal={Materials Today Communications},
+  volume={33},
+  pages={104606},
+  year={2022}
+}
+
+%------------------------------------------------------------------------------
+% Gabor encodings for modal inputs
+%------------------------------------------------------------------------------
+
+@article{gabor1946theory,
+  abstract = {The paper develops a mathematical theory of communication based on the representation of signals as a combination of elementary signals that are localized simultaneously in time and frequency (Gabor atoms / logons). It introduces the information cell picture of the time-frequency plane and analyzes how messages can be encoded and transmitted with finite bandwidth and duration, forming the foundation of Gabor analysis used in modern time-frequency and wavelet signal representations.},
+  title={Theory of communication},
+  author={Gabor, Dennis},
+  journal={Journal of the Institution of Electrical Engineers - Part III: Radio and Communication Engineering},
+  volume={93},
+  number={26},
+  pages={429--441},
+  year={1946}
 }

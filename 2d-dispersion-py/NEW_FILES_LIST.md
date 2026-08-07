@@ -48,7 +48,7 @@ This document lists all the new Python files created to match MATLAB file names 
 
 ### Design Functions
 - `convert_design.py` - Extract from `design_conversion.py`
-- `apply_steel_rubber_paradigm.py` - Extract from `design_conversion.py`
+- `apply_steel_polymer_paradigm.py` - Extract from `design_conversion.py`
 
 ### Plotting Functions
 - `plot_dispersion.py` - Extract from `plotting.py`

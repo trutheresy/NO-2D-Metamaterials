@@ -7,7 +7,7 @@ This document provides a complete one-to-one mapping of all MATLAB files in `2D-
 | MATLAB File | Python File | Status |
 |------------|-------------|--------|
 | `apply_p4mm_symmetry.m` | `symmetry.py` → `apply_p4mm_symmetry()` | ✅ Function exists |
-| `apply_steel_rubber_paradigm.m` | `design_conversion.py` → `apply_steel_rubber_paradigm()` | ✅ Function exists |
+| `apply_steel_polymer_paradigm.m` | `design_conversion.py` → `apply_steel_polymer_paradigm()` | ✅ Function exists |
 | `cellofsparse_to_full.m` | `cellofsparse_to_full.py` | ✅ **CREATED** |
 | `check_contour_analysis.m` | `check_contour_analysis.py` | ✅ **CREATED** |
 | `convert_design.m` | `design_conversion.py` → `convert_design()` | ✅ Function exists |

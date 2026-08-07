@@ -14,6 +14,13 @@ from pathlib import Path
 import torch
 import torch.nn as nn
 
+from input_encodings import (
+    INPUT_ENCODING_FILES,
+    input_encoding_filenames,
+    input_encoding_in_channels,
+    normalize_input_encoding,
+)
+
 try:
     from neuralop.models import FNO2d
 except ImportError as e:
@@ -22,13 +29,15 @@ except ImportError as e:
     ) from e
 
 
-CASE_OUT_CHANNELS = {"I3O1": 1, "I3O4": 4, "I3O5": 5}
-OUT_CHANNELS_TO_CASE = {v: k for k, v in CASE_OUT_CHANNELS.items()}
+CASE_OUT_CHANNELS = {"I3O1": 1, "I3O4": 4, "I3O5": 5, "I4O5": 5}
+OUT_CHANNELS_TO_CASE = {1: "I3O1", 4: "I3O4", 5: "I3O5"}  # out-only fallback; in_ch may differ
 CASE_CHANNEL_LABELS = {
     "I3O1": ["eigenfrequency"],
     "I3O4": ["disp_x_real", "disp_x_imag", "disp_y_real", "disp_y_imag"],
     "I3O5": ["eigenfrequency", "disp_x_real", "disp_x_imag", "disp_y_real", "disp_y_imag"],
+    "I4O5": ["eigenfrequency", "disp_x_real", "disp_x_imag", "disp_y_real", "disp_y_imag"],
 }
+INPUT_ENCODING_CHOICES = ("auto", "wavelet", "sinusoidal", "uniform", "constant")
 
 
 def load_raw_state_dict(model_path, map_location="cpu"):
@@ -153,12 +162,53 @@ def hparams_from_resolved_config(run_dir):
     params = data.get("params") or {}
     args_ = data.get("args") or {}
     out = {}
-    for key in ("out_channels", "hidden_channels", "layers", "modes_height", "modes_width"):
+    for key in (
+        "out_channels",
+        "in_channels",
+        "hidden_channels",
+        "layers",
+        "modes_height",
+        "modes_width",
+        "input_encoding",
+    ):
         if params.get(key) is not None:
             out[key] = params[key]
         elif args_.get(key) is not None:
             out[key] = args_[key]
     return out
+
+
+def resolve_input_encoding(cli_value: str | None, run_dir: str | None = None) -> str:
+    """
+    Resolve wavevector/band encoding for inference.
+
+    ``auto`` (or empty) prefers ``resolved_config.json`` next to the checkpoint,
+    otherwise defaults to ``wavelet`` for backward compatibility.
+    Accepts ``uniform`` as an alias of ``constant``.
+    """
+    raw = (cli_value or "auto").strip().lower()
+    if raw not in ("", "auto"):
+        return normalize_input_encoding(raw)
+    if run_dir:
+        hp = hparams_from_resolved_config(run_dir)
+        if hp.get("input_encoding"):
+            return normalize_input_encoding(str(hp["input_encoding"]))
+    return "wavelet"
+
+
+def io_case_label(in_channels: int, out_channels: int) -> str:
+    """Format I/O case as I{in}O{out} (e.g. I3O5, I4O5)."""
+    return f"I{int(in_channels)}O{int(out_channels)}"
+
+
+def channel_labels_for_out(out_channels: int) -> list[str]:
+    if out_channels == 1:
+        return list(CASE_CHANNEL_LABELS["I3O1"])
+    if out_channels == 4:
+        return list(CASE_CHANNEL_LABELS["I3O4"])
+    if out_channels == 5:
+        return list(CASE_CHANNEL_LABELS["I3O5"])
+    raise ValueError(f"Unsupported out_channels={out_channels}")
 
 
 def infer_num_geometries_per_dataset(dataset_paths):
@@ -176,7 +226,7 @@ def infer_num_geometries_per_dataset(dataset_paths):
     return num_geometries
 
 
-def infer_model_architecture(state_dict, out_channels=5):
+def infer_model_architecture(state_dict, out_channels=5, in_channels=3):
     common_hidden = [128, 256, 512, 64, 32]
     common_layers = [2, 3, 4, 5, 6]
     print("Trying to infer model architecture from state_dict...")
@@ -221,9 +271,13 @@ def infer_model_architecture(state_dict, out_channels=5):
                 if num_layers is not None and hidden_channels is not None:
                     break
                 try:
-                    model = FourierNeuralOperator(32, 32, hidden, layers, out_channels)
+                    model = FourierNeuralOperator(
+                        32, 32, hidden, layers, out_channels, in_channels=in_channels
+                    )
                     model_keys = set(model.state_dict().keys())
-                    match_ratio = len(state_dict_keys & model_keys) / max(len(state_dict_keys), len(model_keys))
+                    match_ratio = len(state_dict_keys & model_keys) / max(
+                        len(state_dict_keys), len(model_keys)
+                    )
                     if match_ratio > 0.8:
                         if num_layers is None:
                             num_layers = layers
@@ -250,23 +304,43 @@ def infer_model_architecture(state_dict, out_channels=5):
     return hidden_channels, num_layers
 
 
-def load_input_data(dataset_paths, num_geometries_per_dataset):
+def load_input_data(dataset_paths, num_geometries_per_dataset, input_encoding: str = "wavelet"):
+    encoding = normalize_input_encoding(input_encoding)
+    files = input_encoding_filenames(encoding)
+    in_ch = input_encoding_in_channels(encoding)
     print("Loading input data...")
+    print(f"Input encoding: {encoding} (in_channels={in_ch})")
+    print(f"  waveforms file: {files['waveforms']}")
+    print(f"  bands file    : {files['bands']}")
     num_geometries = num_geometries_per_dataset * len(dataset_paths)
     print("Loading waveforms and bands (same across all datasets)...")
-    waveforms = torch.load(
-        os.path.join(dataset_paths[0], "waveforms_full.pt"),
-        weights_only=False,
-        map_location="cpu",
-    )
-    band_ffts = torch.load(
-        os.path.join(dataset_paths[0], "band_fft_full.pt"),
-        weights_only=False,
-        map_location="cpu",
-    )
+    wave_path = os.path.join(dataset_paths[0], files["waveforms"])
+    band_path = os.path.join(dataset_paths[0], files["bands"])
+    if not os.path.isfile(wave_path):
+        raise FileNotFoundError(f"Missing wavevector encoding tensor for {encoding}: {wave_path}")
+    if not os.path.isfile(band_path):
+        raise FileNotFoundError(f"Missing band encoding tensor for {encoding}: {band_path}")
+    waveforms = torch.load(wave_path, weights_only=False, map_location="cpu")
+    band_ffts = torch.load(band_path, weights_only=False, map_location="cpu")
+    if encoding == "constant":
+        if waveforms.ndim != 4 or int(waveforms.shape[1]) != 2 or tuple(waveforms.shape[-2:]) != (32, 32):
+            raise ValueError(
+                f"Invalid {files['waveforms']} shape {tuple(waveforms.shape)}; "
+                "expected (n_wv, 2, 32, 32) for constant/uniform encoding."
+            )
+    else:
+        if waveforms.ndim != 3 or tuple(waveforms.shape[-2:]) != (32, 32):
+            raise ValueError(
+                f"Invalid {files['waveforms']} shape {tuple(waveforms.shape)}; "
+                f"expected (n_wv, 32, 32) for {encoding} encoding."
+            )
+    if band_ffts.ndim != 3 or tuple(band_ffts.shape[-2:]) != (32, 32):
+        raise ValueError(
+            f"Invalid {files['bands']} shape {tuple(band_ffts.shape)}; expected (n_bands, 32, 32)."
+        )
     dtype = waveforms.dtype
     print(f"Waveforms - dtype: {waveforms.dtype}, shape: {waveforms.shape}")
-    print(f"Band FFTs - dtype: {band_ffts.dtype}, shape: {band_ffts.shape}")
+    print(f"Bands     - dtype: {band_ffts.dtype}, shape: {band_ffts.shape}")
     combined_geometries = torch.empty((num_geometries, 32, 32), dtype=dtype)
     geom_offset = 0
     for i, dataset_path in enumerate(dataset_paths):
@@ -286,8 +360,30 @@ def load_input_data(dataset_paths, num_geometries_per_dataset):
     print("Final dataset shapes:")
     print(f"  - Geometries: {combined_geometries.shape}")
     print(f"  - Waveforms: {waveforms.shape}")
-    print(f"  - Band FFTs: {band_ffts.shape}")
-    return combined_geometries, waveforms, band_ffts
+    print(f"  - Bands: {band_ffts.shape}")
+    return combined_geometries, waveforms, band_ffts, encoding, in_ch
+
+
+def fill_input_row(
+    batch_tensor: torch.Tensor,
+    row: int,
+    geometry: torch.Tensor,
+    waveform: torch.Tensor,
+    band: torch.Tensor,
+    in_channels: int,
+) -> None:
+    """Write one sample into ``batch_tensor[row]`` for 3- or 4-channel encodings."""
+    batch_tensor[row, 0] = geometry
+    if in_channels == 3:
+        batch_tensor[row, 1] = waveform
+        batch_tensor[row, 2] = band
+    elif in_channels == 4:
+        # constant/uniform: waveform is (2, H, W) = (kx, ky)
+        batch_tensor[row, 1] = waveform[0]
+        batch_tensor[row, 2] = waveform[1]
+        batch_tensor[row, 3] = band
+    else:
+        raise ValueError(f"Unsupported in_channels={in_channels}")
 
 
 def compute_output_index(geometry_idx, waveform_idx, band_idx, num_waveforms, num_bands):
@@ -298,14 +394,15 @@ def materialize_inputs_cpu(
     geometries: torch.Tensor,
     waveforms: torch.Tensor,
     band_ffts: torch.Tensor,
+    in_channels: int = 3,
 ) -> torch.Tensor:
-    """Build (N, 3, 32, 32) float32 inputs on CPU for sequential batch inference."""
+    """Build (N, C, 32, 32) float32 inputs on CPU for sequential batch inference."""
     n_geometries = geometries.shape[0]
     n_waveforms = waveforms.shape[0]
     n_bands = band_ffts.shape[0]
     total = n_geometries * n_waveforms * n_bands
     chunk = n_waveforms * n_bands
-    inputs = torch.empty((total, 3, 32, 32), dtype=torch.float32)
+    inputs = torch.empty((total, in_channels, 32, 32), dtype=torch.float32)
     geoms_f = geometries.float()
     waves_f = waveforms.float()
     bands_f = band_ffts.float()
@@ -314,8 +411,15 @@ def materialize_inputs_cpu(
     for g in range(n_geometries):
         sl = slice(g * chunk, (g + 1) * chunk)
         inputs[sl, 0, :, :] = geoms_f[g]
-        inputs[sl, 1, :, :] = waves_f[w_idx]
-        inputs[sl, 2, :, :] = bands_f[b_idx]
+        if in_channels == 3:
+            inputs[sl, 1, :, :] = waves_f[w_idx]
+            inputs[sl, 2, :, :] = bands_f[b_idx]
+        elif in_channels == 4:
+            inputs[sl, 1, :, :] = waves_f[w_idx, 0]
+            inputs[sl, 2, :, :] = waves_f[w_idx, 1]
+            inputs[sl, 3, :, :] = bands_f[b_idx]
+        else:
+            raise ValueError(f"Unsupported in_channels={in_channels}")
     return inputs
 
 
@@ -391,6 +495,11 @@ def save_outputs(outputs, output_path, channel_labels, num_waveforms, num_bands)
 
 
 def write_inference_doc(doc_path, info):
+    enc = info.get("input_encoding", "wavelet")
+    try:
+        files = input_encoding_filenames(str(enc))
+    except ValueError:
+        files = INPUT_ENCODING_FILES.get("wavelet", {})
     lines = [
         "INFERENCE RUN RECORD",
         "=" * 60,
@@ -402,7 +511,8 @@ def write_inference_doc(doc_path, info):
         f"checkpoint_path     : {info.get('model_path')}",
         f"model_name          : {info.get('model_name')}",
         f"io_case             : {info.get('case')}",
-        "in_channels         : 3",
+        f"input_encoding      : {enc}",
+        f"in_channels         : {info.get('in_channels', 3)}",
         f"out_channels        : {info.get('out_channels')}",
         f"output_channels     : {info.get('channel_labels')}",
         f"hidden_channels     : {info.get('hidden_channels')}",
@@ -426,8 +536,8 @@ def write_inference_doc(doc_path, info):
     lines.extend(
         [
             "shared_input_files (from first dataset):",
-            f"  - waveforms_full.pt  (n_waveforms={info.get('n_waveforms')})",
-            f"  - band_fft_full.pt   (n_bands={info.get('n_bands')})",
+            f"  - {files.get('waveforms', 'waveforms_full.pt')}  (n_waveforms={info.get('n_waveforms')})",
+            f"  - {files.get('bands', 'band_fft_full.pt')}   (n_bands={info.get('n_bands')})",
             "",
             "GEOMETRY SELECTION",
             "-" * 60,

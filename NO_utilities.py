@@ -404,12 +404,13 @@ def visualize_sample(
     hide_y_ticks=False,
     title_fontsize=None,
     colorbar_labelsize=None,
+    input_titles=None,
 ):
     """
     Visualize input and output tensors from a single sample.
 
     Args:
-        input_tensor: Tensor of shape (3, H, W) containing input components
+        input_tensor: Tensor of shape (3, H, W) or (4, H, W) containing input components
         output_tensor: Tensor of shape (C, H, W) containing output components
         (optional) target_tensor: Tensor of shape (C, H, W) containing target components
         unified_colorbar: If True (only when target_tensor is plotted), one colorbar per
@@ -430,8 +431,21 @@ def visualize_sample(
         hide_x_ticks / hide_y_ticks: Per-axis control (``hide_axis_ticks`` forces both True).
         title_fontsize: Optional panel title font size (paper figures typically want larger text).
         colorbar_labelsize: Optional colorbar tick label size.
+        input_titles: Optional titles for the input panels (length must match ``input_tensor``
+            channel count). Defaults: 3-ch Geometry/Wavevector/Band; 4-ch Geometry/kx/ky/Band.
     """
-    input_titles = ["Geometry", "Wavevector", "Band"]
+    n_inputs = int(input_tensor.shape[0])
+    if input_titles is None:
+        if n_inputs == 4:
+            input_titles = ["Geometry", "kx", "ky", "Band"]
+        elif n_inputs == 3:
+            input_titles = ["Geometry", "Wavevector", "Band"]
+        else:
+            input_titles = [f"Input {i}" for i in range(n_inputs)]
+    if len(input_titles) != n_inputs:
+        raise ValueError(
+            f"input_titles length {len(input_titles)} != input channels {n_inputs}"
+        )
     title_kw = {} if title_fontsize is None else {"fontsize": title_fontsize}
     tick_kw = dict(
         hide_axis_ticks=hide_axis_ticks,
@@ -445,7 +459,6 @@ def visualize_sample(
     panel_bottom = 0.07 if omit_x else 0.10
 
     # Create figure for input components (same per-column colorbar geometry as fields pane).
-    n_inputs = 3
     fig1 = plt.figure(figsize=(n_inputs * _PANEL_COL_FIGWIDTH, _PANEL_COL_FIGWIDTH * 0.85))
     gs_in = GridSpec(
         1,
@@ -730,31 +743,68 @@ def plot_eigenvectors(
     plt.show()
 
 
-def wavevectors_to_spatial(wavevectors, design_res, length_scale, amplitude=1.0, phase=0.0, plot_sample=False):
+# Canonical spatial-sinusoidal wavevector encoding (paper §band_wavevector_encoding).
+# Direction ∥ k, frequency ∝ |k|; ~1 cycle across the patch at |k|=π; Γ → 0.
+PLANE_WAVE_CYCLES_AT_PI = 1.0
+PLANE_WAVE_KIND = "sin"
+
+
+def wavevectors_to_spatial(wavevectors, design_res, length_scale=1.0, amplitude=1.0, phase=0.0, plot_sample=False):
     """
-    Vectorized implementation (from NO_utils.py) for performance.
+    Official spatial-sinusoidal wavevector encoding (§band_wavevector_encoding):
+
+        I_k(x, y) = A * sin( (2 / S) (k_x x + k_y y) + phase ),
+        (x, y) ∈ {0, …, S−1},  S = design_res.
+
+    Wavefronts propagate along ``(k_x, k_y)`` with spatial frequency proportional
+    to ``|k|``. The factor ``2/S`` yields about one cycle across the patch at
+    ``|k| = π``. At Γ (``k = 0``) the field is zero.
+
+    Parameters
+    ----------
+    wavevectors : array_like
+        Shape ``(..., 2)`` with last axis ``(k_x, k_y)`` in radians.
+    design_res : int
+        Patch side length S.
+    length_scale : float
+        Unused; kept for call-site compatibility with older linspace-domain API.
+    amplitude, phase : float
+        Optional scale and phase offset on the sine.
+    plot_sample : bool
+        If True and ``wavevectors`` is at least 3D ``(N, W, 2)``, show one sample.
+
+    Returns
+    -------
+    ndarray
+        Sine fields with shape ``wavevectors.shape[:-1] + (S, S)``.
     """
-    N = wavevectors.shape[0]
-    W = wavevectors.shape[1]
-    x = np.linspace(-length_scale / 2, length_scale / 2, design_res)
-    y = np.linspace(-length_scale / 2, length_scale / 2, design_res)
-    X, Y = np.meshgrid(x, y)
+    _ = length_scale  # API compat only; encoding uses pixel indices, not physical length.
+    wavevectors = np.asarray(wavevectors, dtype=np.float64)
+    if wavevectors.shape[-1] != 2:
+        raise ValueError(f"Expected wavevectors[..., 2]; got shape {wavevectors.shape}")
+
+    S = int(design_res)
+    gamma = (2.0 * PLANE_WAVE_CYCLES_AT_PI) / S
+    x = np.arange(S, dtype=np.float64)
+    y = np.arange(S, dtype=np.float64)
+    X, Y = np.meshgrid(x, y, indexing="xy")
     k_x = wavevectors[..., 0][..., None, None]
     k_y = wavevectors[..., 1][..., None, None]
-    spatial_waves = amplitude * np.cos(k_x * X + k_y * Y + phase)
+    spatial_waves = amplitude * np.sin(gamma * (k_x * X + k_y * Y) + phase)
 
-    if plot_sample:
+    if plot_sample and wavevectors.ndim >= 3:
+        N, W = wavevectors.shape[0], wavevectors.shape[1]
         sample_n = random.randint(0, N - 1)
         sample_w = random.randint(0, W - 1)
         plt.figure(figsize=(6, 6))
-        plt.contourf(spatial_waves[sample_n], cmap=DEFAULT_FIELD_CMAP)
+        plt.contourf(spatial_waves[sample_n, sample_w], cmap=DEFAULT_FIELD_CMAP)
         plt.colorbar(label="Wave Amplitude")
-        plt.xlabel("x (m)")
-        plt.ylabel("y (m)")
+        plt.xlabel("x (pixels)")
+        plt.ylabel("y (pixels)")
         plt.title(
             f"Spatial Wave: Sample {sample_n}, Wavevector {sample_w} with "
-            f"$k_x$={wavevectors[sample_n, sample_w, 0]} $m^{{-1}}$, "
-            f"$k_y$={wavevectors[sample_n, sample_w, 1]} $m^{{-1}}$"
+            f"$k_x$={wavevectors[sample_n, sample_w, 0]}, "
+            f"$k_y$={wavevectors[sample_n, sample_w, 1]}"
         )
         plt.show()
 
@@ -762,11 +812,186 @@ def wavevectors_to_spatial(wavevectors, design_res, length_scale, amplitude=1.0,
     return spatial_waves
 
 
+def embed_wavevector_sinusoidal(kx, ky, size=32, verbose=False):
+    """
+    Official wavevector sinusoid (same as ``wavevectors_to_spatial`` / paper):
+
+        I_k(x, y) = sin( (2 / S) (k_x x + k_y y) ),
+        (x, y) ∈ {0, …, S−1}.
+
+    Equivalent to ``embed_wavevector_plane_wave(..., cycles_at_pi=1, kind=\"sin\")``.
+    """
+    return embed_wavevector_plane_wave(
+        kx,
+        ky,
+        size=size,
+        cycles_at_pi=PLANE_WAVE_CYCLES_AT_PI,
+        kind=PLANE_WAVE_KIND,
+        verbose=verbose,
+    )
+
+
+def embed_wavevector_plane_wave(
+    kx,
+    ky,
+    size=32,
+    cycles_at_pi=PLANE_WAVE_CYCLES_AT_PI,
+    kind=PLANE_WAVE_KIND,
+    verbose=False,
+):
+    """
+    Directed plane-wave encoding: wavefronts normal to k, frequency ∝ |k|.
+
+        I(x, y) = f( γ (k_x x + k_y y) ),
+        γ = 2 * cycles_at_pi / S,
+        f ∈ {cos, sin},
+        (x, y) ∈ {0, …, S−1}.
+
+    Defaults (``cycles_at_pi=1``, ``kind=\"sin\"``) are the official paper encoding:
+    about one cycle across the patch at ``|k| = π``, and Γ maps to 0.
+
+    Phase gradient is ∥ (k_x, k_y). At Γ: cos → 1, sin → 0.
+    """
+    kx = np.atleast_1d(np.asarray(kx, dtype=np.float64))
+    ky = np.atleast_1d(np.asarray(ky, dtype=np.float64))
+    if kx.shape != ky.shape:
+        raise ValueError(f"kx and ky shapes must match; got {kx.shape} vs {ky.shape}")
+    if verbose:
+        print("kx shape:", kx.shape, "ky shape:", ky.shape)
+
+    kind_l = str(kind).lower()
+    if kind_l == "cos":
+        wave_fn = np.cos
+    elif kind_l == "sin":
+        wave_fn = np.sin
+    else:
+        raise ValueError(f"kind must be 'cos' or 'sin', got {kind!r}")
+
+    S = int(size)
+    gamma = (2.0 * float(cycles_at_pi)) / S
+    x = np.arange(S, dtype=np.float64)
+    y = np.arange(S, dtype=np.float64)
+    X, Y = np.meshgrid(x, y, indexing="xy")
+    return wave_fn(gamma * (kx[:, None, None] * X + ky[:, None, None] * Y))
+
+
+def embed_wavevector_constant(kx, ky, size=32, verbose=False):
+    """
+    Paper constant-field wavevector encoding (§band_wavevector_encoding):
+
+        I_{k_x} = (k_x / π) * 1_{S×S},   I_{k_y} = (k_y / π) * 1_{S×S},
+        k_x, k_y ∈ [−π, π]  ⇒  values in [−1, 1].
+
+    Returns both channels (manuscript broadcasts k_x and k_y separately).
+
+    Parameters
+    ----------
+    kx, ky : array_like
+        Wavevector components (same broadcastable shape).
+    size : int
+        Patch side length S.
+    verbose : bool
+        If True, print input shapes.
+
+    Returns
+    -------
+    ndarray
+        Shape ``(N, 2, size, size)`` with channel 0 = k_x/π, channel 1 = k_y/π.
+    """
+    kx_a = np.atleast_1d(np.asarray(kx, dtype=np.float64))
+    ky_a = np.atleast_1d(np.asarray(ky, dtype=np.float64))
+    if kx_a.shape != ky_a.shape:
+        raise ValueError(f"kx/ky shape mismatch: {kx_a.shape} vs {ky_a.shape}")
+    if verbose:
+        print("kx/ky shape:", kx_a.shape)
+    S = int(size)
+    vx = (kx_a / np.pi).astype(np.float64)
+    vy = (ky_a / np.pi).astype(np.float64)
+    out = np.empty((kx_a.shape[0], 2, S, S), dtype=np.float64)
+    out[:, 0] = vx[:, None, None]
+    out[:, 1] = vy[:, None, None]
+    return out
+
+
+def embed_band_constant(bands, size=32, verbose=False):
+    """
+    Paper constant-field band encoding (§band_wavevector_encoding):
+
+        I_b = (b / 10) * 1_{S×S},   b ∈ {1,…,6}  ⇒  values in {0.1,…,0.6}.
+
+    Parameters
+    ----------
+    bands : array_like
+        Band indices (typically 1..6).
+    size : int
+        Patch side length S.
+    verbose : bool
+        If True, print input shape.
+
+    Returns
+    -------
+    ndarray
+        Shape ``(N, size, size)``.
+    """
+    b = np.atleast_1d(np.asarray(bands, dtype=np.float64))
+    if verbose:
+        print("bands shape:", b.shape)
+    S = int(size)
+    vals = (b / 10.0).astype(np.float64)
+    return np.broadcast_to(vals[:, None, None], (b.shape[0], S, S)).copy()
+
+
+def embed_band_sinusoidal(bands, size=32, verbose=False):
+    """
+    Official / paper spatial-sinusoidal band encoding (§band_wavevector_encoding):
+
+        I_b(x, y) = (1/2) [ cos(2 π b x / S) + cos(2 π b y / S) ],
+        (x, y) ∈ {0, …, S−1},  b ∈ {1, …, 6}.
+
+    Parameters
+    ----------
+    bands : array_like
+        Band indices (typically 1..6).
+    size : int
+        Patch side length S.
+    verbose : bool
+        If True, print input shape.
+
+    Returns
+    -------
+    ndarray
+        Shape ``(N, size, size)`` for length-N ``bands``.
+    """
+    b = np.atleast_1d(np.asarray(bands, dtype=np.float64))
+    if verbose:
+        print("bands shape:", b.shape)
+
+    S = int(size)
+    x = np.arange(S, dtype=np.float64)
+    y = np.arange(S, dtype=np.float64)
+    X, Y = np.meshgrid(x, y, indexing="xy")
+    return 0.5 * (
+        np.cos(2.0 * np.pi * b[:, None, None] * X / S)
+        + np.cos(2.0 * np.pi * b[:, None, None] * Y / S)
+    )
+
+
 def const_to_spatial(test_band, design_res, plot_result=True, scaling_factor=1.0):
-    x = np.linspace(-1 / 2, 1 / 2, design_res)
-    y = np.linspace(-1 / 2, 1 / 2, design_res)
-    X, Y = np.meshgrid(x, y)
-    constant_array = scaling_factor * np.sin(test_band * np.pi * X) * np.sin(test_band * np.pi * Y)
+    """
+    Official band sinusoid for a single band index (see ``embed_band_sinusoidal``).
+
+        I_b = (scaling_factor) * (1/2) [ cos(2 π b x / S) + cos(2 π b y / S) ].
+
+    Returns
+    -------
+    constant_array : ndarray
+        Shape ``(S, S)``.
+    magnitude_spectrum : ndarray
+        Shifted ``|FFT2|`` of ``constant_array``.
+    """
+    constant_array = scaling_factor * embed_band_sinusoidal(
+        test_band, size=int(design_res), verbose=False
+    )[0]
     fft_result = np.fft.fft2(constant_array)
     fft_result_shifted = np.fft.fftshift(fft_result)
     magnitude_spectrum = np.abs(fft_result_shifted)
@@ -775,13 +1000,13 @@ def const_to_spatial(test_band, design_res, plot_result=True, scaling_factor=1.0
         plt.subplot(1, 2, 1)
         plt.imshow(constant_array, cmap=DEFAULT_FIELD_CMAP)
         plt.colorbar(label="Magnitude")
-        plt.title(f"Spatial Representation of {test_band}")
-        plt.xlabel("x")
-        plt.ylabel("y")
+        plt.title(f"Spatial Representation of band {test_band}")
+        plt.xlabel("x (pixels)")
+        plt.ylabel("y (pixels)")
         plt.subplot(1, 2, 2)
         plt.imshow(magnitude_spectrum, cmap=DEFAULT_FIELD_CMAP)
         plt.colorbar(label="Magnitude")
-        plt.title(f"2D FFT Magnitude Spectrum of {test_band}")
+        plt.title(f"2D FFT Magnitude Spectrum of band {test_band}")
         plt.xlabel("Frequency X")
         plt.ylabel("Frequency Y")
         plt.tight_layout()
@@ -790,6 +1015,7 @@ def const_to_spatial(test_band, design_res, plot_result=True, scaling_factor=1.0
 
 
 def embed_integer_wavelet(c, size=32, freq_range=2.0):
+    """Gabor wavelet band encoding used for ``band_fft_full.pt`` (not the paper sinusoid)."""
     x = np.linspace(-1, 1, size)
     y = np.linspace(-1, 1, size)
     X, Y = np.meshgrid(x, y)
@@ -1145,3 +1371,59 @@ def extract_eigenfrequency_from_wavelet(
     ln_s = np.clip(ln_s, ln_min, ln_max)
     s = np.exp(ln_s)
     return s, k_extracted, theta_extracted
+
+
+# Canonical on-disk filenames for encoded eigenfrequency channel-0 tensors.
+# ``fft`` is the wavelet (Gabor) encoding produced by :func:`embed_eigenfrequency_wavelet`.
+EIGENFREQUENCY_ENCODING_FILES = {
+    "uniform": "eigenfrequency_uniform_full.pt",
+    "fft": "eigenfrequency_fft_full.pt",
+}
+
+
+def resolve_eigenfrequency_encoding(encoding: str) -> str:
+    """Normalize and validate ``uniform`` / ``fft`` eigenfrequency encoding names."""
+    key = str(encoding).strip().lower()
+    if key not in EIGENFREQUENCY_ENCODING_FILES:
+        raise ValueError(
+            f"Unknown eigenfrequency encoding {encoding!r}; "
+            f"expected one of {sorted(EIGENFREQUENCY_ENCODING_FILES)}"
+        )
+    return key
+
+
+def eigenfrequency_full_filename(encoding: str = "uniform") -> str:
+    """Return ``eigenfrequency_{uniform|fft}_full.pt`` for the given encoding."""
+    return EIGENFREQUENCY_ENCODING_FILES[resolve_eigenfrequency_encoding(encoding)]
+
+
+def decode_eigenfrequency_patch(
+    image,
+    encoding: str = "uniform",
+    *,
+    use_patch_mean_for_uniform: bool = False,
+    size: int | None = None,
+):
+    """
+    Decode a single ``(H, W)`` eigenfrequency patch to a scalar frequency.
+
+    Uses the single canonical decoder for each encoding:
+
+    - ``uniform`` → :func:`decode_eigenfrequency_uniform` (corner pixel), or
+      patch-mean ``exp(100 * mean(patch))`` when ``use_patch_mean_for_uniform``
+      (preferred for noisy model predictions).
+    - ``fft`` → :func:`extract_eigenfrequency_from_wavelet` (wavelet / Gabor decode).
+    """
+    encoding = resolve_eigenfrequency_encoding(encoding)
+    arr = np.asarray(image)
+    if arr.ndim != 2:
+        raise ValueError(f"Expected a 2-D patch (H, W); got shape {arr.shape}.")
+    if encoding == "uniform":
+        if use_patch_mean_for_uniform:
+            pixel = float(np.mean(arr.astype(np.float64, copy=False)))
+            return float(np.exp(100.0 * pixel))
+        decoded = decode_eigenfrequency_uniform(arr)
+        return float(np.asarray(decoded, dtype=np.float64).reshape(()))
+    h = int(size) if size is not None else int(arr.shape[0])
+    s, _, _ = extract_eigenfrequency_from_wavelet(arr.astype(np.float64, copy=False), size=h)
+    return float(s)

@@ -82,7 +82,7 @@ Generates `--n-struct` designs, solves dispersion, and writes the raw `_pt` bund
 
 - Prepends `2d-dispersion-py/` to `sys.path` and imports the FEM/design utilities.
 - Fixed physics/discretization contract: `N_ele=1`, `N_pix=32`, `N_wv=[25,13]` (→ **325** wavevectors), `N_eig=6` bands, vectorized assembly (`isUseImprovement=True`), `isSaveEigenvectors=True`.
-- Per structure: design synthesis (`get_design2` → `get_prop` → `kernel_prop`, `p4mm` symmetry) → material mapping (`apply_steel_rubber_paradigm`, optional `--binarize`) → `dispersion_with_matrix_save_opt` (assemble `K`,`M`; per-wavevector reduced eigensolve; `f = sqrt(max(real(λ),0))/(2π)`).
+- Per structure: design synthesis (`get_design2` → `get_prop` → `kernel_prop`, `p4mm` symmetry) → material mapping (`apply_steel_polymer_paradigm`, optional `--binarize`) → `dispersion_with_matrix_save_opt` (assemble `K`,`M`; per-wavevector reduced eigensolve; `f = sqrt(max(real(λ),0))/(2π)`).
 - A shared transformation-matrix cache `precomputed_T_matrices.pkl` (repo root) is reused across structures/batches with the same wavevector grid.
 - Determinism: `design_number = struct_idx + rng_seed_offset`, giving non-overlapping seed windows across batches.
 

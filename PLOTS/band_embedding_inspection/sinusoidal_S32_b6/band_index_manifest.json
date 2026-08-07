@@ -1,0 +1,40 @@
+{
+  "embed_config": {
+    "encoding": "sinusoidal",
+    "size": 32,
+    "bands": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6
+    ]
+  },
+  "bands": [
+    {
+      "index": 0,
+      "band": 1
+    },
+    {
+      "index": 1,
+      "band": 2
+    },
+    {
+      "index": 2,
+      "band": 3
+    },
+    {
+      "index": 3,
+      "band": 4
+    },
+    {
+      "index": 4,
+      "band": 5
+    },
+    {
+      "index": 5,
+      "band": 6
+    }
+  ]
+}

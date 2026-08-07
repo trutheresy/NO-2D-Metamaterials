@@ -1,0 +1,83 @@
+\begin{thebibliography}{10}
+\expandafter\ifx\csname url\endcsname\relax
+  \def\url#1{\texttt{#1}}\fi
+\expandafter\ifx\csname urlprefix\endcsname\relax\def\urlprefix{URL }\fi
+\expandafter\ifx\csname href\endcsname\relax
+  \def\href#1#2{#2} \def\path#1{#1}\fi
+
+\bibitem{cummer2016controlling}
+S.~A. Cummer, J.~Christensen, A.~Al{\`u}, Controlling sound with acoustic metamaterials, Nature Reviews Materials 1~(3) (2016) 1--13.
+
+\bibitem{liao2021acoustic}
+G.~Liao, C.~Luan, Z.~Wang, J.~Liu, X.~Yao, J.~Fu, Acoustic metamaterials: A review of theories, structures, fabrication approaches, and applications, Advanced Materials Technologies 6~(5) (2021) 2000787.
+
+\bibitem{kushwaha1993acoustic}
+M.~S. Kushwaha, P.~Halevi, L.~Dobrzynski, B.~Djafari-Rouhani, Acoustic band structure of periodic elastic composites, Physical Review Letters 71~(13) (1993) 2022--2025.
+
+\bibitem{hussein2014dynamics}
+M.~I. Hussein, M.~J. Leamy, M.~Ruzzene, Dynamics of phononic materials and structures: Historical origins, recent progress, and future outlook, Applied Mechanics Reviews 66~(4) (2014) 040802.
+
+\bibitem{Zhang2024uq}
+H.~Zhang, R.~Karimi~Mahabadi, C.~Rudin, J.~Guilleminot, L.~C. Brinson, Uncertainty quantification of acoustic metamaterial bandgaps with stochastic material properties and geometric defects, Computers \& Structures 305 (2024) 107511.
+
+\bibitem{kovachki2023neural}
+N.~Kovachki, Z.~Li, B.~Liu, K.~Azizzadenesheli, K.~Bhattacharya, A.~Stuart, A.~Anandkumar, Neural operator: Learning maps between function spaces with applications to {PDEs}, Journal of Machine Learning Research 24~(89) (2023) 1--97.
+
+\bibitem{lu2021deeponet}
+L.~Lu, P.~Jin, G.~Pang, Z.~Zhang, G.~E. Karniadakis, Learning nonlinear operators via {DeepONet} based on the universal approximation theorem of operators, Nature Machine Intelligence 3~(3) (2021) 218--229.
+
+\bibitem{li2021fno}
+Z.~Li, N.~Kovachki, K.~Azizzadenesheli, B.~Liu, K.~Bhattacharya, A.~Stuart, A.~Anandkumar, Fourier neural operator for parametric partial differential equations, in: International Conference on Learning Representations, 2021.
+
+\bibitem{wang2021pidon}
+S.~Wang, H.~Wang, P.~Perdikaris, Learning the solution operator of parametric partial differential equations with physics-informed {DeepONet}s, Science Advances 7~(40) (2021) eabi8605.
+
+\bibitem{liu2019dispersion}
+C.-X. Liu, G.-L. Yu, Predicting the dispersion relations of one-dimensional phononic crystals by neural networks, Scientific Reports 9 (2019) 15322.
+
+\bibitem{finol2019eigenvalue}
+D.~Finol, Y.~Lu, V.~Mahadevan, A.~Srivastava, Deep convolutional neural networks for eigenvalue problems in mechanics, International Journal for Numerical Methods in Engineering 118~(5) (2019) 258--275.
+
+\bibitem{Ogren2024gpr}
+A.~C. Ogren, B.~T. Feng, K.~L. Bouman, C.~Daraio, Gaussian process regression as a surrogate model for the computation of dispersion relations, Computer Methods in Applied Mechanics and Engineering 420 (2024) 116661.
+
+\bibitem{wagner2024neural}
+J.~E. Wagner, S.~Burbulla, M.~de~Benito~Delgado, J.~D. Schmid, Neural operators as fast surrogate models for the transmission loss of parameterized sonic crystals, in: NeurIPS 2024 Workshop on Data-driven and Differentiable Simulations, Surrogates, and Solvers, 2024.
+
+\bibitem{liu2026hybridfno}
+C.~Liu, S.~Ning, X.~Li, Y.~Hong, T.~Qi, Y.~Kai, Mesh-independent band structure prediction of phononic crystals via a wave-vector explicit hybrid {Fourier} neural operator, Computers \& Structures (2026).
+
+\bibitem{liu2023deeplearning}
+C.-X. Liu, G.-L. Yu, Deep learning for the design of phononic crystals and elastic metamaterials, Journal of Computational Design and Engineering 10~(2) (2023) 602--614.
+
+\bibitem{jin2022intelligent}
+Y.~Jin, L.~He, Z.~Wen, B.~Mortazavi, H.~Guo, D.~Torrent, B.~Djafari-Rouhani, T.~Rabczuk, X.~Zhuang, Y.~Li, Intelligent on-demand design of phononic metamaterials, Nanophotonics 11~(3) (2022) 439--460.
+
+\bibitem{muhammad2022ml}
+Muhammad, J.~Kennedy, C.~W. Lim, Machine learning and deep learning in phononic crystals and metamaterials -- a review, Materials Today Communications 33 (2022) 104606.
+
+\bibitem{CHEN2022101895}
+Z.~Chen, A.~Ogren, C.~Daraio, L.~C. Brinson, C.~Rudin, How to see hidden patterns in metamaterials with interpretable machine learning, Extreme Mechanics Letters 57 (2022) 101895.
+
+\bibitem{Bastawrous2025}
+M.~V. Bastawrous, Z.~Chen, A.~C. Ogren, C.~Daraio, C.~Rudin, L.~C. Brinson, A multiscale design method using interpretable machine learning for phononic materials with closely interacting scales, Computer Methods in Applied Mechanics and Engineering 440 (2025) 117833.
+
+\bibitem{qin2024spectralfno}
+S.~Qin, F.~Lyu, W.~Peng, T.~Geng, J.~Pang, Y.~Wang, C.~Deng, X.~Liu, Toward a better understanding of {Fourier} neural operators from a spectral perspective, arXiv preprint arXiv:2404.07200 (2024).
+
+\bibitem{gabor1946theory}
+D.~Gabor, Theory of communication, Journal of the Institution of Electrical Engineers - Part III: Radio and Communication Engineering 93~(26) (1946) 429--441.
+
+\bibitem{loshchilov2019adamw}
+I.~Loshchilov, F.~Hutter, Decoupled weight decay regularization, in: International Conference on Learning Representations, 2019.
+
+\bibitem{kingma2015adam}
+D.~P. Kingma, J.~Ba, Adam: A method for stochastic optimization, in: International Conference on Learning Representations, 2015.
+
+\bibitem{rahaman2019spectral}
+N.~Rahaman, A.~Baratin, D.~Arpit, F.~Draxler, M.~Lin, F.~Hamprecht, Y.~Bengio, A.~Courville, On the spectral bias of neural networks, in: Proceedings of the 36th International Conference on Machine Learning, Vol.~97 of Proceedings of Machine Learning Research, 2019, pp. 5301--5310.
+
+\bibitem{cavallazzi2026whno}
+G.~M. Cavallazzi, M.~P{\'e}rez~Cuadrado, A.~Pinelli, {Walsh}--{Hadamard} neural operators for solving {PDEs} with discontinuous coefficients, Journal of Computational PhysicsAlso available as arXiv:2511.07347 (2026).
+
+\end{thebibliography}

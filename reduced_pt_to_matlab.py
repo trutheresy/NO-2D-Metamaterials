@@ -41,11 +41,11 @@ from system_matrices import get_transformation_matrix
 from scipy.interpolate import interp1d
 
 
-def apply_steel_rubber_paradigm(design, const):
+def apply_steel_polymer_paradigm(design, const):
     """
-    Python implementation of MATLAB's apply_steel_rubber_paradigm function.
+    Python implementation of MATLAB's apply_steel_polymer_paradigm function.
     
-    This function takes a single-channel design array and applies the steel-rubber
+    This function takes a single-channel design array and applies the steel-polymer
     paradigm to create a 3-channel design with proper material property mapping.
     
     Parameters
@@ -63,7 +63,7 @@ def apply_steel_rubber_paradigm(design, const):
     design_out : ndarray
         3-channel design array (N_pix, N_pix, 3)
     """
-    # Hardcoded material property values from apply_steel_rubber_paradigm.m
+    # Hardcoded material property values from apply_steel_polymer_paradigm.m
     design_in_polymer = 0.0
     design_in_steel = 1.0
     
@@ -391,8 +391,8 @@ def convert_reduced_pt_to_matlab(pt_input_path, matlab_output_path, use_predicti
         # Get design for this structure (single channel, values in [0, 1])
         design_param = geometries_np[struct_idx]  # (design_res, design_res)
         
-        # Apply steel-rubber paradigm to get 3-channel design
-        # This matches MATLAB's apply_steel_rubber_paradigm function
+        # Apply steel-polymer paradigm to get 3-channel design
+        # This matches MATLAB's apply_steel_polymer_paradigm function
         const_for_paradigm = {
             'E_min': E_min,
             'E_max': E_max,
@@ -401,7 +401,7 @@ def convert_reduced_pt_to_matlab(pt_input_path, matlab_output_path, use_predicti
             'poisson_min': nu_min,
             'poisson_max': nu_max
         }
-        design_3ch = apply_steel_rubber_paradigm(design_param.astype(np.float64), const_for_paradigm)
+        design_3ch = apply_steel_polymer_paradigm(design_param.astype(np.float64), const_for_paradigm)
         
         # Create const dict for matrix computation
         const_for_km = {
@@ -505,8 +505,8 @@ def convert_reduced_pt_to_matlab(pt_input_path, matlab_output_path, use_predicti
     # Step 5: Reconstruct designs with all panes
     print("\nStep 5: Reconstructing designs with all panes")
     
-    # Apply steel-rubber paradigm to reconstruct 3-channel designs
-    # This matches MATLAB's apply_steel_rubber_paradigm function
+    # Apply steel-polymer paradigm to reconstruct 3-channel designs
+    # This matches MATLAB's apply_steel_polymer_paradigm function
     n_panes = 3
     designs_full = np.zeros((n_designs, n_panes, design_res, design_res), dtype=np.float64)
     
@@ -521,7 +521,7 @@ def convert_reduced_pt_to_matlab(pt_input_path, matlab_output_path, use_predicti
     
     for struct_idx in range(n_designs):
         design_param = geometries_np[struct_idx].astype(np.float64)  # (design_res, design_res)
-        design_3ch = apply_steel_rubber_paradigm(design_param, const_for_paradigm)  # (design_res, design_res, 3)
+        design_3ch = apply_steel_polymer_paradigm(design_param, const_for_paradigm)  # (design_res, design_res, 3)
         # Transpose to match MATLAB format: (n_panes, design_res, design_res)
         designs_full[struct_idx, :, :, :] = np.transpose(design_3ch, (2, 0, 1))
     
@@ -583,7 +583,7 @@ def convert_reduced_pt_to_matlab(pt_input_path, matlab_output_path, use_predicti
         'isUseImprovement': np.array([[1.0]], dtype=np.float64),
         'isUseParallel': np.array([[1.0]], dtype=np.float64),
         'isUseSecondImprovement': np.array([[0.0]], dtype=np.float64),
-        'design': np.transpose(apply_steel_rubber_paradigm(
+        'design': np.transpose(apply_steel_polymer_paradigm(
             geometries_np[0].astype(np.float64),
             {
                 'E_min': E_min,

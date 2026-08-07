@@ -31,7 +31,7 @@ This document lists all the new Python files created to match MATLAB file names 
 - ✅ `get_design2.py` (already existed)
 - ✅ `design_parameters.py` (already existed)
 - ✅ `convert_design.py` (needs to be extracted from design_conversion.py)
-- ✅ `apply_steel_rubber_paradigm.py` (needs to be extracted from design_conversion.py)
+- ✅ `apply_steel_polymer_paradigm.py` (needs to be extracted from design_conversion.py)
 
 ### Kernel Functions
 - ✅ `matern52_kernel.py` or `matern52.py` (needs to be extracted from kernels.py)

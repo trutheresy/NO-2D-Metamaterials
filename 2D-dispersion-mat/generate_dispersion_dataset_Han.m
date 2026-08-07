@@ -105,7 +105,7 @@ for struct_idx = 1:N_struct % THIS MUST NOT BE PARFOR
     design_params = design_params.prepare();
     const.design = get_design2(design_params);
     const.design = convert_design(const.design,'linear',const.design_scale,const.E_min,const.E_max,const.rho_min,const.rho_max);
-    const.design = apply_steel_rubber_paradigm(const.design,const);
+    const.design = apply_steel_polymer_paradigm(const.design,const);
     if binarize
         const.design = round(const.design); % Binarize to 0 or 1
     end

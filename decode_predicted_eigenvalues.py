@@ -1,23 +1,25 @@
 """
-Decode a model's predicted eigenfrequency channel (uniform encoding) back into
-scalar eigenvalues laid out like ``eigenvalue_data_full.pt``.
+Decode a model's predicted eigenfrequency channel back into scalar eigenvalues
+laid out like ``eigenvalue_data_full.pt``.
 
 Input  : an INFERENCE run folder containing ``predictions_*.pt`` of shape
          ``(n_geom * n_waveforms * n_bands, out_channels, 32, 32)`` (the dense
          output of ``run_model_inference.py``; flat index
          ``idx = geom*(n_waveforms*n_bands) + wave*n_bands + band``).
-         Channel 0 holds the eigenfrequency in *uniform encoding* (a 32x32 patch
-         whose value is ``ln(s)/100``).
+         Channel 0 holds the eigenfrequency in either *uniform* encoding
+         (``ln(s)/100`` constant patch) or *fft* / wavelet encoding
+         (:func:`NO_utilities.embed_eigenfrequency_wavelet`).
 
 Output : ``eigenvalues_predictions_full.pt`` written to the output folder, a tensor
          of shape ``(n_geom, n_waveforms, n_bands)`` of scalar predicted
          eigenvalues -- the same layout (N_struct, N_wv, N_eig) that
          ``eigenvalue_data_full.pt`` uses, so it can drive the dispersion plotters.
 
-Decoding is patch-mean: ``s = exp(100 * mean(patch))``. The model's float16 output
-patches are only approximately uniform; averaging all 32x32 pixels suppresses the
-spatial noise that a single-pixel read would pass through (and removes the
-band-dependent error a corner-pixel decode introduces).
+Decoding (single formula per encoding, from :mod:`NO_utilities`):
+
+- ``uniform``: patch-mean ``s = exp(100 * mean(patch))`` (robust to spatial noise
+  in float16 model outputs; see ``use_patch_mean_for_uniform``).
+- ``fft``: :func:`NO_utilities.extract_eigenfrequency_from_wavelet`.
 
 The (n_geom, n_waveforms) grid is read from a reference dataset's
 ``eigenvalue_data_full.pt`` (auto-resolved under the output folder, or via
@@ -33,6 +35,7 @@ import numpy as np
 import torch
 from tqdm import tqdm
 
+import NO_utilities as NU
 from output_layout import resolve_script_output_dir
 
 
@@ -63,15 +66,30 @@ def decode_channel(
     predictions: torch.Tensor,
     channel: int,
     batch_size: int,
+    encoding: str,
 ) -> np.ndarray:
-    """Decode the encoded eigenfrequency channel (patch mean) into a flat (N,) float32 array."""
+    """Decode the encoded eigenfrequency channel into a flat (N,) float32 array."""
+    encoding = NU.resolve_eigenfrequency_encoding(encoding)
     n = predictions.shape[0]
     out = np.empty(n, dtype=np.float32)
-    for start in tqdm(range(0, n, batch_size), desc="Decoding", unit="batch"):
-        end = min(start + batch_size, n)
-        patch = predictions[start:end, channel]  # (B, 32, 32) float16
-        pixel_mean = patch.to(torch.float32).mean(dim=(1, 2)).numpy()
-        out[start:end] = np.exp(100.0 * pixel_mean, dtype=np.float32)
+
+    if encoding == "uniform":
+        # Vectorized patch-mean decode (prediction-robust uniform formula).
+        for start in tqdm(range(0, n, batch_size), desc="Decoding uniform", unit="batch"):
+            end = min(start + batch_size, n)
+            patch = predictions[start:end, channel]  # (B, 32, 32)
+            pixel_mean = patch.to(torch.float32).mean(dim=(1, 2)).numpy()
+            out[start:end] = np.exp(100.0 * pixel_mean, dtype=np.float32)
+        return out
+
+    # fft / wavelet: one FFT-centroid decode per sample (canonical extract_*).
+    for i in tqdm(range(n), desc="Decoding fft/wavelet", unit="sample"):
+        patch = predictions[i, channel].to(torch.float32).numpy()
+        out[i] = NU.decode_eigenfrequency_patch(
+            patch,
+            encoding="fft",
+            size=int(patch.shape[0]),
+        )
     return out
 
 
@@ -86,11 +104,22 @@ def main() -> None:
     p.add_argument("--reference-pt-dir", default="", help="Folder with eigenvalue_data_full.pt for the (n_geom, n_wv) grid. Default: auto-resolve under --output-dir.")
     p.add_argument("--out-name", default="eigenvalues_predictions_full.pt", help="Output filename.")
     p.add_argument("--channel", type=int, default=0, help="Prediction channel holding the encoded eigenfrequency (default: 0).")
+    p.add_argument(
+        "--eigen-encoding",
+        choices=tuple(NU.EIGENFREQUENCY_ENCODING_FILES),
+        default="uniform",
+        help=(
+            "Channel-0 encoding used by the model: uniform (ln(s)/100 patch) or "
+            "fft (wavelet / Gabor). Default: uniform."
+        ),
+    )
     p.add_argument("--save-dtype", choices=("float32", "float16"), default="float32",
                    help="Output tensor dtype (default: float32).")
-    p.add_argument("--batch-size", type=int, default=65536)
+    p.add_argument("--batch-size", type=int, default=65536,
+                   help="Batch size for uniform decode (ignored for fft).")
     args = p.parse_args()
 
+    encoding = NU.resolve_eigenfrequency_encoding(args.eigen_encoding)
     input_dir = Path(args.input_dir)
     output_dir = resolve_script_output_dir(
         explicit=args.output_dir or None,
@@ -130,9 +159,9 @@ def main() -> None:
     print(f"  derived n_bands   : {n_bands}  (== predictions / (n_geom*n_waveforms))")
     if n_bands != n_eig_ref:
         print(f"  note: predicted bands ({n_bands}) != reference eigenvalue bands ({n_eig_ref}).")
-    print(f"  decode            : patch mean (channel {args.channel})")
+    print(f"  decode            : {encoding} (channel {args.channel})")
 
-    decoded_flat = decode_channel(predictions, args.channel, args.batch_size)
+    decoded_flat = decode_channel(predictions, args.channel, args.batch_size, encoding)
     decoded = torch.from_numpy(decoded_flat).reshape(n_geom, n_wv, n_bands)
 
     dtype = {"float32": torch.float32, "float16": torch.float16}[args.save_dtype]

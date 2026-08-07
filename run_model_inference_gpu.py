@@ -1,8 +1,13 @@
 """
 GPU inference: run a trained FNO on a dataset and save dense predictions.
 
-Same I/O contract as the original run_model_inference.py (I3O1 / I3O4 / I3O5).
+Same I/O contract as the original run_model_inference.py (I3O1 / I3O4 / I3O5 / I4O5).
 Uses CUDA by default; batches are assembled on GPU with waveforms/bands resident on device.
+
+Wavevector/band input encoding is selected with ``--input-encoding``
+(``wavelet`` | ``sinusoidal`` | ``uniform``/``constant`` | ``auto``).
+``auto`` reads ``input_encoding`` from the checkpoint's ``resolved_config.json``,
+else defaults to wavelet.
 
 For CPU / many-core RAM-resident inference use run_model_inference_cpu.py instead.
 """
@@ -42,6 +47,7 @@ def run_inference_gpu(
     device: torch.device,
     batch_size: int,
     out_channels: int,
+    in_channels: int,
     pin_memory: bool,
 ) -> torch.Tensor:
     model.eval()
@@ -51,7 +57,7 @@ def run_inference_gpu(
     total_samples = n_geometries * n_waveforms * n_bands
     print(f"Running GPU inference on {total_samples} samples...")
     print(f"  - {n_geometries} geometries, {n_waveforms} waveforms, {n_bands} bands")
-    print(f"  - batch_size={batch_size}, pin_memory={pin_memory}")
+    print(f"  - in_channels={in_channels}, batch_size={batch_size}, pin_memory={pin_memory}")
 
     output_dtype = torch.float16
     outputs = torch.empty((total_samples, out_channels, 32, 32), dtype=output_dtype)
@@ -59,7 +65,7 @@ def run_inference_gpu(
     use_non_blocking = device.type == "cuda" and pin_memory
     waveforms_device = waveforms.to(device, non_blocking=use_non_blocking).float()
     band_ffts_device = band_ffts.to(device, non_blocking=use_non_blocking).float()
-    batch_tensor = torch.empty((batch_size, 3, 32, 32), dtype=torch.float32, device=device)
+    batch_tensor = torch.empty((batch_size, in_channels, 32, 32), dtype=torch.float32, device=device)
     batch_indices = [0] * batch_size
     batch_idx = 0
     sample_count = 0
@@ -69,9 +75,14 @@ def run_inference_gpu(
             geometry_device = geometries[geom_idx].to(device, non_blocking=use_non_blocking).float()
             for wave_idx in range(n_waveforms):
                 for band_idx in range(n_bands):
-                    batch_tensor[batch_idx, 0, :, :] = geometry_device
-                    batch_tensor[batch_idx, 1, :, :] = waveforms_device[wave_idx]
-                    batch_tensor[batch_idx, 2, :, :] = band_ffts_device[band_idx]
+                    mic.fill_input_row(
+                        batch_tensor,
+                        batch_idx,
+                        geometry_device,
+                        waveforms_device[wave_idx],
+                        band_ffts_device[band_idx],
+                        in_channels,
+                    )
                     batch_indices[batch_idx] = mic.compute_output_index(
                         geom_idx, wave_idx, band_idx, n_waveforms, n_bands
                     )
@@ -135,7 +146,17 @@ def parse_args() -> argparse.Namespace:
         "--case",
         type=str,
         default="auto",
-        choices=["auto", "I3O1", "I3O4", "I3O5"],
+        choices=["auto", "I3O1", "I3O4", "I3O5", "I4O5"],
+    )
+    p.add_argument(
+        "--input-encoding",
+        type=str,
+        default="auto",
+        choices=list(mic.INPUT_ENCODING_CHOICES),
+        help=(
+            "Wavevector/band encoding tensors to load: wavelet, sinusoidal, "
+            "uniform/constant, or auto (from resolved_config.json; default wavelet)."
+        ),
     )
     p.add_argument("--geometries", nargs="+", type=int, default=None)
     p.add_argument("--geometry-seed", type=int, default=0)
@@ -150,18 +171,36 @@ def main() -> None:
     dataset_paths = mic.resolve_dataset_paths(args.input_dataset_path, args.dataset_structure)
     print(f"Found {len(dataset_paths)} dataset(s)")
 
+    run_dir = os.path.dirname(os.path.abspath(args.model_path))
+    input_encoding = mic.resolve_input_encoding(args.input_encoding, run_dir)
+    in_channels = mic.input_encoding_in_channels(input_encoding)
+    print(f"Input encoding: {input_encoding} (in_channels={in_channels})")
+
     state_dict = mic.normalize_fno_state_dict(mic.load_raw_state_dict(args.model_path, map_location="cpu"))
     if args.case == "auto":
-        case, out_channels = mic.infer_case_from_state_dict(state_dict)
+        _, out_channels = mic.infer_case_from_state_dict(state_dict)
+        case = mic.io_case_label(in_channels, out_channels)
         print(f"Auto-inferred I/O case: {case} (out_channels={out_channels})")
     else:
         case = args.case
         out_channels = mic.CASE_OUT_CHANNELS[case]
-    channel_labels = mic.CASE_CHANNEL_LABELS[case]
+        # Keep explicit I3*/I4* consistent with encoding when possible.
+        expected = mic.io_case_label(in_channels, out_channels)
+        if case != expected and case.startswith("I") and "O" in case:
+            print(
+                f"Warning: --case {case} differs from encoding-derived {expected}; "
+                f"using out_channels={out_channels} with in_channels={in_channels}."
+            )
+            case = expected
+    channel_labels = mic.channel_labels_for_out(out_channels)
     del state_dict
 
-    run_dir = os.path.dirname(os.path.abspath(args.model_path))
     hp = mic.hparams_from_resolved_config(run_dir)
+    if hp.get("in_channels") is not None and int(hp["in_channels"]) != in_channels:
+        print(
+            f"Warning: resolved_config in_channels={hp['in_channels']} != "
+            f"encoding in_channels={in_channels}."
+        )
     num_geometries_per_dataset = mic.infer_num_geometries_per_dataset(dataset_paths)
     if hp.get("hidden_channels") is not None and hp.get("layers") is not None:
         model_hidden = int(hp["hidden_channels"])
@@ -169,13 +208,17 @@ def main() -> None:
         arch_source = "resolved_config.json"
     else:
         state_dict = mic.normalize_fno_state_dict(mic.load_raw_state_dict(args.model_path, map_location="cpu"))
-        model_hidden, model_layers = mic.infer_model_architecture(state_dict, out_channels=out_channels)
+        model_hidden, model_layers = mic.infer_model_architecture(
+            state_dict, out_channels=out_channels, in_channels=in_channels
+        )
         arch_source = "state_dict inference"
         del state_dict
     modes_h = int(hp.get("modes_height", 32))
     modes_w = int(hp.get("modes_width", 32))
 
-    geometries, waveforms, band_ffts = mic.load_input_data(dataset_paths, num_geometries_per_dataset)
+    geometries, waveforms, band_ffts, input_encoding, in_channels = mic.load_input_data(
+        dataset_paths, num_geometries_per_dataset, input_encoding=input_encoding
+    )
     total_geometries = int(geometries.shape[0])
     selected_indices, geom_mode = mic.select_geometry_subset(
         args.geometries, args.geometry_seed, total_geometries
@@ -194,6 +237,7 @@ def main() -> None:
         hidden_channels=model_hidden,
         n_layers=model_layers,
         out_channels=out_channels,
+        in_channels=in_channels,
     )
     mic.load_model_weights(model, args.model_path, device)
 
@@ -213,6 +257,7 @@ def main() -> None:
         device,
         batch_size=args.batch_size,
         out_channels=out_channels,
+        in_channels=in_channels,
         pin_memory=bool(args.pin_memory),
     )
 
@@ -235,6 +280,8 @@ def main() -> None:
             "model_path": os.path.abspath(args.model_path),
             "model_name": model_name,
             "case": case,
+            "input_encoding": input_encoding,
+            "in_channels": in_channels,
             "out_channels": out_channels,
             "channel_labels": channel_labels,
             "hidden_channels": model_hidden,
@@ -249,20 +296,20 @@ def main() -> None:
             "dataset_paths": [os.path.abspath(p) for p in dataset_paths],
             "num_geometries_per_dataset": num_geometries_per_dataset,
             "geometry_mode": geom_mode,
-            "total_geometries_available": total_geometries,
-            "geometry_seed": int(args.geometry_seed) if geom_mode == "random" else None,
+            "geometry_seed": args.geometry_seed,
             "selected_indices": selected_indices,
+            "total_geometries_available": total_geometries,
             "n_waveforms": n_waveforms,
             "n_bands": n_bands,
-            "n_geometries_total": int(outputs.shape[0] // combos) if combos else 0,
+            "n_geometries_total": int(geometries.shape[0]),
             "total_samples": int(outputs.shape[0]),
             "output_filename": os.path.basename(output_path),
             "output_shape": tuple(outputs.shape),
             "output_dtype": str(outputs.dtype),
-            "extra_notes": f"cuda_device={args.cuda_device}, pin_memory={args.pin_memory}",
+            "extra_notes": f"pin_memory={bool(args.pin_memory)}; combos_per_geom={combos}",
         },
     )
-    print(f"Done! Outputs saved in: {run_out_dir}")
+    print(f"Done. Predictions: {output_path}")
 
 
 if __name__ == "__main__":

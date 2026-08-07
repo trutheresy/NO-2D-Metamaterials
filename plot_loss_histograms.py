@@ -4,9 +4,10 @@ figure per loss criterion.
 
 Consumes the same inputs as ``per_sample_loss.py``:
 --dataset-pt-dir : dataset *_pt folder with ``displacements_dataset.pt`` (truth) and
-                   ``eigenfrequency_uniform_full.pt`` (layout).
+                   ``eigenfrequency_{uniform|fft}_full.pt`` (layout; see ``--eigen-encoding``).
 --inference      : dense prediction tensor from ``run_model_inference.py`` with shape
                    ``(n_geom*n_wv*n_bands, out_channels, H, W)``.
+--eigen-encoding : ``uniform`` (default) or ``fft`` (wavelet) for channel-0 truth.
 
 By default the per-sample loss uses channels 0–4 with **group weighting**:
 50% eigenfrequency (ch0) + 50% mean of displacement channels 1–4 (not 1/5 per channel).
@@ -52,6 +53,7 @@ from per_sample_loss import (
     resolve_device,
     validate_channels,
 )
+from NO_utilities import EIGENFREQUENCY_ENCODING_FILES, resolve_eigenfrequency_encoding
 from output_layout import resolve_script_output_dir
 from second_peak_analysis import flat_indices
 from wave_mode_filters import degenerate_pivot_wave_indices, shear_mode_wave_indices
@@ -164,6 +166,12 @@ def set_log_decade_ticks(ax, xmin: float, xmax: float) -> None:
 def main() -> None:
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("--dataset-pt-dir", required=True, help="Dataset *_pt folder with displacements_dataset.pt.")
+    p.add_argument(
+        "--eigen-encoding",
+        choices=tuple(EIGENFREQUENCY_ENCODING_FILES),
+        default="uniform",
+        help="Channel-0 truth encoding: uniform or fft (wavelet). Default: uniform.",
+    )
     p.add_argument("--inference", required=True, help="Dense prediction tensor (.pt), shape (n_geom*n_wv*n_bands, C, H, W).")
     p.add_argument("--losses", nargs="+", required=True, help="Loss criteria: mae mse rms nmae nmse nrms (aliases l1, l2, rmse, nl1, nl2, nrmse).")
     p.add_argument("--channels", default="0,1,2,3,4", help="Comma-separated prediction channels (default: 0,1,2,3,4).")
@@ -262,15 +270,17 @@ def main() -> None:
     )
 
     predictions = torch.load(infer_path, map_location="cpu", mmap=True, weights_only=True)
-    n_geom, n_wv, n_bands, field_h, field_w = load_dataset_layout(dataset_pt_dir)
+    eigen_encoding = resolve_eigenfrequency_encoding(args.eigen_encoding)
+    n_geom, n_wv, n_bands, field_h, field_w = load_dataset_layout(dataset_pt_dir, eigen_encoding)
     total = n_geom * n_wv * n_bands
     validate_channels(channels, int(predictions.shape[1]))
     need_displacements = any(ch >= 1 for ch in channels)
     sources = open_scoring_sources(
-        dataset_pt_dir, total, (field_h, field_w), need_displacements
+        dataset_pt_dir, total, (field_h, field_w), need_displacements, eigen_encoding=eigen_encoding
     )
 
     print(f"Dataset   : {dataset_pt_dir}")
+    print(f"Eigen enc : {eigen_encoding}")
     print(f"Inference : {infer_path}  shape={tuple(predictions.shape)} dtype={predictions.dtype}")
     group_note = f"  group={channel_group}" if channel_group else ""
     print(f"Channels  : {channels}   weighting: {channel_weighting}{group_note}   Field: {field_h}x{field_w}   Device: {device}")

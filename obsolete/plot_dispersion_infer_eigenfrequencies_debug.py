@@ -14,7 +14,7 @@ from scipy.sparse import issparse
 
 from plot_dispersion_infer_eigenfrequencies import (
     load_pt_dataset,
-    apply_steel_rubber_paradigm_single_channel,
+    apply_steel_polymer_paradigm_single_channel,
     create_const_dict,
     compute_K_M_matrices,
     reconstruct_frequencies_from_eigenvectors,
@@ -55,7 +55,7 @@ def main(data_dir: str, out_dir: str, n_structs: int = 1) -> None:
 
     for struct_idx in range(n_plot):
         design_param = np.asarray(designs[struct_idx], dtype=np.float16)
-        design_normalized = apply_steel_rubber_paradigm_single_channel(
+        design_normalized = apply_steel_polymer_paradigm_single_channel(
             design_param.astype(np.float32), E_min, E_max, rho_min, rho_max, nu_min, nu_max
         ).astype(np.float16)
         design_for_plot = np.zeros_like(design_normalized, dtype=np.float32)

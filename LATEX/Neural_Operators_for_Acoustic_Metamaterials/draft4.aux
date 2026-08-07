@@ -1,0 +1,256 @@
+\relax 
+\providecommand\hyper@newdestlabel[2]{}
+\providecommand\HyField@AuxAddToFields[1]{}
+\providecommand\HyField@AuxAddToCoFields[2]{}
+\def\@LN@column{1}
+\Newlabel{Mech}{1}
+\Newlabel{Caltech}{2}
+\Newlabel{Comp}{3}
+\def\@LN@column{1}
+\citation{Zhang2024uq,hussein2014dynamics}
+\citation{kovachki2023neural,lu2021deeponet}
+\citation{li2021fno}
+\citation{wang2021pidon}
+\citation{finol2019eigenvalue,hussein2014dynamics}
+\citation{cummer2016controlling,liao2021acoustic}
+\citation{kushwaha1993acoustic,hussein2014dynamics}
+\citation{Zhang2024uq}
+\def\@LN@column{1}
+\@writefile{toc}{\contentsline {section}{\numberline {1}Introduction}{3}{section.1}\protected@file@percent }
+\newlabel{introduction}{{1}{3}{Introduction}{section.1}{}}
+\citation{liu2019dispersion}
+\citation{finol2019eigenvalue}
+\citation{Ogren2024gpr}
+\citation{wagner2024neural}
+\citation{liu2026hybridfno}
+\citation{liu2023deeplearning,jin2022intelligent,muhammad2022ml}
+\citation{CHEN2022101895,Bastawrous2025}
+\def\@LN@column{1}
+\def\@LN@column{1}
+\citation{kovachki2023neural}
+\citation{li2021fno}
+\citation{li2021fno,qin2024spectralfno}
+\def\@LN@column{1}
+\@writefile{toc}{\contentsline {section}{\numberline {2}Methodology}{6}{section.2}\protected@file@percent }
+\newlabel{sec:Methodology}{{2}{6}{Methodology}{section.2}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.1}Fourier Neural Operator}{6}{subsection.2.1}\protected@file@percent }
+\newlabel{ssec:fourier_neural_operator}{{2.1}{6}{Fourier Neural Operator}{subsection.2.1}{}}
+\def\@LN@column{1}
+\def\@LN@column{1}
+\def\@LN@column{1}
+\@writefile{lof}{\contentsline {figure}{\numberline {1}{\ignorespaces The FNO model architecture used in this project. The input data is first expanded according to the hidden-channels parameter, allowing multiple latent features to be represented between Fourier layers. Each Fourier layer is shown in detail in the expanded view. The data passing through a Fourier layer is processed through two learned branches: a pointwise branch, which applies a learned linear transformation in the spatial representation, and a spectral branch, which applies a fast Fourier transform (FFT), multiplies the retained Fourier modes by learned spectral weights, and then applies an inverse FFT. The outputs of both branches, along with a learnable bias term, are summed before passing through a nonlinear activation function. After passing through four Fourier layers, the latent representation is projected from the hidden-channel dimensionality to the final output dimensions.}}{9}{figure.caption.1}\protected@file@percent }
+\providecommand*\caption@xref[2]{\@setref\relax\@undefined{#1}}
+\newlabel{fig:FNO_architecture}{{1}{9}{The FNO model architecture used in this project. The input data is first expanded according to the hidden-channels parameter, allowing multiple latent features to be represented between Fourier layers. Each Fourier layer is shown in detail in the expanded view. The data passing through a Fourier layer is processed through two learned branches: a pointwise branch, which applies a learned linear transformation in the spatial representation, and a spectral branch, which applies a fast Fourier transform (FFT), multiplies the retained Fourier modes by learned spectral weights, and then applies an inverse FFT. The outputs of both branches, along with a learnable bias term, are summed before passing through a nonlinear activation function. After passing through four Fourier layers, the latent representation is projected from the hidden-channel dimensionality to the final output dimensions}{figure.caption.1}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.2}Metamaterial Design Space}{9}{subsection.2.2}\protected@file@percent }
+\newlabel{ssec:metamaterial_design_space}{{2.2}{9}{Metamaterial Design Space}{subsection.2.2}{}}
+\citation{hussein2014dynamics,kushwaha1993acoustic}
+\def\@LN@column{1}
+\@writefile{lot}{\contentsline {table}{\numberline {1}{\ignorespaces Material parameters. The hard material is chosen to be a common steel alloy and the soft material a rubbery polymer.}}{10}{table.caption.2}\protected@file@percent }
+\newlabel{tab:parameter_ranges}{{1}{10}{Material parameters. The hard material is chosen to be a common steel alloy and the soft material a rubbery polymer}{table.caption.2}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {2}{\ignorespaces Example of a continuous geometry (left) and a discrete geometry (right) generated using the above process and parameters.}}{10}{figure.caption.3}\protected@file@percent }
+\newlabel{fig:example_geometries}{{2}{10}{Example of a continuous geometry (left) and a discrete geometry (right) generated using the above process and parameters}{figure.caption.3}{}}
+\def\@LN@column{1}
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.3}Wave Propagation Simulations}{11}{subsection.2.3}\protected@file@percent }
+\newlabel{ssec:wave_propagration_simulations}{{2.3}{11}{Wave Propagation Simulations}{subsection.2.3}{}}
+\newlabel{eqn:eig_PDE}{{6}{11}{Wave Propagation Simulations}{equation.6}{}}
+\newlabel{eqn:reduced_KM}{{7}{11}{Wave Propagation Simulations}{equation.7}{}}
+\def\@LN@column{1}
+\@writefile{lof}{\contentsline {figure}{\numberline {3}{\ignorespaces Flowchart of the FEA data generation method. Green squares represent varying inputs to the process, and orange squares represent computed quantities of the FEA process. Black rounded rectangles represent subroutines of the FEA process. The process starts with inputs of defined densities, stiffnesses, and Poisson ratios for each pixel of a metamaterial unit cell geometry (each a $32 \times 32$ pixel grid of values ranging from 0 to 1), along with a chosen $k_x$ and $k_y$ wavevector representing the stimulus to the metamaterial. A custom optimized FEA solver takes these inputs and produces intermediate matrices $(\mathbf  {K},\mathbf  {M},\mathbf  {T})$, forms the reduced operators $(\mathbf  {K}_r,\mathbf  {M}_r)$, and then solves Eq.~\eqref  {eqn:eig_PDE} for the displacement fields (eigenvectors) and frequencies $\omega $ (eigenvalues) for the given inputs.}}{12}{figure.caption.4}\protected@file@percent }
+\newlabel{fig:FEA_full_process}{{3}{12}{Flowchart of the FEA data generation method. Green squares represent varying inputs to the process, and orange squares represent computed quantities of the FEA process. Black rounded rectangles represent subroutines of the FEA process. The process starts with inputs of defined densities, stiffnesses, and Poisson ratios for each pixel of a metamaterial unit cell geometry (each a $32 \times 32$ pixel grid of values ranging from 0 to 1), along with a chosen $k_x$ and $k_y$ wavevector representing the stimulus to the metamaterial. A custom optimized FEA solver takes these inputs and produces intermediate matrices $(\mathbf {K},\mathbf {M},\mathbf {T})$, forms the reduced operators $(\mathbf {K}_r,\mathbf {M}_r)$, and then solves Eq.~\eqref {eqn:eig_PDE} for the displacement fields (eigenvectors) and frequencies $\omega $ (eigenvalues) for the given inputs}{figure.caption.4}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.4}Input Wavelet Encoding}{12}{subsection.2.4}\protected@file@percent }
+\newlabel{ssec:input_wavelet_encoding}{{2.4}{12}{Input Wavelet Encoding}{subsection.2.4}{}}
+\citation{gabor1946theory}
+\def\@LN@column{1}
+\newlabel{fig:1D_wavelet_encoding_spatial}{{4a}{13}{The wavelet spatial encoding for band integer}{figure.caption.5}{}}
+\newlabel{sub@fig:1D_wavelet_encoding_spatial}{{a}{13}{The wavelet spatial encoding for band integer}{figure.caption.5}{}}
+\newlabel{fig:1D_wavelet_encoding_fft}{{4b}{13}{The FFT of the above wavelet spatial encodings}{figure.caption.5}{}}
+\newlabel{sub@fig:1D_wavelet_encoding_fft}{{b}{13}{The FFT of the above wavelet spatial encodings}{figure.caption.5}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {4}{\ignorespaces The wavelet encoding of the band integer (Fig.~\ref {fig:1D_wavelet_encoding_spatial}) and its FFT (Fig.~\ref {fig:1D_wavelet_encoding_fft}). Each band corresponds to a unique wavelet with representation in both spatial and spectral domains.}}{13}{figure.caption.5}\protected@file@percent }
+\newlabel{fig:1D_wavelet_encoding}{{4}{13}{The wavelet encoding of the band integer (Fig.~\ref {fig:1D_wavelet_encoding_spatial}) and its FFT (Fig.~\ref {fig:1D_wavelet_encoding_fft}). Each band corresponds to a unique wavelet with representation in both spatial and spectral domains}{figure.caption.5}{}}
+\citation{gabor1946theory}
+\def\@LN@column{1}
+\newlabel{fig:2D_wavelet_encoding_spatial}{{5a}{14}{The wavelet spatial encoding for $x$ and $y$ wavevectors}{figure.caption.6}{}}
+\newlabel{sub@fig:2D_wavelet_encoding_spatial}{{a}{14}{The wavelet spatial encoding for $x$ and $y$ wavevectors}{figure.caption.6}{}}
+\newlabel{fig:2D_wavelet_encoding_fft}{{5b}{14}{The FFT of the above wavelet spatial encodings}{figure.caption.6}{}}
+\newlabel{sub@fig:2D_wavelet_encoding_fft}{{b}{14}{The FFT of the above wavelet spatial encodings}{figure.caption.6}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {5}{\ignorespaces The wavelet encoding of the $x$ and $y$ wavevectors (Fig.~\ref {fig:2D_wavelet_encoding_spatial}) and its FFT (Fig.~\ref {fig:2D_wavelet_encoding_fft}). The physical wavevectors are shown in the subplot titles. For each $(k_x,k_y)$ pair there is a unique mapping in both the spatial and spectral domains.}}{14}{figure.caption.6}\protected@file@percent }
+\newlabel{fig:2D_wavelet_encoding}{{5}{14}{The wavelet encoding of the $x$ and $y$ wavevectors (Fig.~\ref {fig:2D_wavelet_encoding_spatial}) and its FFT (Fig.~\ref {fig:2D_wavelet_encoding_fft}). The physical wavevectors are shown in the subplot titles. For each $(k_x,k_y)$ pair there is a unique mapping in both the spatial and spectral domains}{figure.caption.6}{}}
+\def\@LN@column{1}
+\@writefile{lof}{\contentsline {figure}{\numberline {6}{\ignorespaces Pairwise cosine similarity of mean-centered $\log _{10}|\mathrm  {FFT}|$ spectra for the $325$ IBZ wavevector encodings generated by Algorithm~\ref {alg:2d_gabor_embedding}. The maximum off-diagonal similarity is $0.862$, indicating that distinct $(k_x,k_y)$ pairs remain spectrally separable on the $32\times 32$ grid.}}{15}{figure.caption.7}\protected@file@percent }
+\newlabel{fig:wavevector_encoding_similarity}{{6}{15}{Pairwise cosine similarity of mean-centered $\log _{10}|\mathrm {FFT}|$ spectra for the $325$ IBZ wavevector encodings generated by Algorithm~\ref {alg:2d_gabor_embedding}. The maximum off-diagonal similarity is $0.862$, indicating that distinct $(k_x,k_y)$ pairs remain spectrally separable on the $32\times 32$ grid}{figure.caption.7}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.5}Dataset Construction}{15}{subsection.2.5}\protected@file@percent }
+\newlabel{ssec:dataset_construction}{{2.5}{15}{Dataset Construction}{subsection.2.5}{}}
+\citation{loshchilov2019adamw}
+\citation{kingma2015adam}
+\def\@LN@column{1}
+\newlabel{fig:input_dataset_construction}{{7a}{16}{Construction of the input tensors}{figure.caption.8}{}}
+\newlabel{sub@fig:input_dataset_construction}{{a}{16}{Construction of the input tensors}{figure.caption.8}{}}
+\newlabel{fig:output_dataset_construction}{{7b}{16}{Construction of the output tensors}{figure.caption.8}{}}
+\newlabel{sub@fig:output_dataset_construction}{{b}{16}{Construction of the output tensors}{figure.caption.8}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {7}{\ignorespaces Subfigures~\subref  {fig:input_dataset_construction} and~\subref  {fig:output_dataset_construction} show the processes by which input data from Section~\ref {ssec:metamaterial_design_space} and output data from Section~\ref {ssec:wave_propagration_simulations} are tensorized for ingestion by the FNO model. Note the wavelet embedding steps applied to fundamentally scalar quantities.}}{16}{figure.caption.8}\protected@file@percent }
+\newlabel{fig:dataset_construction}{{7}{16}{Subfigures~\subref {fig:input_dataset_construction} and~\subref {fig:output_dataset_construction} show the processes by which input data from Section~\ref {ssec:metamaterial_design_space} and output data from Section~\ref {ssec:wave_propagration_simulations} are tensorized for ingestion by the FNO model. Note the wavelet embedding steps applied to fundamentally scalar quantities}{figure.caption.8}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.6}Training Procedure}{16}{subsection.2.6}\protected@file@percent }
+\newlabel{ssec:training_procedure}{{2.6}{16}{Training Procedure}{subsection.2.6}{}}
+\def\@LN@column{1}
+\@writefile{toc}{\contentsline {section}{\numberline {3}Results and Discussion}{17}{section.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.1}Displacement Field Prediction}{17}{subsection.3.1}\protected@file@percent }
+\def\@LN@column{1}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {3.1.1}Continuous Geometries}{18}{subsubsection.3.1.1}\protected@file@percent }
+\newlabel{fig:c_p25_input}{{8a}{18}{Input sample at the 25th percentile of performance for unseen continuous-valued geometries}{figure.caption.9}{}}
+\newlabel{sub@fig:c_p25_input}{{a}{18}{Input sample at the 25th percentile of performance for unseen continuous-valued geometries}{figure.caption.9}{}}
+\newlabel{fig:c_p25_output}{{8b}{18}{Output predictions at the 25th percentile of performance for unseen continuous-valued geometries. The first row shows target fields, the second row shows predictions, and the third row shows difference fields. At the 25th percentile, prediction outcomes are already fairly good, with accurate representations of scale and structure}{figure.caption.9}{}}
+\newlabel{sub@fig:c_p25_output}{{b}{18}{Output predictions at the 25th percentile of performance for unseen continuous-valued geometries. The first row shows target fields, the second row shows predictions, and the third row shows difference fields. At the 25th percentile, prediction outcomes are already fairly good, with accurate representations of scale and structure}{figure.caption.9}{}}
+\def\@LN@column{1}
+\newlabel{fig:c_p50_input}{{9a}{19}{Input sample at the 50th percentile of performance for unseen continuous-valued geometries}{figure.caption.10}{}}
+\newlabel{sub@fig:c_p50_input}{{a}{19}{Input sample at the 50th percentile of performance for unseen continuous-valued geometries}{figure.caption.10}{}}
+\newlabel{fig:c_p50_output}{{9b}{19}{Output predictions at the 50th percentile of performance for unseen continuous-valued geometries. The first row shows target fields, the second row shows predictions, and the third row shows difference fields. Predictions are able to consistently capture complex structures without graininess}{figure.caption.10}{}}
+\newlabel{sub@fig:c_p50_output}{{b}{19}{Output predictions at the 50th percentile of performance for unseen continuous-valued geometries. The first row shows target fields, the second row shows predictions, and the third row shows difference fields. Predictions are able to consistently capture complex structures without graininess}{figure.caption.10}{}}
+\def\@LN@column{1}
+\newlabel{fig:c_p75_input}{{10a}{20}{Input sample at the 75th percentile of performance for unseen continuous-valued geometries}{figure.caption.11}{}}
+\newlabel{sub@fig:c_p75_input}{{a}{20}{Input sample at the 75th percentile of performance for unseen continuous-valued geometries}{figure.caption.11}{}}
+\newlabel{fig:c_p75_output}{{10b}{20}{Output predictions at the 75th percentile of performance for unseen continuous-valued geometries. The first row shows target fields, the second row shows predictions, and the third row shows difference fields. At this point, the target and prediction are virtually indistinguishable by eye}{figure.caption.11}{}}
+\newlabel{sub@fig:c_p75_output}{{b}{20}{Output predictions at the 75th percentile of performance for unseen continuous-valued geometries. The first row shows target fields, the second row shows predictions, and the third row shows difference fields. At this point, the target and prediction are virtually indistinguishable by eye}{figure.caption.11}{}}
+\def\@LN@column{1}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {3.1.2}Discrete Geometries}{21}{subsubsection.3.1.2}\protected@file@percent }
+\newlabel{fig:b_p25_input}{{11a}{21}{Input sample at the 25th percentile of performance for unseen discrete-valued geometries}{figure.caption.12}{}}
+\newlabel{sub@fig:b_p25_input}{{a}{21}{Input sample at the 25th percentile of performance for unseen discrete-valued geometries}{figure.caption.12}{}}
+\newlabel{fig:b_p25_output}{{11b}{21}{Output predictions at the 25th percentile of performance for unseen discrete-valued geometries. The first row shows target fields, the second row shows predictions, and the third row shows difference fields. Because Huber loss penalizes absolute residuals, for this sample the model prioritizes the two imaginary displacement channels, which are one to two orders of magnitude larger than the real channels. Absolute error is therefore low overall, but relative error remains large on the smaller-magnitude channels. (Note that the colorbars for each column are independently scaled.)}{figure.caption.12}{}}
+\newlabel{sub@fig:b_p25_output}{{b}{21}{Output predictions at the 25th percentile of performance for unseen discrete-valued geometries. The first row shows target fields, the second row shows predictions, and the third row shows difference fields. Because Huber loss penalizes absolute residuals, for this sample the model prioritizes the two imaginary displacement channels, which are one to two orders of magnitude larger than the real channels. Absolute error is therefore low overall, but relative error remains large on the smaller-magnitude channels. (Note that the colorbars for each column are independently scaled.)}{figure.caption.12}{}}
+\def\@LN@column{1}
+\newlabel{fig:b_p50_input}{{12a}{22}{Input sample at the 50th percentile of performance for unseen discrete-valued geometries}{figure.caption.13}{}}
+\newlabel{sub@fig:b_p50_input}{{a}{22}{Input sample at the 50th percentile of performance for unseen discrete-valued geometries}{figure.caption.13}{}}
+\newlabel{fig:b_p50_output}{{12b}{22}{Output predictions at the 50th percentile of performance for unseen discrete-valued geometries. The first row shows target fields, the second row shows predictions, and the third row shows difference fields. Absolute and relative errors are low, with strong agreement in structure and scale between targets and predictions}{figure.caption.13}{}}
+\newlabel{sub@fig:b_p50_output}{{b}{22}{Output predictions at the 50th percentile of performance for unseen discrete-valued geometries. The first row shows target fields, the second row shows predictions, and the third row shows difference fields. Absolute and relative errors are low, with strong agreement in structure and scale between targets and predictions}{figure.caption.13}{}}
+\def\@LN@column{1}
+\newlabel{fig:b_p75_input}{{13a}{23}{Input sample at the 75th percentile of performance for unseen discrete-valued geometries}{figure.caption.14}{}}
+\newlabel{sub@fig:b_p75_input}{{a}{23}{Input sample at the 75th percentile of performance for unseen discrete-valued geometries}{figure.caption.14}{}}
+\newlabel{fig:b_p75_output}{{13b}{23}{Output predictions at the 75th percentile of performance for unseen discrete-valued geometries. The first row shows target fields, the second row shows predictions, and the third row shows difference fields. At this point, disagreements between targets and predictions become very hard to see by eye}{figure.caption.14}{}}
+\newlabel{sub@fig:b_p75_output}{{b}{23}{Output predictions at the 75th percentile of performance for unseen discrete-valued geometries. The first row shows target fields, the second row shows predictions, and the third row shows difference fields. At this point, disagreements between targets and predictions become very hard to see by eye}{figure.caption.14}{}}
+\citation{rahaman2019spectral,qin2024spectralfno,cavallazzi2026whno}
+\def\@LN@column{1}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {3.1.3}Continuous Versus Discrete Performance}{24}{subsubsection.3.1.3}\protected@file@percent }
+\def\@LN@column{1}
+\newlabel{fig:disp_loss_histogram_continuous}{{14a}{25}{Performance histogram for continuous geometries}{figure.caption.15}{}}
+\newlabel{sub@fig:disp_loss_histogram_continuous}{{a}{25}{Performance histogram for continuous geometries}{figure.caption.15}{}}
+\newlabel{fig:disp_loss_histogram_discrete}{{14b}{25}{Performance histogram for discrete geometries}{figure.caption.15}{}}
+\newlabel{sub@fig:disp_loss_histogram_discrete}{{b}{25}{Performance histogram for discrete geometries}{figure.caption.15}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {14}{\ignorespaces Comparison of relative prediction error distributions for continuous-valued and discrete metamaterial geometries for the same model. While there are some tail outliers, most samples fall within the range of $~10^{-2}$ to $~10^{-4}$, indicating that the same model is able to learn continuous and discrete geometry cases.}}{25}{figure.caption.15}\protected@file@percent }
+\newlabel{fig:disp_loss_histograms}{{14}{25}{Comparison of relative prediction error distributions for continuous-valued and discrete metamaterial geometries for the same model. While there are some tail outliers, most samples fall within the range of $~10^{-2}$ to $~10^{-4}$, indicating that the same model is able to learn continuous and discrete geometry cases}{figure.caption.15}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.2}Dispersion Band Reconstruction}{25}{subsection.3.2}\protected@file@percent }
+\newlabel{fig:dispersion_c_p25}{{15a}{25}{25th percentile performance}{figure.caption.16}{}}
+\newlabel{sub@fig:dispersion_c_p25}{{a}{25}{25th percentile performance}{figure.caption.16}{}}
+\newlabel{fig:dispersion_c_p50}{{15b}{25}{50th percentile performance}{figure.caption.16}{}}
+\newlabel{sub@fig:dispersion_c_p50}{{b}{25}{50th percentile performance}{figure.caption.16}{}}
+\newlabel{fig:dispersion_c_p75}{{15c}{25}{75th percentile performance}{figure.caption.16}{}}
+\newlabel{sub@fig:dispersion_c_p75}{{c}{25}{75th percentile performance}{figure.caption.16}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {15}{\ignorespaces Predicted and ground-truth dispersion bands for representative unseen continuous-valued geometries spanning the 25th, 50th, and 75th percentiles of prediction performance.}}{25}{figure.caption.16}\protected@file@percent }
+\newlabel{fig:dispersion_c_percentiles}{{15}{25}{Predicted and ground-truth dispersion bands for representative unseen continuous-valued geometries spanning the 25th, 50th, and 75th percentiles of prediction performance}{figure.caption.16}{}}
+\def\@LN@column{1}
+\newlabel{fig:dispersion_b_p25}{{16a}{26}{25th percentile performance}{figure.caption.17}{}}
+\newlabel{sub@fig:dispersion_b_p25}{{a}{26}{25th percentile performance}{figure.caption.17}{}}
+\newlabel{fig:dispersion_b_p50}{{16b}{26}{50th percentile performance}{figure.caption.17}{}}
+\newlabel{sub@fig:dispersion_b_p50}{{b}{26}{50th percentile performance}{figure.caption.17}{}}
+\newlabel{fig:dispersion_b_p75}{{16c}{26}{75th percentile performance}{figure.caption.17}{}}
+\newlabel{sub@fig:dispersion_b_p75}{{c}{26}{75th percentile performance}{figure.caption.17}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {16}{\ignorespaces Predicted and ground-truth dispersion bands for representative unseen discrete-valued geometries spanning the 25th, 50th, and 75th percentiles of prediction performance.}}{26}{figure.caption.17}\protected@file@percent }
+\newlabel{fig:dispersion_b_percentiles}{{16}{26}{Predicted and ground-truth dispersion bands for representative unseen discrete-valued geometries spanning the 25th, 50th, and 75th percentiles of prediction performance}{figure.caption.17}{}}
+\citation{rahaman2019spectral,qin2024spectralfno}
+\citation{cavallazzi2026whno}
+\def\@LN@column{1}
+\newlabel{fig:freq_loss_histogram_continuous}{{17a}{27}{Performance histogram for continuous geometries}{figure.caption.18}{}}
+\newlabel{sub@fig:freq_loss_histogram_continuous}{{a}{27}{Performance histogram for continuous geometries}{figure.caption.18}{}}
+\newlabel{fig:freq_loss_histogram_discrete}{{17b}{27}{Performance histogram for discrete geometries}{figure.caption.18}{}}
+\newlabel{sub@fig:freq_loss_histogram_discrete}{{b}{27}{Performance histogram for discrete geometries}{figure.caption.18}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {17}{\ignorespaces Comparison of relative prediction error distributions for continuous-valued and discrete metamaterial geometries for the same model. While there are some tail outliers, most samples fall within the range of $~10^{-2}$ to $~10^{-4}$, indicating that the same model is able to learn continuous and discrete geometry cases.}}{27}{figure.caption.18}\protected@file@percent }
+\newlabel{fig:freq_loss_histograms}{{17}{27}{Comparison of relative prediction error distributions for continuous-valued and discrete metamaterial geometries for the same model. While there are some tail outliers, most samples fall within the range of $~10^{-2}$ to $~10^{-4}$, indicating that the same model is able to learn continuous and discrete geometry cases}{figure.caption.18}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.3}Dependence of Prediction Error on Band and Boundary Length}{27}{subsection.3.3}\protected@file@percent }
+\newlabel{ssec:boundary_length_vs_loss}{{3.3}{27}{Dependence of Prediction Error on Band and Boundary Length}{subsection.3.3}{}}
+\def\@LN@column{1}
+\def\@LN@column{1}
+\@writefile{lof}{\contentsline {figure}{\numberline {18}{\ignorespaces Mean displacement MAE versus interface boundary length, separated by color for each of the six eigenbands on the discrete test set. Points correspond to average performance on unit-cell geometries. Legend values $\rho $ are Spearman rank correlations. A positive trend appears for every band, consistent with degraded FNO accuracy as the total length of $0$/$1$ material interfaces increases.}}{29}{figure.caption.19}\protected@file@percent }
+\newlabel{fig:boundary_vs_mae_by_band}{{18}{29}{Mean displacement MAE versus interface boundary length, separated by color for each of the six eigenbands on the discrete test set. Points correspond to average performance on unit-cell geometries. Legend values $\rho $ are Spearman rank correlations. A positive trend appears for every band, consistent with degraded FNO accuracy as the total length of $0$/$1$ material interfaces increases}{figure.caption.19}{}}
+\def\@LN@column{1}
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.4}Band and Wavevector Encoding}{30}{subsection.3.4}\protected@file@percent }
+\newlabel{ssec:band_wavevector_encoding}{{3.4}{30}{Band and Wavevector Encoding}{subsection.3.4}{}}
+\citation{gabor1946theory}
+\citation{Ogren2024gpr,wagner2024neural,liu2026hybridfno}
+\citation{gabor1946theory}
+\def\@LN@column{1}
+\citation{rahaman2019spectral,qin2024spectralfno,cavallazzi2026whno}
+\citation{wang2021pidon}
+\citation{CHEN2022101895,Bastawrous2025}
+\def\@LN@column{1}
+\@writefile{toc}{\contentsline {section}{\numberline {4}Conclusions}{32}{section.4}\protected@file@percent }
+\newlabel{sec:Conclusion}{{4}{32}{Conclusions}{section.4}{}}
+\def\@LN@column{1}
+\bibstyle{elsarticle-num}
+\bibdata{references}
+\bibcite{Zhang2024uq}{{1}{}{{}}{{}}}
+\bibcite{hussein2014dynamics}{{2}{}{{}}{{}}}
+\bibcite{kovachki2023neural}{{3}{}{{}}{{}}}
+\bibcite{lu2021deeponet}{{4}{}{{}}{{}}}
+\bibcite{li2021fno}{{5}{}{{}}{{}}}
+\def\@LN@column{1}
+\newlabel{sec:Repository}{{4}{34}{}{section.4}{}}
+\bibcite{wang2021pidon}{{6}{}{{}}{{}}}
+\bibcite{finol2019eigenvalue}{{7}{}{{}}{{}}}
+\bibcite{cummer2016controlling}{{8}{}{{}}{{}}}
+\bibcite{liao2021acoustic}{{9}{}{{}}{{}}}
+\bibcite{kushwaha1993acoustic}{{10}{}{{}}{{}}}
+\bibcite{liu2019dispersion}{{11}{}{{}}{{}}}
+\bibcite{Ogren2024gpr}{{12}{}{{}}{{}}}
+\bibcite{wagner2024neural}{{13}{}{{}}{{}}}
+\bibcite{liu2026hybridfno}{{14}{}{{}}{{}}}
+\def\@LN@column{1}
+\bibcite{liu2023deeplearning}{{15}{}{{}}{{}}}
+\bibcite{jin2022intelligent}{{16}{}{{}}{{}}}
+\bibcite{muhammad2022ml}{{17}{}{{}}{{}}}
+\bibcite{CHEN2022101895}{{18}{}{{}}{{}}}
+\bibcite{Bastawrous2025}{{19}{}{{}}{{}}}
+\bibcite{qin2024spectralfno}{{20}{}{{}}{{}}}
+\bibcite{gabor1946theory}{{21}{}{{}}{{}}}
+\bibcite{loshchilov2019adamw}{{22}{}{{}}{{}}}
+\bibcite{kingma2015adam}{{23}{}{{}}{{}}}
+\def\@LN@column{1}
+\bibcite{rahaman2019spectral}{{24}{}{{}}{{}}}
+\bibcite{cavallazzi2026whno}{{25}{}{{}}{{}}}
+\def\@LN@column{1}
+\def\@LN@column{1}
+\@writefile{toc}{\let\numberline\tmptocnumberline}
+\@writefile{toc}{\contentsline {section}{\numberline {S1}Supplementary Information}{38}{appendix.A}\protected@file@percent }
+\newlabel{sec:supplement}{{S1}{38}{Supplementary Information}{appendix.A}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {S1.1}Model and Training Hyperparameters}{38}{subsection.A.1}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {S1}{\ignorespaces Combinations tried in grid search for optimal model and training hyperparameters.}}{38}{table.caption.20}\protected@file@percent }
+\newlabel{tab:training_hyperparameters}{{S1}{38}{Combinations tried in grid search for optimal model and training hyperparameters}{table.caption.20}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {S1.2}Loss Criterion}{38}{subsection.A.2}\protected@file@percent }
+\def\@LN@column{1}
+\def\@LN@column{1}
+\def\@LN@column{1}
+\def\@LN@column{1}
+\def\@LN@column{1}
+\@writefile{toc}{\contentsline {subsection}{\numberline {S1.3}Algorithms for Input Wavelet Encoding}{43}{subsection.A.3}\protected@file@percent }
+\newlabel{ssec:input_wavelet_algorithms}{{S1.3}{43}{Algorithms for Input Wavelet Encoding}{subsection.A.3}{}}
+\def\@LN@column{1}
+\@writefile{loa}{\contentsline {algorithm}{\numberline {1}{\ignorespaces 1D Gabor Wavelet Embedding from Band Index}}{44}{algorithm.1}\protected@file@percent }
+\newlabel{alg:1d_gabor_embedding}{{1}{44}{1D Gabor Wavelet Embedding from Band Index}{algorithm.1}{}}
+\def\@LN@column{1}
+\@writefile{loa}{\contentsline {algorithm}{\numberline {2}{\ignorespaces 2D Gabor Wavelet Embedding for Wavevectors}}{45}{algorithm.2}\protected@file@percent }
+\newlabel{alg:2d_gabor_embedding}{{2}{45}{2D Gabor Wavelet Embedding for Wavevectors}{algorithm.2}{}}
+\def\@LN@column{1}
+\@writefile{toc}{\contentsline {subsection}{\numberline {S1.4}Wavelet Decoding}{46}{subsection.A.4}\protected@file@percent }
+\newlabel{ssec:wavelet_decoding}{{S1.4}{46}{Wavelet Decoding}{subsection.A.4}{}}
+\def\@LN@column{1}
+\@writefile{lof}{\contentsline {figure}{\numberline {S1}{\ignorespaces Log spaced Gabor wavelet encodings of scalars from 1 to 8000. Alternating rows show the spatial wavelet images and the corresponding Fourier magnitude spectra.}}{47}{figure.caption.21}\protected@file@percent }
+\newlabel{fig:eigenfrequency_encoding}{{S1}{47}{Log spaced Gabor wavelet encodings of scalars from 1 to 8000. Alternating rows show the spatial wavelet images and the corresponding Fourier magnitude spectra}{figure.caption.21}{}}
+\def\@LN@column{1}
+\@writefile{lof}{\contentsline {figure}{\numberline {S2}{\ignorespaces Encode--decode error for scalars from a minimum of 1 to a maximum of 8000.}}{48}{figure.caption.22}\protected@file@percent }
+\newlabel{fig:eigenfrequency_decode_error}{{S2}{48}{Encode--decode error for scalars from a minimum of 1 to a maximum of 8000}{figure.caption.22}{}}
+\def\@LN@column{1}
+\@writefile{loa}{\contentsline {algorithm}{\numberline {3}{\ignorespaces Scalar Wavelet Encoding}}{49}{algorithm.3}\protected@file@percent }
+\newlabel{alg:eigenfrequency_wavelet_encoding}{{3}{49}{Scalar Wavelet Encoding}{algorithm.3}{}}
+\def\@LN@column{1}
+\@writefile{loa}{\contentsline {algorithm}{\numberline {4}{\ignorespaces Scalar Wavelet Decoding}}{50}{algorithm.4}\protected@file@percent }
+\newlabel{alg:eigenfrequency_wavelet_decoding}{{4}{50}{Scalar Wavelet Decoding}{algorithm.4}{}}
+\providecommand\NAT@force@numbers{}\NAT@force@numbers
+\def\@LN@column{1}
+\gdef \@abspage@last{51}

@@ -65,7 +65,7 @@ This document tracks all unit tests performed to ensure functional equivalence b
 | `get_design.m` | `get_design.py` | ✅ CREATED | `test_design.py` | Tests created, ready to run |
 | `get_design2.m` | `get_design2.py` | ✅ CREATED | `test_design.py` | Tests created, ready to run |
 | `convert_design.m` | `design_conversion.py` | ✅ CREATED | `test_design.py` | Tests created, ready to run |
-| `apply_steel_rubber_paradigm.m` | `design_conversion.py` | ✅ CREATED | `test_design.py` | Tests created, ready to run |
+| `apply_steel_polymer_paradigm.m` | `design_conversion.py` | ✅ CREATED | `test_design.py` | Tests created, ready to run |
 
 ### Kernel Functions
 

@@ -48,7 +48,11 @@ Label throwaway work clearly so it can be found and cleaned up:
 | `run_*_diagnostics*.py` | Named diagnostic tools (e.g. `run_validation_divergence_diagnostics.py`) | Keep if reused; document what they check |
 | `diagnostic_panels.py` + `--diagnostic-panels` | Built-in training-time test-set panels | Prefer this over ad-hoc plotting during training |
 
-Exploratory notebooks use `*sandbox*` in the filename (`encoding_sandbox.ipynb`, `NO_sandbox.ipynb`). Superseded notebooks use `obsolete` or `_old` in the name (`figures_obsolete.ipynb`, `Data_sandbox_old.ipynb`) or live under `OBSOLETE/`.
+All notebooks live under [`NOTEBOOKS/`](NOTEBOOKS/). Exploratory notebooks use
+`*sandbox*` in the filename (`encoding_sandbox.ipynb`, `NO_sandbox.ipynb`).
+Superseded notebooks use `obsolete` or `_old` in the name
+(`figures_obsolete.ipynb`, `Data_sandbox_old.ipynb`) or live under
+`NOTEBOOKS/OBSOLETE/`.
 
 ---
 
@@ -118,6 +122,9 @@ flowchart TD
 ## 3. Notebooks, data, and plot labelling
 
 ### Notebooks
+
+Store every `.ipynb` file under [`NOTEBOOKS/`](NOTEBOOKS/); do not add notebooks
+at the repository root.
 
 | Pattern | Use |
 |---------|-----|

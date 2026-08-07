@@ -38,7 +38,7 @@ This test suite verifies functional equivalence between Python files in `2d-disp
    - `get_design()` - Design generation
    - `get_design2()` - Design from parameters
    - `convert_design()` - Design format conversion
-   - `apply_steel_rubber_paradigm()` - Material paradigm
+   - `apply_steel_polymer_paradigm()` - Material paradigm
 
 6. **test_kernels.py** - Tests kernel functions:
    - `matern52_kernel()` - Matern 5/2 kernel

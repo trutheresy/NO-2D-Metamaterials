@@ -30,13 +30,13 @@ Per dataset (`c_test`, then `b_test`) unless noted.
 
 | # | Script | Purpose | Output (default subdir) |
 |---|--------|---------|-------------------------|
-| 1 | `run_model_inference_gpu.py` | Run the checkpoint over the dataset; save dense predictions `(N, 5, 32, 32)`. | `INFERENCE/<model>/<ds>/predictions_I3O5_<model>.pt` |
+| 1 | `run_model_inference_gpu.py` | Run the checkpoint over the dataset; save dense predictions `(N, 5, 32, 32)`. Pass `--input-encoding {wavelet,sinusoidal,uniform,auto}` to select wavevector/band tensors (`auto` reads the run's `resolved_config.json`, else wavelet). | `INFERENCE/<model>/<ds>/predictions_I{3\|4}O5_<model>.pt` |
 | 2 | (copy step in launcher) | Copy `eigenvalue_data_full.pt`, `geometries_full.pt`, `wavevectors_full.pt` beside predictions. | `INFERENCE/<model>/<ds>/` |
-| 3 | `compare_inference_to_truth.py` | Per-channel + overall MAE/MSE statistics vs truth. | `loss_comparison_<ds>.csv` |
-| 4 | `decode_predicted_eigenvalues.py` | Decode prediction ch0 (uniform encoding) to scalar eigenvalues. | `eigenvalues_predictions_full.pt` |
+| 3 | `compare_inference_to_truth.py` | Per-channel + overall MAE/MSE statistics vs truth. Pass `--eigen-encoding {uniform,fft}` to select ch0 truth. | `loss_comparison_<ds>.csv` |
+| 4 | `decode_predicted_eigenvalues.py` | Decode prediction ch0 to scalar eigenvalues (`--eigen-encoding uniform` or `fft` / wavelet). | `eigenvalues_predictions_full.pt` |
 | 5 | `plot_per_pixel_relative_error.py --dataset-mode` | Per-pixel \|e\|/\|t\| stack `(N, 32, 32)` + mean-over-samples heatmap. | `INFERENCE/.../relative_error_dataset/` |
 | 6 | `analyze_second_peak_waves.py` | Split bimodal log-NMAE distribution; per-wavevector / per-band second-peak enrichment tables + report. | `INFERENCE/.../second_peak_analysis/` |
-| 7 | `per_sample_loss.py` (×6 losses) | Per-sample scalar loss arrays (mae, mse, rms, nmae, nmse, nrms). | `PLOTS/.../<LOSS>_sample_case_plots/*.npy` |
+| 7 | `per_sample_loss.py` (×6 losses) | Per-sample scalar loss arrays (mae, mse, rms, nmae, nmse, nrms). Use matching `--eigen-encoding`. | `PLOTS/.../<LOSS>_sample_case_plots/*.npy` |
 | 8 | `plot_loss_histograms.py` (×3 groups) | Log-scale histograms + KDE per channel group (all/disp/freq). | `PLOTS/.../{all,disp,freq} channel histograms/` |
 | 9 | `plot_sample_cases.py` (×6 losses) | Truth-vs-prediction field plots at loss percentiles. | `PLOTS/.../<LOSS>_sample_case_plots/` |
 | 10 | `plot_high_loss_samples.py` | Field plots of the worst NMAE/NMSE samples. | `PLOTS/.../high_loss_analysis/` |
@@ -60,5 +60,19 @@ Conventions:
 - CPU by default for scoring/plot steps (`--device cpu`); GPU only for step 1
   (see [RULES.md §2](RULES.md) for GPU coordination).
 - `--tag <dataset>` sets output filenames; `--dataset <dataset>` sets the layout folder.
+- Channel-0 eigenfrequency encoding: pass `--eigen-encoding uniform` (default) or
+  `fft` (wavelet / Gabor; file `eigenfrequency_fft_full.pt`). Pipeline launchers
+  set `$EigenEncoding` once and forward it to all scoring/decode/plot steps.
+  Encode/decode formulas live only in `NO_utilities.py`
+  (`encode_eigenfrequency_uniform` / `decode_eigenfrequency_uniform` and
+  `embed_eigenfrequency_wavelet` / `extract_eigenfrequency_from_wavelet`).
+- Wavevector/band **input** encoding (independent of ch0): pass
+  `--input-encoding wavelet|sinusoidal|uniform|auto` to
+  `run_model_inference_gpu.py` / `_cpu.py`. Files in each `*_pt` folder:
+  wavelet → `waveforms_full.pt` + `band_fft_full.pt`;
+  sinusoidal → `waveforms_sinusoidal_full.pt` + `band_sinusoidal_full.pt`;
+  uniform/constant → `waveforms_constant_full.pt` + `band_constant_full.pt`
+  (4 input channels: geo, kx, ky, band). `auto` reads the run's
+  `resolved_config.json`. Shared map: `input_encodings.py`.
 - Backfill helpers for adding a new step to old runs follow the pattern of
   `_run_relative_error_backfill.ps1` (skip-if-complete checks + structure verification).

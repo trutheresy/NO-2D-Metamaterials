@@ -42,7 +42,17 @@ EIGEN_CH0_FILES = {
     "fft": "eigenfrequency_fft_full.pt",
 }
 
+# Input encoding products: stacked train inputs + full-index val waveform/band tensors.
+# "constant" / "uniform" = manuscript constant-field encoding (kx/π, ky/π, b/10 broadcasts).
+from input_encodings import (  # noqa: E402  (shared with inference)
+    INPUT_ENCODING_ALIASES,
+    INPUT_ENCODING_FILES,
+    INPUT_ENCODING_IN_CHANNELS,
+    normalize_input_encoding,
+)
+
 OUT_CHANNELS = 5
+
 
 CANONICAL_LOSSES = frozenset({
     "mae",
@@ -428,6 +438,9 @@ class FullIndexTensorPairDataset(Dataset[tuple[torch.Tensor, torch.Tensor]]):
     Assembles inputs from geometries/waveforms/band_fft and targets from
     eigenfrequency_*_full.pt + displacements_dataset.pt without requiring
     prebuilt inputs.pt/outputs.pt for the full index list.
+
+    Waveforms may be ``(N_wv, S, S)`` (wavelet/sinusoidal) or ``(N_wv, 2, S, S)``
+    (constant: separate k_x / k_y channels).
     """
 
     def __init__(self, shards: list[FullIndexShardInfo], eigen_ch0_encoding: str):
@@ -450,6 +463,7 @@ class FullIndexTensorPairDataset(Dataset[tuple[torch.Tensor, torch.Tensor]]):
         self._loaded_indices: np.ndarray | None = None
         self._n_wv: int = 0
         self._n_band: int = 0
+        self._waveforms_two_channel: bool = False
 
     def __len__(self) -> int:
         return self._total
@@ -491,6 +505,16 @@ class FullIndexTensorPairDataset(Dataset[tuple[torch.Tensor, torch.Tensor]]):
             )
         self._n_wv = shard.n_wv
         self._n_band = shard.n_band
+        assert self._loaded_waveforms is not None
+        if self._loaded_waveforms.ndim == 4 and int(self._loaded_waveforms.shape[1]) == 2:
+            self._waveforms_two_channel = True
+        elif self._loaded_waveforms.ndim == 3:
+            self._waveforms_two_channel = False
+        else:
+            raise ValueError(
+                f"Unsupported waveforms shape {tuple(self._loaded_waveforms.shape)} in {shard.pt_dir}; "
+                "expected (N_wv, S, S) or (N_wv, 2, S, S)."
+            )
         self._loaded_shard_idx = shard_idx
 
     def __getitem__(self, idx: int) -> tuple[torch.Tensor, torch.Tensor]:
@@ -504,10 +528,13 @@ class FullIndexTensorPairDataset(Dataset[tuple[torch.Tensor, torch.Tensor]]):
         assert self._loaded_indices is not None
 
         d, w, b = (int(v) for v in self._loaded_indices[local_idx])
-        x = torch.stack(
-            [self._loaded_geometries[d], self._loaded_waveforms[w], self._loaded_band_fft[b]],
-            dim=0,
-        )
+        geo = self._loaded_geometries[d]
+        band = self._loaded_band_fft[b]
+        if self._waveforms_two_channel:
+            wf = self._loaded_waveforms[w]  # (2, S, S)
+            x = torch.cat([geo.unsqueeze(0), wf, band.unsqueeze(0)], dim=0)
+        else:
+            x = torch.stack([geo, self._loaded_waveforms[w], band], dim=0)
         y0 = self._loaded_eigen_ch0[d, w, b]
         flat = d * self._n_wv * self._n_band + w * self._n_band + b
         y = torch.stack(
@@ -609,7 +636,14 @@ class ShardAwareBatchSampler(Sampler[list[int]]):
 class FourierNeuralOperator(nn.Module):
     """Match NO_trainer_4.ipynb model style via neuralop FNO2d."""
 
-    def __init__(self, modes_height: int, modes_width: int, hidden_channels: int, n_layers: int):
+    def __init__(
+        self,
+        modes_height: int,
+        modes_width: int,
+        hidden_channels: int,
+        n_layers: int,
+        in_channels: int = 3,
+    ):
         super().__init__()
         try:
             from neuralop.models import FNO2d
@@ -619,8 +653,9 @@ class FourierNeuralOperator(nn.Module):
                 "This environment likely has a broken neuralop/wandb dependency chain. "
                 "Fix env packages and retry."
             ) from e
+        self.in_channels = int(in_channels)
         self.model = FNO2d(
-            in_channels=3,
+            in_channels=self.in_channels,
             out_channels=OUT_CHANNELS,
             n_modes_height=modes_height,
             n_modes_width=modes_width,
@@ -812,6 +847,16 @@ def parse_args() -> argparse.Namespace:
         "Channels 1–4 always come from outputs.pt.",
     )
     p.add_argument(
+        "--input-encoding",
+        choices=tuple(sorted(set(INPUT_ENCODING_FILES) | set(INPUT_ENCODING_ALIASES))),
+        default="wavelet",
+        help=(
+            "Input wavevector/band encoding: wavelet (inputs.pt), sinusoidal, or "
+            "constant/uniform (manuscript constant fields: kx/π, ky/π, b/10 → 4-channel inputs). "
+            "Default wavelet preserves existing experiments."
+        ),
+    )
+    p.add_argument(
         "--progress-mode",
         choices=("tqdm", "plain"),
         default="tqdm",
@@ -882,21 +927,29 @@ def latest_pt_dir(dataset_dir: Path) -> Path:
     return max(cands, key=lambda p: p.stat().st_mtime)
 
 
-def discover_shards(output_root: Path, prefixes: tuple[str, ...], eigen_ch0_encoding: str) -> list[ShardInfo]:
+def discover_shards(
+    output_root: Path,
+    prefixes: tuple[str, ...],
+    eigen_ch0_encoding: str,
+    input_encoding: str = "wavelet",
+) -> list[ShardInfo]:
     if eigen_ch0_encoding not in EIGEN_CH0_FILES:
         raise ValueError(f"Unknown eigen_ch0_encoding: {eigen_ch0_encoding!r}")
+    input_encoding = normalize_input_encoding(input_encoding)
     eigen_fname = EIGEN_CH0_FILES[eigen_ch0_encoding]
+    inputs_fname = INPUT_ENCODING_FILES[input_encoding]["inputs"]
+    expected_in_ch = INPUT_ENCODING_IN_CHANNELS[input_encoding]
     shards: list[ShardInfo] = []
     ds_dirs = sorted([p for p in output_root.iterdir() if p.is_dir() and p.name.startswith(prefixes)], key=lambda p: p.name)
     validated_contract = False
     for d in ds_dirs:
         pt = latest_pt_dir(d)
-        in_path = pt / "inputs.pt"
+        in_path = pt / inputs_fname
         out_path = pt / "outputs.pt"
         ridx_path = pt / "reduced_indices.pt"
         eigen_path = pt / eigen_fname
         if not in_path.exists() or not out_path.exists():
-            raise FileNotFoundError(f"Missing inputs/outputs in {pt}")
+            raise FileNotFoundError(f"Missing {inputs_fname}/outputs in {pt}")
         if not ridx_path.exists():
             raise FileNotFoundError(f"Missing reduced_indices.pt in {pt}")
         if not eigen_path.exists():
@@ -913,8 +966,11 @@ def discover_shards(output_root: Path, prefixes: tuple[str, ...], eigen_ch0_enco
             eig = torch.load(eigen_path, map_location="cpu", mmap=True, weights_only=True)
             if x.ndim != 4 or y.ndim != 4:
                 raise ValueError(f"Invalid tensor dims in {pt}: inputs={tuple(x.shape)}, outputs={tuple(y.shape)}")
-            if tuple(x.shape[1:]) != (3, 32, 32):
-                raise ValueError(f"Invalid inputs shape in {pt}: {tuple(x.shape)}")
+            if tuple(x.shape[1:]) != (expected_in_ch, 32, 32):
+                raise ValueError(
+                    f"Invalid inputs shape in {pt}: {tuple(x.shape)} "
+                    f"(expected (N, {expected_in_ch}, 32, 32) for input_encoding={input_encoding})"
+                )
             if tuple(y.shape[1:]) != (5, 32, 32):
                 raise ValueError(f"Invalid outputs shape in {pt}: {tuple(y.shape)}")
             if eig.ndim != 5 or tuple(eig.shape[-2:]) != (32, 32):
@@ -956,11 +1012,17 @@ def discover_shards(output_root: Path, prefixes: tuple[str, ...], eigen_ch0_enco
 
 
 def discover_full_index_test_shards(
-    output_root: Path, prefixes: tuple[str, ...], eigen_ch0_encoding: str
+    output_root: Path,
+    prefixes: tuple[str, ...],
+    eigen_ch0_encoding: str,
+    input_encoding: str = "wavelet",
 ) -> list[FullIndexShardInfo]:
     if eigen_ch0_encoding not in EIGEN_CH0_FILES:
         raise ValueError(f"Unknown eigen_ch0_encoding: {eigen_ch0_encoding!r}")
+    input_encoding = normalize_input_encoding(input_encoding)
     eigen_fname = EIGEN_CH0_FILES[eigen_ch0_encoding]
+    waveforms_fname = INPUT_ENCODING_FILES[input_encoding]["waveforms"]
+    bands_fname = INPUT_ENCODING_FILES[input_encoding]["bands"]
     shards: list[FullIndexShardInfo] = []
     ds_dirs = sorted([p for p in output_root.iterdir() if p.is_dir() and p.name.startswith(prefixes)], key=lambda p: p.name)
     validated_contract = False
@@ -968,15 +1030,15 @@ def discover_full_index_test_shards(
         pt = latest_pt_dir(d)
         indices_path = pt / "indices_full.pt"
         geometries_path = pt / "geometries_full.pt"
-        waveforms_path = pt / "waveforms_full.pt"
-        band_fft_path = pt / "band_fft_full.pt"
+        waveforms_path = pt / waveforms_fname
+        band_fft_path = pt / bands_fname
         eigen_path = pt / eigen_fname
         disp_path = pt / "displacements_dataset.pt"
         required = {
             "indices_full.pt": indices_path,
             "geometries_full.pt": geometries_path,
-            "waveforms_full.pt": waveforms_path,
-            "band_fft_full.pt": band_fft_path,
+            waveforms_fname: waveforms_path,
+            bands_fname: band_fft_path,
             eigen_fname: eigen_path,
             "displacements_dataset.pt": disp_path,
         }
@@ -997,10 +1059,17 @@ def discover_full_index_test_shards(
             displacements = torch.load(disp_path, map_location="cpu", mmap=True, weights_only=False)
             if geometries.ndim != 3 or tuple(geometries.shape[-2:]) != (32, 32):
                 raise ValueError(f"Invalid geometries_full shape in {pt}: {tuple(geometries.shape)}")
-            if waveforms.ndim != 3 or tuple(waveforms.shape[-2:]) != (32, 32):
-                raise ValueError(f"Invalid waveforms_full shape in {pt}: {tuple(waveforms.shape)}")
+            if input_encoding == "constant":
+                if waveforms.ndim != 4 or int(waveforms.shape[1]) != 2 or tuple(waveforms.shape[-2:]) != (32, 32):
+                    raise ValueError(
+                        f"Invalid {waveforms_fname} shape in {pt}: {tuple(waveforms.shape)} "
+                        "(expected (N_wv, 2, 32, 32) for constant encoding)"
+                    )
+            else:
+                if waveforms.ndim != 3 or tuple(waveforms.shape[-2:]) != (32, 32):
+                    raise ValueError(f"Invalid {waveforms_fname} shape in {pt}: {tuple(waveforms.shape)}")
             if band_fft.ndim != 3 or tuple(band_fft.shape[-2:]) != (32, 32):
-                raise ValueError(f"Invalid band_fft_full shape in {pt}: {tuple(band_fft.shape)}")
+                raise ValueError(f"Invalid {bands_fname} shape in {pt}: {tuple(band_fft.shape)}")
             if eig.ndim != 5 or tuple(eig.shape[-2:]) != (32, 32):
                 raise ValueError(
                     f"Invalid {eigen_fname} in {pt}: expected 5D with trailing (32,32), got shape={tuple(eig.shape)}"
@@ -1060,9 +1129,13 @@ def discover_full_index_test_shards(
     return shards
 
 
-def dataset_version_hash(shards: list[ShardInfo], eigen_ch0_encoding: str) -> str:
+def dataset_version_hash(
+    shards: list[ShardInfo], eigen_ch0_encoding: str, input_encoding: str = "wavelet"
+) -> str:
     h = hashlib.sha256()
     h.update(eigen_ch0_encoding.encode("utf-8"))
+    h.update(input_encoding.encode("utf-8"))
+    h.update(INPUT_ENCODING_FILES[input_encoding]["inputs"].encode("utf-8"))
     for s in shards:
         h.update(str(s.pt_dir).encode("utf-8"))
         h.update(str(s.inputs_path.stat().st_size).encode("utf-8"))
@@ -1074,9 +1147,14 @@ def dataset_version_hash(shards: list[ShardInfo], eigen_ch0_encoding: str) -> st
     return h.hexdigest()[:12]
 
 
-def full_index_dataset_version_hash(shards: list[FullIndexShardInfo], eigen_ch0_encoding: str) -> str:
+def full_index_dataset_version_hash(
+    shards: list[FullIndexShardInfo], eigen_ch0_encoding: str, input_encoding: str = "wavelet"
+) -> str:
     h = hashlib.sha256()
     h.update(eigen_ch0_encoding.encode("utf-8"))
+    h.update(input_encoding.encode("utf-8"))
+    h.update(INPUT_ENCODING_FILES[input_encoding]["waveforms"].encode("utf-8"))
+    h.update(INPUT_ENCODING_FILES[input_encoding]["bands"].encode("utf-8"))
     h.update(b"indices_full")
     for s in shards:
         h.update(str(s.pt_dir).encode("utf-8"))
@@ -1111,12 +1189,20 @@ def compute_l1_weight_norm(model: nn.Module) -> torch.Tensor:
 def build_run_name(args: argparse.Namespace) -> str:
     ds = datetime.now().strftime("%y%m%d")
     ch0_tag = "ch0u" if args.eigen_ch0_encoding == "uniform" else "ch0fft"
+    enc = normalize_input_encoding(getattr(args, "input_encoding", "wavelet"))
+    in_ch = INPUT_ENCODING_IN_CHANNELS[enc]
+    if enc == "sinusoidal":
+        in_tag = "_insin"
+    elif enc == "constant":
+        in_tag = "_inconst"
+    else:
+        in_tag = ""
     loss_tag = build_training_loss(args.loss).run_tag
     l1_tag = f"_L1P{args.l1_penalty:.0e}" if args.l1_penalty > 0 else ""
     return (
-        f"NO_I3O5_BCF16_{loss_tag}_HC{args.hidden_channels}_"
+        f"NO_I{in_ch}O5_BCF16_{loss_tag}_HC{args.hidden_channels}_"
         f"LR{args.learning_rate:.0e}_WD{args.weight_decay:.0e}{l1_tag}_"
-        f"SS{args.step_size}_G{args.gamma:.0e}_{ch0_tag}_{ds}"
+        f"SS{args.step_size}_G{args.gamma:.0e}_{ch0_tag}{in_tag}_{ds}"
     )
 
 
@@ -1761,6 +1847,7 @@ def _infer_previous_loss_from_run(run_dir: Path) -> str | None:
 
 def main() -> None:
     args = parse_args()
+    args.input_encoding = normalize_input_encoding(args.input_encoding)
     seed_everything(args.seed)
 
     if torch.cuda.is_available():
@@ -1871,13 +1958,19 @@ def main() -> None:
 
     try:
         output_root = Path(args.output_root)
-        train_shards = discover_shards(output_root, train_prefixes, args.eigen_ch0_encoding)
+        train_shards = discover_shards(
+            output_root, train_prefixes, args.eigen_ch0_encoding, args.input_encoding
+        )
         if args.val_full_test:
             test_shards_materialized: list[ShardInfo] = []
-            test_shards_full = discover_full_index_test_shards(output_root, test_prefixes, args.eigen_ch0_encoding)
+            test_shards_full = discover_full_index_test_shards(
+                output_root, test_prefixes, args.eigen_ch0_encoding, args.input_encoding
+            )
             test_shards_full = maybe_cap_full_shards(test_shards_full, args.max_test_samples)
         else:
-            test_shards_materialized = discover_shards(output_root, test_prefixes, args.eigen_ch0_encoding)
+            test_shards_materialized = discover_shards(
+                output_root, test_prefixes, args.eigen_ch0_encoding, args.input_encoding
+            )
             test_shards_materialized = maybe_cap_shards(test_shards_materialized, args.max_test_samples)
             test_shards_full = []
         train_shards = maybe_cap_shards(train_shards, args.max_train_samples)
@@ -1928,11 +2021,13 @@ def main() -> None:
         test_loader = DataLoader(test_ds, **test_loader_kwargs)
 
         device = resolve_device(args.allow_cpu)
+        in_channels = INPUT_ENCODING_IN_CHANNELS[args.input_encoding]
         model = FourierNeuralOperator(
             modes_height=args.modes_height,
             modes_width=args.modes_width,
             hidden_channels=args.hidden_channels,
             n_layers=args.layers,
+            in_channels=in_channels,
         ).to(device)
         loss_spec = build_training_loss(
             args.loss,
@@ -2136,9 +2231,11 @@ def main() -> None:
             metadata["resume_from_epoch"] = start_epoch - 1
             metadata["resume_target_total_epochs"] = total_epochs
 
-        train_data_ver = dataset_version_hash(train_shards, args.eigen_ch0_encoding)
+        train_data_ver = dataset_version_hash(train_shards, args.eigen_ch0_encoding, args.input_encoding)
         if args.val_full_test:
-            test_data_ver = full_index_dataset_version_hash(test_shards_full, args.eigen_ch0_encoding)
+            test_data_ver = full_index_dataset_version_hash(
+                test_shards_full, args.eigen_ch0_encoding, args.input_encoding
+            )
             test_shards_count = len(test_shards_full)
             test_shards_config = [
                 {
@@ -2150,7 +2247,9 @@ def main() -> None:
                 for s in test_shards_full
             ]
         else:
-            test_data_ver = dataset_version_hash(test_shards_materialized, args.eigen_ch0_encoding)
+            test_data_ver = dataset_version_hash(
+                test_shards_materialized, args.eigen_ch0_encoding, args.input_encoding
+            )
             test_shards_count = len(test_shards_materialized)
             test_shards_config = [
                 {
@@ -2164,9 +2263,10 @@ def main() -> None:
         data_ver = hashlib.sha256(f"{train_data_ver}:{test_data_ver}".encode("utf-8")).hexdigest()[:12]
         params: dict[str, Any] = {
             "model_name": "FNO2d",
-            "in_channels": 3,
+            "in_channels": INPUT_ENCODING_IN_CHANNELS[args.input_encoding],
             "out_channels": OUT_CHANNELS,
             "eigen_ch0_encoding": args.eigen_ch0_encoding,
+            "input_encoding": args.input_encoding,
             "hidden_channels": args.hidden_channels,
             "layers": args.layers,
             "modes_height": args.modes_height,

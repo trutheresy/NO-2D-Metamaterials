@@ -1,0 +1,23 @@
+{
+  "status": "completed",
+  "run_name": "NO_I4O5_BCF16_NMAE_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_inconst_260725",
+  "run_id": "NO_I4O5_BCF16_NMAE_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_inconst_260725",
+  "started_at_utc": "2026-07-27T13:56:46.904460+00:00",
+  "ended_at_utc": "2026-07-28T04:11:12.418848+00:00",
+  "duration_sec": 51265.514388,
+  "best_val_loss": 0.25807558702180783,
+  "best_epoch": 8,
+  "checkpoints": {
+    "best": "D:\\Research\\NO-2D-Metamaterials\\MODELS\\training_runs\\NO_I4O5_BCF16_NMAE_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_inconst_260725\\NO_I4O5_BCF16_NMAE_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_inconst_260725_best.pth",
+    "final": "D:\\Research\\NO-2D-Metamaterials\\MODELS\\training_runs\\NO_I4O5_BCF16_NMAE_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_inconst_260725\\NO_I4O5_BCF16_NMAE_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_inconst_260725_final.pth",
+    "epoch_pattern": "D:\\Research\\NO-2D-Metamaterials\\MODELS\\training_runs\\NO_I4O5_BCF16_NMAE_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_inconst_260725\\NO_I4O5_BCF16_NMAE_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_inconst_260725_E{epoch}.pth"
+  },
+  "artifacts": {
+    "train_log": "D:\\Research\\NO-2D-Metamaterials\\MODELS\\training_runs\\NO_I4O5_BCF16_NMAE_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_inconst_260725\\train.log",
+    "resolved_config": "D:\\Research\\NO-2D-Metamaterials\\MODELS\\training_runs\\NO_I4O5_BCF16_NMAE_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_inconst_260725\\resolved_config.json",
+    "run_metadata": "D:\\Research\\NO-2D-Metamaterials\\MODELS\\training_runs\\NO_I4O5_BCF16_NMAE_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_inconst_260725\\run_metadata.json",
+    "metrics_csv": "D:\\Research\\NO-2D-Metamaterials\\MODELS\\training_runs\\NO_I4O5_BCF16_NMAE_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_inconst_260725\\metrics.csv",
+    "metrics_jsonl": "D:\\Research\\NO-2D-Metamaterials\\MODELS\\training_runs\\NO_I4O5_BCF16_NMAE_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_inconst_260725\\metrics.jsonl",
+    "diagnostics": "D:\\Research\\NO-2D-Metamaterials\\MODELS\\training_runs\\NO_I4O5_BCF16_NMAE_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_inconst_260725\\diagnostics"
+  }
+}

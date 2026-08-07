@@ -25,6 +25,10 @@ $datasets = @(
     @{ tag = "b_test"; pt = "$root\DATASETS\b_test\binarized_2026-03-08_16-34-27_pt" }
 )
 $refFiles = @("eigenvalue_data_full.pt", "geometries_full.pt", "wavevectors_full.pt")
+# Channel-0 eigenfrequency encoding used by this checkpoint (must match training).
+$EigenEncoding = "uniform"  # set to "fft" for wavelet-trained (ch0fft) models
+# Wavevector/band input encoding: wavelet | sinusoidal | uniform | auto (from resolved_config).
+$InputEncoding = "auto"
 
 function Run-Py($label, [string[]]$pyArgs) {
     Write-Output "`n>> $label START $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')"
@@ -56,7 +60,8 @@ foreach ($d in $datasets) {
         "--model_path", $ckpt,
         "--input_dataset_path", $pt,
         "--output_path", $pred,
-        "--batch_size", "1024"
+        "--batch_size", "1024",
+        "--input-encoding", $InputEncoding
     )
 
     foreach ($f in $refFiles) {
@@ -77,7 +82,7 @@ foreach ($d in $datasets) {
         "compare_inference_to_truth.py",
         "--predictions", $pred,
         "--dataset-pt-dir", $pt,
-        "--eigen-encoding", "uniform",
+        "--eigen-encoding", $EigenEncoding,
         "--model-name", $MODEL,
         "--dataset", $tag,
         "--device", "cpu"
@@ -86,7 +91,8 @@ foreach ($d in $datasets) {
     Run-Py "decode_$tag" @(
         "decode_predicted_eigenvalues.py",
         "--input-dir", (Join-Path $INF $tag),
-        "--reference-pt-dir", $pt
+        "--reference-pt-dir", $pt,
+        "--eigen-encoding", $EigenEncoding
     )
 
     Run-Py "relative_error_$tag" @(
@@ -96,7 +102,8 @@ foreach ($d in $datasets) {
         "--predictions", $pred,
         "--model-name", $MODEL,
         "--dataset", $tag,
-        "--tag", $tag
+        "--tag", $tag,
+        "--eigen-encoding", $EigenEncoding
     )
 
     Run-Py "second_peak_$tag" @(
@@ -105,7 +112,8 @@ foreach ($d in $datasets) {
         "--predictions", $pred,
         "--model-name", $MODEL,
         "--dataset", $tag,
-        "--tag", $tag
+        "--tag", $tag,
+        "--eigen-encoding", $EigenEncoding
     )
 }
 
@@ -128,6 +136,7 @@ foreach ($d in $datasets) {
             "--dataset-pt-dir", $pt,
             "--inference", $pred,
             "--losses", $loss,
+            "--eigen-encoding", $EigenEncoding,
             "--tag", $tag,
             "--model-name", $MODEL,
             "--dataset", $tag,
@@ -143,6 +152,7 @@ foreach ($d in $datasets) {
             "plot_loss_histograms.py",
             "--dataset-pt-dir", $pt,
             "--inference", $pred,
+            "--eigen-encoding", $EigenEncoding,
             "--losses", $losses,
             "--tag", $tag,
             "--model-name", $MODEL,
@@ -159,6 +169,7 @@ foreach ($d in $datasets) {
             "plot_sample_cases.py",
             "--dataset-pt-dir", $pt,
             "--predictions", $pred,
+            "--eigen-encoding", $EigenEncoding,
             "--loss-array", $loss, $npy,
             "--tag", $tag,
             "--model-name", $MODEL,
@@ -175,6 +186,7 @@ foreach ($d in $datasets) {
         "plot_high_loss_samples.py",
         "--dataset-pt-dir", $pt,
         "--predictions", $pred,
+        "--eigen-encoding", $EigenEncoding,
         "--loss-array", "nmae", $nmaeNpy,
         "--loss-array", "nmse", $nmseNpy,
         "--tag", $tag,
@@ -194,6 +206,7 @@ Run-Py "scatter_boundary_b_test" @(
     "--dataset-pt-dir", $bpt.pt,
     "--inference", $bpred,
     "--geometries", $bgeo,
+    "--eigen-encoding", $EigenEncoding,
     "--losses", $losses,
     "--tag", "b_test",
     "--model-name", $MODEL,
@@ -207,6 +220,7 @@ Run-Py "scatter_boundary_by_band_b_test" @(
     "--dataset-pt-dir", $bpt.pt,
     "--inference", $bpred,
     "--geometries", $bgeo,
+    "--eigen-encoding", $EigenEncoding,
     "--losses", $losses,
     "--tag", "b_test",
     "--model-name", $MODEL,

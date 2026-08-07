@@ -137,7 +137,7 @@ def run_fixed_geometry_generation_debug(
 
     from wavevectors import get_IBZ_wavevectors  # type: ignore
     from dispersion_with_matrix_save_opt import dispersion_with_matrix_save_opt  # type: ignore
-    from design_conversion import design_to_explicit, apply_steel_rubber_paradigm  # type: ignore
+    from design_conversion import design_to_explicit, apply_steel_polymer_paradigm  # type: ignore
 
     if default_dtype not in {"float16", "float32", "float64"}:
         raise ValueError("--default-dtype must be float16, float32, or float64")
@@ -153,7 +153,7 @@ def run_fixed_geometry_generation_debug(
         raise ValueError(f"Expected FIXED_DESIGN shape (32, 32, 3), got {design.shape}")
 
     const = _base_constants()
-    design_after_map = apply_steel_rubber_paradigm(design, const)
+    design_after_map = apply_steel_polymer_paradigm(design, const)
     design_for_solver = np.asarray(design_after_map, dtype=dtype)
     const["design"] = design_for_solver
     const["wavevectors"] = np.asarray(

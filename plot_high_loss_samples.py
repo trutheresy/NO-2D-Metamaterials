@@ -29,13 +29,35 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
 import NO_utilities
+from input_encodings import (
+    assemble_model_input,
+    input_encoding_filenames,
+    input_panel_titles,
+    normalize_input_encoding,
+)
 from per_sample_loss import DEFAULT_SCORING_CHANNELS, parse_channels
 from output_layout import resolve_script_output_dir
 
 
 def main() -> None:
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    p.add_argument("--dataset-pt-dir", required=True, help="Dataset *_pt folder (geometries/waveforms/band_fft/eigenfrequency_uniform/displacements).")
+    p.add_argument(
+        "--dataset-pt-dir",
+        required=True,
+        help="Dataset *_pt folder (geometries/waveforms/band_fft/eigenfrequency_*/displacements).",
+    )
+    p.add_argument(
+        "--eigen-encoding",
+        choices=tuple(NO_utilities.EIGENFREQUENCY_ENCODING_FILES),
+        default="uniform",
+        help="Channel-0 truth encoding: uniform or fft (wavelet). Default: uniform.",
+    )
+    p.add_argument(
+        "--input-encoding",
+        default="wavelet",
+        choices=("wavelet", "sinusoidal", "uniform", "constant"),
+        help="Wavevector/band input encoding tensors (default: wavelet).",
+    )
     p.add_argument("--predictions", required=True, help="Dense prediction tensor (.pt), shape (n_geom*n_wv*n_bands, C, H, W).")
     p.add_argument("--loss-array", nargs=2, action="append", metavar=("NAME", "PATH"), required=True,
                    help="Loss name and .npy path from per_sample_loss.py. Repeatable.")
@@ -67,9 +89,13 @@ def main() -> None:
     )
 
     geometries = torch.load(pt / "geometries_full.pt", weights_only=False)
-    waveforms = torch.load(pt / "waveforms_full.pt", weights_only=False)
-    band_ffts = torch.load(pt / "band_fft_full.pt", weights_only=False)
-    eigenfrequency_uniform = torch.load(pt / "eigenfrequency_uniform_full.pt", weights_only=False)
+    input_encoding = normalize_input_encoding(args.input_encoding)
+    enc_files = input_encoding_filenames(input_encoding)
+    waveforms = torch.load(pt / enc_files["waveforms"], weights_only=False)
+    band_ffts = torch.load(pt / enc_files["bands"], weights_only=False)
+    eigen_encoding = NO_utilities.resolve_eigenfrequency_encoding(args.eigen_encoding)
+    eigen_name = NO_utilities.eigenfrequency_full_filename(eigen_encoding)
+    eigenfrequency_ch0 = torch.load(pt / eigen_name, weights_only=False)
     displacements = torch.load(pt / "displacements_dataset.pt", weights_only=False)
     predictions = torch.load(args.predictions, map_location="cpu", mmap=True, weights_only=True)
 
@@ -89,7 +115,7 @@ def main() -> None:
         )
 
     def stack_target_channels(d: int, w: int, b: int, combined: int) -> torch.Tensor:
-        ch0 = eigenfrequency_uniform[d, w, b]
+        ch0 = eigenfrequency_ch0[d, w, b]
         chans = [displacements.tensors[i][combined] for i in range(4)]
         return torch.stack([ch0, *chans], dim=0)
 
@@ -135,12 +161,15 @@ def main() -> None:
             ma, ms, mx = displacement_field_stats(comb)
             print(f"{rank:>4}{comb:>10}{d:>6}{w:>5}{b:>4}{val:>14.4e}{mae:>13.4e}{mse:>13.4e}{ma:>12.4e}{ms:>13.4e}{mx:>12.4e}")
 
-            input_tensor = torch.stack([geometries[d], waveforms[w], band_ffts[b]], dim=0).float()
+            input_tensor = assemble_model_input(
+                geometries[d], waveforms[w], band_ffts[b], encoding=input_encoding
+            ).float()
             plt.close("all")
             NO_utilities.visualize_sample(
                 input_tensor.cpu(), out.cpu(), tgt.cpu(),
                 unified_colorbar=args.unified_colorbar, field_cmap=args.field_cmap,
                 diverge_center=args.diverge_center, show_eigfreq=args.show_eigfreq,
+                input_titles=input_panel_titles(input_encoding),
             )
             nums = plt.get_fignums()
             suptitle = (f"{tag} | {loss_name.upper()} worst#{rank} | comb={comb} (g={d},w={w},b={b}) | "

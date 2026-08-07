@@ -8,8 +8,8 @@
    - `generate_dispersion_from_prescribed_geometries.m`
    - `compare_eigenvalue_full_pt_vs_matlab.py`
 2. Mapping parity A/B:
-   - MATLAB `apply_steel_rubber_paradigm.m` output dumps
-   - Python `design_conversion.apply_steel_rubber_paradigm` output dumps
+   - MATLAB `apply_steel_polymer_paradigm.m` output dumps
+   - Python `design_conversion.apply_steel_polymer_paradigm` output dumps
 3. Wavevector/remap validation:
    - Updated `compare_eigenvalue_full_pt_vs_matlab.py` to exact-key-first remap + diagnostics
 4. Solver ablations:
@@ -63,7 +63,7 @@ From `solver_ablation_summary.json`:
 ## Where disagreements are (ranked)
 
 1. **Design/material mapping constant mismatch (confirmed):**
-   - MATLAB: `2D-dispersion-mat/apply_steel_rubber_paradigm.m` uses `E_polymer = 100e6`
+   - MATLAB: `2D-dispersion-mat/apply_steel_polymer_paradigm.m` uses `E_polymer = 100e6`
    - Python: `2d-dispersion-py/design_conversion.py` uses `E_polymer = 200e6`
    - Measured effect: mapping-level error `~5e-4` in normalized design pane 1.
 
@@ -88,7 +88,7 @@ From `solver_ablation_summary.json`:
 ## Final conclusion
 
 The largest remaining MATLAB vs Python disagreement in the current workflow is **not** driven by PT float16 export and **not** primarily by the tested solver toggles. The strongest confirmed disagreements are:
-- a mapping constant mismatch in steel-rubber conversion (`E_polymer`),
+- a mapping constant mismatch in steel-polymer conversion (`E_polymer`),
 - wavevector representation mismatch requiring nearest remap,
 - and structure-specific residual spectrum disagreement that remains after those controls, concentrated in structures 1 and 3.
 

@@ -59,20 +59,24 @@ def run_inference_cpu_streaming(
     band_ffts: torch.Tensor,
     batch_size: int,
     out_channels: int,
+    in_channels: int,
     output_dtype: torch.dtype,
 ) -> torch.Tensor:
-    """Assemble batches on the fly without materializing the full (N, 3, 32, 32) input tensor."""
+    """Assemble batches on the fly without materializing the full (N, C, 32, 32) input tensor."""
     model.eval()
     n_geometries = geometries.shape[0]
     n_waveforms = waveforms.shape[0]
     n_bands = band_ffts.shape[0]
     total_samples = n_geometries * n_waveforms * n_bands
-    print(f"Running CPU streaming inference on {total_samples} samples (batch_size={batch_size})...")
+    print(
+        f"Running CPU streaming inference on {total_samples} samples "
+        f"(batch_size={batch_size}, in_channels={in_channels})..."
+    )
     outputs = torch.empty((total_samples, out_channels, 32, 32), dtype=output_dtype)
     geoms_f = geometries.float()
     waves_f = waveforms.float()
     bands_f = band_ffts.float()
-    batch_tensor = torch.empty((batch_size, 3, 32, 32), dtype=torch.float32)
+    batch_tensor = torch.empty((batch_size, in_channels, 32, 32), dtype=torch.float32)
     batch_indices = [0] * batch_size
     batch_idx = 0
 
@@ -82,9 +86,9 @@ def run_inference_cpu_streaming(
             for wave_idx in range(n_waveforms):
                 wave = waves_f[wave_idx]
                 for band_idx in range(n_bands):
-                    batch_tensor[batch_idx, 0, :, :] = geom
-                    batch_tensor[batch_idx, 1, :, :] = wave
-                    batch_tensor[batch_idx, 2, :, :] = bands_f[band_idx]
+                    mic.fill_input_row(
+                        batch_tensor, batch_idx, geom, wave, bands_f[band_idx], in_channels
+                    )
                     batch_indices[batch_idx] = mic.compute_output_index(
                         geom_idx, wave_idx, band_idx, n_waveforms, n_bands
                     )
@@ -161,6 +165,7 @@ def model_cfg_to_kwargs(model_cfg: dict) -> dict:
         "hidden_channels": model_cfg["hidden"],
         "n_layers": model_cfg["layers"],
         "out_channels": model_cfg["out_channels"],
+        "in_channels": model_cfg.get("in_channels", 3),
     }
 
 
@@ -204,6 +209,7 @@ def _parallel_inference_worker(
         hidden_channels=model_cfg["hidden"],
         n_layers=model_cfg["layers"],
         out_channels=model_cfg["out_channels"],
+        in_channels=model_cfg.get("in_channels", 3),
     )
     mic.load_model_weights(model, model_path, torch.device("cpu"))
     model.eval()
@@ -214,6 +220,7 @@ def _parallel_inference_worker(
             print(f"[worker {worker_id}] torch.compile failed, continuing uncompiled: {exc}")
 
     combos = int(waveforms.shape[0]) * int(band_ffts.shape[0])
+    in_channels = int(model_cfg.get("in_channels", 3))
     try:
         with torch.inference_mode():
             while True:
@@ -221,7 +228,9 @@ def _parallel_inference_worker(
                 if item is None:
                     break
                 lstart, lend = item
-                inputs = mic.materialize_inputs_cpu(geometries[lstart:lend], waveforms, band_ffts)
+                inputs = mic.materialize_inputs_cpu(
+                    geometries[lstart:lend], waveforms, band_ffts, in_channels=in_channels
+                )
                 base = lstart * combos
                 n = inputs.shape[0]
                 for s in range(0, n, batch_size):
@@ -384,7 +393,7 @@ def parse_args() -> argparse.Namespace:
         "--preload-inputs",
         action=argparse.BooleanOptionalAction,
         default=True,
-        help="Materialize full (N, 3, 32, 32) inputs in RAM before inference (default: on).",
+        help="Materialize full (N, C, 32, 32) inputs in RAM before inference (default: on).",
     )
     p.add_argument(
         "--output-dtype",
@@ -402,7 +411,17 @@ def parse_args() -> argparse.Namespace:
         "--case",
         type=str,
         default="auto",
-        choices=["auto", "I3O1", "I3O4", "I3O5"],
+        choices=["auto", "I3O1", "I3O4", "I3O5", "I4O5"],
+    )
+    p.add_argument(
+        "--input-encoding",
+        type=str,
+        default="auto",
+        choices=list(mic.INPUT_ENCODING_CHOICES),
+        help=(
+            "Wavevector/band encoding tensors: wavelet, sinusoidal, uniform/constant, "
+            "or auto (from resolved_config.json; default wavelet)."
+        ),
     )
     p.add_argument("--geometries", nargs="+", type=int, default=None)
     p.add_argument("--geometry-seed", type=int, default=0)
@@ -431,16 +450,20 @@ def main() -> None:
     print(f"Found {len(dataset_paths)} dataset(s)")
 
     state_dict = mic.normalize_fno_state_dict(mic.load_raw_state_dict(args.model_path, map_location="cpu"))
+    run_dir = os.path.dirname(os.path.abspath(args.model_path))
+    input_encoding = mic.resolve_input_encoding(args.input_encoding, run_dir)
+    in_channels = mic.input_encoding_in_channels(input_encoding)
+    print(f"Input encoding: {input_encoding} (in_channels={in_channels})")
     if args.case == "auto":
-        case, out_channels = mic.infer_case_from_state_dict(state_dict)
+        _, out_channels = mic.infer_case_from_state_dict(state_dict)
+        case = mic.io_case_label(in_channels, out_channels)
         print(f"Auto-inferred I/O case: {case} (out_channels={out_channels})")
     else:
-        case = args.case
-        out_channels = mic.CASE_OUT_CHANNELS[case]
-    channel_labels = mic.CASE_CHANNEL_LABELS[case]
+        out_channels = mic.CASE_OUT_CHANNELS[args.case]
+        case = mic.io_case_label(in_channels, out_channels)
+    channel_labels = mic.channel_labels_for_out(out_channels)
     del state_dict
 
-    run_dir = os.path.dirname(os.path.abspath(args.model_path))
     hp = mic.hparams_from_resolved_config(run_dir)
     num_geometries_per_dataset = mic.infer_num_geometries_per_dataset(dataset_paths)
     if hp.get("hidden_channels") is not None and hp.get("layers") is not None:
@@ -449,13 +472,17 @@ def main() -> None:
         arch_source = "resolved_config.json"
     else:
         state_dict = mic.normalize_fno_state_dict(mic.load_raw_state_dict(args.model_path, map_location="cpu"))
-        model_hidden, model_layers = mic.infer_model_architecture(state_dict, out_channels=out_channels)
+        model_hidden, model_layers = mic.infer_model_architecture(
+            state_dict, out_channels=out_channels, in_channels=in_channels
+        )
         arch_source = "state_dict inference"
         del state_dict
     modes_h = int(hp.get("modes_height", 32))
     modes_w = int(hp.get("modes_width", 32))
 
-    geometries, waveforms, band_ffts = mic.load_input_data(dataset_paths, num_geometries_per_dataset)
+    geometries, waveforms, band_ffts, input_encoding, in_channels = mic.load_input_data(
+        dataset_paths, num_geometries_per_dataset, input_encoding=input_encoding
+    )
     total_geometries = int(geometries.shape[0])
     if args.geometry_range is not None:
         start, end = int(args.geometry_range[0]), int(args.geometry_range[1])
@@ -479,7 +506,7 @@ def main() -> None:
     n_waveforms = waveforms.shape[0]
     n_bands = band_ffts.shape[0]
     n_samples = geometries.shape[0] * n_waveforms * n_bands
-    input_gb = n_samples * 3 * 32 * 32 * 4 / (1024**3)
+    input_gb = n_samples * in_channels * 32 * 32 * 4 / (1024**3)
     output_gb = n_samples * out_channels * 32 * 32 * (2 if output_dtype == torch.float16 else 4) / (1024**3)
     print(f"Estimated RAM: inputs~{input_gb:.2f} GB, outputs~{output_gb:.2f} GB")
 
@@ -491,6 +518,7 @@ def main() -> None:
         "hidden": model_hidden,
         "layers": model_layers,
         "out_channels": out_channels,
+        "in_channels": in_channels,
     }
 
     if n_workers > 1:
@@ -517,7 +545,9 @@ def main() -> None:
         n_threads = configure_cpu_threads(args.cpu_threads if args.cpu_threads > 0 else default_cpu_threads())
         notes_mode = f"single-process preload, cpu_threads={n_threads}"
         print("Materializing inputs on CPU...")
-        inputs_cpu = mic.materialize_inputs_cpu(geometries, waveforms, band_ffts)
+        inputs_cpu = mic.materialize_inputs_cpu(
+            geometries, waveforms, band_ffts, in_channels=in_channels
+        )
         del geometries, waveforms, band_ffts
         gc.collect()
         print("Building model...")
@@ -544,6 +574,7 @@ def main() -> None:
             band_ffts,
             batch_size=args.batch_size,
             out_channels=out_channels,
+            in_channels=in_channels,
             output_dtype=output_dtype,
         )
         del model
@@ -566,6 +597,8 @@ def main() -> None:
             "model_path": os.path.abspath(args.model_path),
             "model_name": model_name,
             "case": case,
+            "input_encoding": input_encoding,
+            "in_channels": in_channels,
             "out_channels": out_channels,
             "channel_labels": channel_labels,
             "hidden_channels": model_hidden,

@@ -92,10 +92,10 @@ data/out_test_10_pt/
 
 ---
 
-### STEP 3: Convert Design (Steel-Rubber Paradigm)
+### STEP 3: Convert Design (steel-polymer Paradigm)
 **File**: `reduced_pt_to_matlab.py` (lines 387-400)
 
-**Function**: `apply_steel_rubber_paradigm()`
+**Function**: `apply_steel_polymer_paradigm()`
 
 **Operations**:
 1. **Extract single-channel design**:
@@ -104,7 +104,7 @@ data/out_test_10_pt/
    design_param = design_param.astype(np.float64)  # Convert to float64
    ```
 
-2. **Apply steel-rubber paradigm**:
+2. **Apply steel-polymer paradigm**:
    - Maps single-channel design [0, 1] to 3-channel design
    - Channel 0: Elastic modulus (E_polymer=100e6 → E_steel=200e9)
    - Channel 1: Density (rho_polymer=1200 → rho_steel=8000)

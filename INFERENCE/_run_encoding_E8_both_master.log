@@ -1,0 +1,12 @@
+
+################ NO_I3O5_BCF16_NMAE_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_insin_260723_E8 ################
+Log: d:\Research\NO-2D-Metamaterials\INFERENCE\_run_insin_E8_pipeline.log
+Err: d:\Research\NO-2D-Metamaterials\INFERENCE\_run_insin_E8_pipeline.err.log
+DONE NO_I3O5_BCF16_NMAE_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_insin_260723_E8
+
+################ NO_I4O5_BCF16_NMAE_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_inconst_260725_E8 ################
+Log: d:\Research\NO-2D-Metamaterials\INFERENCE\_run_inconst_E8_pipeline.log
+Err: d:\Research\NO-2D-Metamaterials\INFERENCE\_run_inconst_E8_pipeline.err.log
+DONE NO_I4O5_BCF16_NMAE_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0u_inconst_260725_E8
+
+ALL_BOTH_ENCODING_E8_PIPELINES_DONE 2026-08-02 21:36:24

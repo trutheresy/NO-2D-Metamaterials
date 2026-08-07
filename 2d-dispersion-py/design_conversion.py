@@ -271,11 +271,11 @@ def clip_design_to_bounds(design, design_format='linear', E_min=2e9, E_max=200e9
     return clipped_design
 
 
-def apply_steel_rubber_paradigm(design, const):
+def apply_steel_polymer_paradigm(design, const):
     """
-    Apply steel-rubber paradigm to design.
+    Apply steel-polymer paradigm to design.
     
-    This is the exact translation of MATLAB's apply_steel_rubber_paradigm.m function.
+    This is the exact translation of MATLAB's apply_steel_polymer_paradigm.m function.
     
     Note: Despite MATLAB's comment saying "design should be a N_pix matrix (with only one pane)",
     the actual MATLAB code accesses design(:,:,prop_idx) for prop_idx=1:3, which requires
@@ -293,7 +293,7 @@ def apply_steel_rubber_paradigm(design, const):
     Returns
     -------
     design_out : array_like
-        Design array (N_pix x N_pix x 3) with steel-rubber paradigm applied to each channel
+        Design array (N_pix x N_pix x 3) with steel-polymer paradigm applied to each channel
     """
     design_in_polymer = 0
     design_in_steel = 1

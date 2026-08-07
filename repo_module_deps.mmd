@@ -1,0 +1,119 @@
+%% Local Python import graph (core modules only)
+%% Open this file and use Mermaid preview (CodeLens / Command Palette).
+%% Arrow A --> B means A imports B.
+
+flowchart TB
+  subgraph Train["Training / evaluation"]
+    train_from_disk_fast["train_from_disk_fast"]
+    train_from_disk["train_from_disk"]
+    train_disp["train_from_disk_displacement"]
+    train_eig["train_from_disk_eigenfrequency"]
+    train_lam["train_from_disk_lambda_weighted"]
+    evaluate_from_disk["evaluate_from_disk"]
+    diagnostic_panels["diagnostic_panels"]
+    sissi_loss["sissi_loss"]
+  end
+
+  subgraph Infer["Inference"]
+    run_gpu["run_model_inference_gpu"]
+    run_cpu["run_model_inference_cpu"]
+    model_inference_common["model_inference_common"]
+    compare_truth["compare_inference_to_truth"]
+  end
+
+  subgraph Shared["Shared utilities"]
+    NO_utilities["NO_utilities"]
+    output_layout["output_layout"]
+    per_sample_loss["per_sample_loss"]
+    wave_mode_filters["wave_mode_filters"]
+    second_peak_analysis["second_peak_analysis"]
+  end
+
+  subgraph Analyze["Analysis / plots"]
+    plot_loss_histograms["plot_loss_histograms"]
+    plot_sample_cases["plot_sample_cases"]
+    plot_high_loss["plot_high_loss_samples"]
+    plot_pixel["plot_per_pixel_relative_error"]
+    scatter_boundary["scatter_loss_vs_boundary"]
+    analyze_peak["analyze_second_peak_waves"]
+    plot_ibz["plot_ibz_second_peak_waves"]
+    inspect_wavelet["inspect_wavelet_embeddings_ibz"]
+    plot_encode["plot_1d_scalar_encode_decode_error"]
+  end
+
+  subgraph Physics["Dispersion / FEM core"]
+    gen_dataset["generate_dispersion_dataset_Han_Alex"]
+    run_batched["run_generate_dispersion_batched"]
+    dispersion["dispersion"]
+    disp_opt["dispersion_with_matrix_save_opt"]
+    system_matrices["system_matrices"]
+    system_matrices_vec["system_matrices_vec"]
+    wavevectors["wavevectors"]
+    get_design["get_design"]
+    get_design2["get_design2"]
+    design_parameters["design_parameters"]
+    design_conversion["design_conversion"]
+  end
+
+  %% Training
+  train_from_disk_fast --> train_from_disk
+  train_from_disk --> diagnostic_panels
+  train_disp --> diagnostic_panels
+  train_eig --> diagnostic_panels
+  train_lam --> diagnostic_panels
+  evaluate_from_disk --> train_from_disk
+  backfill_val_dual_loss["backfill_val_dual_loss"] --> evaluate_from_disk
+
+  %% Inference
+  run_gpu --> model_inference_common
+  run_cpu --> model_inference_common
+  compare_truth --> output_layout
+  compare_truth --> per_sample_loss
+
+  %% Shared
+  per_sample_loss --> output_layout
+  per_sample_loss --> wave_mode_filters
+
+  %% Analysis
+  plot_loss_histograms --> output_layout
+  plot_loss_histograms --> per_sample_loss
+  plot_loss_histograms --> second_peak_analysis
+  plot_loss_histograms --> wave_mode_filters
+  plot_sample_cases --> NO_utilities
+  plot_sample_cases --> output_layout
+  plot_sample_cases --> per_sample_loss
+  plot_sample_cases --> wave_mode_filters
+  plot_high_loss --> NO_utilities
+  plot_high_loss --> output_layout
+  plot_high_loss --> per_sample_loss
+  plot_pixel --> output_layout
+  plot_pixel --> per_sample_loss
+  scatter_boundary --> output_layout
+  scatter_boundary --> per_sample_loss
+  scatter_boundary --> compute_boundary_length["compute_boundary_length"]
+  analyze_peak --> output_layout
+  analyze_peak --> per_sample_loss
+  analyze_peak --> second_peak_analysis
+  plot_ibz --> output_layout
+  inspect_wavelet --> NO_utilities
+  plot_encode --> NO_utilities
+
+  %% Physics / data gen
+  gen_dataset --> design_conversion
+  gen_dataset --> design_parameters
+  gen_dataset --> disp_opt
+  gen_dataset --> get_design
+  gen_dataset --> get_design2
+  gen_dataset --> system_matrices
+  gen_dataset --> wavevectors
+  run_batched --> NO_utilities
+  dispersion --> system_matrices
+  dispersion --> system_matrices_vec
+  dispersion --> get_duddesign["get_duddesign"]
+  disp_opt --> system_matrices
+  disp_opt --> system_matrices_vec
+  system_matrices --> elements["elements"]
+  system_matrices_vec --> elements_vec["elements_vec"]
+  get_design2 --> get_prop["get_prop"]
+  encode_uniform["encode_eigenfrequency_uniform_full"] --> NO_utilities
+  encode_fft["encode_eigenfrequency_fft_full"] --> run_batched

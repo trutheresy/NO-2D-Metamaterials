@@ -28,7 +28,7 @@ Additional feature/demo outputs from the same script:
 Core generation path:
 
 1. `DesignParameters.prepare()` -> `get_design2()`  
-2. `convert_design()` -> `apply_steel_rubber_paradigm()`  
+2. `convert_design()` -> `apply_steel_polymer_paradigm()`  
 3. `dispersion_with_matrix_save_opt(const, const["wavevectors"])` -> returns `wv, fr, ev, K, M, T`  
 4. `design_to_explicit()` -> constitutive panes (`E`, `rho`, `nu`)  
 5. `_build_pt_dataset_outputs(...)` builds `.pt` payloads  

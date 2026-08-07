@@ -83,7 +83,7 @@ for struct_idx = 1:N_struct
         g = squeeze(geometries_full(struct_idx, :, :));
         design_input = cat(3, g, g, g);
     end
-    design3 = apply_steel_rubber_paradigm(design_input, const);
+    design3 = apply_steel_polymer_paradigm(design_input, const);
     const.design = design3;
     designs(:,:,:,struct_idx) = design3;
 

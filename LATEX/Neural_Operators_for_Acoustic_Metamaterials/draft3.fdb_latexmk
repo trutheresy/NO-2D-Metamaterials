@@ -1,13 +1,13 @@
 # Fdb version 4
-["bibtex draft3"] 0 "draft3.aux" "draft3.bbl" "draft3" 0 -1
-  "./references.bib" 1784257377 2849 9c9e156bbf0ac61152913c9d1706f718 ""
+["bibtex draft3"] 1784257618.61881 "draft3.aux" "draft3.bbl" "draft3" 1784257618.99317 0
+  "./references.bib" 1784257613 11894 f6942481bc42c8c418b2625c697571d7 ""
   "c:/texlive/2026/texmf-dist/bibtex/bst/elsarticle/elsarticle-num.bst" 1784141422 29462 dde4ec39bf78fded04ea32048bba0a74 ""
-  "draft3.aux" 1784257389 31797 af5f9efe8d73a75ce1dfc692c3983633 "pdflatex"
+  "draft3.aux" 1784257617 31797 af5f9efe8d73a75ce1dfc692c3983633 "pdflatex"
   (generated)
   "draft3.bbl"
   "draft3.blg"
   (rewritten before read)
-["pdflatex"] 1784257385.00074 "d:/Research/NO-2D-Metamaterials/LATEX/Neural_Operators_for_Acoustic_Metamaterials/draft3.tex" "draft3.pdf" "draft3" 1784257390.66434 2
+["pdflatex"] 1784257613.1582 "d:/Research/NO-2D-Metamaterials/LATEX/Neural_Operators_for_Acoustic_Metamaterials/draft3.tex" "draft3.pdf" "draft3" 1784257618.99335 0
   "Figures/Dispersion B/NMAE252_NMSE328_g729.png" 1784137176 134073 fd6e1c18d0a4d5c0639fd495f5319eff ""
   "Figures/Dispersion B/NMAE499_NMSE514_g975.png" 1784137176 146939 ce54cb91ac091f83ef0f57882f0f4bf8 ""
   "Figures/Dispersion B/NMAE754_NMSE754_g690.png" 1784137176 154406 e68d24a6923f77abedaaefb21d916cab ""
@@ -48,7 +48,6 @@
   "c:/texlive/2026/texmf-dist/fonts/map/fontname/texfonts.map" 1784142136 3524 cb3e574dea2d1052e39280babc910dc8 ""
   "c:/texlive/2026/texmf-dist/fonts/tfm/adobe/symbol/psyr.tfm" 1784147884 1408 5937f58aa508ea2cea4901c07d10f5fe ""
   "c:/texlive/2026/texmf-dist/fonts/tfm/adobe/zapfding/pzdr.tfm" 1784149543 1528 7e12f4c0fcf5a072cebdcfbfc610f54c ""
-  "c:/texlive/2026/texmf-dist/fonts/tfm/jknappen/ec/ecbx1000.tfm" 1784141311 3584 2d666ecf6d466d8b007246bc2f94d9da ""
   "c:/texlive/2026/texmf-dist/fonts/tfm/jknappen/ec/ecbx1200.tfm" 1784141311 3584 402da0b29eafbad07963b1224b222f18 ""
   "c:/texlive/2026/texmf-dist/fonts/tfm/jknappen/ec/ecrm0600.tfm" 1784141311 3584 291a5713401683441e0a8c8f4417b17b ""
   "c:/texlive/2026/texmf-dist/fonts/tfm/jknappen/ec/ecrm0800.tfm" 1784141311 3584 49064b465390a8e316a3c8417a050403 ""
@@ -118,7 +117,6 @@
   "c:/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy7.pfb" 1784138667 32716 08e384dc442464e7285e891af9f45947 ""
   "c:/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy8.pfb" 1784138667 32626 5abc8bb2f28aa647d4c70f8ea38cc0d3 ""
   "c:/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/symbols/msbm10.pfb" 1784138667 34694 870c211f62cb72718a00e353f14f254d ""
-  "c:/texlive/2026/texmf-dist/fonts/type1/public/cm-super/sfbx1000.pfb" 1784140277 145408 bcd327f112f643a875638eafb48d1d8b ""
   "c:/texlive/2026/texmf-dist/fonts/type1/public/cm-super/sfbx1200.pfb" 1784140277 140176 d0f50dba675c56d445f84a32c1f93a79 ""
   "c:/texlive/2026/texmf-dist/fonts/type1/public/cm-super/sfrm0800.pfb" 1784140277 164227 41439fae96b3b30186924e9dd2fcff30 ""
   "c:/texlive/2026/texmf-dist/fonts/type1/public/cm-super/sfrm1000.pfb" 1784140277 138258 6525c253f16cededa14c7fd0da7f67b2 ""
@@ -342,13 +340,13 @@
   "c:/texlive/2026/texmf-var/fonts/map/pdftex/updmap/pdftex.map" 1784149622 5619402 ad1310ccf7f36101ef3e8f014a173c46 ""
   "c:/texlive/2026/texmf-var/web2c/pdftex/pdflatex.fmt" 1784149706 3656536 8e9c96c0b0fa94397c1aa53ccc68a4fb ""
   "c:/texlive/2026/texmf.cnf" 1784149603 713 e69b156964470283e0530f5060668171 ""
-  "d:/Research/NO-2D-Metamaterials/LATEX/Neural_Operators_for_Acoustic_Metamaterials/draft3.tex" 1784257259 93255 031fb039acd270531cede7aa4ca50040 ""
-  "draft3.aux" 1784257389 31797 af5f9efe8d73a75ce1dfc692c3983633 "pdflatex"
-  "draft3.bbl" 1784257378 279 3878827962be5d70daebf15e197c8d1b "bibtex draft3"
-  "draft3.out" 1784257389 4063 8dad8a4d6e9338c06c41fd7c801c5154 "pdflatex"
-  "draft3.spl" 1784257385 0 d41d8cd98f00b204e9800998ecf8427e "pdflatex"
-  "draft3.tex" 1784257259 93255 031fb039acd270531cede7aa4ca50040 ""
-  "draft3.toc" 1784257389 2033 3a804cf8e3dc153c9c20a3b16bb829da "pdflatex"
+  "d:/Research/NO-2D-Metamaterials/LATEX/Neural_Operators_for_Acoustic_Metamaterials/draft3.tex" 1784257594 93255 f0b1bb65a668b19ebcbd4385c879343a ""
+  "draft3.aux" 1784257617 31797 af5f9efe8d73a75ce1dfc692c3983633 "pdflatex"
+  "draft3.bbl" 1784257618 279 3878827962be5d70daebf15e197c8d1b "bibtex draft3"
+  "draft3.out" 1784257617 4063 8dad8a4d6e9338c06c41fd7c801c5154 "pdflatex"
+  "draft3.spl" 1784257613 0 d41d8cd98f00b204e9800998ecf8427e "pdflatex"
+  "draft3.tex" 1784257594 93255 f0b1bb65a668b19ebcbd4385c879343a ""
+  "draft3.toc" 1784257617 2033 3a804cf8e3dc153c9c20a3b16bb829da "pdflatex"
   (generated)
   "draft3.aux"
   "draft3.log"

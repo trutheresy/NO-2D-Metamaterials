@@ -44,7 +44,7 @@ A comprehensive unit test suite has been created to verify functional equivalenc
   - `TestGetDesign` - Design generation tests
   - `TestGetDesign2` - Design from parameters tests
   - `TestConvertDesign` - Design conversion tests
-  - `TestApplySteelRubberParadigm` - Material paradigm tests
+  - `TestApplySteelPolymerParadigm` - Material paradigm tests
 
 - ✅ `tests/test_kernels.py` - **5 test classes, 10+ test cases**
   - `TestMatern52Kernel` - Matern 5/2 kernel tests

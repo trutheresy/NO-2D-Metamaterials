@@ -32,7 +32,7 @@ try:
     from get_design2 import get_design2
     from wavevectors import get_IBZ_wavevectors
     from design_parameters import DesignParameters
-    from design_conversion import convert_design, design_to_explicit, apply_steel_rubber_paradigm
+    from design_conversion import convert_design, design_to_explicit, apply_steel_polymer_paradigm
     from kernels import generate_correlated_design
     from system_matrices import get_transformation_matrix
     from utils import validate_constants, check_contour_analysis
@@ -247,7 +247,7 @@ def _compute_single_structure(struct_idx, rng_seed_offset, binarize, const_templ
             const_local['E_min'], const_local['E_max'],
             const_local['rho_min'], const_local['rho_max']
         )
-        design = apply_steel_rubber_paradigm(design, const_local)
+        design = apply_steel_polymer_paradigm(design, const_local)
         if binarize:
             design = np.round(design)
 

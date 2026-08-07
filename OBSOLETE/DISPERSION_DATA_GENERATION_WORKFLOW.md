@@ -211,7 +211,7 @@ Output:
 
 Transform sequence:
 1. `design_conversion.convert_design(..., 'linear' -> const['design_scale'])`
-2. `design_conversion.apply_steel_rubber_paradigm(design, const)` remaps channels to steel/polymer-inspired parameterized bands.
+2. `design_conversion.apply_steel_polymer_paradigm(design, const)` remaps channels to steel/polymer-inspired parameterized bands.
 3. Optional binarization: `np.round(design)` when `--binarize` set.
 
 Then:

@@ -52,7 +52,7 @@
 
 ### H4: Design Conversion Issues
 **Status**: ⏳ Pending
-**Description**: Steel-rubber paradigm parameter mismatch, design expansion (repelem) issues
+**Description**: steel-polymer paradigm parameter mismatch, design expansion (repelem) issues
 **Location**: Phase 3.3, 4.2.2
 **Priority**: LOW (already verified designs match)
 
@@ -122,7 +122,7 @@
 
 1. `get_system_matrices_VEC()` - Produces K and M that match original
 2. `get_transformation_matrix()` - Produces T matrices that match original
-3. `apply_steel_rubber_paradigm()` - Produces designs that match original
+3. `apply_steel_polymer_paradigm()` - Produces designs that match original
 4. Eigenvector reconstruction - Produces eigenvectors that match original
 
 ---

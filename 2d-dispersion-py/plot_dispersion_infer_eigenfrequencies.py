@@ -256,13 +256,13 @@ def load_pt_dataset(data_dir: Path, original_data_dir: Path = None, require_eige
     return data
 
 
-def apply_steel_rubber_paradigm_single_channel(design_single, E_min, E_max, rho_min, rho_max, nu_min, nu_max):
+def apply_steel_polymer_paradigm_single_channel(design_single, E_min, E_max, rho_min, rho_max, nu_min, nu_max):
     """
-    Apply steel-rubber paradigm to single-channel design.
+    Apply steel-polymer paradigm to single-channel design.
     
-    This matches MATLAB's apply_steel_rubber_paradigm.m functionality.
+    This matches MATLAB's apply_steel_polymer_paradigm.m functionality.
     Takes a single-channel design (N_pix x N_pix) with values in [0, 1] and maps
-    them to normalized property values for E, rho, nu using the steel-rubber paradigm.
+    them to normalized property values for E, rho, nu using the steel-polymer paradigm.
     
     Parameters
     ----------
@@ -280,7 +280,7 @@ def apply_steel_rubber_paradigm_single_channel(design_single, E_min, E_max, rho_
     design_3ch : ndarray
         3-channel design (N_pix, N_pix, 3) with normalized property values
     """
-    # Material properties for steel-rubber paradigm (matching MATLAB)
+    # Material properties for steel-polymer paradigm (matching MATLAB)
     design_in_polymer = 0.0
     design_in_steel = 1.0
     
@@ -343,7 +343,7 @@ def apply_steel_rubber_paradigm_single_channel(design_single, E_min, E_max, rho_
     
     # Don't clip - let plot_design handle the actual value ranges
     # Some normalized values may exceed 1.0 if material properties are outside bounds
-    # This is correct behavior matching MATLAB's apply_steel_rubber_paradigm.m
+    # This is correct behavior matching MATLAB's apply_steel_polymer_paradigm.m
     # plot_design will now use individual colorbars and auto-scale for each property
     
     return design_3ch
@@ -1119,11 +1119,11 @@ def main(cli_data_dir=None, cli_original_dir=None, n_structs=None, infer=True, s
             fig_design_raw.savefig(png_path_raw, dpi=png_resolution, bbox_inches='tight')
             plt.close(fig_design_raw)
         
-        # For plotting: apply steel-rubber paradigm to get actual material property values
-        # This matches MATLAB's apply_steel_rubber_paradigm.m functionality
+        # For plotting: apply steel-polymer paradigm to get actual material property values
+        # This matches MATLAB's apply_steel_polymer_paradigm.m functionality
         # The design values [0, 1] are mapped to actual material property values for E, rho, nu
         # First get normalized values, then convert back to actual property values for plotting
-        design_normalized = apply_steel_rubber_paradigm_single_channel(
+        design_normalized = apply_steel_polymer_paradigm_single_channel(
             design_param, E_min, E_max, rho_min, rho_max, nu_min, nu_max
         )
         

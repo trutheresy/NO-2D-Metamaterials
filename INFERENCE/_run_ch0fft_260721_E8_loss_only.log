@@ -1,0 +1,6 @@
+=== ch0fft_260721 E8 loss-only pipeline ===
+Checkpoint: d:\Research\NO-2D-Metamaterials\MODELS\training_runs\NO_I3O5_BCF16_NMAE_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0fft_260721\NO_I3O5_BCF16_NMAE_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0fft_260721_E8.pth
+Model: NO_I3O5_BCF16_NMAE_HC128_LR2e-03_WD0e+00_SS1_G9e-01_ch0fft_260721_E8
+Eigen encoding: fft | Input encoding: wavelet
+
+>> infer_gpu_c_test START 2026-08-03 10:32:06

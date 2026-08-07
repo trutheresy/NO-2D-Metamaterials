@@ -35,6 +35,7 @@ from per_sample_loss import (
     parse_channels,
     resolve_device,
 )
+from NO_utilities import EIGENFREQUENCY_ENCODING_FILES, resolve_eigenfrequency_encoding
 from second_peak_analysis import band_table, flat_indices, second_peak_mask, wave_table
 
 
@@ -75,6 +76,12 @@ def bz_tag(kx: float, ky: float, kmax: float) -> str:
 def main() -> None:
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("--dataset-pt-dir", required=True)
+    p.add_argument(
+        "--eigen-encoding",
+        choices=tuple(EIGENFREQUENCY_ENCODING_FILES),
+        default="uniform",
+        help="Channel-0 truth encoding: uniform or fft (wavelet). Default: uniform.",
+    )
     p.add_argument("--predictions", required=True)
     p.add_argument("--loss", default="nmae", help="Loss criterion (default: nmae).")
     p.add_argument("--channels", default="0,1,2,3,4")
@@ -111,11 +118,15 @@ def main() -> None:
     device = resolve_device(args.device)
 
     predictions = torch.load(pred_path, map_location="cpu", mmap=True, weights_only=True)
-    n_geom, n_wv, n_bands, fh, fw = load_dataset_layout(dataset_pt_dir)
+    eigen_encoding = resolve_eigenfrequency_encoding(args.eigen_encoding)
+    n_geom, n_wv, n_bands, fh, fw = load_dataset_layout(dataset_pt_dir, eigen_encoding)
     total = n_geom * n_wv * n_bands
-    sources = open_scoring_sources(dataset_pt_dir, total, (fh, fw), any(c >= 1 for c in channels))
+    sources = open_scoring_sources(
+        dataset_pt_dir, total, (fh, fw), any(c >= 1 for c in channels), eigen_encoding=eigen_encoding
+    )
 
     print(f"Dataset    : {dataset_pt_dir}")
+    print(f"Eigen enc  : {eigen_encoding}")
     print(f"Predictions: {pred_path}")
     print(f"Samples    : {total} (geom={n_geom} wv={n_wv} bands={n_bands})")
     print(f"Loss       : {args.loss}  channels={channels}  weighting={weighting}")

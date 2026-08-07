@@ -1,0 +1,22 @@
+{
+  "similarity_metric": "cosine on mean-centered log10|FFT|",
+  "avg_similarity": 0.06883946806192398,
+  "near_duplicate_threshold": 0.95,
+  "per_band_nearest_neighbor": [],
+  "pairs_above_threshold": [],
+  "global_max_offdiag_cos": 0.9496492743492126,
+  "global_mean_max_offdiag_cos": 0.7748573422431946,
+  "embed_config": {
+    "encoding": "sinusoidal",
+    "size": 32,
+    "bands": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6
+    ]
+  },
+  "output_dir": "D:\\Research\\NO-2D-Metamaterials\\PLOTS\\band_embedding_inspection\\sinusoidal_S32_b6"
+}

@@ -79,7 +79,7 @@ This inventory lists (1) non-MATLAB scripts that ingest/emit MATLAB formats or i
 |---|---|---|
 | active | `2D-dispersion-mat/OUTPUT/output with system matrices/ex_dispersion_batch_save.m` | dispersion_library_path = 'D:\Research\NO-2D-Metamaterials\2D-dispersion_alex'; |
 | active | `2D-dispersion-mat/apply_p4mm_symmetry.m` | Measure original data range of A |
-| active | `2D-dispersion-mat/apply_steel_rubber_paradigm.m` | design should be a N_pix matrix (with only one pane) |
+| active | `2D-dispersion-mat/apply_steel_polymer_paradigm.m` | design should be a N_pix matrix (with only one pane) |
 | active | `2D-dispersion-mat/cellofsparse_to_full.m` | MATLAB function file (no header comment). |
 | active | `2D-dispersion-mat/compute_KMT_from_mat.m` | compute_KMT_from_mat.m |
 | active | `2D-dispersion-mat/convert_design.m` | initial_format and target_format can be 'linear','log','explicit' |

@@ -63,8 +63,8 @@ The script generates dispersion plots by:
 2. Plot raw design (before normalization):
    - Replicate single channel to 3 channels
    - Call `plot_design(design_raw_3ch)`
-3. Apply steel-rubber paradigm:
-   - Call `apply_steel_rubber_paradigm_single_channel()` to get normalized values
+3. Apply steel-polymer paradigm:
+   - Call `apply_steel_polymer_paradigm_single_channel()` to get normalized values
    - Convert normalized values back to actual material property values:
      - `E = E_min + (E_max - E_min) * design_normalized[:,:,0]`
      - `rho = rho_min + (rho_max - rho_min) * design_normalized[:,:,1]`
@@ -233,7 +233,7 @@ data = {
 For each structure:
     ↓
     [Design Plotting]
-    design_param → apply_steel_rubber_paradigm() → plot_design()
+    design_param → apply_steel_polymer_paradigm() → plot_design()
     ↓
     [Frequency Reconstruction]
     eigenvectors (field format)
@@ -267,7 +267,7 @@ For each structure:
 ## Key Functions and Their Roles
 
 1. **`load_pt_dataset()`**: Loads PyTorch data files
-2. **`apply_steel_rubber_paradigm_single_channel()`**: Maps design parameter to normalized material properties
+2. **`apply_steel_polymer_paradigm_single_channel()`**: Maps design parameter to normalized material properties
 3. **`convert_field_to_dof_format()`**: Converts field-format eigenvectors to DOF format
 4. **`reconstruct_frequencies_from_eigenvectors()`**: Reconstructs frequencies from eigenvectors using K, M, T
 5. **`get_IBZ_contour_wavevectors()`**: Generates IBZ contour path

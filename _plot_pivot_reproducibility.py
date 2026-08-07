@@ -30,7 +30,7 @@ sys.path.insert(0, str(ROOT / "2d-dispersion-py"))
 from dispersion_with_matrix_save_opt import dispersion_with_matrix_save_opt
 from get_design2 import get_design2
 from design_parameters import DesignParameters
-from design_conversion import convert_design, apply_steel_rubber_paradigm
+from design_conversion import convert_design, apply_steel_polymer_paradigm
 
 OUT = ROOT / "PLOTS" / "ky0_pivot_explainer"
 OUT.mkdir(parents=True, exist_ok=True)
@@ -78,7 +78,7 @@ design = get_design2(dp)
 design = convert_design(design, "linear", "linear",
                         const["E_min"], const["E_max"],
                         const["rho_min"], const["rho_max"])
-design = apply_steel_rubber_paradigm(design, const)
+design = apply_steel_polymer_paradigm(design, const)
 const["design"] = np.asarray(design, dtype=np.float16)
 g = np.asarray(design)[:, :, 0].astype(np.float64)
 print(f"design symmetric? |g-flipx|={np.abs(g - g[:, ::-1]).max():.2e} "

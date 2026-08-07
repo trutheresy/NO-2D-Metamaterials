@@ -70,10 +70,10 @@ designs = zeros(N_pix, N_pix, 3, N_struct);
 
 for struct_idx = 1:N_struct
     g = squeeze(geometries_full(struct_idx, :, :));  % single channel from PT
-    % Start from one prescribed channel then apply MATLAB steel/rubber mapping
+    % Start from one prescribed channel then apply MATLAB steel/polymer mapping
     % to produce physically consistent E/rho/nu panes.
     design3 = cat(3, g, g, g);
-    design3 = apply_steel_rubber_paradigm(design3, const);
+    design3 = apply_steel_polymer_paradigm(design3, const);
     const.design = design3;
     designs(:,:,:,struct_idx) = design3;
 

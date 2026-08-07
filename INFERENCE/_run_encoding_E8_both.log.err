@@ -1,0 +1,7 @@
+powershell.exe : python.exe : 
+At D:\Research\NO-2D-Metamaterials\_run_encoding_E8_both.ps1:31 char:5
++     & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $pipeli ...
++     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (python.exe : :String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 

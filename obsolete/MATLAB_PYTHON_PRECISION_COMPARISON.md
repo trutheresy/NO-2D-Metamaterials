@@ -55,7 +55,7 @@ M non-zero values: double
 ## Python Precision Chain
 
 ### Step 1: Material Property Extraction
-- **Input (design_expanded)**: `float64` (from steel-rubber paradigm)
+- **Input (design_expanded)**: `float64` (from steel-polymer paradigm)
 - **Intermediate calculation**: `float64` (to avoid overflow)
 - **Output material properties**: `float32` (explicit cast)
   ```python

@@ -15,7 +15,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from get_design import get_design
 from get_design2 import get_design2
-from design_conversion import convert_design, apply_steel_rubber_paradigm
+from design_conversion import convert_design, apply_steel_polymer_paradigm
 from design_parameters import DesignParameters
 
 
@@ -157,11 +157,11 @@ class TestConvertDesign:
         assert np.all(design_explicit[:, :, 1] > 0)
 
 
-class TestApplySteelRubberParadigm:
-    """Test apply_steel_rubber_paradigm function."""
+class TestApplySteelPolymerParadigm:
+    """Test apply_steel_polymer_paradigm function."""
     
-    def test_apply_steel_rubber_paradigm_basic(self):
-        """Test basic steel-rubber paradigm application."""
+    def test_apply_steel_polymer_paradigm_basic(self):
+        """Test basic steel-polymer paradigm application."""
         N_pix = 5
         design = np.random.rand(N_pix, N_pix, 3)
         
@@ -174,7 +174,7 @@ class TestApplySteelRubberParadigm:
             'poisson_max': 0.5
         }
         
-        design_out = apply_steel_rubber_paradigm(design, const)
+        design_out = apply_steel_polymer_paradigm(design, const)
         
         # Check shape
         assert design_out.shape == design.shape

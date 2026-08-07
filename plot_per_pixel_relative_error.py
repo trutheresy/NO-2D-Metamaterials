@@ -28,6 +28,7 @@ import torch
 from tqdm import tqdm
 
 from output_layout import resolve_script_output_dir
+from NO_utilities import EIGENFREQUENCY_ENCODING_FILES, eigenfrequency_full_filename, resolve_eigenfrequency_encoding
 from per_sample_loss import (
     DEFAULT_SCORING_CHANNELS,
     load_dataset_layout,
@@ -69,9 +70,11 @@ def load_truth_single(
     band: int,
     combined: int,
     out_channels: int,
+    eigen_encoding: str = "uniform",
 ) -> torch.Tensor:
+    encoding = resolve_eigenfrequency_encoding(eigen_encoding)
     eigen = torch.load(
-        dataset_pt_dir / "eigenfrequency_uniform_full.pt",
+        dataset_pt_dir / eigenfrequency_full_filename(encoding),
         map_location="cpu",
         mmap=True,
         weights_only=True,
@@ -157,7 +160,15 @@ def run_single_sample(args: argparse.Namespace) -> None:
             raise SystemExit("Provide --loss-array or all of --combined-idx --geom --wave --band.")
         combined, geom, wave, band = args.combined_idx, args.geom, args.wave, args.band
 
-    truth = load_truth_single(dataset_pt_dir, geom, wave, band, combined, out_channels)
+    truth = load_truth_single(
+        dataset_pt_dir,
+        geom,
+        wave,
+        band,
+        combined,
+        out_channels,
+        eigen_encoding=args.eigen_encoding,
+    )
     pred = predictions[combined].float()
     rel = compute_relative_error(pred, truth, args.eps).numpy()
     nmae_ch = compute_nmae_per_channel(pred, truth, args.eps)
@@ -234,7 +245,8 @@ def run_dataset_mode(args: argparse.Namespace) -> None:
 
     channels = list(DEFAULT_SCORING_CHANNELS)
     predictions = torch.load(pred_path, map_location="cpu", mmap=True, weights_only=True)
-    n_geom, n_wv, n_bands, field_h, field_w = load_dataset_layout(dataset_pt_dir)
+    eigen_encoding = resolve_eigenfrequency_encoding(args.eigen_encoding)
+    n_geom, n_wv, n_bands, field_h, field_w = load_dataset_layout(dataset_pt_dir, eigen_encoding)
     total = n_geom * n_wv * n_bands
     if predictions.shape[0] != total:
         raise ValueError(
@@ -245,13 +257,18 @@ def run_dataset_mode(args: argparse.Namespace) -> None:
 
     print(f"Dataset mode   : {args.tag}")
     print(f"Dataset        : {dataset_pt_dir}")
+    print(f"Eigen enc      : {eigen_encoding}")
     print(f"Predictions    : {pred_path}  shape={tuple(predictions.shape)}")
     print(f"Samples        : {total}  field={field_h}x{field_w}")
     print(f"Channels       : {channels} (uniform mean -> one HxW map per sample)")
     print(f"Output dir     : {out_dir}")
 
     sources = open_scoring_sources(
-        dataset_pt_dir, total, (field_h, field_w), need_displacements=True
+        dataset_pt_dir,
+        total,
+        (field_h, field_w),
+        need_displacements=True,
+        eigen_encoding=eigen_encoding,
     )
 
     stack_path = out_dir / f"{args.tag}_per_pixel_rel_error_stack.npy"
@@ -314,6 +331,12 @@ def run_dataset_mode(args: argparse.Namespace) -> None:
 def main() -> None:
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("--dataset-pt-dir", required=True)
+    p.add_argument(
+        "--eigen-encoding",
+        choices=tuple(EIGENFREQUENCY_ENCODING_FILES),
+        default="uniform",
+        help="Channel-0 truth encoding: uniform or fft (wavelet). Default: uniform.",
+    )
     p.add_argument("--predictions", required=True)
     p.add_argument(
         "--output-dir",
