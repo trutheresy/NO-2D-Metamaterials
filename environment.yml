@@ -1,0 +1,17 @@
+name: NO_2D_Metamaterials
+channels:
+  - pytorch
+  - conda-forge
+  - defaults
+dependencies:
+  - python>=3.10,<3.13
+  - numpy>=1.20
+  - scipy>=1.7
+  - matplotlib>=3.5
+  - tqdm>=4.62
+  - h5py>=3.0
+  - pip
+  - pip:
+      - torch>=2.0
+      - neuraloperator>=0.3.0
+      - mlflow>=2.0

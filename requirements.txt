@@ -1,0 +1,17 @@
+# Python dependencies for this repository
+
+# Core scientific stack
+numpy>=1.20
+scipy>=1.7
+matplotlib>=3.5
+tqdm>=4.62
+
+# Deep learning
+torch>=2.0
+neuraloperator>=0.3.0
+
+# Optional: MATLAB v7.3 (.mat) loading inside 2d-dispersion-py demos
+h5py>=3.0
+
+# Optional: MLflow-backed trainer (train_disk_mlflow.py)
+mlflow>=2.0

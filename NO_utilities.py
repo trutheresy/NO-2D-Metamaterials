@@ -1,0 +1,1429 @@
+import os
+import h5py
+import numpy as np
+import torch
+import matplotlib.pyplot as plt
+from matplotlib.colors import TwoSlopeNorm
+from matplotlib.gridspec import GridSpec
+from matplotlib.ticker import MaxNLocator, FuncFormatter
+from mpl_toolkits.axes_grid1 import make_axes_locatable
+import time
+import random
+
+# Default diverging colormap for field plots: blue / white / red with neutral at diverge_center.
+DEFAULT_FIELD_CMAP = "RdBu_r"
+DEFAULT_DIVERGE_CENTER = 0.0
+
+
+def load_mat_data(folder_path, multiple_datafiles=False):
+    """
+    Load MATLAB v7.3 .mat dataset(s) from a folder.
+
+    - Default keeps single-file behavior.
+    - If multiple_datafiles=True, concatenates data across all .mat files.
+    """
+    start_time = time.time()
+    mat_files = [file for file in os.listdir(folder_path) if file.endswith(".mat")]
+
+    if len(mat_files) == 0:
+        raise FileNotFoundError(f"No .mat files found in the specified folder: {folder_path}")
+
+    if len(mat_files) > 1 and not multiple_datafiles:
+        raise ValueError(
+            f"Multiple .mat files found in the specified folder: {folder_path}. "
+            "Please ensure there is only one .mat file or set multiple_datafiles=True."
+        )
+
+    if not multiple_datafiles:
+        data_path = os.path.join(folder_path, mat_files[0])
+        with h5py.File(data_path, "r") as file:
+            EIGENVALUE_DATA = np.array(file["EIGENVALUE_DATA"], dtype=np.float16)
+            EIGENVECTOR_DATA_real = np.array(file["EIGENVECTOR_DATA"]["real"], dtype=np.float16)
+            EIGENVECTOR_DATA_imag = np.array(file["EIGENVECTOR_DATA"]["imag"], dtype=np.float16)
+            EIGENVECTOR_DATA = EIGENVECTOR_DATA_real + 1j * EIGENVECTOR_DATA_imag
+            WAVEVECTOR_DATA = np.array(file["WAVEVECTOR_DATA"], dtype=np.float16)
+            const = {key: np.array(file["const"][key]) for key in file["const"]}
+            N_struct = np.array(file["N_struct"])
+            design_params = np.array(file["design_params"])
+            designs = np.array(file["designs"])
+            imag_tol = np.array(file["imag_tol"])
+            rng_seed_offset = np.array(file["rng_seed_offset"])
+
+        end_time = time.time()
+        print(f"Data loaded in {end_time - start_time:.2f} seconds.")
+        return {
+            "EIGENVALUE_DATA": EIGENVALUE_DATA,
+            "EIGENVECTOR_DATA": EIGENVECTOR_DATA,
+            "WAVEVECTOR_DATA": WAVEVECTOR_DATA,
+            "const": const,
+            "N_struct": N_struct,
+            "design_params": design_params,
+            "designs": designs,
+            "imag_tol": imag_tol,
+            "rng_seed_offset": rng_seed_offset,
+        }
+
+    combined_data = {
+        "EIGENVALUE_DATA": [],
+        "EIGENVECTOR_DATA": [],
+        "WAVEVECTOR_DATA": [],
+        "const": {},
+        "N_struct": [],
+        "design_params": [],
+        "designs": [],
+        "imag_tol": [],
+        "rng_seed_offset": [],
+    }
+
+    for mat_file in mat_files:
+        data_path = os.path.join(folder_path, mat_file)
+        with h5py.File(data_path, "r") as file:
+            EIGENVALUE_DATA = np.array(file["EIGENVALUE_DATA"], dtype=np.float16)
+            EIGENVECTOR_DATA_real = np.array(file["EIGENVECTOR_DATA"]["real"], dtype=np.float16)
+            EIGENVECTOR_DATA_imag = np.array(file["EIGENVECTOR_DATA"]["imag"], dtype=np.float16)
+            EIGENVECTOR_DATA = EIGENVECTOR_DATA_real + 1j * EIGENVECTOR_DATA_imag
+            WAVEVECTOR_DATA = np.array(file["WAVEVECTOR_DATA"], dtype=np.float16)
+            const = {key: np.array(file["const"][key]) for key in file["const"]}
+            N_struct = np.array(file["N_struct"])
+            design_params = np.array(file["design_params"])
+            designs = np.array(file["designs"])
+            imag_tol = np.array(file["imag_tol"])
+            rng_seed_offset = np.array(file["rng_seed_offset"])
+
+            combined_data["EIGENVALUE_DATA"].append(EIGENVALUE_DATA)
+            combined_data["EIGENVECTOR_DATA"].append(EIGENVECTOR_DATA)
+            combined_data["WAVEVECTOR_DATA"].append(WAVEVECTOR_DATA)
+            for key, value in const.items():
+                if key not in combined_data["const"]:
+                    combined_data["const"][key] = [value]
+                else:
+                    combined_data["const"][key].append(value)
+            combined_data["N_struct"].append(N_struct)
+            combined_data["design_params"].append(design_params)
+            combined_data["designs"].append(designs)
+            combined_data["imag_tol"].append(imag_tol)
+            combined_data["rng_seed_offset"].append(rng_seed_offset)
+
+    combined_data["EIGENVALUE_DATA"] = np.concatenate(combined_data["EIGENVALUE_DATA"], axis=0)
+    combined_data["EIGENVECTOR_DATA"] = np.concatenate(combined_data["EIGENVECTOR_DATA"], axis=0)
+    combined_data["WAVEVECTOR_DATA"] = np.concatenate(combined_data["WAVEVECTOR_DATA"], axis=0)
+    combined_data["N_struct"] = np.concatenate(combined_data["N_struct"], axis=0)
+    combined_data["design_params"] = np.concatenate(combined_data["design_params"], axis=0)
+    combined_data["designs"] = np.concatenate(combined_data["designs"], axis=0)
+    combined_data["imag_tol"] = np.concatenate(combined_data["imag_tol"], axis=0)
+    combined_data["rng_seed_offset"] = np.concatenate(combined_data["rng_seed_offset"], axis=0)
+    for key, value_list in combined_data["const"].items():
+        combined_data["const"][key] = np.concatenate(value_list, axis=0)
+
+    end_time = time.time()
+    print(f"Data loaded and combined from {len(mat_files)} files in {end_time - start_time:.2f} seconds.")
+    return combined_data
+
+
+def split_array(arr, dim):
+    shape = arr.shape
+    if dim < 0 or dim >= len(shape):
+        raise ValueError(f"Invalid dimension: {dim}. Array has {len(shape)} dimensions.")
+    if shape[dim] % 2 != 0:
+        raise ValueError(f"Length of dimension {dim} must be even.")
+
+    slices = [slice(None)] * len(shape)
+    slices[dim] = slice(None, None, 2)
+    arr1 = arr[tuple(slices)]
+    slices[dim] = slice(1, None, 2)
+    arr2 = arr[tuple(slices)]
+    return arr1, arr2
+
+
+def extract_data(data_path, multiple_datafiles=False):
+    i_dim = 3
+    data = load_mat_data(data_path, multiple_datafiles=multiple_datafiles)
+
+    designs = np.array(data["designs"])
+    design_params = np.array(data["design_params"])
+    n_designs = designs.shape[0]
+    n_panes = designs.shape[1]
+    design_res = designs.shape[2]
+    const = {key: np.array(data["const"][key]) for key in data["const"]}
+
+    WAVEVECTOR_DATA = data["WAVEVECTOR_DATA"]
+    n_dim = WAVEVECTOR_DATA.shape[1]
+    WAVEVECTOR_DATA = WAVEVECTOR_DATA.transpose(0, 2, 1)
+    n_wavevectors = WAVEVECTOR_DATA.shape[1]
+    if np.any(np.iscomplex(WAVEVECTOR_DATA)):
+        print("WAVEVECTOR_DATA array contains complex-valued elements.")
+    WAVEFORM_DATA = wavevectors_to_spatial(WAVEVECTOR_DATA, design_res, length_scale=const["a"], plot_sample=False)
+
+    EIGENVALUE_DATA = np.array(data["EIGENVALUE_DATA"]).transpose(0, 2, 1)
+    n_bands = EIGENVALUE_DATA.shape[2]
+    EIGENVECTOR_DATA = np.array(data["EIGENVECTOR_DATA"]).transpose(0, 2, 1, 3)
+    EIGENVECTOR_DATA_x, EIGENVECTOR_DATA_y = split_array(EIGENVECTOR_DATA, i_dim)
+
+    N_struct = data["N_struct"]
+    imag_tol = data["imag_tol"]
+    rng_seed_offset = data["rng_seed_offset"]
+
+    EIGENVECTOR_DATA_x = EIGENVECTOR_DATA_x.reshape(
+        n_designs, n_wavevectors, n_bands, design_res, design_res, order="C"
+    )
+    EIGENVECTOR_DATA_y = EIGENVECTOR_DATA_y.reshape(
+        n_designs, n_wavevectors, n_bands, design_res, design_res, order="C"
+    )
+
+    print(
+        f"n_designs: {n_designs}, n_panes: {n_panes}, design_res: {design_res}, "
+        f"d_design: {n_dim}, dispersion_bands: {n_bands}, rng_seed_offset: {rng_seed_offset}"
+    )
+    print("EIGENVALUE_DATA shape:", EIGENVALUE_DATA.shape)
+    print("EIGENVECTOR_DATA shape:", EIGENVECTOR_DATA.shape)
+    print("EIGENVECTOR_DATA_x shape:", EIGENVECTOR_DATA_x.shape)
+    print("EIGENVECTOR_DATA_y shape:", EIGENVECTOR_DATA_y.shape)
+    print("WAVEVECTOR_DATA shape:", WAVEVECTOR_DATA.shape)
+    print("WAVEFORM_DATA shape:", WAVEFORM_DATA.shape)
+    print("designs shape:", designs.shape)
+    print("design_params shape:", design_params.shape)
+    print("const shape:", {key: const[key].shape for key in const})
+
+    return (
+        designs,
+        design_params,
+        n_designs,
+        n_panes,
+        design_res,
+        WAVEVECTOR_DATA,
+        WAVEFORM_DATA,
+        n_dim,
+        n_wavevectors,
+        EIGENVALUE_DATA,
+        n_bands,
+        EIGENVECTOR_DATA_x,
+        EIGENVECTOR_DATA_y,
+        const,
+        N_struct,
+        imag_tol,
+        rng_seed_offset,
+    )
+
+
+def plot_geometry(sample_geometry, sample_index):
+    fig, ax = plt.subplots()
+    ax.imshow(sample_geometry)
+    ax.set_xlabel("X")
+    ax.set_ylabel("Y")
+    ax.set_title(f"Geometry #{sample_index}")
+    plt.show()
+
+
+def _format_sci_compact(x, _pos=None):
+    """Scientific notation with 3 significant digits and compact exponents (``1.23e-4``)."""
+    if not np.isfinite(x):
+        return ""
+    mant, exp = f"{x:.2e}".split("e")
+    sign = exp[0]
+    digits = exp[1:].lstrip("0") or "0"
+    return f"{mant}e{sign}{digits}"
+
+
+def _format_decimal_one(x, _pos=None):
+    """Fixed-point label with one decimal place (``0.0`` … ``1.0``)."""
+    if not np.isfinite(x):
+        return ""
+    return f"{x:.1f}"
+
+
+def _sci_formatter():
+    """Tick formatter: 3-sig scientific notation with compact exponents (e.g. 1.23e-4)."""
+    return FuncFormatter(_format_sci_compact)
+
+
+def _decimal_formatter():
+    return FuncFormatter(_format_decimal_one)
+
+
+def _colorbar_tick_dense_nice(cb, labelsize=None):
+    cb.locator = MaxNLocator(nbins=10, steps=[1, 1.5, 2, 2.5, 3, 4, 5, 6, 8, 10])
+    cb.formatter = _sci_formatter()
+    cb.update_ticks()
+    if labelsize is not None:
+        cb.ax.tick_params(labelsize=labelsize)
+
+
+def _colorbar_dense_nice(im, ax=None, shrink=0.8, labelsize=None):
+    """Colorbar with denser tick marks while keeping Matplotlib's 'nice' step choices."""
+    cb = plt.colorbar(im, ax=ax, shrink=shrink)
+    _colorbar_tick_dense_nice(cb, labelsize=labelsize)
+
+
+def _symmetrize_vlim_around(vmin, vmax, center):
+    """Expand vmin/vmax so |center - vmin| == |vmax - center| (TwoSlopeNorm then maps linearly in colormap space)."""
+    half = max(vmax - center, center - vmin)
+    return center - half, center + half
+
+
+def _imshow_comparison(
+    ax, arr, vmin=None, vmax=None, cmap=DEFAULT_FIELD_CMAP, diverge_center=DEFAULT_DIVERGE_CENTER
+):
+    """
+    Scalar imshow for target/output/diff panels.
+
+    If *cmap* is set and diverge_center lies strictly between effective vmin/vmax,
+    uses TwoSlopeNorm so that value maps to the colormap center (neutral for RdBu, coolwarm, etc.).
+    Limits are symmetrized around *diverge_center* so positive and negative ranges occupy equal
+    length on the colorbar (avoids +c sitting closer to 0 than −c along the strip).
+    """
+    arr = np.asarray(arr)
+    eff_vmin = float(arr.min()) if vmin is None else float(vmin)
+    eff_vmax = float(arr.max()) if vmax is None else float(vmax)
+    if cmap is not None and eff_vmin < diverge_center < eff_vmax:
+        eff_vmin, eff_vmax = _symmetrize_vlim_around(eff_vmin, eff_vmax, diverge_center)
+        norm = TwoSlopeNorm(diverge_center, eff_vmin, eff_vmax)
+        return ax.imshow(arr, cmap=cmap, norm=norm)
+    if cmap is not None and vmin is not None and vmax is not None:
+        return ax.imshow(arr, cmap=cmap, vmin=vmin, vmax=vmax)
+    if cmap is not None:
+        return ax.imshow(arr, cmap=cmap)
+    if vmin is not None and vmax is not None:
+        return ax.imshow(arr, vmin=vmin, vmax=vmax)
+    return ax.imshow(arr)
+
+
+def _colorbar_dense_nice_cax(
+    fig,
+    mappable,
+    cax,
+    uniform_ticks=11,
+    labelsize=None,
+    tick_format="sci",
+):
+    """Colorbar in a dedicated axes (figure / GridSpec slot).
+
+    ``tick_format``:
+      - ``"sci"``: evenly spaced ``linspace`` ticks with 3-digit compact scientific labels
+      - ``"decimal"``: unit-interval style ticks labeled ``0.0`` … ``1.0`` (no ``e`` notation)
+    """
+    cb = fig.colorbar(mappable, cax=cax, aspect=6)
+    vmin, vmax = mappable.get_clim()
+    if tick_format == "decimal":
+        # Inputs pane: plain 0.0–1.0 labels (data are abs-normalized encodings in [0, 1]).
+        lo = 0.0 if (vmin is None or not np.isfinite(vmin)) else float(vmin)
+        hi = 1.0 if (vmax is None or not np.isfinite(vmax)) else float(vmax)
+        # Prefer a true 0–1 bar when the data already span that interval.
+        if abs(lo) <= 1e-6 and abs(hi - 1.0) <= 1e-2:
+            lo, hi = 0.0, 1.0
+            mappable.set_clim(lo, hi)
+        n = max(int(uniform_ticks), 2)
+        # Keep a modest number of decimal ticks (0.0, 0.2, …, 1.0).
+        n_dec = 6 if abs(hi - lo - 1.0) <= 1e-6 and abs(lo) <= 1e-6 else min(n, 6)
+        cb.set_ticks(np.linspace(lo, hi, n_dec))
+        cb.formatter = _decimal_formatter()
+    elif (
+        uniform_ticks >= 2
+        and vmin is not None
+        and vmax is not None
+        and np.isfinite(vmin)
+        and np.isfinite(vmax)
+        and vmax > vmin
+    ):
+        cb.set_ticks(np.linspace(vmin, vmax, int(uniform_ticks)))
+        cb.formatter = _sci_formatter()
+    else:
+        _colorbar_tick_dense_nice(cb, labelsize=labelsize)
+        cb.formatter = _sci_formatter()
+    cb.update_ticks()
+    if labelsize is not None:
+        cb.ax.tick_params(labelsize=labelsize)
+    # Labels on the left, in the pad between the image and the colorbar.
+    cb.ax.yaxis.set_ticks_position("left")
+    cb.ax.yaxis.set_label_position("left")
+
+
+# Per-column GridSpec widths: image | label pad | colorbar | trailing gap.
+# Label pad (left of colorbar) holds tick labels; trailing is space before the next image.
+# Trailing is kept small so the next column sits close to this colorbar.
+_PANEL_COL_WIDTH_RATIOS = (17.18, 2.97, 1.10, 0.18)
+# Absolute figure inches per column group — shared by inputs and fields panes.
+_PANEL_COL_FIGWIDTH = 5.0
+
+
+def _panel_column_width_ratios(n_cols: int) -> list[float]:
+    ratios: list[float] = []
+    for _ in range(n_cols):
+        ratios.extend(_PANEL_COL_WIDTH_RATIOS)
+    return ratios
+
+
+def _apply_axis_tick_style(ax, hide_axis_ticks=False, hide_x_ticks=False, hide_y_ticks=False):
+    """Optionally omit pixel-index ticks. ``hide_axis_ticks`` hides both axes."""
+    if hide_axis_ticks:
+        hide_x_ticks = True
+        hide_y_ticks = True
+    if hide_x_ticks:
+        ax.set_xticks([])
+        ax.tick_params(axis="x", which="both", bottom=False, top=False, labelbottom=False, length=0)
+    else:
+        # Inward ticks stay visible on imshow panels (outward ticks are easy to clip).
+        ax.tick_params(
+            axis="x",
+            which="major",
+            bottom=True,
+            top=False,
+            labelbottom=True,
+            length=4,
+            width=1.0,
+            direction="in",
+            pad=2,
+        )
+    if hide_y_ticks:
+        ax.set_yticks([])
+        ax.tick_params(axis="y", which="both", left=False, right=False, labelleft=False, length=0)
+    else:
+        ax.tick_params(
+            axis="y",
+            which="major",
+            left=True,
+            right=False,
+            labelleft=True,
+            length=5,
+            width=1.1,
+            direction="out",
+            pad=2,
+        )
+
+
+def visualize_sample(
+    input_tensor,
+    output_tensor,
+    target_tensor,
+    diffs=True,
+    unified_colorbar=False,
+    field_cmap=DEFAULT_FIELD_CMAP,
+    diverge_center=DEFAULT_DIVERGE_CENTER,
+    show_eigfreq=True,
+    hide_axis_ticks=False,
+    hide_x_ticks=False,
+    hide_y_ticks=False,
+    title_fontsize=None,
+    colorbar_labelsize=None,
+    input_titles=None,
+):
+    """
+    Visualize input and output tensors from a single sample.
+
+    Args:
+        input_tensor: Tensor of shape (3, H, W) or (4, H, W) containing input components
+        output_tensor: Tensor of shape (C, H, W) containing output components
+        (optional) target_tensor: Tensor of shape (C, H, W) containing target components
+        unified_colorbar: If True (only when target_tensor is plotted), one colorbar per
+            column spanning target, output, and (if diffs) difference rows; limits are the
+            min/max over those arrays in that column.
+        field_cmap: Colormap name for the three input panels and the target/output/(diff) grid
+            (default: ``DEFAULT_FIELD_CMAP``, ``"RdBu_r"``). Other diverging options include
+            ``"coolwarm"``, ``"seismic"``, or ``"bwr"``. Pass ``None`` to use Matplotlib's default.
+        diverge_center: When ``field_cmap`` is set, if this value lies strictly between the panel's
+            vmin and vmax, colors use TwoSlopeNorm with limits **symmetrized** around
+            *diverge_center* so the neutral color sits at the bar midpoint and ± ranges span equal
+            physical length on the colorbar. Per-column unified colorbars use evenly spaced
+            ``linspace`` ticks with 3-digit compact scientific labels.
+        show_eigfreq: If True (default), plot the eigenfrequency channel (channel 0) as the first
+            column. If False, channel 0 is dropped from the target/output/diff grid (and from the
+            outputs-only fallback), so only the remaining channels are shown.
+        hide_axis_ticks: If True, omit pixel-index ticks on both axes of image panels.
+        hide_x_ticks / hide_y_ticks: Per-axis control (``hide_axis_ticks`` forces both True).
+        title_fontsize: Optional panel title font size (paper figures typically want larger text).
+        colorbar_labelsize: Optional colorbar tick label size.
+        input_titles: Optional titles for the input panels (length must match ``input_tensor``
+            channel count). Defaults: 3-ch Geometry/Wavevector/Band; 4-ch Geometry/kx/ky/Band.
+    """
+    n_inputs = int(input_tensor.shape[0])
+    if input_titles is None:
+        if n_inputs == 4:
+            input_titles = ["Geometry", "kx", "ky", "Band"]
+        elif n_inputs == 3:
+            input_titles = ["Geometry", "Wavevector", "Band"]
+        else:
+            input_titles = [f"Input {i}" for i in range(n_inputs)]
+    if len(input_titles) != n_inputs:
+        raise ValueError(
+            f"input_titles length {len(input_titles)} != input channels {n_inputs}"
+        )
+    title_kw = {} if title_fontsize is None else {"fontsize": title_fontsize}
+    tick_kw = dict(
+        hide_axis_ticks=hide_axis_ticks,
+        hide_x_ticks=hide_x_ticks,
+        hide_y_ticks=hide_y_ticks,
+    )
+    omit_y = hide_axis_ticks or hide_y_ticks
+    omit_x = hide_axis_ticks or hide_x_ticks
+    panel_wspace = 0.015 if (omit_x and omit_y) else (0.03 if omit_y else 0.10)
+    panel_left = 0.03 if omit_y else 0.06
+    panel_bottom = 0.07 if omit_x else 0.10
+
+    # Create figure for input components (same per-column colorbar geometry as fields pane).
+    fig1 = plt.figure(figsize=(n_inputs * _PANEL_COL_FIGWIDTH, _PANEL_COL_FIGWIDTH * 0.85))
+    gs_in = GridSpec(
+        1,
+        4 * n_inputs,
+        figure=fig1,
+        width_ratios=_panel_column_width_ratios(n_inputs),
+        wspace=panel_wspace,
+        left=panel_left,
+        right=0.98,
+        top=0.88,
+        bottom=panel_bottom,
+    )
+    input_arrays = []
+    for i in range(n_inputs):
+        tensor_data = input_tensor[i].abs()
+        if tensor_data.dtype in [torch.float8_e4m3fn, torch.float16]:
+            tensor_data = tensor_data.float()
+        input_arrays.append(tensor_data.numpy())
+    if field_cmap is not None:
+        input_vmin = min(float(np.min(a)) for a in input_arrays)
+        input_vmax = max(float(np.max(a)) for a in input_arrays)
+    for i in range(n_inputs):
+        ax = fig1.add_subplot(gs_in[0, 4 * i])
+        cax = fig1.add_subplot(gs_in[0, 4 * i + 2])
+        if field_cmap is not None:
+            im = _imshow_comparison(
+                ax,
+                input_arrays[i],
+                vmin=input_vmin,
+                vmax=input_vmax,
+                cmap=field_cmap,
+                diverge_center=diverge_center,
+            )
+        else:
+            im = ax.imshow(input_arrays[i])
+        _colorbar_dense_nice_cax(
+            fig1, im, cax, labelsize=colorbar_labelsize, tick_format="decimal"
+        )
+        _apply_axis_tick_style(ax, **tick_kw)
+        ax.set_title(input_titles[i], **title_kw)
+    plt.show()
+
+    channel_titles_default = [
+        "Eigfreq (Encoded)",
+        "Eigvec (x real)",
+        "Eigvec (x imag)",
+        "Eigvec (y real)",
+        "Eigvec (y imag)",
+    ]
+
+    if target_tensor is not None:
+        num_targets = target_tensor.shape[0]
+        num_outputs = output_tensor.shape[0]
+        if num_targets != num_outputs:
+            raise ValueError("Target and output tensors must have the same number of channels for matched plotting.")
+
+        channel_titles = list(channel_titles_default[:num_targets])
+        if num_targets > len(channel_titles_default):
+            channel_titles.extend([f"Channel {i + 1}" for i in range(len(channel_titles_default), num_targets)])
+
+        # Columns to display: optionally drop the eigenfrequency channel (channel 0).
+        channel_indices = list(range(num_targets)) if show_eigfreq else [c for c in range(num_targets) if c != 0]
+        if len(channel_indices) == 0:
+            raise ValueError("No channels to plot (show_eigfreq=False removed the only channel).")
+        num_cols = len(channel_indices)
+
+        n_rows = 3 if diffs else 2
+        if unified_colorbar:
+            # Per channel: image | label pad | colorbar | trailing gap (shared with inputs pane).
+            fig = plt.figure(figsize=(num_cols * _PANEL_COL_FIGWIDTH, n_rows * _PANEL_COL_FIGWIDTH * 0.85))
+            hspace = 0.22 if (omit_x and omit_y) else (0.32 if not omit_x else 0.30)
+            gs = GridSpec(
+                n_rows,
+                4 * num_cols,
+                figure=fig,
+                width_ratios=_panel_column_width_ratios(num_cols),
+                wspace=panel_wspace,
+                hspace=hspace,
+                left=panel_left,
+                right=0.98,
+                top=0.90,
+                bottom=panel_bottom,
+            )
+            axs = np.empty((n_rows, num_cols), dtype=object)
+            unified_caxes = []
+            for c in range(num_cols):
+                for r in range(n_rows):
+                    axs[r, c] = fig.add_subplot(gs[r, 4 * c])
+                unified_caxes.append(fig.add_subplot(gs[:, 4 * c + 2]))
+        else:
+            fig, axs = plt.subplots(n_rows, num_cols, figsize=(4 * num_cols, 4 * n_rows))
+            if num_cols == 1:
+                axs = np.expand_dims(axs, axis=1)
+                if n_rows == 1:
+                    axs = np.expand_dims(axs, axis=0)
+
+        # Shared min/max per displayed channel between target and output rows.
+        vmins = []
+        vmaxs = []
+        for ch in channel_indices:
+            tgt_data = target_tensor[ch]
+            out_data = output_tensor[ch]
+            if tgt_data.dtype in [torch.float8_e4m3fn, torch.float16]:
+                tgt_data = tgt_data.float()
+            if out_data.dtype in [torch.float8_e4m3fn, torch.float16]:
+                out_data = out_data.float()
+            vmins.append(min(tgt_data.min().item(), out_data.min().item()))
+            vmaxs.append(max(tgt_data.max().item(), out_data.max().item()))
+
+        if unified_colorbar:
+            vmins_plot = []
+            vmaxs_plot = []
+            for ch in channel_indices:
+                tgt_data = target_tensor[ch]
+                out_data = output_tensor[ch]
+                if tgt_data.dtype in [torch.float8_e4m3fn, torch.float16]:
+                    tgt_data = tgt_data.float()
+                if out_data.dtype in [torch.float8_e4m3fn, torch.float16]:
+                    out_data = out_data.float()
+                vmin = min(tgt_data.min().item(), out_data.min().item())
+                vmax = max(tgt_data.max().item(), out_data.max().item())
+                if diffs:
+                    diff_data = torch.abs(out_data - tgt_data)
+                    vmin = min(vmin, diff_data.min().item())
+                    vmax = max(vmax, diff_data.max().item())
+                vmins_plot.append(vmin)
+                vmaxs_plot.append(vmax)
+        else:
+            vmins_plot, vmaxs_plot = vmins, vmaxs
+
+        column_mappable = [None] * num_cols
+
+        # Row 1: targets
+        for col, ch in enumerate(channel_indices):
+            ax = axs[0, col]
+            tensor_data = target_tensor[ch]
+            if tensor_data.dtype in [torch.float8_e4m3fn, torch.float16]:
+                tensor_data = tensor_data.float()
+            im = _imshow_comparison(
+                ax,
+                tensor_data.numpy(),
+                vmin=vmins_plot[col],
+                vmax=vmaxs_plot[col],
+                cmap=field_cmap,
+                diverge_center=diverge_center,
+            )
+            column_mappable[col] = im
+            if not unified_colorbar:
+                _colorbar_dense_nice(im, ax=ax, labelsize=colorbar_labelsize)
+            _apply_axis_tick_style(ax, **tick_kw)
+            ax.set_title(f"Target {channel_titles[ch]}", **title_kw)
+
+        # Row 2: outputs
+        for col, ch in enumerate(channel_indices):
+            ax = axs[1, col]
+            tensor_data = output_tensor[ch]
+            if tensor_data.dtype in [torch.float8_e4m3fn, torch.float16]:
+                tensor_data = tensor_data.float()
+            im = _imshow_comparison(
+                ax,
+                tensor_data.numpy(),
+                vmin=vmins_plot[col],
+                vmax=vmaxs_plot[col],
+                cmap=field_cmap,
+                diverge_center=diverge_center,
+            )
+            column_mappable[col] = im
+            if not unified_colorbar:
+                _colorbar_dense_nice(im, ax=ax, labelsize=colorbar_labelsize)
+            _apply_axis_tick_style(ax, **tick_kw)
+            ax.set_title(f"Output {channel_titles[ch]}", **title_kw)
+
+        # Row 3: absolute differences (with same per-channel scales as rows 1-2)
+        if diffs:
+            for col, ch in enumerate(channel_indices):
+                ax = axs[2, col]
+                tgt_data = target_tensor[ch]
+                out_data = output_tensor[ch]
+                if tgt_data.dtype in [torch.float8_e4m3fn, torch.float16]:
+                    tgt_data = tgt_data.float()
+                if out_data.dtype in [torch.float8_e4m3fn, torch.float16]:
+                    out_data = out_data.float()
+                diff_data = torch.abs(out_data - tgt_data)
+                if unified_colorbar:
+                    im = _imshow_comparison(
+                        ax,
+                        diff_data.numpy(),
+                        vmin=vmins_plot[col],
+                        vmax=vmaxs_plot[col],
+                        cmap=field_cmap,
+                        diverge_center=diverge_center,
+                    )
+                else:
+                    im = _imshow_comparison(
+                        ax,
+                        diff_data.numpy(),
+                        cmap=field_cmap,
+                        diverge_center=diverge_center,
+                    )
+                column_mappable[col] = im
+                if not unified_colorbar:
+                    _colorbar_dense_nice(im, ax=ax, labelsize=colorbar_labelsize)
+                _apply_axis_tick_style(ax, **tick_kw)
+                ax.set_title(f"Diff {channel_titles[ch]}", **title_kw)
+
+        if unified_colorbar:
+            for c in range(num_cols):
+                _colorbar_dense_nice_cax(
+                    fig, column_mappable[c], unified_caxes[c], labelsize=colorbar_labelsize
+                )
+        else:
+            plt.tight_layout()
+        plt.show()
+    else:
+        # Fallback: outputs-only view
+        num_outputs = output_tensor.shape[0]
+        channel_titles = list(channel_titles_default[:num_outputs])
+        if num_outputs > len(channel_titles_default):
+            channel_titles.extend([f"Channel {i + 1}" for i in range(len(channel_titles_default), num_outputs)])
+        channel_indices = list(range(num_outputs)) if show_eigfreq else [c for c in range(num_outputs) if c != 0]
+        if len(channel_indices) == 0:
+            raise ValueError("No channels to plot (show_eigfreq=False removed the only channel).")
+        num_cols = len(channel_indices)
+        fig2 = plt.figure(figsize=(4 * num_cols, 4))
+        for col, ch in enumerate(channel_indices):
+            ax = plt.subplot(1, num_cols, col + 1)
+            tensor_data = output_tensor[ch].abs()
+            if tensor_data.dtype in [torch.float8_e4m3fn, torch.float16]:
+                tensor_data = tensor_data.float()
+            im = _imshow_comparison(
+                ax,
+                tensor_data.numpy(),
+                cmap=field_cmap,
+                diverge_center=diverge_center,
+            )
+            _colorbar_dense_nice(im, labelsize=colorbar_labelsize)
+            _apply_axis_tick_style(ax, **tick_kw)
+            ax.set_title(f"Output {channel_titles[ch]}", **title_kw)
+        plt.tight_layout()
+        plt.show()
+
+
+def plot_eigenvectors(
+    sample_eigenvector_x,
+    sample_eigenvector_y,
+    unify_scales=True,
+    field_cmap=DEFAULT_FIELD_CMAP,
+    diverge_center=DEFAULT_DIVERGE_CENTER,
+):
+    fig, axs = plt.subplots(2, 2, figsize=(10, 8))
+    panels = [
+        (0, 0, np.real(sample_eigenvector_x), "x displacement field real"),
+        (1, 0, np.imag(sample_eigenvector_x), "x displacement field imag"),
+        (0, 1, np.real(sample_eigenvector_y), "y displacement field real"),
+        (1, 1, np.imag(sample_eigenvector_y), "y displacement field imag"),
+    ]
+    ims = []
+    for row, col, arr, title in panels:
+        ax = axs[row, col]
+        im = _imshow_comparison(ax, arr, cmap=field_cmap, diverge_center=diverge_center)
+        ax.set_title(title, pad=1)
+        ax.axis("off")
+        ims.append(im)
+    im00, im10, im01, im11 = ims
+
+    if unify_scales:
+        vmin = min(im.get_array().min() for im in [im00, im10, im01, im11])
+        vmax = max(im.get_array().max() for im in [im00, im10, im01, im11])
+        for im in [im00, im10, im01, im11]:
+            im.set_clim(vmin, vmax)
+        cbar_ax = fig.add_axes([0.98, 0.15, 0.02, 0.7])
+        fig.colorbar(im00, cax=cbar_ax)
+        cbar_ax.tick_params(labelsize=10)
+    else:
+        for ax in axs.flatten():
+            divider = make_axes_locatable(ax)
+            cax = divider.append_axes("right", size="5%", pad=0.05)
+            fig.colorbar(ax.images[0], cax=cax)
+            cax.tick_params(labelsize=10)
+
+    plt.tight_layout()
+    plt.show()
+
+
+# Canonical spatial-sinusoidal wavevector encoding (paper §band_wavevector_encoding).
+# Direction ∥ k, frequency ∝ |k|; ~1 cycle across the patch at |k|=π; Γ → 0.
+PLANE_WAVE_CYCLES_AT_PI = 1.0
+PLANE_WAVE_KIND = "sin"
+
+
+def wavevectors_to_spatial(wavevectors, design_res, length_scale=1.0, amplitude=1.0, phase=0.0, plot_sample=False):
+    """
+    Official spatial-sinusoidal wavevector encoding (§band_wavevector_encoding):
+
+        I_k(x, y) = A * sin( (2 / S) (k_x x + k_y y) + phase ),
+        (x, y) ∈ {0, …, S−1},  S = design_res.
+
+    Wavefronts propagate along ``(k_x, k_y)`` with spatial frequency proportional
+    to ``|k|``. The factor ``2/S`` yields about one cycle across the patch at
+    ``|k| = π``. At Γ (``k = 0``) the field is zero.
+
+    Parameters
+    ----------
+    wavevectors : array_like
+        Shape ``(..., 2)`` with last axis ``(k_x, k_y)`` in radians.
+    design_res : int
+        Patch side length S.
+    length_scale : float
+        Unused; kept for call-site compatibility with older linspace-domain API.
+    amplitude, phase : float
+        Optional scale and phase offset on the sine.
+    plot_sample : bool
+        If True and ``wavevectors`` is at least 3D ``(N, W, 2)``, show one sample.
+
+    Returns
+    -------
+    ndarray
+        Sine fields with shape ``wavevectors.shape[:-1] + (S, S)``.
+    """
+    _ = length_scale  # API compat only; encoding uses pixel indices, not physical length.
+    wavevectors = np.asarray(wavevectors, dtype=np.float64)
+    if wavevectors.shape[-1] != 2:
+        raise ValueError(f"Expected wavevectors[..., 2]; got shape {wavevectors.shape}")
+
+    S = int(design_res)
+    gamma = (2.0 * PLANE_WAVE_CYCLES_AT_PI) / S
+    x = np.arange(S, dtype=np.float64)
+    y = np.arange(S, dtype=np.float64)
+    X, Y = np.meshgrid(x, y, indexing="xy")
+    k_x = wavevectors[..., 0][..., None, None]
+    k_y = wavevectors[..., 1][..., None, None]
+    spatial_waves = amplitude * np.sin(gamma * (k_x * X + k_y * Y) + phase)
+
+    if plot_sample and wavevectors.ndim >= 3:
+        N, W = wavevectors.shape[0], wavevectors.shape[1]
+        sample_n = random.randint(0, N - 1)
+        sample_w = random.randint(0, W - 1)
+        plt.figure(figsize=(6, 6))
+        plt.contourf(spatial_waves[sample_n, sample_w], cmap=DEFAULT_FIELD_CMAP)
+        plt.colorbar(label="Wave Amplitude")
+        plt.xlabel("x (pixels)")
+        plt.ylabel("y (pixels)")
+        plt.title(
+            f"Spatial Wave: Sample {sample_n}, Wavevector {sample_w} with "
+            f"$k_x$={wavevectors[sample_n, sample_w, 0]}, "
+            f"$k_y$={wavevectors[sample_n, sample_w, 1]}"
+        )
+        plt.show()
+
+    print("Spatial waves shape:", spatial_waves.shape)
+    return spatial_waves
+
+
+def embed_wavevector_sinusoidal(kx, ky, size=32, verbose=False):
+    """
+    Official wavevector sinusoid (same as ``wavevectors_to_spatial`` / paper):
+
+        I_k(x, y) = sin( (2 / S) (k_x x + k_y y) ),
+        (x, y) ∈ {0, …, S−1}.
+
+    Equivalent to ``embed_wavevector_plane_wave(..., cycles_at_pi=1, kind=\"sin\")``.
+    """
+    return embed_wavevector_plane_wave(
+        kx,
+        ky,
+        size=size,
+        cycles_at_pi=PLANE_WAVE_CYCLES_AT_PI,
+        kind=PLANE_WAVE_KIND,
+        verbose=verbose,
+    )
+
+
+def embed_wavevector_plane_wave(
+    kx,
+    ky,
+    size=32,
+    cycles_at_pi=PLANE_WAVE_CYCLES_AT_PI,
+    kind=PLANE_WAVE_KIND,
+    verbose=False,
+):
+    """
+    Directed plane-wave encoding: wavefronts normal to k, frequency ∝ |k|.
+
+        I(x, y) = f( γ (k_x x + k_y y) ),
+        γ = 2 * cycles_at_pi / S,
+        f ∈ {cos, sin},
+        (x, y) ∈ {0, …, S−1}.
+
+    Defaults (``cycles_at_pi=1``, ``kind=\"sin\"``) are the official paper encoding:
+    about one cycle across the patch at ``|k| = π``, and Γ maps to 0.
+
+    Phase gradient is ∥ (k_x, k_y). At Γ: cos → 1, sin → 0.
+    """
+    kx = np.atleast_1d(np.asarray(kx, dtype=np.float64))
+    ky = np.atleast_1d(np.asarray(ky, dtype=np.float64))
+    if kx.shape != ky.shape:
+        raise ValueError(f"kx and ky shapes must match; got {kx.shape} vs {ky.shape}")
+    if verbose:
+        print("kx shape:", kx.shape, "ky shape:", ky.shape)
+
+    kind_l = str(kind).lower()
+    if kind_l == "cos":
+        wave_fn = np.cos
+    elif kind_l == "sin":
+        wave_fn = np.sin
+    else:
+        raise ValueError(f"kind must be 'cos' or 'sin', got {kind!r}")
+
+    S = int(size)
+    gamma = (2.0 * float(cycles_at_pi)) / S
+    x = np.arange(S, dtype=np.float64)
+    y = np.arange(S, dtype=np.float64)
+    X, Y = np.meshgrid(x, y, indexing="xy")
+    return wave_fn(gamma * (kx[:, None, None] * X + ky[:, None, None] * Y))
+
+
+def embed_wavevector_constant(kx, ky, size=32, verbose=False):
+    """
+    Paper constant-field wavevector encoding (§band_wavevector_encoding):
+
+        I_{k_x} = (k_x / π) * 1_{S×S},   I_{k_y} = (k_y / π) * 1_{S×S},
+        k_x, k_y ∈ [−π, π]  ⇒  values in [−1, 1].
+
+    Returns both channels (manuscript broadcasts k_x and k_y separately).
+
+    Parameters
+    ----------
+    kx, ky : array_like
+        Wavevector components (same broadcastable shape).
+    size : int
+        Patch side length S.
+    verbose : bool
+        If True, print input shapes.
+
+    Returns
+    -------
+    ndarray
+        Shape ``(N, 2, size, size)`` with channel 0 = k_x/π, channel 1 = k_y/π.
+    """
+    kx_a = np.atleast_1d(np.asarray(kx, dtype=np.float64))
+    ky_a = np.atleast_1d(np.asarray(ky, dtype=np.float64))
+    if kx_a.shape != ky_a.shape:
+        raise ValueError(f"kx/ky shape mismatch: {kx_a.shape} vs {ky_a.shape}")
+    if verbose:
+        print("kx/ky shape:", kx_a.shape)
+    S = int(size)
+    vx = (kx_a / np.pi).astype(np.float64)
+    vy = (ky_a / np.pi).astype(np.float64)
+    out = np.empty((kx_a.shape[0], 2, S, S), dtype=np.float64)
+    out[:, 0] = vx[:, None, None]
+    out[:, 1] = vy[:, None, None]
+    return out
+
+
+def embed_band_constant(bands, size=32, verbose=False):
+    """
+    Paper constant-field band encoding (§band_wavevector_encoding):
+
+        I_b = (b / 10) * 1_{S×S},   b ∈ {1,…,6}  ⇒  values in {0.1,…,0.6}.
+
+    Parameters
+    ----------
+    bands : array_like
+        Band indices (typically 1..6).
+    size : int
+        Patch side length S.
+    verbose : bool
+        If True, print input shape.
+
+    Returns
+    -------
+    ndarray
+        Shape ``(N, size, size)``.
+    """
+    b = np.atleast_1d(np.asarray(bands, dtype=np.float64))
+    if verbose:
+        print("bands shape:", b.shape)
+    S = int(size)
+    vals = (b / 10.0).astype(np.float64)
+    return np.broadcast_to(vals[:, None, None], (b.shape[0], S, S)).copy()
+
+
+def embed_band_sinusoidal(bands, size=32, verbose=False):
+    """
+    Official / paper spatial-sinusoidal band encoding (§band_wavevector_encoding):
+
+        I_b(x, y) = (1/2) [ cos(2 π b x / S) + cos(2 π b y / S) ],
+        (x, y) ∈ {0, …, S−1},  b ∈ {1, …, 6}.
+
+    Parameters
+    ----------
+    bands : array_like
+        Band indices (typically 1..6).
+    size : int
+        Patch side length S.
+    verbose : bool
+        If True, print input shape.
+
+    Returns
+    -------
+    ndarray
+        Shape ``(N, size, size)`` for length-N ``bands``.
+    """
+    b = np.atleast_1d(np.asarray(bands, dtype=np.float64))
+    if verbose:
+        print("bands shape:", b.shape)
+
+    S = int(size)
+    x = np.arange(S, dtype=np.float64)
+    y = np.arange(S, dtype=np.float64)
+    X, Y = np.meshgrid(x, y, indexing="xy")
+    return 0.5 * (
+        np.cos(2.0 * np.pi * b[:, None, None] * X / S)
+        + np.cos(2.0 * np.pi * b[:, None, None] * Y / S)
+    )
+
+
+def const_to_spatial(test_band, design_res, plot_result=True, scaling_factor=1.0):
+    """
+    Official band sinusoid for a single band index (see ``embed_band_sinusoidal``).
+
+        I_b = (scaling_factor) * (1/2) [ cos(2 π b x / S) + cos(2 π b y / S) ].
+
+    Returns
+    -------
+    constant_array : ndarray
+        Shape ``(S, S)``.
+    magnitude_spectrum : ndarray
+        Shifted ``|FFT2|`` of ``constant_array``.
+    """
+    constant_array = scaling_factor * embed_band_sinusoidal(
+        test_band, size=int(design_res), verbose=False
+    )[0]
+    fft_result = np.fft.fft2(constant_array)
+    fft_result_shifted = np.fft.fftshift(fft_result)
+    magnitude_spectrum = np.abs(fft_result_shifted)
+    if plot_result:
+        plt.figure(figsize=(12, 6))
+        plt.subplot(1, 2, 1)
+        plt.imshow(constant_array, cmap=DEFAULT_FIELD_CMAP)
+        plt.colorbar(label="Magnitude")
+        plt.title(f"Spatial Representation of band {test_band}")
+        plt.xlabel("x (pixels)")
+        plt.ylabel("y (pixels)")
+        plt.subplot(1, 2, 2)
+        plt.imshow(magnitude_spectrum, cmap=DEFAULT_FIELD_CMAP)
+        plt.colorbar(label="Magnitude")
+        plt.title(f"2D FFT Magnitude Spectrum of band {test_band}")
+        plt.xlabel("Frequency X")
+        plt.ylabel("Frequency Y")
+        plt.tight_layout()
+        plt.show()
+    return constant_array, magnitude_spectrum
+
+
+def embed_integer_wavelet(c, size=32, freq_range=2.0):
+    """Gabor wavelet band encoding used for ``band_fft_full.pt`` (not the paper sinusoid)."""
+    x = np.linspace(-1, 1, size)
+    y = np.linspace(-1, 1, size)
+    X, Y = np.meshgrid(x, y)
+    c = np.asarray(c)
+    base_frequency = (1.0 + np.abs(c))[:, None, None] * (size / 8)
+    theta = (c % 8)[:, None, None] * (size / 16)
+    cos_theta = np.cos(theta)
+    sin_theta = np.sin(theta)
+    X_theta = X[None, :, :] * cos_theta + Y[None, :, :] * sin_theta
+    Y_theta = -X[None, :, :] * sin_theta + Y[None, :, :] * cos_theta
+    sigma_x = 0.3 / freq_range
+    sigma_y = 0.3 / freq_range
+    gaussian = np.exp(-(X_theta**2 / (2 * sigma_x**2) + Y_theta**2 / (2 * sigma_y**2)))
+    gabor = gaussian * np.cos(base_frequency * X_theta)
+    return gabor
+
+
+EMBED_2CONST_FREQ_OFFSET = 2.20
+EMBED_2CONST_FREQ_SCALE = 41.0
+EMBED_2CONST_SIGMA_NUMERATOR = 0.5
+EMBED_2CONST_KX_CYCLES = 13
+EMBED_2CONST_KY_CYCLES = 25
+
+
+def embed_2const_wavelet_params(
+    size: int = 32,
+    freq_range: float = 1.0,
+    *,
+    freq_scale: float | None = None,
+    freq_offset: float | None = None,
+    sigma_numerator: float | None = None,
+    kx_cycles: int | None = None,
+    ky_cycles: int | None = None,
+) -> dict[str, float | int]:
+    """Return tunable constants for ``embed_2const_wavelet`` (for paths, logging, etc.)."""
+    sigma_num = EMBED_2CONST_SIGMA_NUMERATOR if sigma_numerator is None else sigma_numerator
+    return {
+        "size": size,
+        "freq_range": freq_range,
+        "freq_scale": EMBED_2CONST_FREQ_SCALE if freq_scale is None else float(freq_scale),
+        "freq_offset": EMBED_2CONST_FREQ_OFFSET if freq_offset is None else float(freq_offset),
+        "sigma_numerator": sigma_num,
+        "sigma": sigma_num / freq_range,
+        "kx_cycles": EMBED_2CONST_KX_CYCLES if kx_cycles is None else int(kx_cycles),
+        "ky_cycles": EMBED_2CONST_KY_CYCLES if ky_cycles is None else int(ky_cycles),
+    }
+
+
+def embed_2const_wavelet(
+    kx,
+    ky,
+    size=32,
+    freq_range=1.0,
+    verbose=True,
+    *,
+    freq_scale=None,
+    freq_offset=None,
+    sigma_numerator=None,
+    kx_cycles=None,
+    ky_cycles=None,
+):
+    """
+    Embed wavevector components (kx, ky) into 32×32 Gabor-wavelet patches.
+
+    Parameters
+    ----------
+    kx, ky : array_like
+        Wavevector components in radians (same units as ``wavevectors_full.pt``).
+    size : int
+        Output patch side length.
+    freq_range : float
+        Envelope scale; larger values narrow the Gaussian (σ = 0.5 / freq_range).
+    """
+    kx = np.asarray(kx)
+    ky = np.asarray(ky)
+    if verbose:
+        print("kx shape:", kx.shape, "ky shape:", ky.shape)
+
+    x = np.linspace(-1, 1, size)
+    y = np.linspace(-1, 1, size)
+    X, Y = np.meshgrid(x, y)
+    cfg = embed_2const_wavelet_params(
+        size=size,
+        freq_range=freq_range,
+        freq_scale=freq_scale,
+        freq_offset=freq_offset,
+        sigma_numerator=sigma_numerator,
+        kx_cycles=kx_cycles,
+        ky_cycles=ky_cycles,
+    )
+    freq_x = (cfg["freq_offset"] + kx)[:, None, None] * cfg["freq_scale"]
+    freq_y = (cfg["freq_offset"] + ky)[:, None, None] * cfg["freq_scale"]
+    kx_cycles = cfg["kx_cycles"]
+    ky_cycles = cfg["ky_cycles"]
+    theta1 = (kx % kx_cycles)[:, None, None] * (np.pi / kx_cycles)
+    theta2 = (ky % ky_cycles)[:, None, None] * (np.pi / ky_cycles)
+    X_rot = X[None, :, :] * np.cos(theta1) + Y[None, :, :] * np.sin(theta2)
+    Y_rot = -X[None, :, :] * np.sin(theta1) + Y[None, :, :] * np.cos(theta2)
+    sigma_x = cfg["sigma"]
+    sigma_y = cfg["sigma"]
+    gaussian = np.exp(-(X_rot**2 / (2 * sigma_x**2) + Y_rot**2 / (2 * sigma_y**2)))
+    gabor = gaussian * np.sin(freq_x * X_rot) * np.sin(freq_y * Y_rot)
+    return gabor
+
+
+def extract_2const_from_wavelet(pattern, size=32, freq_range=1.0, verbose=True):
+    x = np.linspace(-1, 1, size)
+    y = np.linspace(-1, 1, size)
+    X, Y = np.meshgrid(x, y)
+    fft_pattern = np.fft.fft2(pattern)
+    fft_shifted = np.fft.fftshift(fft_pattern)
+    freq_profile_x = np.sum(np.abs(fft_shifted), axis=0)
+    freq_profile_y = np.sum(np.abs(fft_shifted), axis=1)
+    peak_freq_x = np.argmax(freq_profile_x)
+    peak_freq_y = np.argmax(freq_profile_y)
+    norm_freq_x = (peak_freq_x - size // 2) / (size // 2)
+    norm_freq_y = (peak_freq_y - size // 2) / (size // 2)
+    cfg = embed_2const_wavelet_params(size=size, freq_range=freq_range)
+    kx = int(round((norm_freq_x * cfg["freq_scale"] - cfg["freq_offset"])))
+    ky = int(round((norm_freq_y * cfg["freq_scale"] - cfg["freq_offset"])))
+    kx_cycles = cfg["kx_cycles"]
+    ky_cycles = cfg["ky_cycles"]
+    kx = kx % kx_cycles
+    ky = ky % ky_cycles
+    if verbose:
+        print("kx:", kx, "ky:", ky)
+    return kx, ky
+
+
+def embed_eigenfrequency_wavelet(
+    s,
+    size=32,
+    ef_min=1.0,
+    ef_max=8000.0,
+    k_min=2.0,
+    k_max=16.0,
+    gamma=1,
+    phi=0.0,
+    sigma_factor=8,
+    theta_min=np.pi / 30,
+    theta_max=np.pi / 2 - np.pi / 30,
+):
+    if s <= 0:
+        raise ValueError("s must be positive (log-domain mapping).")
+
+    ln_s = np.log(s)
+    ln_min = np.log(ef_min)
+    ln_max = np.log(ef_max)
+    log_range = ln_max - ln_min
+    k_range = k_max - k_min
+    log_per_unit_k = log_range / k_range if k_range > 0 else 0.0
+    t = np.clip((ln_s - ln_min) / (ln_max - ln_min), 0.0, 1.0) if ln_max != ln_min else 0.0
+    k = k_min + t * k_range
+
+    if log_per_unit_k > 0:
+        band_fraction = ((ln_s - ln_min) % log_per_unit_k) / log_per_unit_k
+        theta = theta_min + band_fraction * (theta_max - theta_min)
+    else:
+        theta = theta_min
+
+    coords = np.linspace(-size // 2, size // 2 - 1, size)
+    X, Y = np.meshgrid(coords, coords)
+    X_theta = X * np.cos(theta) + Y * np.sin(theta)
+    Y_theta = -X * np.sin(theta) + Y * np.cos(theta)
+    sigma_x = sigma_factor
+    sigma_y = sigma_x * gamma
+    freq = 2.0 * np.pi * k / size
+    gaussian = np.exp(-0.5 * ((X_theta**2) / sigma_x**2 + (Y_theta**2) / sigma_y**2))
+    carrier = np.cos(freq * X_theta + phi)
+    return gaussian * carrier, k, theta
+
+
+def encode_eigenfrequency_uniform(s, size=32):
+    """
+    Encode eigenfrequency as a uniform float16 patch: every pixel is ln(s)/100.
+
+    The input is cast to float16 first; ``log`` and division follow in NumPy's
+    float16 arithmetic (wider internal promotion, if any, is left to NumPy).
+
+    Parameters
+    ----------
+    s : float, or array_like of floats
+        Eigenfrequency values; must be strictly positive (log domain).
+    size : int, default 32
+        Spatial extent of the square patch.
+
+    Returns
+    -------
+    ndarray, dtype float16
+        Shape ``(size, size)`` if ``s`` is scalar (0-d after casting), otherwise
+        ``s.shape + (size, size)`` with one patch per element of ``s``.
+    """
+    s_f16 = np.asarray(s, dtype=np.float16)
+    if np.any(s_f16 <= 0):
+        raise ValueError("s must be positive (log domain).")
+
+    pixel = (np.log(s_f16) / np.float16(100.0)).astype(np.float16)
+    tail = (size, size)
+    if pixel.ndim == 0:
+        return np.full(tail, pixel, dtype=np.float16)
+    out_shape = pixel.shape + tail
+    return np.broadcast_to(pixel[..., np.newaxis, np.newaxis], out_shape).copy()
+
+
+def encode_eigenfrequency_uniform_torch(s: torch.Tensor, size: int = 32) -> torch.Tensor:
+    """
+    Torch-only analogue of :func:`encode_eigenfrequency_uniform`: float16 patches of ``ln(s)/100``.
+
+    Parameters
+    ----------
+    s : torch.Tensor
+        Eigenfrequency values; must be strictly positive (after any clamping by the caller).
+    size : int
+        Square patch side length.
+
+    Returns
+    -------
+    torch.Tensor
+        ``dtype=float16``, shape ``s.shape + (size, size)`` on the same device as ``s``.
+    """
+    if not torch.is_tensor(s):
+        raise TypeError("s must be a torch.Tensor")
+    device = s.device
+    s_f16 = s.to(device=device, dtype=torch.float16)
+    if bool((s_f16 <= 0).any().item()):
+        raise ValueError("s must be positive (log domain).")
+    hundred = torch.tensor(100.0, device=device, dtype=torch.float16)
+    pixel = (torch.log(s_f16) / hundred).to(torch.float16)
+    h, w = size, size
+    if pixel.ndim == 0:
+        return torch.full((h, w), pixel, dtype=torch.float16, device=device)
+    return pixel.unsqueeze(-1).unsqueeze(-1).expand(*pixel.shape, h, w).contiguous()
+
+
+def decode_eigenfrequency_uniform(image):
+    """
+    Decode eigenfrequency from a patch produced by :func:`encode_eigenfrequency_uniform`.
+
+    Reads the top-left pixel (all pixels are identical for valid encodings).
+    Recovers ``s`` as ``exp(pixel * 100)`` in float16, then returns ``float64``
+    scalars/arrays for downstream use.
+
+    If the spatial mean of a patch differs from ``patch[0, 0]`` beyond a small
+    tolerance, prints a warning to stdout (non-uniform or corrupted input).
+
+    Parameters
+    ----------
+    image : array_like
+        Last two dimensions are height and width (e.g. ``(size, size)`` or
+        ``(..., size, size)``).
+
+    Returns
+    -------
+    ndarray or scalar
+        Shape ``()`` if ``image`` is 2-D, otherwise ``image.shape[:-2]``,
+        dtype ``float64``.
+    """
+    arr = np.asarray(image, dtype=np.float16)
+    if arr.ndim < 2:
+        raise ValueError("image must be at least 2-D (..., height, width).")
+    ref = arr[..., 0, 0]
+    avg = np.mean(arr, axis=(-2, -1))
+    if not np.allclose(avg, ref, rtol=1e-3, atol=1e-4):
+        print(
+            "Warning: decode_eigenfrequency_uniform: patch mean differs from pixel [0, 0]; "
+            "input may not be a valid uniform encoding.",
+            flush=True,
+        )
+    pixel = ref
+    ln_s_f16 = (pixel * np.float16(100.0)).astype(np.float16)
+    s_f16 = np.exp(ln_s_f16).astype(np.float16)
+    return s_f16.astype(np.float64)
+
+
+def extract_eigenfrequency_from_wavelet(
+    image,
+    size=32,
+    ef_min=1.0,
+    ef_max=8000.0,
+    k_min=2.0,
+    k_max=16.0,
+    theta_min=np.pi / 30,
+    theta_max=np.pi / 2 - np.pi / 30,
+):
+    CENTROID_RADIUS = 3
+    CENTROID_POWER = 2
+    ln_min = np.log(ef_min)
+    ln_max = np.log(ef_max)
+    log_range = ln_max - ln_min
+    k_range = k_max - k_min
+    log_per_unit_k = log_range / k_range if k_range > 0 else 0.0
+
+    image_centered = image - np.mean(image)
+    F = np.fft.fft2(image_centered)
+    F_mag = np.abs(np.fft.fftshift(F))
+    center = size // 2
+
+    hp = np.zeros_like(F_mag)
+    hp[:center, :] = F_mag[:center, :]
+    hp[center, center + 1 :] = F_mag[center, center + 1 :]
+    peak_idx = np.unravel_index(np.argmax(hp), hp.shape)
+    peak_kx = peak_idx[1] - center
+    peak_ky = peak_idx[0] - center
+    peak_row, peak_col = peak_idx[0], peak_idx[1]
+
+    sym_row = 2 * center - peak_row
+    sym_col = 2 * center - peak_col
+    sum_w = sum_kx = sum_ky = 0.0
+    r_int = int(np.ceil(CENTROID_RADIUS))
+    for dr in range(-r_int, r_int + 1):
+        for dc in range(-r_int, r_int + 1):
+            if dr * dr + dc * dc > CENTROID_RADIUS * CENTROID_RADIUS:
+                continue
+            r, c = peak_row + dr, peak_col + dc
+            if 0 <= r < size and 0 <= c < size:
+                d_main_sq = dr * dr + dc * dc
+                d_sym_sq = (r - sym_row) ** 2 + (c - sym_col) ** 2
+                if d_sym_sq < d_main_sq:
+                    continue
+                w = F_mag[r, c] ** CENTROID_POWER
+                sum_w += w
+                sum_kx += w * (c - center)
+                sum_ky += w * (r - center)
+
+    if sum_w > 0:
+        kx_ref = sum_kx / sum_w
+        ky_ref = sum_ky / sum_w
+    else:
+        kx_ref, ky_ref = float(peak_kx), float(peak_ky)
+
+    k_extracted = np.sqrt(kx_ref**2 + ky_ref**2)
+    theta_extracted = np.arctan2(ky_ref, kx_ref) % np.pi
+
+    t = np.clip((k_extracted - k_min) / k_range, 0.0, 1.0) if k_range > 0 else 0.0
+    ln_s_approx = ln_min + t * log_range
+    if log_per_unit_k > 0:
+        theta_range = theta_max - theta_min
+        band_fraction = np.clip((theta_extracted - theta_min) / theta_range, 0.0, 1.0)
+        log_position_in_band = band_fraction * log_per_unit_k
+        band = int(np.floor((ln_s_approx - ln_min) / log_per_unit_k))
+        best_ln_s = None
+        best_dist = np.inf
+        for b in [band - 1, band, band + 1]:
+            cand = ln_min + b * log_per_unit_k + log_position_in_band
+            dist = abs(cand - ln_s_approx)
+            if dist < best_dist:
+                best_dist = dist
+                best_ln_s = cand
+        ln_s = best_ln_s
+    else:
+        ln_s = ln_s_approx
+
+    ln_s = np.clip(ln_s, ln_min, ln_max)
+    s = np.exp(ln_s)
+    return s, k_extracted, theta_extracted
+
+
+# Canonical on-disk filenames for encoded eigenfrequency channel-0 tensors.
+# ``fft`` is the wavelet (Gabor) encoding produced by :func:`embed_eigenfrequency_wavelet`.
+EIGENFREQUENCY_ENCODING_FILES = {
+    "uniform": "eigenfrequency_uniform_full.pt",
+    "fft": "eigenfrequency_fft_full.pt",
+}
+
+
+def resolve_eigenfrequency_encoding(encoding: str) -> str:
+    """Normalize and validate ``uniform`` / ``fft`` eigenfrequency encoding names."""
+    key = str(encoding).strip().lower()
+    if key not in EIGENFREQUENCY_ENCODING_FILES:
+        raise ValueError(
+            f"Unknown eigenfrequency encoding {encoding!r}; "
+            f"expected one of {sorted(EIGENFREQUENCY_ENCODING_FILES)}"
+        )
+    return key
+
+
+def eigenfrequency_full_filename(encoding: str = "uniform") -> str:
+    """Return ``eigenfrequency_{uniform|fft}_full.pt`` for the given encoding."""
+    return EIGENFREQUENCY_ENCODING_FILES[resolve_eigenfrequency_encoding(encoding)]
+
+
+def decode_eigenfrequency_patch(
+    image,
+    encoding: str = "uniform",
+    *,
+    use_patch_mean_for_uniform: bool = False,
+    size: int | None = None,
+):
+    """
+    Decode a single ``(H, W)`` eigenfrequency patch to a scalar frequency.
+
+    Uses the single canonical decoder for each encoding:
+
+    - ``uniform`` → :func:`decode_eigenfrequency_uniform` (corner pixel), or
+      patch-mean ``exp(100 * mean(patch))`` when ``use_patch_mean_for_uniform``
+      (preferred for noisy model predictions).
+    - ``fft`` → :func:`extract_eigenfrequency_from_wavelet` (wavelet / Gabor decode).
+    """
+    encoding = resolve_eigenfrequency_encoding(encoding)
+    arr = np.asarray(image)
+    if arr.ndim != 2:
+        raise ValueError(f"Expected a 2-D patch (H, W); got shape {arr.shape}.")
+    if encoding == "uniform":
+        if use_patch_mean_for_uniform:
+            pixel = float(np.mean(arr.astype(np.float64, copy=False)))
+            return float(np.exp(100.0 * pixel))
+        decoded = decode_eigenfrequency_uniform(arr)
+        return float(np.asarray(decoded, dtype=np.float64).reshape(()))
+    h = int(size) if size is not None else int(arr.shape[0])
+    s, _, _ = extract_eigenfrequency_from_wavelet(arr.astype(np.float64, copy=False), size=h)
+    return float(s)

@@ -1,0 +1,9 @@
+# FEA package dependencies (2d-dispersion-py)
+
+numpy>=1.20.0
+scipy>=1.7.0
+matplotlib>=3.3.0
+torch>=1.9.0
+
+# Optional: MATLAB v7.3 loading (mat73_loader.py / demos)
+h5py>=3.0.0

@@ -1,0 +1,2775 @@
+from __future__ import annotations
+
+import argparse
+import bisect
+import csv
+import faulthandler
+from functools import partial
+import hashlib
+import json
+import logging
+import multiprocessing as mp
+import os
+import platform
+import re
+import shutil
+import subprocess
+import sys
+import time
+import traceback
+from dataclasses import dataclass
+from datetime import datetime, timezone
+from pathlib import Path
+from typing import Any
+
+import numpy as np
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+from torch.utils.data import DataLoader, Dataset, Sampler
+from tqdm import tqdm
+
+# Optional local diagnostics (folder is gitignored / may be absent in clones).
+try:
+    from DIAGNOSTICS.diagnostic_panels import save_random_test_diagnostic_panels
+except ImportError:
+    save_random_test_diagnostic_panels = None  # type: ignore[misc, assignment]
+
+
+TRAIN_PREFIXES = ("c_train", "b_train")
+TEST_PREFIXES = ("c_test", "b_test")
+_MAIN_FAULT_FH: Any | None = None
+_WORKER_FAULT_FH: Any | None = None
+
+EIGEN_CH0_FILES = {
+    "uniform": "eigenfrequency_uniform_full.pt",
+    "fft": "eigenfrequency_fft_full.pt",
+}
+
+# Input encoding products: stacked train inputs + full-index val waveform/band tensors.
+# "constant" / "uniform" = manuscript constant-field encoding (kx/π, ky/π, b/10 broadcasts).
+from input_encodings import (  # noqa: E402  (shared with inference)
+    INPUT_ENCODING_ALIASES,
+    INPUT_ENCODING_FILES,
+    INPUT_ENCODING_IN_CHANNELS,
+    normalize_input_encoding,
+)
+
+OUT_CHANNELS = 5
+
+
+CANONICAL_LOSSES = frozenset({
+    "mae",
+    "mse",
+    "smoothl1",
+    "nmae",
+    "nmse",
+    "rmse",
+    "nrmse",
+    "mae_rmse",
+    "nmae_nrmse",
+})
+LOSS_CLI_CHOICES = (
+    "mae",
+    "mse",
+    "smoothl1",
+    "nmae",
+    "nmse",
+    "rmse",
+    "nrmse",
+    "mae_rmse",
+    "nmae_nrmse",
+    "l1",
+    "l2",
+    "huber",
+    "sl1",
+    "nl1",
+    "nl2",
+    "nrms",
+    "maermse",
+    "nmaenrmse",
+)
+DEFAULT_NMAE_EPS = 1e-5
+DEFAULT_NMSE_EPS = 1e-5
+DEFAULT_RMSE_SQRT_FLOOR = 1e-12
+DEFAULT_MAE_RMSE_COEFF = 1.0
+DEFAULT_NMAE_NRMSE_COEFF = 1.0
+DEFAULT_L1_PENALTY = 0.0
+
+
+def normalize_loss_name(name: str) -> str:
+    """Map CLI / legacy aliases to canonical loss names."""
+    n = name.strip().lower()
+    if n in ("l1", "mae"):
+        return "mae"
+    if n in ("l2", "mse"):
+        return "mse"
+    if n in ("smoothl1", "huber", "sl1"):
+        return "smoothl1"
+    if n in ("nl1", "nmae"):
+        return "nmae"
+    if n in ("nl2", "nmse"):
+        return "nmse"
+    if n in ("nrms", "nrmse"):
+        return "nrmse"
+    if n in ("maermse", "mae+rmse"):
+        return "mae_rmse"
+    if n in ("nmaenrmse", "nmae+nrms", "nmae_nrms"):
+        return "nmae_nrmse"
+    if n in CANONICAL_LOSSES:
+        return n
+    raise ValueError(
+        f"Unsupported loss {name!r}. Supported: {', '.join(sorted(CANONICAL_LOSSES))} "
+        f"(aliases l1, l2, huber, sl1, nl1, nl2, nrms, maermse, nmaenrmse)."
+    )
+
+
+class NormalizedMaeLoss(nn.Module):
+    """mean(|p-t|) / (mean(|t|) + eps) per channel, averaged over channels."""
+
+    def __init__(self, eps: float = DEFAULT_NMAE_EPS) -> None:
+        super().__init__()
+        self.eps = eps
+
+    def forward(self, pred: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
+        err = pred - target
+        mae_per_ch = err.abs().mean(dim=(0, 2, 3))
+        denom = target.abs().mean(dim=(0, 2, 3)) + self.eps
+        return (mae_per_ch / denom).mean()
+
+
+class NormalizedMseLoss(nn.Module):
+    """mean((p-t)^2) / (mean(t^2) + eps) per channel, averaged over channels."""
+
+    def __init__(self, eps: float = DEFAULT_NMSE_EPS) -> None:
+        super().__init__()
+        self.eps = eps
+
+    def forward(self, pred: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
+        err = pred - target
+        mse_per_ch = err.square().mean(dim=(0, 2, 3))
+        denom = target.square().mean(dim=(0, 2, 3)) + self.eps
+        return (mse_per_ch / denom).mean()
+
+
+class RmseLoss(nn.Module):
+    """sqrt(mean((p-t)^2)) per channel, averaged over channels."""
+
+    def __init__(self, sqrt_floor: float = DEFAULT_RMSE_SQRT_FLOOR) -> None:
+        super().__init__()
+        self.sqrt_floor = sqrt_floor
+
+    def forward(self, pred: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
+        err = pred - target
+        mse_per_ch = err.square().mean(dim=(0, 2, 3))
+        return torch.sqrt(mse_per_ch + self.sqrt_floor).mean()
+
+
+class NormalizedRmseLoss(nn.Module):
+    """sqrt(mean((p-t)^2) / (mean(t^2) + eps)) per channel, averaged over channels."""
+
+    def __init__(self, eps: float = DEFAULT_NMSE_EPS) -> None:
+        super().__init__()
+        self.eps = eps
+
+    def forward(self, pred: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
+        err = pred - target
+        mse_per_ch = err.square().mean(dim=(0, 2, 3))
+        denom = target.square().mean(dim=(0, 2, 3)) + self.eps
+        return torch.sqrt((mse_per_ch / denom).clamp_min(0.0)).mean()
+
+
+class MaeRmseLoss(nn.Module):
+    """mean(|p-t|) + c * sqrt(mean((p-t)^2)) per channel, averaged over channels."""
+
+    def __init__(self, coeff: float = DEFAULT_MAE_RMSE_COEFF, *, rmse_sqrt_floor: float = DEFAULT_RMSE_SQRT_FLOOR) -> None:
+        super().__init__()
+        self.coeff = coeff
+        self.rmse_sqrt_floor = rmse_sqrt_floor
+
+    def forward(self, pred: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
+        err = pred - target
+        mae_per_ch = err.abs().mean(dim=(0, 2, 3))
+        rmse_per_ch = torch.sqrt(err.square().mean(dim=(0, 2, 3)) + self.rmse_sqrt_floor)
+        return (mae_per_ch + self.coeff * rmse_per_ch).mean()
+
+
+class NmaeNrmseLoss(nn.Module):
+    """NMAE + c * NRMSE per channel, averaged over channels."""
+
+    def __init__(
+        self,
+        coeff: float = DEFAULT_NMAE_NRMSE_COEFF,
+        *,
+        nmae_eps: float = DEFAULT_NMAE_EPS,
+        nmse_eps: float = DEFAULT_NMSE_EPS,
+    ) -> None:
+        super().__init__()
+        self.coeff = coeff
+        self.nmae_eps = nmae_eps
+        self.nmse_eps = nmse_eps
+
+    def forward(self, pred: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
+        err = pred - target
+        mae_per_ch = err.abs().mean(dim=(0, 2, 3))
+        mse_per_ch = err.square().mean(dim=(0, 2, 3))
+        denom_a = target.abs().mean(dim=(0, 2, 3)) + self.nmae_eps
+        denom_s = target.square().mean(dim=(0, 2, 3)) + self.nmse_eps
+        nmae_per_ch = mae_per_ch / denom_a
+        nrmse_per_ch = torch.sqrt((mse_per_ch / denom_s).clamp_min(0.0))
+        return (nmae_per_ch + self.coeff * nrmse_per_ch).mean()
+
+
+@dataclass
+class TrainingLossSpec:
+    """Criterion plus metadata for logging, metrics, and checkpoint selection."""
+
+    name: str
+    criterion: nn.Module
+    compare_kind: str
+    run_tag: str
+    huber_beta: float = 1e-3
+    nmae_eps: float = DEFAULT_NMAE_EPS
+    nmse_eps: float = DEFAULT_NMSE_EPS
+    rmse_sqrt_floor: float = DEFAULT_RMSE_SQRT_FLOOR
+    mae_rmse_coeff: float = DEFAULT_MAE_RMSE_COEFF
+    nmae_nrmse_coeff: float = DEFAULT_NMAE_NRMSE_COEFF
+
+    def batch_loss(self, pred: torch.Tensor, yb: torch.Tensor) -> torch.Tensor:
+        return self.criterion(pred, yb)
+
+    def per_channel_mean(self, pred: torch.Tensor, yb: torch.Tensor) -> torch.Tensor:
+        return per_channel_loss_mean(
+            pred,
+            yb,
+            self.name,
+            huber_beta=self.huber_beta,
+            nmae_eps=self.nmae_eps,
+            nmse_eps=self.nmse_eps,
+            rmse_sqrt_floor=self.rmse_sqrt_floor,
+            mae_rmse_coeff=self.mae_rmse_coeff,
+            nmae_nrmse_coeff=self.nmae_nrmse_coeff,
+        )
+
+
+def build_training_loss(
+    loss_name: str,
+    *,
+    huber_beta: float = 1e-3,
+    nmae_eps: float = DEFAULT_NMAE_EPS,
+    nmse_eps: float = DEFAULT_NMSE_EPS,
+    rmse_sqrt_floor: float = DEFAULT_RMSE_SQRT_FLOOR,
+    mae_rmse_coeff: float = DEFAULT_MAE_RMSE_COEFF,
+    nmae_nrmse_coeff: float = DEFAULT_NMAE_NRMSE_COEFF,
+) -> TrainingLossSpec:
+    name = normalize_loss_name(loss_name)
+    common = dict(
+        huber_beta=huber_beta,
+        nmae_eps=nmae_eps,
+        nmse_eps=nmse_eps,
+        rmse_sqrt_floor=rmse_sqrt_floor,
+        mae_rmse_coeff=mae_rmse_coeff,
+        nmae_nrmse_coeff=nmae_nrmse_coeff,
+    )
+    if name == "mse":
+        return TrainingLossSpec(
+            name=name,
+            criterion=nn.MSELoss(),
+            compare_kind="mae",
+            run_tag="L2",
+            **common,
+        )
+    if name == "mae":
+        return TrainingLossSpec(
+            name=name,
+            criterion=nn.L1Loss(),
+            compare_kind="mse",
+            run_tag="MAE",
+            **common,
+        )
+    if name == "nmae":
+        return TrainingLossSpec(
+            name=name,
+            criterion=NormalizedMaeLoss(eps=nmae_eps),
+            compare_kind="mse",
+            run_tag="NMAE",
+            **common,
+        )
+    if name == "nmse":
+        return TrainingLossSpec(
+            name=name,
+            criterion=NormalizedMseLoss(eps=nmse_eps),
+            compare_kind="mse",
+            run_tag="NMSE",
+            **common,
+        )
+    if name == "rmse":
+        return TrainingLossSpec(
+            name=name,
+            criterion=RmseLoss(sqrt_floor=rmse_sqrt_floor),
+            compare_kind="mse",
+            run_tag="RMSE",
+            **common,
+        )
+    if name == "nrmse":
+        return TrainingLossSpec(
+            name=name,
+            criterion=NormalizedRmseLoss(eps=nmse_eps),
+            compare_kind="mse",
+            run_tag="NRMSE",
+            **common,
+        )
+    if name == "mae_rmse":
+        return TrainingLossSpec(
+            name=name,
+            criterion=MaeRmseLoss(coeff=mae_rmse_coeff, rmse_sqrt_floor=rmse_sqrt_floor),
+            compare_kind="mse",
+            run_tag="MAERMSE",
+            **common,
+        )
+    if name == "nmae_nrmse":
+        return TrainingLossSpec(
+            name=name,
+            criterion=NmaeNrmseLoss(coeff=nmae_nrmse_coeff, nmae_eps=nmae_eps, nmse_eps=nmse_eps),
+            compare_kind="mse",
+            run_tag="NMAENRMSE",
+            **common,
+        )
+    return TrainingLossSpec(
+        name=name,
+        criterion=nn.SmoothL1Loss(beta=huber_beta),
+        compare_kind="mse",
+        run_tag="SL1",
+        **common,
+    )
+
+
+@dataclass
+class ShardInfo:
+    name: str
+    pt_dir: Path
+    inputs_path: Path
+    outputs_path: Path
+    reduced_indices_path: Path
+    eigen_ch0_path: Path
+    n: int
+
+
+@dataclass
+class FullIndexShardInfo:
+    """Test shard metadata for on-the-fly assembly from indices_full.pt."""
+
+    name: str
+    pt_dir: Path
+    indices_path: Path
+    geometries_path: Path
+    waveforms_path: Path
+    band_fft_path: Path
+    eigen_ch0_path: Path
+    displacements_path: Path
+    n: int
+    n_design: int
+    n_wv: int
+    n_band: int
+
+
+class ShardedTensorPairDataset(Dataset[tuple[torch.Tensor, torch.Tensor]]):
+    """
+    Disk-backed dataset: inputs.pt; output channel 0 from eigenfrequency_*_full.pt at
+    (design, wavevector, band) from reduced_indices.pt; channels 1–4 from outputs.pt.
+    """
+
+    def __init__(self, shards: list[ShardInfo], eigen_ch0_encoding: str):
+        if eigen_ch0_encoding not in EIGEN_CH0_FILES:
+            raise ValueError(f"Unknown eigen_ch0_encoding: {eigen_ch0_encoding!r}")
+        if not shards:
+            raise ValueError("No shards were provided.")
+        self.shards = shards
+        self.eigen_ch0_encoding = eigen_ch0_encoding
+        self._lengths = [s.n for s in shards]
+        self._offsets = np.cumsum([0, *self._lengths]).tolist()
+        self._total = self._offsets[-1]
+
+        self._loaded_shard_idx: int | None = None
+        self._loaded_inputs: torch.Tensor | None = None
+        self._loaded_outputs: torch.Tensor | None = None
+        self._loaded_eigen_ch0: torch.Tensor | None = None
+        self._loaded_ridx: Any = None
+
+    def __len__(self) -> int:
+        return self._total
+
+    @property
+    def offsets(self) -> list[int]:
+        """Global index offsets for each shard start; length = n_shards + 1."""
+        return self._offsets
+
+    def _resolve(self, idx: int) -> tuple[int, int]:
+        if idx < 0 or idx >= self._total:
+            raise IndexError(f"Index out of range: {idx}")
+        shard_idx = bisect.bisect_right(self._offsets, idx) - 1
+        local_idx = idx - self._offsets[shard_idx]
+        return shard_idx, local_idx
+
+    def _load_shard(self, shard_idx: int) -> None:
+        if self._loaded_shard_idx == shard_idx:
+            return
+        shard = self.shards[shard_idx]
+        self._loaded_inputs = torch.load(shard.inputs_path, map_location="cpu", mmap=True, weights_only=True)
+        self._loaded_outputs = torch.load(shard.outputs_path, map_location="cpu", mmap=True, weights_only=True)
+        self._loaded_eigen_ch0 = torch.load(shard.eigen_ch0_path, map_location="cpu", mmap=True, weights_only=True)
+        self._loaded_ridx = torch.load(shard.reduced_indices_path, map_location="cpu", weights_only=False)
+        self._loaded_shard_idx = shard_idx
+
+    def __getitem__(self, idx: int) -> tuple[torch.Tensor, torch.Tensor]:
+        shard_idx, local_idx = self._resolve(idx)
+        self._load_shard(shard_idx)
+        assert self._loaded_inputs is not None and self._loaded_outputs is not None
+        assert self._loaded_eigen_ch0 is not None and self._loaded_ridx is not None
+        x = self._loaded_inputs[local_idx]
+        triplet = self._loaded_ridx[local_idx]
+        d, w, b = int(triplet[0]), int(triplet[1]), int(triplet[2])
+        y0 = self._loaded_eigen_ch0[d, w, b]
+        y_rest = self._loaded_outputs[local_idx, 1:5]
+        y = torch.cat([y0.unsqueeze(0), y_rest], dim=0)
+        return x, y
+
+
+class FullIndexTensorPairDataset(Dataset[tuple[torch.Tensor, torch.Tensor]]):
+    """
+    Disk-backed validation dataset over indices_full.pt.
+
+    Assembles inputs from geometries/waveforms/band_fft and targets from
+    eigenfrequency_*_full.pt + displacements_dataset.pt without requiring
+    prebuilt inputs.pt/outputs.pt for the full index list.
+
+    Waveforms may be ``(N_wv, S, S)`` (wavelet/sinusoidal) or ``(N_wv, 2, S, S)``
+    (constant: separate k_x / k_y channels).
+    """
+
+    def __init__(self, shards: list[FullIndexShardInfo], eigen_ch0_encoding: str):
+        if eigen_ch0_encoding not in EIGEN_CH0_FILES:
+            raise ValueError(f"Unknown eigen_ch0_encoding: {eigen_ch0_encoding!r}")
+        if not shards:
+            raise ValueError("No shards were provided.")
+        self.shards = shards
+        self.eigen_ch0_encoding = eigen_ch0_encoding
+        self._lengths = [s.n for s in shards]
+        self._offsets = np.cumsum([0, *self._lengths]).tolist()
+        self._total = self._offsets[-1]
+
+        self._loaded_shard_idx: int | None = None
+        self._loaded_geometries: torch.Tensor | None = None
+        self._loaded_waveforms: torch.Tensor | None = None
+        self._loaded_band_fft: torch.Tensor | None = None
+        self._loaded_eigen_ch0: torch.Tensor | None = None
+        self._loaded_disp: list[torch.Tensor] | None = None
+        self._loaded_indices: np.ndarray | None = None
+        self._n_wv: int = 0
+        self._n_band: int = 0
+        self._waveforms_two_channel: bool = False
+
+    def __len__(self) -> int:
+        return self._total
+
+    def _resolve(self, idx: int) -> tuple[int, int]:
+        if idx < 0 or idx >= self._total:
+            raise IndexError(f"Index out of range: {idx}")
+        shard_idx = bisect.bisect_right(self._offsets, idx) - 1
+        local_idx = idx - self._offsets[shard_idx]
+        return shard_idx, local_idx
+
+    def _load_shard(self, shard_idx: int) -> None:
+        if self._loaded_shard_idx == shard_idx:
+            return
+        shard = self.shards[shard_idx]
+        self._loaded_geometries = torch.load(
+            shard.geometries_path, map_location="cpu", mmap=True, weights_only=True
+        )
+        self._loaded_waveforms = torch.load(
+            shard.waveforms_path, map_location="cpu", mmap=True, weights_only=True
+        )
+        self._loaded_band_fft = torch.load(
+            shard.band_fft_path, map_location="cpu", mmap=True, weights_only=True
+        )
+        self._loaded_eigen_ch0 = torch.load(
+            shard.eigen_ch0_path, map_location="cpu", mmap=True, weights_only=True
+        )
+        displacements = torch.load(shard.displacements_path, map_location="cpu", mmap=True, weights_only=False)
+        if not hasattr(displacements, "tensors") or len(displacements.tensors) != 4:
+            raise ValueError(
+                f"displacements_dataset in {shard.pt_dir} must be a TensorDataset with 4 tensors"
+            )
+        self._loaded_disp = list(displacements.tensors)
+        indices = torch.load(shard.indices_path, map_location="cpu", weights_only=False)
+        self._loaded_indices = np.asarray(indices, dtype=np.int32)
+        if self._loaded_indices.ndim != 2 or self._loaded_indices.shape[1] != 3:
+            raise ValueError(
+                f"indices_full must have shape [N,3] when treated as array, got {self._loaded_indices.shape}"
+            )
+        self._n_wv = shard.n_wv
+        self._n_band = shard.n_band
+        assert self._loaded_waveforms is not None
+        if self._loaded_waveforms.ndim == 4 and int(self._loaded_waveforms.shape[1]) == 2:
+            self._waveforms_two_channel = True
+        elif self._loaded_waveforms.ndim == 3:
+            self._waveforms_two_channel = False
+        else:
+            raise ValueError(
+                f"Unsupported waveforms shape {tuple(self._loaded_waveforms.shape)} in {shard.pt_dir}; "
+                "expected (N_wv, S, S) or (N_wv, 2, S, S)."
+            )
+        self._loaded_shard_idx = shard_idx
+
+    def __getitem__(self, idx: int) -> tuple[torch.Tensor, torch.Tensor]:
+        shard_idx, local_idx = self._resolve(idx)
+        self._load_shard(shard_idx)
+        assert self._loaded_geometries is not None
+        assert self._loaded_waveforms is not None
+        assert self._loaded_band_fft is not None
+        assert self._loaded_eigen_ch0 is not None
+        assert self._loaded_disp is not None
+        assert self._loaded_indices is not None
+
+        d, w, b = (int(v) for v in self._loaded_indices[local_idx])
+        geo = self._loaded_geometries[d]
+        band = self._loaded_band_fft[b]
+        if self._waveforms_two_channel:
+            wf = self._loaded_waveforms[w]  # (2, S, S)
+            x = torch.cat([geo.unsqueeze(0), wf, band.unsqueeze(0)], dim=0)
+        else:
+            x = torch.stack([geo, self._loaded_waveforms[w], band], dim=0)
+        y0 = self._loaded_eigen_ch0[d, w, b]
+        flat = d * self._n_wv * self._n_band + w * self._n_band + b
+        y = torch.stack(
+            [
+                y0,
+                self._loaded_disp[0][flat],
+                self._loaded_disp[1][flat],
+                self._loaded_disp[2][flat],
+                self._loaded_disp[3][flat],
+            ],
+            dim=0,
+        )
+        return x, y
+
+
+class ShardAwareBatchSampler(Sampler[list[int]]):
+    """
+    Shuffle globally at the shard/batch level while keeping each batch shard-local.
+
+    This avoids heavy cross-shard random seeks that occur with default global index
+    shuffling, preserving I/O locality and improving GPU feed throughput.
+    """
+
+    def __init__(
+        self,
+        shard_offsets: list[int],
+        batch_size: int,
+        drop_last: bool,
+        seed: int = 0,
+    ) -> None:
+        if len(shard_offsets) < 2:
+            raise ValueError("shard_offsets must include at least one shard start and end.")
+        if batch_size <= 0:
+            raise ValueError("batch_size must be positive.")
+        self._offsets = shard_offsets
+        self.batch_size = int(batch_size)
+        self.drop_last = bool(drop_last)
+        self.seed = int(seed)
+        self.epoch = 0
+        self._num_samples = int(shard_offsets[-1])
+        self._num_batches = self._estimate_num_batches()
+
+    def set_epoch(self, epoch: int) -> None:
+        self.epoch = int(epoch)
+
+    def _estimate_num_batches(self) -> int:
+        n_batches = 0
+        for s in range(len(self._offsets) - 1):
+            n = self._offsets[s + 1] - self._offsets[s]
+            if self.drop_last:
+                n_batches += n // self.batch_size
+            else:
+                n_batches += (n + self.batch_size - 1) // self.batch_size
+        return n_batches
+
+    def __len__(self) -> int:
+        return self._num_batches
+
+    def __iter__(self):
+        gen = torch.Generator()
+        gen.manual_seed(self.seed + self.epoch)
+
+        shard_batches: list[list[list[int]]] = []
+        for s in range(len(self._offsets) - 1):
+            start = self._offsets[s]
+            end = self._offsets[s + 1]
+            n = end - start
+            if n <= 0:
+                shard_batches.append([])
+                continue
+            perm_local = torch.randperm(n, generator=gen).tolist()
+            global_idx = [start + i for i in perm_local]
+            batches: list[list[int]] = []
+            for i in range(0, n, self.batch_size):
+                b = global_idx[i : i + self.batch_size]
+                if len(b) < self.batch_size and self.drop_last:
+                    continue
+                batches.append(b)
+            shard_batches.append(batches)
+
+        # Interleave shards in randomized rounds so no single shard dominates too long.
+        ptr = [0] * len(shard_batches)
+        active = [i for i, b in enumerate(shard_batches) if b]
+        while active:
+            order = torch.randperm(len(active), generator=gen).tolist()
+            next_active: list[int] = []
+            for k in order:
+                s = active[k]
+                p = ptr[s]
+                if p < len(shard_batches[s]):
+                    yield shard_batches[s][p]
+                    p += 1
+                    ptr[s] = p
+                if p < len(shard_batches[s]):
+                    next_active.append(s)
+            active = next_active
+
+
+class FourierNeuralOperator(nn.Module):
+    """Match NO_trainer_4.ipynb model style via neuralop FNO2d."""
+
+    def __init__(
+        self,
+        modes_height: int,
+        modes_width: int,
+        hidden_channels: int,
+        n_layers: int,
+        in_channels: int = 3,
+    ):
+        super().__init__()
+        try:
+            from neuralop.models import FNO2d
+        except Exception as e:
+            raise RuntimeError(
+                "Failed to import neuralop FNO2d. "
+                "This environment likely has a broken neuralop/wandb dependency chain. "
+                "Fix env packages and retry."
+            ) from e
+        self.in_channels = int(in_channels)
+        self.model = FNO2d(
+            in_channels=self.in_channels,
+            out_channels=OUT_CHANNELS,
+            n_modes_height=modes_height,
+            n_modes_width=modes_width,
+            hidden_channels=hidden_channels,
+            n_layers=n_layers,
+        )
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        return self.model(x)
+
+    # Preserve unwrapped FNO2d checkpoint keys by delegating state_dict I/O to the inner model.
+    def state_dict(self, *args, **kwargs):  # type: ignore[override]
+        return self.model.state_dict(*args, **kwargs)
+
+    def load_state_dict(self, state_dict, strict: bool = True):  # type: ignore[override]
+        return self.model.load_state_dict(state_dict, strict=strict)
+
+
+def parse_args() -> argparse.Namespace:
+    # DataLoader defaults (batch 520, workers 2, prefetch 3, pin_memory) match the stable Windows
+    # I3O5 L1 disk run (~12.4 ks/epoch after resume vs ~25 ks/epoch with workers=4 on this machine).
+    p = argparse.ArgumentParser(description="Disk-backed training pipeline with local file logging.")
+    p.add_argument("--output-root", default="D:/Research/NO-2D-Metamaterials/DATASETS")
+    p.add_argument("--save-dir", default="D:/Research/NO-2D-Metamaterials/MODELS/training_runs")
+    p.add_argument(
+        "--output-run-dir",
+        default="",
+        help="Optional run output directory. New runs write directly here; resumed runs copy --resume-run-dir here and continue in the copied directory.",
+    )
+    p.add_argument("--epochs", type=int, default=12)
+    p.add_argument(
+        "--resume-run-dir",
+        default="",
+        help="Existing run directory to resume and append logs/checkpoints in-place.",
+    )
+    p.add_argument(
+        "--extend-epochs",
+        type=int,
+        default=0,
+        help="When resuming, train this many additional epochs beyond the last completed epoch.",
+    )
+    p.add_argument("--batch-size", type=int, default=520)
+    p.add_argument(
+        "--train-shuffle",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="Shuffle training indices each epoch (recommended). Disable with --no-train-shuffle if needed.",
+    )
+    p.add_argument("--num-workers", type=int, default=2)
+    p.add_argument("--prefetch-factor", type=int, default=3)
+    p.add_argument(
+        "--pin-memory",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="Pin DataLoader CPU memory for host->GPU transfer.",
+    )
+    p.add_argument("--hidden-channels", type=int, default=128)
+    p.add_argument("--layers", type=int, default=4)
+    p.add_argument("--modes-height", type=int, default=32)
+    p.add_argument("--modes-width", type=int, default=32)
+    p.add_argument("--learning-rate", type=float, default=2e-3)
+    p.add_argument("--weight-decay", type=float, default=0.0)
+    p.add_argument(
+        "--l1-penalty",
+        type=float,
+        default=DEFAULT_L1_PENALTY,
+        help=(
+            "Lambda for an explicit L1 penalty on model weights added to the training loss "
+            "(loss = data_loss + lambda * sum(|W|) over >=2D weight tensors; biases/1-D params "
+            "excluded). 0 disables it. This is true L1 sparsity regularization, distinct from "
+            "--weight-decay (AdamW L2)."
+        ),
+    )
+    p.add_argument(
+        "--loss",
+        type=normalize_loss_name,
+        choices=LOSS_CLI_CHOICES,
+        default="smoothl1",
+        help="Training loss preset. Aliases: l1->mae, l2->mse, huber/sl1->smoothl1, nl1->nmae, nl2->nmse, nrms->nrmse, maermse->mae_rmse, nmaenrmse->nmae_nrmse.",
+    )
+    p.add_argument(
+        "--huber-beta",
+        type=float,
+        default=1e-3,
+        help="SmoothL1/Huber transition point (|r|=beta). Used when --loss smoothl1.",
+    )
+    p.add_argument(
+        "--nmae-eps",
+        type=float,
+        default=DEFAULT_NMAE_EPS,
+        help="Epsilon added to mean(|t|) denominator for nmae / nmae_nrmse (default 1e-5).",
+    )
+    p.add_argument(
+        "--nmse-eps",
+        type=float,
+        default=DEFAULT_NMSE_EPS,
+        help="Epsilon added to mean(t^2) denominator for nmse / nrmse / nmae_nrmse (default 1e-5).",
+    )
+    p.add_argument(
+        "--rmse-sqrt-floor",
+        type=float,
+        default=DEFAULT_RMSE_SQRT_FLOOR,
+        help="Additive floor inside sqrt(mean((p-t)^2)) for rmse / mae_rmse gradient stability "
+        "(default 1e-12). Not a truth-normalization epsilon; see --nmse-eps / --nmae-eps.",
+    )
+    p.add_argument(
+        "--mae-rmse-coeff",
+        type=float,
+        default=DEFAULT_MAE_RMSE_COEFF,
+        help="Coefficient c on RMSE in --loss mae_rmse: MAE + c*RMSE (default 1.0).",
+    )
+    p.add_argument(
+        "--nmae-nrmse-coeff",
+        type=float,
+        default=DEFAULT_NMAE_NRMSE_COEFF,
+        help="Coefficient c on NRMSE in --loss nmae_nrmse: NMAE + c*NRMSE (default 1.0).",
+    )
+    p.add_argument("--scheduler", choices=("steplr", "cosine", "none"), default="steplr")
+    p.add_argument("--step-size", type=int, default=1)
+    p.add_argument("--gamma", type=float, default=0.9)
+    p.add_argument("--t-max", type=int, default=0, help="CosineAnnealingLR T_max. 0 means epochs.")
+    p.add_argument("--seed", type=int, default=0)
+    p.add_argument("--amp", choices=("none", "fp16", "bf16"), default="none")
+    p.add_argument(
+        "--allow-cpu",
+        action="store_true",
+        help="Allow CPU fallback when CUDA is unavailable. Default is to require GPU.",
+    )
+    p.add_argument("--max-train-samples", type=int, default=0, help="0 means use all.")
+    p.add_argument("--max-test-samples", type=int, default=0, help="0 means use all.")
+    p.add_argument(
+        "--train-prefixes",
+        default="",
+        help=(
+            "Comma-separated dataset-directory prefixes for the TRAIN split "
+            "(e.g. 'c_train_01' to use a single shard for quick tests). "
+            "Empty uses the built-in default (c_train, b_train)."
+        ),
+    )
+    p.add_argument(
+        "--test-prefixes",
+        default="",
+        help=(
+            "Comma-separated dataset-directory prefixes for the TEST/VAL split "
+            "(e.g. 'c_test'). Empty uses the built-in default (c_test, b_test)."
+        ),
+    )
+    p.add_argument(
+        "--tf32",
+        action=argparse.BooleanOptionalAction,
+        default=False,
+        help=(
+            "Enable TF32 for cuDNN and cuBLAS matmuls on Ampere/Ada GPUs "
+            "(sets allow_tf32 and float32_matmul_precision). Speeds up fp32 math "
+            "with negligible accuracy loss. Default off preserves legacy behavior."
+        ),
+    )
+    p.add_argument(
+        "--cudnn-benchmark",
+        action=argparse.BooleanOptionalAction,
+        default=False,
+        help=(
+            "Enable torch.backends.cudnn.benchmark to autotune convolution algorithms "
+            "for fixed input shapes. Default off preserves legacy behavior."
+        ),
+    )
+    p.add_argument(
+        "--matmul-precision",
+        choices=("highest", "high", "medium"),
+        default="highest",
+        help=(
+            "torch.set_float32_matmul_precision level. 'high'/'medium' enable TF32-style "
+            "fast paths; 'highest' keeps full fp32. Only applied when --tf32 is off; "
+            "--tf32 forces at least 'high'."
+        ),
+    )
+    p.add_argument(
+        "--val-full-test",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="Validate on indices_full.pt for c_test/b_test (all design×wavevector×band samples). "
+        "Use --no-val-full-test to validate on downselected reduced_indices (~20%%).",
+    )
+    p.add_argument(
+        "--eigen-ch0-encoding",
+        choices=tuple(EIGEN_CH0_FILES.keys()),
+        default="uniform",
+        help="Output ch0 from eigenfrequency_uniform_full.pt (uniform) or eigenfrequency_fft_full.pt (fft). "
+        "Channels 1–4 always come from outputs.pt.",
+    )
+    p.add_argument(
+        "--input-encoding",
+        choices=tuple(sorted(set(INPUT_ENCODING_FILES) | set(INPUT_ENCODING_ALIASES))),
+        default="wavelet",
+        help=(
+            "Input wavevector/band encoding: wavelet (inputs.pt), sinusoidal, or "
+            "constant/uniform (manuscript constant fields: kx/π, ky/π, b/10 → 4-channel inputs). "
+            "Default wavelet preserves existing experiments."
+        ),
+    )
+    p.add_argument(
+        "--progress-mode",
+        choices=("tqdm", "plain"),
+        default="tqdm",
+        help="Progress output mode: tqdm bar or plain periodic logs.",
+    )
+    p.add_argument(
+        "--log-every-batches",
+        type=int,
+        default=100,
+        help="Heartbeat/postfix interval in train batches.",
+    )
+    p.add_argument(
+        "--diagnostic-panels",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="After each epoch's validation, save random test-set diagnostic PNGs (see diagnostic_panels).",
+    )
+    p.add_argument(
+        "--diagnostic-samples",
+        type=int,
+        default=10,
+        help="Number of random test samples to render when --diagnostic-panels is on.",
+    )
+    p.add_argument(
+        "--init-checkpoint",
+        default="",
+        help="Optional .pth weights to load when starting a new run (fresh optimizer/scheduler).",
+    )
+    p.add_argument(
+        "--reset-optimizer-scheduler",
+        action=argparse.BooleanOptionalAction,
+        default=False,
+        help="When resuming, load model weights but rebuild optimizer/scheduler at CLI lr/gamma (epoch-1 values).",
+    )
+    p.add_argument(
+        "--resume-from-epoch",
+        type=int,
+        default=0,
+        help="When resuming, load {run_name}_E{n}.pth and continue at epoch n+1 (0 = use training_state_latest).",
+    )
+    return p.parse_args()
+
+
+def seed_everything(seed: int) -> None:
+    torch.manual_seed(seed)
+    np.random.seed(seed)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed_all(seed)
+
+
+def resolve_device(allow_cpu: bool) -> torch.device:
+    if torch.cuda.is_available():
+        return torch.device("cuda")
+    if allow_cpu:
+        return torch.device("cpu")
+    cuda_visible = os.environ.get("CUDA_VISIBLE_DEVICES", "<unset>")
+    raise RuntimeError(
+        "CUDA is unavailable but GPU is required for training. "
+        "If you intentionally want CPU fallback, pass --allow-cpu. "
+        f"Current CUDA_VISIBLE_DEVICES={cuda_visible}"
+    )
+
+
+def latest_pt_dir(dataset_dir: Path) -> Path:
+    cands = [p for p in dataset_dir.iterdir() if p.is_dir() and p.name.endswith("_pt")]
+    if not cands:
+        raise FileNotFoundError(f"No *_pt folder under {dataset_dir}")
+    return max(cands, key=lambda p: p.stat().st_mtime)
+
+
+def discover_shards(
+    output_root: Path,
+    prefixes: tuple[str, ...],
+    eigen_ch0_encoding: str,
+    input_encoding: str = "wavelet",
+) -> list[ShardInfo]:
+    if eigen_ch0_encoding not in EIGEN_CH0_FILES:
+        raise ValueError(f"Unknown eigen_ch0_encoding: {eigen_ch0_encoding!r}")
+    input_encoding = normalize_input_encoding(input_encoding)
+    eigen_fname = EIGEN_CH0_FILES[eigen_ch0_encoding]
+    inputs_fname = INPUT_ENCODING_FILES[input_encoding]["inputs"]
+    expected_in_ch = INPUT_ENCODING_IN_CHANNELS[input_encoding]
+    shards: list[ShardInfo] = []
+    ds_dirs = sorted([p for p in output_root.iterdir() if p.is_dir() and p.name.startswith(prefixes)], key=lambda p: p.name)
+    validated_contract = False
+    for d in ds_dirs:
+        pt = latest_pt_dir(d)
+        in_path = pt / inputs_fname
+        out_path = pt / "outputs.pt"
+        ridx_path = pt / "reduced_indices.pt"
+        eigen_path = pt / eigen_fname
+        if not in_path.exists() or not out_path.exists():
+            raise FileNotFoundError(f"Missing {inputs_fname}/outputs in {pt}")
+        if not ridx_path.exists():
+            raise FileNotFoundError(f"Missing reduced_indices.pt in {pt}")
+        if not eigen_path.exists():
+            raise FileNotFoundError(
+                f"Missing {eigen_fname} in {pt} (required for --eigen-ch0-encoding={eigen_ch0_encoding})"
+            )
+
+        ridx = torch.load(ridx_path, map_location="cpu", weights_only=False)
+        n = len(ridx)
+
+        if not validated_contract:
+            x = torch.load(in_path, map_location="cpu", mmap=True, weights_only=True)
+            y = torch.load(out_path, map_location="cpu", mmap=True, weights_only=True)
+            eig = torch.load(eigen_path, map_location="cpu", mmap=True, weights_only=True)
+            if x.ndim != 4 or y.ndim != 4:
+                raise ValueError(f"Invalid tensor dims in {pt}: inputs={tuple(x.shape)}, outputs={tuple(y.shape)}")
+            if tuple(x.shape[1:]) != (expected_in_ch, 32, 32):
+                raise ValueError(
+                    f"Invalid inputs shape in {pt}: {tuple(x.shape)} "
+                    f"(expected (N, {expected_in_ch}, 32, 32) for input_encoding={input_encoding})"
+                )
+            if tuple(y.shape[1:]) != (5, 32, 32):
+                raise ValueError(f"Invalid outputs shape in {pt}: {tuple(y.shape)}")
+            if eig.ndim != 5 or tuple(eig.shape[-2:]) != (32, 32):
+                raise ValueError(
+                    f"Invalid {eigen_fname} in {pt}: expected 5D with trailing (32,32), got shape={tuple(eig.shape)}"
+                )
+            if int(y.shape[0]) != n:
+                raise ValueError(
+                    f"Sample count mismatch in {pt}: outputs N={int(y.shape[0])} vs len(reduced_indices)={n}"
+                )
+            arr = np.asarray(ridx, dtype=np.int32)
+            if arr.ndim != 2 or arr.shape[1] != 3:
+                raise ValueError(f"reduced_indices must be shape [N,3] when treated as array, got {arr.shape}")
+            dmax, wmax, bmax = int(arr[:, 0].max()), int(arr[:, 1].max()), int(arr[:, 2].max())
+            dmin, wmin, bmin = int(arr[:, 0].min()), int(arr[:, 1].min()), int(arr[:, 2].min())
+            if dmin < 0 or wmin < 0 or bmin < 0:
+                raise ValueError(f"Negative (design,wavevector,band) index in reduced_indices under {pt}")
+            if dmax >= eig.shape[0] or wmax >= eig.shape[1] or bmax >= eig.shape[2]:
+                raise ValueError(
+                    f"reduced_indices out of range for {eigen_fname} in {pt}: "
+                    f"max indices ({dmax},{wmax},{bmax}) vs tensor shape {tuple(eig.shape[:3])}"
+                )
+            validated_contract = True
+
+        shards.append(
+            ShardInfo(
+                name=d.name,
+                pt_dir=pt,
+                inputs_path=in_path,
+                outputs_path=out_path,
+                reduced_indices_path=ridx_path,
+                eigen_ch0_path=eigen_path,
+                n=n,
+            )
+        )
+    if not shards:
+        raise FileNotFoundError(f"No dataset shards found with prefixes={prefixes} under {output_root}")
+    return shards
+
+
+def discover_full_index_test_shards(
+    output_root: Path,
+    prefixes: tuple[str, ...],
+    eigen_ch0_encoding: str,
+    input_encoding: str = "wavelet",
+) -> list[FullIndexShardInfo]:
+    if eigen_ch0_encoding not in EIGEN_CH0_FILES:
+        raise ValueError(f"Unknown eigen_ch0_encoding: {eigen_ch0_encoding!r}")
+    input_encoding = normalize_input_encoding(input_encoding)
+    eigen_fname = EIGEN_CH0_FILES[eigen_ch0_encoding]
+    waveforms_fname = INPUT_ENCODING_FILES[input_encoding]["waveforms"]
+    bands_fname = INPUT_ENCODING_FILES[input_encoding]["bands"]
+    shards: list[FullIndexShardInfo] = []
+    ds_dirs = sorted([p for p in output_root.iterdir() if p.is_dir() and p.name.startswith(prefixes)], key=lambda p: p.name)
+    validated_contract = False
+    for d in ds_dirs:
+        pt = latest_pt_dir(d)
+        indices_path = pt / "indices_full.pt"
+        geometries_path = pt / "geometries_full.pt"
+        waveforms_path = pt / waveforms_fname
+        band_fft_path = pt / bands_fname
+        eigen_path = pt / eigen_fname
+        disp_path = pt / "displacements_dataset.pt"
+        required = {
+            "indices_full.pt": indices_path,
+            "geometries_full.pt": geometries_path,
+            waveforms_fname: waveforms_path,
+            bands_fname: band_fft_path,
+            eigen_fname: eigen_path,
+            "displacements_dataset.pt": disp_path,
+        }
+        for label, path in required.items():
+            if not path.exists():
+                raise FileNotFoundError(
+                    f"Missing {label} in {pt} (required for full-index validation)"
+                )
+
+        indices = torch.load(indices_path, map_location="cpu", weights_only=False)
+        n = len(indices)
+
+        if not validated_contract:
+            geometries = torch.load(geometries_path, map_location="cpu", mmap=True, weights_only=True)
+            waveforms = torch.load(waveforms_path, map_location="cpu", mmap=True, weights_only=True)
+            band_fft = torch.load(band_fft_path, map_location="cpu", mmap=True, weights_only=True)
+            eig = torch.load(eigen_path, map_location="cpu", mmap=True, weights_only=True)
+            displacements = torch.load(disp_path, map_location="cpu", mmap=True, weights_only=False)
+            if geometries.ndim != 3 or tuple(geometries.shape[-2:]) != (32, 32):
+                raise ValueError(f"Invalid geometries_full shape in {pt}: {tuple(geometries.shape)}")
+            if input_encoding == "constant":
+                if waveforms.ndim != 4 or int(waveforms.shape[1]) != 2 or tuple(waveforms.shape[-2:]) != (32, 32):
+                    raise ValueError(
+                        f"Invalid {waveforms_fname} shape in {pt}: {tuple(waveforms.shape)} "
+                        "(expected (N_wv, 2, 32, 32) for constant encoding)"
+                    )
+            else:
+                if waveforms.ndim != 3 or tuple(waveforms.shape[-2:]) != (32, 32):
+                    raise ValueError(f"Invalid {waveforms_fname} shape in {pt}: {tuple(waveforms.shape)}")
+            if band_fft.ndim != 3 or tuple(band_fft.shape[-2:]) != (32, 32):
+                raise ValueError(f"Invalid {bands_fname} shape in {pt}: {tuple(band_fft.shape)}")
+            if eig.ndim != 5 or tuple(eig.shape[-2:]) != (32, 32):
+                raise ValueError(
+                    f"Invalid {eigen_fname} in {pt}: expected 5D with trailing (32,32), got shape={tuple(eig.shape)}"
+                )
+            n_design = int(geometries.shape[0])
+            n_wv = int(waveforms.shape[0])
+            n_band = int(band_fft.shape[0])
+            if tuple(eig.shape[:3]) != (n_design, n_wv, n_band):
+                raise ValueError(
+                    f"{eigen_fname} leading dims do not match geometry/waveform/band counts in {pt}: "
+                    f"eigen={tuple(eig.shape[:3])}, expected=({n_design}, {n_wv}, {n_band})"
+                )
+            if not hasattr(displacements, "tensors") or len(displacements.tensors) != 4:
+                raise ValueError(f"displacements_dataset in {pt} must be a TensorDataset with 4 tensors")
+            full_rows = n_design * n_wv * n_band
+            disp_rows = int(displacements.tensors[0].shape[0])
+            if disp_rows != full_rows:
+                raise ValueError(
+                    f"displacements row count mismatch in {pt}: rows={disp_rows}, expected full={full_rows}"
+                )
+            arr = np.asarray(indices, dtype=np.int32)
+            if arr.ndim != 2 or arr.shape[1] != 3:
+                raise ValueError(f"indices_full must be shape [N,3] when treated as array, got {arr.shape}")
+            dmax, wmax, bmax = int(arr[:, 0].max()), int(arr[:, 1].max()), int(arr[:, 2].max())
+            dmin, wmin, bmin = int(arr[:, 0].min()), int(arr[:, 1].min()), int(arr[:, 2].min())
+            if dmin < 0 or wmin < 0 or bmin < 0:
+                raise ValueError(f"Negative (design,wavevector,band) index in indices_full under {pt}")
+            if dmax >= n_design or wmax >= n_wv or bmax >= n_band:
+                raise ValueError(
+                    f"indices_full out of range in {pt}: max indices ({dmax},{wmax},{bmax}) "
+                    f"vs counts ({n_design},{n_wv},{n_band})"
+                )
+            validated_contract = True
+        else:
+            n_design = int(torch.load(geometries_path, map_location="cpu", mmap=True, weights_only=True).shape[0])
+            n_wv = int(torch.load(waveforms_path, map_location="cpu", mmap=True, weights_only=True).shape[0])
+            n_band = int(torch.load(band_fft_path, map_location="cpu", mmap=True, weights_only=True).shape[0])
+
+        shards.append(
+            FullIndexShardInfo(
+                name=d.name,
+                pt_dir=pt,
+                indices_path=indices_path,
+                geometries_path=geometries_path,
+                waveforms_path=waveforms_path,
+                band_fft_path=band_fft_path,
+                eigen_ch0_path=eigen_path,
+                displacements_path=disp_path,
+                n=n,
+                n_design=n_design,
+                n_wv=n_wv,
+                n_band=n_band,
+            )
+        )
+    if not shards:
+        raise FileNotFoundError(f"No dataset shards found with prefixes={prefixes} under {output_root}")
+    return shards
+
+
+def dataset_version_hash(
+    shards: list[ShardInfo], eigen_ch0_encoding: str, input_encoding: str = "wavelet"
+) -> str:
+    h = hashlib.sha256()
+    h.update(eigen_ch0_encoding.encode("utf-8"))
+    h.update(input_encoding.encode("utf-8"))
+    h.update(INPUT_ENCODING_FILES[input_encoding]["inputs"].encode("utf-8"))
+    for s in shards:
+        h.update(str(s.pt_dir).encode("utf-8"))
+        h.update(str(s.inputs_path.stat().st_size).encode("utf-8"))
+        h.update(str(s.outputs_path.stat().st_size).encode("utf-8"))
+        h.update(str(s.eigen_ch0_path.stat().st_size).encode("utf-8"))
+        h.update(str(int(s.inputs_path.stat().st_mtime)).encode("utf-8"))
+        h.update(str(int(s.outputs_path.stat().st_mtime)).encode("utf-8"))
+        h.update(str(int(s.eigen_ch0_path.stat().st_mtime)).encode("utf-8"))
+    return h.hexdigest()[:12]
+
+
+def full_index_dataset_version_hash(
+    shards: list[FullIndexShardInfo], eigen_ch0_encoding: str, input_encoding: str = "wavelet"
+) -> str:
+    h = hashlib.sha256()
+    h.update(eigen_ch0_encoding.encode("utf-8"))
+    h.update(input_encoding.encode("utf-8"))
+    h.update(INPUT_ENCODING_FILES[input_encoding]["waveforms"].encode("utf-8"))
+    h.update(INPUT_ENCODING_FILES[input_encoding]["bands"].encode("utf-8"))
+    h.update(b"indices_full")
+    for s in shards:
+        h.update(str(s.pt_dir).encode("utf-8"))
+        for path in (
+            s.indices_path,
+            s.geometries_path,
+            s.waveforms_path,
+            s.band_fft_path,
+            s.eigen_ch0_path,
+            s.displacements_path,
+        ):
+            h.update(str(path.stat().st_size).encode("utf-8"))
+            h.update(str(int(path.stat().st_mtime)).encode("utf-8"))
+    return h.hexdigest()[:12]
+
+
+def compute_l1_weight_norm(model: nn.Module) -> torch.Tensor:
+    """Sum of |w| over >=2D weight tensors (skips biases and 1-D params).
+
+    Complex spectral weights contribute their magnitude via abs()."""
+    total: torch.Tensor | None = None
+    for param in model.parameters():
+        if not param.requires_grad or param.ndim < 2:
+            continue
+        s = param.abs().sum()
+        total = s if total is None else total + s
+    if total is None:
+        return torch.zeros((), device=next(model.parameters()).device)
+    return total
+
+
+def build_run_name(args: argparse.Namespace) -> str:
+    ds = datetime.now().strftime("%y%m%d")
+    ch0_tag = "ch0u" if args.eigen_ch0_encoding == "uniform" else "ch0fft"
+    enc = normalize_input_encoding(getattr(args, "input_encoding", "wavelet"))
+    in_ch = INPUT_ENCODING_IN_CHANNELS[enc]
+    if enc == "sinusoidal":
+        in_tag = "_insin"
+    elif enc == "constant":
+        in_tag = "_inconst"
+    else:
+        in_tag = ""
+    loss_tag = build_training_loss(args.loss).run_tag
+    l1_tag = f"_L1P{args.l1_penalty:.0e}" if args.l1_penalty > 0 else ""
+    return (
+        f"NO_I{in_ch}O5_BCF16_{loss_tag}_HC{args.hidden_channels}_"
+        f"LR{args.learning_rate:.0e}_WD{args.weight_decay:.0e}{l1_tag}_"
+        f"SS{args.step_size}_G{args.gamma:.0e}_{ch0_tag}{in_tag}_{ds}"
+    )
+
+
+def git_info() -> dict[str, str]:
+    out: dict[str, str] = {"git_commit": "unknown", "git_dirty": "unknown"}
+    try:
+        c = subprocess.run(["git", "rev-parse", "HEAD"], capture_output=True, text=True, check=True)
+        out["git_commit"] = c.stdout.strip()
+    except Exception:
+        pass
+    try:
+        d = subprocess.run(["git", "status", "--porcelain"], capture_output=True, text=True, check=True)
+        out["git_dirty"] = "true" if d.stdout.strip() else "false"
+    except Exception:
+        pass
+    return out
+
+
+def maybe_cap_shards(shards: list[ShardInfo], cap: int) -> list[ShardInfo]:
+    if cap <= 0:
+        return shards
+    out: list[ShardInfo] = []
+    remaining = cap
+    for s in shards:
+        if remaining <= 0:
+            break
+        keep = min(s.n, remaining)
+        out.append(
+            ShardInfo(
+                s.name,
+                s.pt_dir,
+                s.inputs_path,
+                s.outputs_path,
+                s.reduced_indices_path,
+                s.eigen_ch0_path,
+                keep,
+            )
+        )
+        remaining -= keep
+    return out
+
+
+def maybe_cap_full_shards(shards: list[FullIndexShardInfo], cap: int) -> list[FullIndexShardInfo]:
+    if cap <= 0:
+        return shards
+    out: list[FullIndexShardInfo] = []
+    remaining = cap
+    for s in shards:
+        if remaining <= 0:
+            break
+        keep = min(s.n, remaining)
+        out.append(
+            FullIndexShardInfo(
+                s.name,
+                s.pt_dir,
+                s.indices_path,
+                s.geometries_path,
+                s.waveforms_path,
+                s.band_fft_path,
+                s.eigen_ch0_path,
+                s.displacements_path,
+                keep,
+                s.n_design,
+                s.n_wv,
+                s.n_band,
+            )
+        )
+        remaining -= keep
+    return out
+
+
+def amp_context(device: torch.device, amp_mode: str):
+    if device.type != "cuda" or amp_mode == "none":
+        return torch.autocast(device_type=device.type, enabled=False)
+    if amp_mode == "fp16":
+        return torch.autocast(device_type="cuda", dtype=torch.float16, enabled=True)
+    return torch.autocast(device_type="cuda", dtype=torch.bfloat16, enabled=True)
+
+
+def build_criterion(
+    loss_name: str,
+    *,
+    huber_beta: float = 1e-3,
+    nmae_eps: float = DEFAULT_NMAE_EPS,
+    nmse_eps: float = DEFAULT_NMSE_EPS,
+    rmse_sqrt_floor: float = DEFAULT_RMSE_SQRT_FLOOR,
+    mae_rmse_coeff: float = DEFAULT_MAE_RMSE_COEFF,
+    nmae_nrmse_coeff: float = DEFAULT_NMAE_NRMSE_COEFF,
+) -> nn.Module:
+    """Return only the ``nn.Module`` for a preset loss (backward-compatible helper)."""
+    return build_training_loss(
+        loss_name,
+        huber_beta=huber_beta,
+        nmae_eps=nmae_eps,
+        nmse_eps=nmse_eps,
+        rmse_sqrt_floor=rmse_sqrt_floor,
+        mae_rmse_coeff=mae_rmse_coeff,
+        nmae_nrmse_coeff=nmae_nrmse_coeff,
+    ).criterion
+
+
+def reference_l1_mse_fieldnames(out_channels: int) -> list[str]:
+    cols = ["train_l1_loss", "train_mse_loss", "val_l1_loss", "val_mse_loss"]
+    for loss_name in ("l1", "mse"):
+        for split in ("train", "val"):
+            cols += [f"{split}_{loss_name}_loss_ch{i}" for i in range(out_channels)]
+    return cols
+
+
+def populate_reference_l1_mse_from_row(
+    row: dict[str, str],
+    out_channels: int,
+    *,
+    active_loss: str | None,
+) -> None:
+    """Fill explicit MAE/MSE reference columns from active/compare columns when possible."""
+    train_loss = row.get("train_loss", "")
+    val_loss = row.get("val_loss", "")
+    train_cmp = row.get("train_compare_loss", "")
+    val_cmp = row.get("val_compare_loss", "")
+
+    if active_loss in ("l1", "mae"):
+        row["train_l1_loss"] = train_loss
+        row["val_l1_loss"] = val_loss
+        row["train_mse_loss"] = train_cmp
+        row["val_mse_loss"] = val_cmp
+        for i in range(out_channels):
+            row[f"train_l1_loss_ch{i}"] = row.get(f"train_loss_ch{i}", "")
+            row[f"val_l1_loss_ch{i}"] = row.get(f"val_loss_ch{i}", "")
+            row[f"train_mse_loss_ch{i}"] = row.get(f"train_compare_loss_ch{i}", "")
+            row[f"val_mse_loss_ch{i}"] = row.get(f"val_compare_loss_ch{i}", "")
+    elif active_loss == "mse":
+        row["train_mse_loss"] = train_loss
+        row["val_mse_loss"] = val_loss
+        row["train_l1_loss"] = train_cmp
+        row["val_l1_loss"] = val_cmp
+        for i in range(out_channels):
+            row[f"train_mse_loss_ch{i}"] = row.get(f"train_loss_ch{i}", "")
+            row[f"val_mse_loss_ch{i}"] = row.get(f"val_loss_ch{i}", "")
+            row[f"train_l1_loss_ch{i}"] = row.get(f"train_compare_loss_ch{i}", "")
+            row[f"val_l1_loss_ch{i}"] = row.get(f"val_compare_loss_ch{i}", "")
+    else:
+        for key in reference_l1_mse_fieldnames(out_channels):
+            row.setdefault(key, "")
+
+
+def build_optimizer(args: argparse.Namespace, model: nn.Module) -> torch.optim.Optimizer:
+    return torch.optim.AdamW(model.parameters(), lr=args.learning_rate, weight_decay=args.weight_decay)
+
+
+def build_scheduler(args: argparse.Namespace, optimizer: torch.optim.Optimizer):
+    if args.scheduler == "none":
+        return None
+    if args.scheduler == "steplr":
+        return torch.optim.lr_scheduler.StepLR(optimizer, step_size=args.step_size, gamma=args.gamma)
+    t_max = args.t_max if args.t_max > 0 else args.epochs
+    return torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=t_max)
+
+
+def _epoch_num_from_ckpt(path: Path) -> int | None:
+    if "_E" not in path.stem:
+        return None
+    suffix = path.stem.rsplit("_E", 1)[-1]
+    if not suffix.isdigit():
+        return None
+    return int(suffix)
+
+
+def _advance_scheduler_for_completed_epochs(scheduler: Any, completed_epochs: int) -> float | None:
+    if scheduler is None or completed_epochs <= 0:
+        return None
+    for _ in range(completed_epochs):
+        scheduler.step()
+    return float(scheduler.optimizer.param_groups[0]["lr"])
+
+
+def per_channel_loss_mean(
+    pred: torch.Tensor,
+    yb: torch.Tensor,
+    loss_name: str,
+    *,
+    huber_beta: float = 1e-3,
+    nmae_eps: float = DEFAULT_NMAE_EPS,
+    nmse_eps: float = DEFAULT_NMSE_EPS,
+    rmse_sqrt_floor: float = DEFAULT_RMSE_SQRT_FLOOR,
+    mae_rmse_coeff: float = DEFAULT_MAE_RMSE_COEFF,
+    nmae_nrmse_coeff: float = DEFAULT_NMAE_NRMSE_COEFF,
+) -> torch.Tensor:
+    """
+    Per-channel mean of the given loss, shape [C]: mean over (N, H, W) per channel.
+    Matches the per-channel breakdown implied by nn.MSELoss / L1Loss / SmoothL1Loss with default reduction.
+    """
+    loss_name = normalize_loss_name(loss_name)
+    with torch.no_grad():
+        pf = pred.detach().float()
+        yf = yb.float()
+        err = pf - yf
+        if loss_name == "mse":
+            return err.square().mean(dim=(0, 2, 3)).cpu().to(torch.float32)
+        if loss_name == "mae":
+            return err.abs().mean(dim=(0, 2, 3)).cpu().to(torch.float32)
+        if loss_name == "smoothl1":
+            return (
+                F.smooth_l1_loss(pf, yf, reduction="none", beta=huber_beta)
+                .mean(dim=(0, 2, 3))
+                .cpu()
+                .to(torch.float32)
+            )
+        if loss_name == "nmae":
+            mae_per_ch = err.abs().mean(dim=(0, 2, 3))
+            denom = yf.abs().mean(dim=(0, 2, 3)) + nmae_eps
+            return (mae_per_ch / denom).cpu().to(torch.float32)
+        if loss_name == "nmse":
+            mse_per_ch = err.square().mean(dim=(0, 2, 3))
+            denom = yf.square().mean(dim=(0, 2, 3)) + nmse_eps
+            return (mse_per_ch / denom).cpu().to(torch.float32)
+        if loss_name == "rmse":
+            mse_per_ch = err.square().mean(dim=(0, 2, 3))
+            return torch.sqrt(mse_per_ch + rmse_sqrt_floor).cpu().to(torch.float32)
+        if loss_name == "nrmse":
+            mse_per_ch = err.square().mean(dim=(0, 2, 3))
+            denom = yf.square().mean(dim=(0, 2, 3)) + nmse_eps
+            return torch.sqrt((mse_per_ch / denom).clamp_min(0.0)).cpu().to(torch.float32)
+        if loss_name == "mae_rmse":
+            mae_per_ch = err.abs().mean(dim=(0, 2, 3))
+            rmse_per_ch = torch.sqrt(err.square().mean(dim=(0, 2, 3)) + rmse_sqrt_floor)
+            return (mae_per_ch + mae_rmse_coeff * rmse_per_ch).cpu().to(torch.float32)
+        if loss_name == "nmae_nrmse":
+            mae_per_ch = err.abs().mean(dim=(0, 2, 3))
+            mse_per_ch = err.square().mean(dim=(0, 2, 3))
+            denom_a = yf.abs().mean(dim=(0, 2, 3)) + nmae_eps
+            denom_s = yf.square().mean(dim=(0, 2, 3)) + nmse_eps
+            nmae_per_ch = mae_per_ch / denom_a
+            nrmse_per_ch = torch.sqrt((mse_per_ch / denom_s).clamp_min(0.0))
+            return (nmae_per_ch + nmae_nrmse_coeff * nrmse_per_ch).cpu().to(torch.float32)
+        raise ValueError(f"Unknown loss_name: {loss_name!r}")
+
+
+def metrics_csv_fieldnames(out_channels: int, *, dual_compare: bool) -> list[str]:
+    cols = [
+        "epoch",
+        "train_loss",
+        *[f"train_loss_ch{i}" for i in range(out_channels)],
+        "val_loss",
+        "lr",
+        "epoch_time_sec",
+        "data_time_sec",
+        "train_samples_per_sec",
+        "val_samples_per_sec",
+        *[f"val_loss_ch{i}" for i in range(out_channels)],
+    ]
+    if dual_compare:
+        cols += [
+            "train_compare_loss",
+            "val_compare_loss",
+            *[f"train_compare_loss_ch{i}" for i in range(out_channels)],
+            *[f"val_compare_loss_ch{i}" for i in range(out_channels)],
+            *reference_l1_mse_fieldnames(out_channels),
+        ]
+    return cols
+
+
+def _to_float_or_nan(v: str | None) -> float:
+    if v is None:
+        return float("nan")
+    try:
+        return float(v)
+    except Exception:
+        return float("nan")
+
+
+def _migrate_metrics_schema(metrics_csv: Path, out_channels: int, *, active_loss: str | None) -> None:
+    """
+    Upgrade metrics.csv to the current dual-loss + L1/MSE reference header in-place.
+    Seeds compare/reference columns from active loss columns when historical rows lack them.
+    """
+    dual_header = metrics_csv_fieldnames(out_channels, dual_compare=True)
+    single_header = metrics_csv_fieldnames(out_channels, dual_compare=False)
+    with metrics_csv.open("r", newline="", encoding="utf-8") as rf:
+        reader = csv.DictReader(rf)
+        existing_header = list(reader.fieldnames or [])
+        rows = list(reader)
+    if existing_header == dual_header:
+        return
+
+    tmp_path = metrics_csv.with_suffix(".csv.tmp")
+    with tmp_path.open("w", newline="", encoding="utf-8") as wf:
+        writer = csv.DictWriter(wf, fieldnames=dual_header)
+        writer.writeheader()
+        for row in rows:
+            if existing_header == single_header:
+                merged = {k: row.get(k, "") for k in single_header}
+                merged["train_compare_loss"] = row.get("train_loss", "")
+                merged["val_compare_loss"] = row.get("val_loss", "")
+                for i in range(out_channels):
+                    merged[f"train_compare_loss_ch{i}"] = row.get(f"train_loss_ch{i}", "")
+                    merged[f"val_compare_loss_ch{i}"] = row.get(f"val_loss_ch{i}", "")
+            else:
+                merged = {k: row.get(k, "") for k in dual_header}
+            populate_reference_l1_mse_from_row(merged, out_channels, active_loss=active_loss)
+            writer.writerow({k: merged.get(k, "") for k in dual_header})
+    tmp_path.replace(metrics_csv)
+
+
+def _best_from_metrics_csv(metrics_csv: Path, metric_col: str) -> tuple[int, float]:
+    if not metrics_csv.is_file():
+        return -1, float("inf")
+    best_epoch = -1
+    best_val = float("inf")
+    with metrics_csv.open("r", newline="", encoding="utf-8") as rf:
+        for row in csv.DictReader(rf):
+            val = _to_float_or_nan(row.get(metric_col))
+            epoch = int(_to_float_or_nan(row.get("epoch")))
+            if np.isfinite(val) and val < best_val:
+                best_val = float(val)
+                best_epoch = epoch
+    return best_epoch, best_val
+
+
+def _sync_best_weights_from_epoch(run_dir: Path, run_name: str, best_epoch: int, best_path: Path) -> None:
+    if best_epoch < 0:
+        return
+    src = run_dir / f"{run_name}_E{best_epoch}.pth"
+    if src.is_file():
+        shutil.copyfile(src, best_path)
+
+
+def _truncate_metrics_after_epoch(run_dir: Path, max_epoch: int) -> None:
+    """Drop metrics rows with epoch > max_epoch when rewinding a resumed run."""
+    metrics_csv = run_dir / "metrics.csv"
+    if metrics_csv.is_file():
+        with metrics_csv.open("r", newline="", encoding="utf-8") as rf:
+            rows = list(csv.DictReader(rf))
+            fieldnames = rows[0].keys() if rows else []
+        kept = [r for r in rows if int(float(r.get("epoch", "0"))) <= max_epoch]
+        if len(kept) < len(rows):
+            with metrics_csv.open("w", newline="", encoding="utf-8") as wf:
+                writer = csv.DictWriter(wf, fieldnames=fieldnames)
+                writer.writeheader()
+                writer.writerows(kept)
+    metrics_jsonl = run_dir / "metrics.jsonl"
+    if metrics_jsonl.is_file():
+        kept_lines: list[str] = []
+        with metrics_jsonl.open("r", encoding="utf-8") as rf:
+            for line in rf:
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    row = json.loads(line)
+                    if int(row.get("epoch", 0)) <= max_epoch:
+                        kept_lines.append(line)
+                except json.JSONDecodeError:
+                    continue
+        metrics_jsonl.write_text("\n".join(kept_lines) + ("\n" if kept_lines else ""), encoding="utf-8")
+
+
+@dataclass
+class LossMetrics:
+    active: float
+    active_ch: list[float]
+    mae: float
+    mae_ch: list[float]
+    mse: float
+    mse_ch: list[float]
+    samples_per_sec: float
+
+    def compare(self, compare_kind: str) -> tuple[float, list[float]]:
+        if normalize_loss_name(compare_kind) == "mae":
+            return self.mae, self.mae_ch
+        return self.mse, self.mse_ch
+
+
+def evaluate(
+    model: nn.Module,
+    loader: DataLoader,
+    device: torch.device,
+    amp_mode: str,
+    loss_spec: TrainingLossSpec,
+) -> LossMetrics:
+    model.eval()
+    running_active = 0.0
+    running_mae = 0.0
+    running_mse = 0.0
+    running_active_ch = torch.zeros(OUT_CHANNELS, dtype=torch.float32)
+    running_mae_ch = torch.zeros(OUT_CHANNELS, dtype=torch.float32)
+    running_mse_ch = torch.zeros(OUT_CHANNELS, dtype=torch.float32)
+    n_samples = 0
+    start = time.time()
+    with torch.no_grad():
+        for xb, yb in loader:
+            xb = xb.to(device, dtype=torch.float32, non_blocking=True)
+            yb = yb.to(device, dtype=torch.float32, non_blocking=True)
+            with amp_context(device, amp_mode):
+                pred = model(xb)
+                loss_active = loss_spec.batch_loss(pred, yb)
+                loss_mae = F.l1_loss(pred, yb)
+                loss_mse = F.mse_loss(pred, yb)
+            bs = xb.shape[0]
+            running_active += float(loss_active.item()) * bs
+            running_mae += float(loss_mae.item()) * bs
+            running_mse += float(loss_mse.item()) * bs
+            running_active_ch += loss_spec.per_channel_mean(pred, yb) * bs
+            running_mae_ch += per_channel_loss_mean(pred, yb, "mae", huber_beta=loss_spec.huber_beta) * bs
+            running_mse_ch += per_channel_loss_mean(pred, yb, "mse", huber_beta=loss_spec.huber_beta) * bs
+            n_samples += bs
+    elapsed = max(time.time() - start, 1e-9)
+    denom = max(n_samples, 1)
+    return LossMetrics(
+        active=running_active / denom,
+        active_ch=(running_active_ch / denom).tolist(),
+        mae=running_mae / denom,
+        mae_ch=(running_mae_ch / denom).tolist(),
+        mse=running_mse / denom,
+        mse_ch=(running_mse_ch / denom).tolist(),
+        samples_per_sec=n_samples / elapsed,
+    )
+
+
+def _format_loss_ch(values: list[float]) -> str:
+    return " ".join(f"{x:.3e}" for x in values)
+
+
+def log_epoch_losses(
+    logger: logging.Logger,
+    *,
+    epoch: int,
+    total_epochs: int,
+    loss_name: str,
+    train_active: float,
+    val_active: float,
+    train_mae: float,
+    val_mae: float,
+    train_mse: float,
+    val_mse: float,
+    train_active_ch: list[float],
+    val_active_ch: list[float],
+    train_mae_ch: list[float],
+    val_mae_ch: list[float],
+    train_mse_ch: list[float],
+    val_mse_ch: list[float],
+    lr: float,
+    train_sps: float,
+) -> None:
+    """Log active training loss plus reference MAE and MSE for train and val."""
+    ch = _format_loss_ch
+    logger.info(
+        "epoch=%d/%d loss=%s train_%s=%.6e val_%s=%.6e "
+        "train_mae=%.6e val_mae=%.6e train_mse=%.6e val_mse=%.6e lr=%.3e train_sps=%.1f",
+        epoch,
+        total_epochs,
+        loss_name,
+        loss_name,
+        train_active,
+        loss_name,
+        val_active,
+        train_mae,
+        val_mae,
+        train_mse,
+        val_mse,
+        lr,
+        train_sps,
+    )
+    logger.info(
+        "epoch=%d/%d loss_ch_%s train=%s val=%s",
+        epoch,
+        total_epochs,
+        loss_name,
+        ch(train_active_ch),
+        ch(val_active_ch),
+    )
+    logger.info(
+        "epoch=%d/%d mae_ch train=%s val=%s mse_ch train=%s val=%s",
+        epoch,
+        total_epochs,
+        ch(train_mae_ch),
+        ch(val_mae_ch),
+        ch(train_mse_ch),
+        ch(val_mse_ch),
+    )
+
+
+def setup_logger(log_path: Path) -> logging.Logger:
+    logger = logging.getLogger("train_from_disk")
+    logger.setLevel(logging.INFO)
+    logger.handlers.clear()
+    logger.propagate = False
+
+    fmt = logging.Formatter("%(asctime)s | %(levelname)s | %(message)s")
+
+    fh = logging.FileHandler(log_path, mode="a", encoding="utf-8")
+    fh.setLevel(logging.INFO)
+    fh.setFormatter(fmt)
+    logger.addHandler(fh)
+
+    sh = logging.StreamHandler(sys.stdout)
+    sh.setLevel(logging.INFO)
+    sh.setFormatter(fmt)
+    logger.addHandler(sh)
+    return logger
+
+
+def env_info() -> dict[str, Any]:
+    return {
+        "python_version": platform.python_version(),
+        "platform": platform.platform(),
+        "torch_version": torch.__version__,
+        "cuda_available": torch.cuda.is_available(),
+        "cuda_version": torch.version.cuda,
+        "cudnn_version": torch.backends.cudnn.version() if torch.backends.cudnn.is_available() else None,
+        "device_count": torch.cuda.device_count() if torch.cuda.is_available() else 0,
+        "device_name_0": torch.cuda.get_device_name(0) if torch.cuda.is_available() else None,
+    }
+
+
+def write_json(path: Path, payload: dict[str, Any]) -> None:
+    path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+
+
+def emit_progress(message: str, use_tqdm: bool) -> None:
+    if use_tqdm:
+        tqdm.write(message, file=sys.stdout)
+    else:
+        print(message)
+
+
+def enable_main_fault_handler(run_dir: Path) -> str:
+    global _MAIN_FAULT_FH
+    fault_path = run_dir / "main_process_fault.log"
+    _MAIN_FAULT_FH = fault_path.open("a", encoding="utf-8")
+    faulthandler.enable(file=_MAIN_FAULT_FH, all_threads=True)
+    return str(fault_path)
+
+
+def dataloader_worker_init(_worker_id: int, run_dir_str: str) -> None:
+    global _WORKER_FAULT_FH
+    run_dir = Path(run_dir_str)
+    fault_path = run_dir / f"worker_{os.getpid()}_fault.log"
+    try:
+        _WORKER_FAULT_FH = fault_path.open("a", encoding="utf-8")
+        faulthandler.enable(file=_WORKER_FAULT_FH, all_threads=True)
+        _WORKER_FAULT_FH.write(f"{datetime.now(timezone.utc).isoformat()} | worker_start pid={os.getpid()}\n")
+        _WORKER_FAULT_FH.flush()
+    except Exception:
+        # Best-effort fallback so worker init failures are still visible.
+        with (run_dir / f"worker_{os.getpid()}_init_error.log").open("a", encoding="utf-8") as f:
+            f.write(f"{datetime.now(timezone.utc).isoformat()} | worker init failed\n")
+            f.write(traceback.format_exc())
+            f.write("\n")
+
+
+def save_training_state(
+    path: Path,
+    *,
+    model: nn.Module,
+    optimizer: torch.optim.Optimizer,
+    scheduler: Any,
+    scaler: torch.cuda.amp.GradScaler,
+    epoch: int,
+    best_val: float,
+    best_epoch: int,
+) -> None:
+    payload: dict[str, Any] = {
+        "epoch": int(epoch),
+        "best_val_loss": float(best_val),
+        "best_epoch": int(best_epoch),
+        "model_state_dict": model.state_dict(),
+        "optimizer_state_dict": optimizer.state_dict(),
+        "scheduler_state_dict": scheduler.state_dict() if scheduler is not None else None,
+        "scaler_state_dict": scaler.state_dict(),
+    }
+    torch.save(payload, path)
+
+
+def _latest_epoch_from_ckpts(run_dir: Path) -> int:
+    max_epoch = -1
+    for ckpt in run_dir.glob("*_E*.pth"):
+        stem = ckpt.stem
+        if "_E" not in stem:
+            continue
+        try:
+            n = int(stem.rsplit("_E", 1)[-1])
+        except ValueError:
+            continue
+        max_epoch = max(max_epoch, n)
+    return max_epoch
+
+
+def _try_load_model_state_with_compat_fallback(
+    model: nn.Module,
+    state_dict: Any,
+    run_dir: Path,
+) -> tuple[bool, Path | None]:
+    if isinstance(state_dict, dict) and "_metadata" in state_dict:
+        state_dict = dict(state_dict)
+        state_dict.pop("_metadata", None)
+    try:
+        model.load_state_dict(state_dict)
+        return True, None
+    except RuntimeError:
+        compat_ckpts = sorted(run_dir.glob("*best_fno2d_compat*.pth"))
+        if not compat_ckpts:
+            raise
+        compat_path = compat_ckpts[-1]
+        compat_blob = torch.load(compat_path, map_location="cpu", weights_only=False)
+        compat_state = compat_blob["model_state_dict"] if isinstance(compat_blob, dict) and "model_state_dict" in compat_blob else compat_blob
+        if isinstance(compat_state, dict) and "_metadata" in compat_state:
+            compat_state = dict(compat_state)
+            compat_state.pop("_metadata", None)
+        model.load_state_dict(compat_state)
+        return False, compat_path
+
+
+def _infer_previous_loss_from_run(run_dir: Path) -> str | None:
+    train_log = run_dir / "train.log"
+    if train_log.is_file():
+        loss_pat = re.compile(r"\bloss=([a-zA-Z0-9_]+)")
+        try:
+            last_match: str | None = None
+            with train_log.open("r", encoding="utf-8", errors="ignore") as fh:
+                for line in fh:
+                    m = loss_pat.search(line)
+                    if m:
+                        last_match = m.group(1).lower()
+            if last_match in set(LOSS_CLI_CHOICES) | CANONICAL_LOSSES | {"mae+rmse", "nmae+nrms"}:
+                return normalize_loss_name(last_match)
+            if last_match == "l2":
+                return "mse"
+        except Exception:
+            pass
+    rc_path = run_dir / "resolved_config.json"
+    if rc_path.is_file():
+        try:
+            rc = json.loads(rc_path.read_text(encoding="utf-8"))
+            loss = str(rc.get("args", {}).get("loss", "")).lower()
+            if loss in set(LOSS_CLI_CHOICES) | CANONICAL_LOSSES:
+                return normalize_loss_name(loss)
+        except Exception:
+            pass
+    return None
+
+
+def main() -> None:
+    args = parse_args()
+    args.input_encoding = normalize_input_encoding(args.input_encoding)
+    seed_everything(args.seed)
+
+    if torch.cuda.is_available():
+        if args.tf32:
+            torch.backends.cuda.matmul.allow_tf32 = True
+            torch.backends.cudnn.allow_tf32 = True
+            torch.set_float32_matmul_precision(
+                "high" if args.matmul_precision == "highest" else args.matmul_precision
+            )
+        elif args.matmul_precision != "highest":
+            torch.set_float32_matmul_precision(args.matmul_precision)
+        if args.cudnn_benchmark:
+            torch.backends.cudnn.benchmark = True
+
+    train_prefixes = (
+        tuple(s.strip() for s in args.train_prefixes.split(",") if s.strip()) or TRAIN_PREFIXES
+    )
+    test_prefixes = (
+        tuple(s.strip() for s in args.test_prefixes.split(",") if s.strip()) or TEST_PREFIXES
+    )
+
+    save_root = Path(args.save_dir)
+    save_root.mkdir(parents=True, exist_ok=True)
+    output_run_dir = Path(args.output_run_dir).resolve() if args.output_run_dir.strip() else None
+    resume_mode = bool(args.resume_run_dir.strip())
+    prior_run_dir: Path | None = None
+    if resume_mode:
+        src_run_dir = Path(args.resume_run_dir).resolve()
+        if output_run_dir is not None:
+            prior_run_dir = src_run_dir
+        if not src_run_dir.is_dir():
+            raise FileNotFoundError(f"--resume-run-dir does not exist: {src_run_dir}")
+        src_meta_path = src_run_dir / "run_metadata.json"
+        if not src_meta_path.is_file():
+            raise FileNotFoundError(f"Missing run_metadata.json in resume dir: {src_run_dir}")
+        src_meta = json.loads(src_meta_path.read_text(encoding="utf-8"))
+        if output_run_dir is not None:
+            if output_run_dir.exists():
+                raise FileExistsError(f"--output-run-dir already exists: {output_run_dir}")
+            shutil.copytree(src_run_dir, output_run_dir)
+            run_dir = output_run_dir
+            old_run_name = str(src_meta.get("run_name", run_dir.name))
+            run_name = run_dir.name
+            run_id = run_name
+            if old_run_name != run_name:
+                for ckpt in run_dir.glob(f"{old_run_name}_*.pth"):
+                    ckpt.rename(ckpt.with_name(ckpt.name.replace(old_run_name, run_name, 1)))
+        else:
+            run_dir = src_run_dir
+        run_metadata_path = run_dir / "run_metadata.json"
+        if not run_metadata_path.is_file():
+            raise FileNotFoundError(f"Missing run_metadata.json in resume dir: {run_dir}")
+        prev_meta = json.loads(run_metadata_path.read_text(encoding="utf-8"))
+        if output_run_dir is None:
+            run_name = str(prev_meta.get("run_name", run_dir.name))
+            run_id = str(prev_meta.get("run_id", run_dir.name))
+        if args.extend_epochs <= 0:
+            raise ValueError("--extend-epochs must be > 0 when --resume-run-dir is set.")
+    else:
+        if output_run_dir is not None:
+            run_dir = output_run_dir
+            if run_dir.exists():
+                raise FileExistsError(f"--output-run-dir already exists: {run_dir}")
+            run_dir.mkdir(parents=True, exist_ok=False)
+            run_name = run_dir.name
+            run_id = run_name
+        else:
+            run_name = build_run_name(args)
+            run_id = run_name
+            run_dir = save_root / run_name
+            run_dir.mkdir(parents=True, exist_ok=True)
+
+    main_fault_path = enable_main_fault_handler(run_dir)
+
+    logger = setup_logger(run_dir / "train.log")
+    if train_prefixes != TRAIN_PREFIXES or test_prefixes != TEST_PREFIXES:
+        logger.info("Dataset prefix override | train=%s test=%s", train_prefixes, test_prefixes)
+    if torch.cuda.is_available():
+        logger.info(
+            "Perf backends | tf32=%s cudnn_benchmark=%s matmul_precision=%s amp=%s",
+            bool(args.tf32),
+            bool(torch.backends.cudnn.benchmark),
+            torch.get_float32_matmul_precision(),
+            args.amp,
+        )
+    start_ts = datetime.now(timezone.utc)
+    run_metadata_path = run_dir / "run_metadata.json"
+    if resume_mode:
+        metadata = json.loads(run_metadata_path.read_text(encoding="utf-8"))
+        metadata["status"] = "running"
+        metadata["resumed_at_utc"] = start_ts.isoformat()
+        metadata["resume_extend_epochs"] = int(args.extend_epochs)
+        if prior_run_dir is not None:
+            metadata["branched_from_run_dir"] = str(prior_run_dir)
+        if args.resume_from_epoch > 0:
+            metadata["inherited_epochs_through"] = int(args.resume_from_epoch)
+    else:
+        metadata = {
+            "run_name": run_name,
+            "run_id": run_id,
+            "status": "running",
+            "started_at_utc": start_ts.isoformat(),
+            "git": git_info(),
+            "environment": env_info(),
+        }
+    write_json(run_metadata_path, metadata)
+    crash_state: dict[str, Any] = {"phase": "startup", "epoch": 0, "batch": 0}
+
+    try:
+        output_root = Path(args.output_root)
+        train_shards = discover_shards(
+            output_root, train_prefixes, args.eigen_ch0_encoding, args.input_encoding
+        )
+        if args.val_full_test:
+            test_shards_materialized: list[ShardInfo] = []
+            test_shards_full = discover_full_index_test_shards(
+                output_root, test_prefixes, args.eigen_ch0_encoding, args.input_encoding
+            )
+            test_shards_full = maybe_cap_full_shards(test_shards_full, args.max_test_samples)
+        else:
+            test_shards_materialized = discover_shards(
+                output_root, test_prefixes, args.eigen_ch0_encoding, args.input_encoding
+            )
+            test_shards_materialized = maybe_cap_shards(test_shards_materialized, args.max_test_samples)
+            test_shards_full = []
+        train_shards = maybe_cap_shards(train_shards, args.max_train_samples)
+
+        train_ds = ShardedTensorPairDataset(train_shards, args.eigen_ch0_encoding)
+        if args.val_full_test:
+            test_ds: Dataset[tuple[torch.Tensor, torch.Tensor]] = FullIndexTensorPairDataset(
+                test_shards_full, args.eigen_ch0_encoding
+            )
+        else:
+            test_ds = ShardedTensorPairDataset(test_shards_materialized, args.eigen_ch0_encoding)
+
+        train_loader_kwargs: dict[str, Any] = {
+            "num_workers": args.num_workers,
+            "pin_memory": bool(args.pin_memory),
+            "drop_last": False,
+        }
+        test_loader_kwargs: dict[str, Any] = {
+            "batch_size": args.batch_size,
+            "shuffle": False,
+            "num_workers": args.num_workers,
+            "pin_memory": bool(args.pin_memory),
+            "drop_last": False,
+        }
+        if args.num_workers > 0:
+            train_loader_kwargs["persistent_workers"] = True
+            train_loader_kwargs["prefetch_factor"] = args.prefetch_factor
+            train_loader_kwargs["worker_init_fn"] = partial(dataloader_worker_init, run_dir_str=str(run_dir))
+            train_loader_kwargs["timeout"] = 180
+            test_loader_kwargs["persistent_workers"] = True
+            test_loader_kwargs["prefetch_factor"] = args.prefetch_factor
+            test_loader_kwargs["worker_init_fn"] = partial(dataloader_worker_init, run_dir_str=str(run_dir))
+            test_loader_kwargs["timeout"] = 180
+
+        train_batch_sampler: ShardAwareBatchSampler | None = None
+        if args.train_shuffle:
+            train_batch_sampler = ShardAwareBatchSampler(
+                shard_offsets=train_ds.offsets,
+                batch_size=args.batch_size,
+                drop_last=False,
+                seed=args.seed,
+            )
+            train_loader_kwargs["batch_sampler"] = train_batch_sampler
+        else:
+            train_loader_kwargs["batch_size"] = args.batch_size
+            train_loader_kwargs["shuffle"] = False
+        train_loader = DataLoader(train_ds, **train_loader_kwargs)
+        test_loader = DataLoader(test_ds, **test_loader_kwargs)
+
+        device = resolve_device(args.allow_cpu)
+        in_channels = INPUT_ENCODING_IN_CHANNELS[args.input_encoding]
+        model = FourierNeuralOperator(
+            modes_height=args.modes_height,
+            modes_width=args.modes_width,
+            hidden_channels=args.hidden_channels,
+            n_layers=args.layers,
+            in_channels=in_channels,
+        ).to(device)
+        loss_spec = build_training_loss(
+            args.loss,
+            huber_beta=args.huber_beta,
+            nmae_eps=args.nmae_eps,
+            nmse_eps=args.nmse_eps,
+            rmse_sqrt_floor=args.rmse_sqrt_floor,
+            mae_rmse_coeff=args.mae_rmse_coeff,
+            nmae_nrmse_coeff=args.nmae_nrmse_coeff,
+        )
+        args.loss = loss_spec.name
+        compare_kind = loss_spec.compare_kind
+        l1_lambda = float(args.l1_penalty)
+        if l1_lambda > 0.0:
+            logger.info("L1 weight penalty lambda=%.6e (added to training loss)", l1_lambda)
+        if loss_spec.name == "smoothl1":
+            logger.info("Huber/SmoothL1 beta=%.6e", loss_spec.huber_beta)
+        elif loss_spec.name == "nmae":
+            logger.info("NMAE epsilon=%.6e", loss_spec.nmae_eps)
+        elif loss_spec.name == "nmse":
+            logger.info("NMSE epsilon=%.6e", loss_spec.nmse_eps)
+        elif loss_spec.name == "rmse":
+            logger.info("RMSE sqrt floor=%.6e", loss_spec.rmse_sqrt_floor)
+        elif loss_spec.name == "nrmse":
+            logger.info("NRMSE epsilon (mean(t^2) denom)=%.6e", loss_spec.nmse_eps)
+        elif loss_spec.name == "mae_rmse":
+            logger.info(
+                "MAE+RMSE coeff=%.6g sqrt_floor=%.6e",
+                loss_spec.mae_rmse_coeff,
+                loss_spec.rmse_sqrt_floor,
+            )
+        elif loss_spec.name == "nmae_nrmse":
+            logger.info(
+                "NMAE+NRMSE coeff=%.6g nmae_eps=%.6e nmse_eps=%.6e",
+                loss_spec.nmae_nrmse_coeff,
+                loss_spec.nmae_eps,
+                loss_spec.nmse_eps,
+            )
+        logger.info(
+            "Loss logging: active=%s; every epoch records train/val %s, MAE, and MSE",
+            loss_spec.name,
+            loss_spec.name,
+        )
+        optimizer = build_optimizer(args, model)
+        scheduler = build_scheduler(args, optimizer)
+        scaler = torch.cuda.amp.GradScaler(enabled=(device.type == "cuda" and args.amp == "fp16"))
+        start_epoch = 1
+        total_epochs = args.epochs
+        best_val = float("inf")
+        best_epoch = -1
+
+        if not resume_mode and args.init_checkpoint.strip():
+            init_path = Path(args.init_checkpoint).resolve()
+            if not init_path.is_file():
+                raise FileNotFoundError(f"--init-checkpoint not found: {init_path}")
+            init_blob = torch.load(init_path, map_location="cpu", weights_only=False)
+            if isinstance(init_blob, dict) and "model_state_dict" in init_blob:
+                init_state = init_blob["model_state_dict"]
+            else:
+                init_state = init_blob
+            loaded_ok, compat_path = _try_load_model_state_with_compat_fallback(model, init_state, run_dir)
+            if not loaded_ok:
+                logger.warning("Loaded compat weights from %s for init checkpoint %s", compat_path, init_path)
+            metadata["init_checkpoint"] = str(init_path)
+            logger.info("Warm-started model weights from %s", init_path)
+
+        state_latest_path = run_dir / "training_state_latest.pt"
+        scheduler_state_restored = False
+        if resume_mode:
+            if args.resume_from_epoch > 0:
+                ep_n = int(args.resume_from_epoch)
+                ep_ckpt = run_dir / f"{run_name}_E{ep_n}.pth"
+                if not ep_ckpt.is_file():
+                    raise FileNotFoundError(f"--resume-from-epoch {ep_n}: missing checkpoint {ep_ckpt}")
+                _truncate_metrics_after_epoch(run_dir, ep_n)
+                for stray in run_dir.glob(f"{run_name}_E*.pth"):
+                    try:
+                        n = int(stray.stem.rsplit("_E", 1)[-1])
+                    except ValueError:
+                        continue
+                    if n > ep_n:
+                        stray.unlink(missing_ok=True)
+                ep_blob = torch.load(ep_ckpt, map_location="cpu", weights_only=False)
+                if isinstance(ep_blob, dict) and "model_state_dict" in ep_blob:
+                    ep_state = ep_blob["model_state_dict"]
+                else:
+                    ep_state = ep_blob
+                loaded_ok, compat_path = _try_load_model_state_with_compat_fallback(model, ep_state, run_dir)
+                if not loaded_ok:
+                    logger.warning("Loaded compat weights from %s for epoch checkpoint %s", compat_path, ep_ckpt)
+                start_epoch = ep_n + 1
+                metadata["resume_from_epoch_checkpoint"] = str(ep_ckpt)
+                if args.reset_optimizer_scheduler:
+                    logger.info(
+                        "Loaded weights from %s; reset optimizer/scheduler to lr=%.3e gamma=%.3g; "
+                        "continuing at epoch=%d.",
+                        ep_ckpt,
+                        args.learning_rate,
+                        args.gamma,
+                        start_epoch,
+                    )
+                else:
+                    logger.info("Loaded weights from %s; continuing at epoch=%d.", ep_ckpt, start_epoch)
+                    lr_now = _advance_scheduler_for_completed_epochs(scheduler, ep_n)
+                    if lr_now is not None:
+                        logger.info(
+                            "Advanced StepLR by %d completed epochs; lr=%.3e for epoch=%d.",
+                            ep_n,
+                            lr_now,
+                            start_epoch,
+                        )
+                if prior_run_dir is not None:
+                    logger.info(
+                        "Branched run: epochs 1-%d checkpoints/metrics were copied from prior run %s; "
+                        "epochs > %d in this folder will be replaced by this continuation.",
+                        ep_n,
+                        prior_run_dir,
+                        ep_n,
+                    )
+            elif state_latest_path.is_file():
+                state_blob = torch.load(state_latest_path, map_location="cpu", weights_only=False)
+                state_dict = state_blob["model_state_dict"]
+                resumed_full_state, compat_path = _try_load_model_state_with_compat_fallback(model, state_dict, run_dir)
+                if resumed_full_state:
+                    start_epoch = int(state_blob["epoch"]) + 1
+                    best_val = float(state_blob.get("best_val_loss", best_val))
+                    best_epoch = int(state_blob.get("best_epoch", best_epoch))
+                    if args.reset_optimizer_scheduler:
+                        logger.info(
+                            "Resumed model weights from %s at epoch=%d; reset optimizer/scheduler to "
+                            "lr=%.3e gamma=%.3g (not restoring saved optimizer state).",
+                            state_latest_path,
+                            start_epoch - 1,
+                            args.learning_rate,
+                            args.gamma,
+                        )
+                    else:
+                        optimizer.load_state_dict(state_blob["optimizer_state_dict"])
+                        if scheduler is not None and state_blob.get("scheduler_state_dict") is not None:
+                            scheduler.load_state_dict(state_blob["scheduler_state_dict"])
+                            scheduler_state_restored = True
+                        scaler.load_state_dict(state_blob.get("scaler_state_dict", {}))
+                        logger.info("Resumed full state from %s at epoch=%d", state_latest_path, start_epoch - 1)
+                else:
+                    fallback_epoch = _latest_epoch_from_ckpts(run_dir)
+                    if fallback_epoch >= 0:
+                        start_epoch = fallback_epoch + 1
+                    else:
+                        start_epoch = int(state_blob.get("epoch", 0)) + 1
+                    logger.warning(
+                        "State dict mismatch while loading %s; used compat checkpoint %s and switched to warm-start at epoch=%d.",
+                        state_latest_path,
+                        compat_path,
+                        start_epoch - 1,
+                    )
+            else:
+                # Legacy runs may only have model-only checkpoints; warm-start from latest epoch.
+                ckpts = [
+                    p
+                    for p in run_dir.glob(f"{run_name}_E*.pth")
+                    if _epoch_num_from_ckpt(p) is not None
+                ]
+                if not ckpts:
+                    raise FileNotFoundError(
+                        f"No resumable state found in {run_dir}. Need training_state_latest.pt or {run_name}_E*.pth"
+                    )
+                latest_ckpt = max(ckpts, key=lambda p: _epoch_num_from_ckpt(p) or -1)
+                epoch_n = int(_epoch_num_from_ckpt(latest_ckpt))
+                legacy_blob = torch.load(latest_ckpt, map_location="cpu", weights_only=False)
+                if isinstance(legacy_blob, dict) and "model_state_dict" in legacy_blob:
+                    state_dict = legacy_blob["model_state_dict"]
+                else:
+                    state_dict = legacy_blob
+                resumed_full_state, compat_path = _try_load_model_state_with_compat_fallback(model, state_dict, run_dir)
+                start_epoch = epoch_n + 1
+                if resumed_full_state:
+                    logger.warning(
+                        "Resumed model-only checkpoint %s (epoch=%d). Optimizer/scheduler state unavailable; "
+                        "this is a warm-start, not exact equivalent continuation.",
+                        latest_ckpt,
+                        epoch_n,
+                    )
+                else:
+                    logger.warning(
+                        "State dict mismatch while loading %s; used compat checkpoint %s at epoch=%d. "
+                        "Optimizer/scheduler state unavailable; this is a warm-start.",
+                        latest_ckpt,
+                        compat_path,
+                        epoch_n,
+                    )
+                if not args.reset_optimizer_scheduler and not scheduler_state_restored:
+                    lr_now = _advance_scheduler_for_completed_epochs(scheduler, epoch_n)
+                    if lr_now is not None:
+                        logger.info(
+                            "Advanced StepLR by %d completed epochs; lr=%.3e for epoch=%d.",
+                            epoch_n,
+                            lr_now,
+                            start_epoch,
+                        )
+            total_epochs = start_epoch + int(args.extend_epochs) - 1
+            metadata["resume_from_epoch"] = start_epoch - 1
+            metadata["resume_target_total_epochs"] = total_epochs
+
+        train_data_ver = dataset_version_hash(train_shards, args.eigen_ch0_encoding, args.input_encoding)
+        if args.val_full_test:
+            test_data_ver = full_index_dataset_version_hash(
+                test_shards_full, args.eigen_ch0_encoding, args.input_encoding
+            )
+            test_shards_count = len(test_shards_full)
+            test_shards_config = [
+                {
+                    "name": s.name,
+                    "pt_dir": str(s.pt_dir),
+                    "n": s.n,
+                    "index_source": "indices_full",
+                }
+                for s in test_shards_full
+            ]
+        else:
+            test_data_ver = dataset_version_hash(
+                test_shards_materialized, args.eigen_ch0_encoding, args.input_encoding
+            )
+            test_shards_count = len(test_shards_materialized)
+            test_shards_config = [
+                {
+                    "name": s.name,
+                    "pt_dir": str(s.pt_dir),
+                    "n": s.n,
+                    "index_source": "reduced_indices",
+                }
+                for s in test_shards_materialized
+            ]
+        data_ver = hashlib.sha256(f"{train_data_ver}:{test_data_ver}".encode("utf-8")).hexdigest()[:12]
+        params: dict[str, Any] = {
+            "model_name": "FNO2d",
+            "in_channels": INPUT_ENCODING_IN_CHANNELS[args.input_encoding],
+            "out_channels": OUT_CHANNELS,
+            "eigen_ch0_encoding": args.eigen_ch0_encoding,
+            "input_encoding": args.input_encoding,
+            "hidden_channels": args.hidden_channels,
+            "layers": args.layers,
+            "modes_height": args.modes_height,
+            "modes_width": args.modes_width,
+            "optimizer": "adamw",
+            "loss": args.loss,
+            "huber_beta": args.huber_beta,
+            "nmae_eps": args.nmae_eps,
+            "nmse_eps": args.nmse_eps,
+            "rmse_sqrt_floor": args.rmse_sqrt_floor,
+            "mae_rmse_coeff": args.mae_rmse_coeff,
+            "nmae_nrmse_coeff": args.nmae_nrmse_coeff,
+            "scheduler": args.scheduler,
+            "learning_rate": args.learning_rate,
+            "weight_decay": args.weight_decay,
+            "l1_penalty": args.l1_penalty,
+            "step_size": args.step_size,
+            "gamma": args.gamma,
+            "t_max": args.t_max if args.t_max > 0 else total_epochs,
+            "epochs": total_epochs,
+            "start_epoch": start_epoch,
+            "batch_size": args.batch_size,
+            "num_workers": args.num_workers,
+            "prefetch_factor": args.prefetch_factor,
+            "pin_memory": bool(args.pin_memory),
+            "seed": args.seed,
+            "amp": args.amp,
+            "tf32": bool(args.tf32),
+            "cudnn_benchmark": bool(args.cudnn_benchmark),
+            "matmul_precision": torch.get_float32_matmul_precision(),
+            "train_prefixes": list(train_prefixes),
+            "test_prefixes": list(test_prefixes),
+            "device": str(device),
+            "train_shards_count": len(train_shards),
+            "test_shards_count": test_shards_count,
+            "train_samples": len(train_ds),
+            "test_samples": len(test_ds),
+            "val_index_source": "indices_full" if args.val_full_test else "reduced_indices",
+            "dataset_version": data_ver,
+            "train_sampler": "shard_aware" if args.train_shuffle else "sequential",
+        }
+
+        config_payload = {
+            "args": vars(args),
+            "params": params,
+            "resume_mode": resume_mode,
+            "train_shards": [{"name": s.name, "pt_dir": str(s.pt_dir), "n": s.n} for s in train_shards],
+            "test_shards": test_shards_config,
+        }
+        write_json(run_dir / "resolved_config.json", config_payload)
+        best_path = run_dir / f"{run_name}_best.pth"
+        metrics_csv = run_dir / "metrics.csv"
+        metrics_jsonl = run_dir / "metrics.jsonl"
+
+        logger.info(
+            "Run started | run_name=%s run_id=%s device=%s train_samples=%d test_samples=%d "
+            "val_index_source=%s epoch_range=%d..%d",
+            run_name,
+            run_id,
+            device,
+            len(train_ds),
+            len(test_ds),
+            "indices_full" if args.val_full_test else "reduced_indices",
+            start_epoch,
+            total_epochs,
+        )
+        if prior_run_dir is not None and args.resume_from_epoch > 0:
+            logger.info(
+                "Prior run reference | epochs 1-%d canonical location: %s",
+                int(args.resume_from_epoch),
+                prior_run_dir,
+            )
+        logger.info("Fault diagnostics | main_fault_log=%s", main_fault_path)
+        crash_state["phase"] = "train_loop_setup"
+
+        dual_compare = True
+        # When training MSE, track best checkpoint on val MAE (compare); otherwise on active loss.
+        best_metric_col = (
+            "val_compare_loss" if compare_kind == "mae" else "val_loss"
+        )
+        expected_metrics_header = metrics_csv_fieldnames(OUT_CHANNELS, dual_compare=dual_compare)
+        csv_mode = "a" if (resume_mode and metrics_csv.exists()) else "w"
+        if csv_mode == "a" and metrics_csv.exists():
+            _migrate_metrics_schema(metrics_csv, OUT_CHANNELS, active_loss=args.loss)
+            with metrics_csv.open("r", newline="", encoding="utf-8") as rf:
+                existing_header = next(csv.reader(rf))
+            if existing_header != expected_metrics_header:
+                raise RuntimeError(
+                    "metrics.csv header does not match this trainer (expected per-channel train columns). "
+                    "Use a new run directory or delete/rename metrics.csv and metrics.jsonl before resuming."
+                )
+            # Always derive best checkpoint score from CSV across all completed epochs.
+            csv_best_epoch, csv_best_val = _best_from_metrics_csv(metrics_csv, best_metric_col)
+            if csv_best_epoch >= 0:
+                best_epoch = csv_best_epoch
+                best_val = csv_best_val
+                _sync_best_weights_from_epoch(run_dir, run_name, best_epoch, best_path)
+
+        with metrics_csv.open(csv_mode, newline="", encoding="utf-8") as csv_f, metrics_jsonl.open("a", encoding="utf-8") as jsonl_f:
+            writer = csv.writer(csv_f)
+            if csv_mode == "w":
+                writer.writerow(expected_metrics_header)
+
+            for epoch in range(start_epoch, total_epochs + 1):
+                crash_state["phase"] = "train_epoch"
+                crash_state["epoch"] = epoch
+                if train_batch_sampler is not None:
+                    train_batch_sampler.set_epoch(epoch - 1)
+                model.train()
+                t_epoch0 = time.time()
+                running = 0.0
+                running_mae = 0.0
+                running_mse = 0.0
+                running_train_per_ch = torch.zeros(OUT_CHANNELS, dtype=torch.float32)
+                running_train_mae_ch = torch.zeros(OUT_CHANNELS, dtype=torch.float32)
+                running_train_mse_ch = torch.zeros(OUT_CHANNELS, dtype=torch.float32)
+                n_seen = 0
+                data_time = 0.0
+                last = time.time()
+                total_batches = len(train_loader)
+                use_tqdm = args.progress_mode == "tqdm"
+
+                if use_tqdm:
+                    with tqdm(
+                        total=total_batches,
+                        desc=f"Train E{epoch}/{total_epochs}",
+                        unit="batch",
+                        file=sys.stdout,
+                        dynamic_ncols=False,
+                        ascii=True,
+                        mininterval=2.0,
+                        miniters=max(1, args.log_every_batches),
+                        smoothing=0.0,
+                        position=0,
+                        leave=True,
+                    ) as train_bar:
+                        for batch_idx, (xb, yb) in enumerate(train_loader, start=1):
+                            crash_state["batch"] = batch_idx
+                            data_time += max(time.time() - last, 0.0)
+                            xb = xb.to(device, dtype=torch.float32, non_blocking=True)
+                            yb = yb.to(device, dtype=torch.float32, non_blocking=True)
+
+                            optimizer.zero_grad(set_to_none=True)
+                            with amp_context(device, args.amp):
+                                pred = model(xb)
+                                loss = loss_spec.batch_loss(pred, yb)
+                                total_loss = loss
+                                if l1_lambda > 0.0:
+                                    total_loss = loss + l1_lambda * compute_l1_weight_norm(model)
+
+                            if scaler.is_enabled():
+                                scaler.scale(total_loss).backward()
+                                scaler.step(optimizer)
+                                scaler.update()
+                            else:
+                                total_loss.backward()
+                                optimizer.step()
+
+                            bs = xb.shape[0]
+                            running += float(loss.item()) * bs
+                            with torch.no_grad():
+                                running_mae += float(F.l1_loss(pred, yb).item()) * bs
+                                running_mse += float(F.mse_loss(pred, yb).item()) * bs
+                            running_train_per_ch += loss_spec.per_channel_mean(pred, yb) * bs
+                            running_train_mae_ch += per_channel_loss_mean(
+                                pred, yb, "mae", huber_beta=loss_spec.huber_beta
+                            ) * bs
+                            running_train_mse_ch += per_channel_loss_mean(
+                                pred, yb, "mse", huber_beta=loss_spec.huber_beta
+                            ) * bs
+                            n_seen += bs
+                            last = time.time()
+                            train_bar.update(1)
+
+                            if args.log_every_batches > 0 and (
+                                batch_idx % args.log_every_batches == 0 or batch_idx == total_batches
+                            ):
+                                train_bar.set_postfix(batch_loss=f"{float(loss.item()):.4e}")
+                                emit_progress(
+                                    f"E{epoch}/{total_epochs} B{batch_idx}/{total_batches} "
+                                    f"batch_loss={float(loss.item()):.4e}",
+                                    use_tqdm=use_tqdm,
+                                )
+                else:
+                    for batch_idx, (xb, yb) in enumerate(train_loader, start=1):
+                        crash_state["batch"] = batch_idx
+                        data_time += max(time.time() - last, 0.0)
+                        xb = xb.to(device, dtype=torch.float32, non_blocking=True)
+                        yb = yb.to(device, dtype=torch.float32, non_blocking=True)
+
+                        optimizer.zero_grad(set_to_none=True)
+                        with amp_context(device, args.amp):
+                            pred = model(xb)
+                            loss = loss_spec.batch_loss(pred, yb)
+                            total_loss = loss
+                            if l1_lambda > 0.0:
+                                total_loss = loss + l1_lambda * compute_l1_weight_norm(model)
+
+                        if scaler.is_enabled():
+                            scaler.scale(total_loss).backward()
+                            scaler.step(optimizer)
+                            scaler.update()
+                        else:
+                            total_loss.backward()
+                            optimizer.step()
+
+                        bs = xb.shape[0]
+                        running += float(loss.item()) * bs
+                        with torch.no_grad():
+                            running_mae += float(F.l1_loss(pred, yb).item()) * bs
+                            running_mse += float(F.mse_loss(pred, yb).item()) * bs
+                        running_train_per_ch += loss_spec.per_channel_mean(pred, yb) * bs
+                        running_train_mae_ch += per_channel_loss_mean(
+                            pred, yb, "mae", huber_beta=loss_spec.huber_beta
+                        ) * bs
+                        running_train_mse_ch += per_channel_loss_mean(
+                            pred, yb, "mse", huber_beta=loss_spec.huber_beta
+                        ) * bs
+                        n_seen += bs
+                        last = time.time()
+
+                        if args.log_every_batches > 0 and (
+                            batch_idx % args.log_every_batches == 0 or batch_idx == total_batches
+                        ):
+                            emit_progress(
+                                f"E{epoch}/{total_epochs} B{batch_idx}/{total_batches} "
+                                f"batch_loss={float(loss.item()):.4e}",
+                                use_tqdm=use_tqdm,
+                            )
+
+                if scheduler is not None:
+                    scheduler.step()
+                if l1_lambda > 0.0:
+                    with torch.no_grad():
+                        epoch_l1_norm = float(compute_l1_weight_norm(model))
+                    epoch_l1_penalty = l1_lambda * epoch_l1_norm
+                else:
+                    epoch_l1_norm = 0.0
+                    epoch_l1_penalty = 0.0
+                epoch_time = max(time.time() - t_epoch0, 1e-9)
+                train_loss = running / max(n_seen, 1)
+                train_mae = running_mae / max(n_seen, 1)
+                train_mse = running_mse / max(n_seen, 1)
+                train_ch = (running_train_per_ch / max(n_seen, 1)).tolist()
+                train_mae_ch = (running_train_mae_ch / max(n_seen, 1)).tolist()
+                train_mse_ch = (running_train_mse_ch / max(n_seen, 1)).tolist()
+                train_loss_compare, train_ch_cmp = (
+                    (train_mae, train_mae_ch) if compare_kind == "mae" else (train_mse, train_mse_ch)
+                )
+                train_sps = n_seen / epoch_time
+                crash_state["phase"] = "eval_epoch"
+                val_metrics = evaluate(
+                    model,
+                    test_loader,
+                    device,
+                    args.amp,
+                    loss_spec,
+                )
+                val_loss = val_metrics.active
+                val_ch = val_metrics.active_ch
+                val_mae = val_metrics.mae
+                val_mse = val_metrics.mse
+                val_mae_ch = val_metrics.mae_ch
+                val_mse_ch = val_metrics.mse_ch
+                val_loss_compare, val_ch_cmp = val_metrics.compare(compare_kind)
+                val_sps = val_metrics.samples_per_sec
+                lr_now = float(optimizer.param_groups[0]["lr"])
+
+                if args.diagnostic_panels:
+                    if save_random_test_diagnostic_panels is None:
+                        raise RuntimeError(
+                            "DIAGNOSTICS/diagnostic_panels.py is not available; "
+                            "omit --diagnostic-panels or restore the DIAGNOSTICS folder."
+                        )
+                    diag_dir = run_dir / "diagnostics" / f"epoch_{epoch:03d}"
+                    try:
+                        paths = save_random_test_diagnostic_panels(
+                            model,
+                            test_ds,
+                            device,
+                            diag_dir,
+                            epoch=epoch,
+                            n_samples=int(args.diagnostic_samples),
+                            amp_mode=args.amp,
+                            seed=int(args.seed) + epoch * 1_000_003,
+                        )
+                        logger.info(
+                            "Saved %d diagnostic panel(s) under %s",
+                            len(paths),
+                            diag_dir,
+                        )
+                    except Exception:
+                        logger.exception("Diagnostic panel export failed (training continues)")
+
+                row = [
+                    epoch,
+                    train_loss,
+                    *train_ch,
+                    val_loss,
+                    lr_now,
+                    epoch_time,
+                    data_time,
+                    train_sps,
+                    val_sps,
+                    *val_ch,
+                ]
+                row_compare_metric: float = float(val_loss_compare)
+                row.extend(
+                    [
+                        float(train_loss_compare),
+                        row_compare_metric,
+                        *train_ch_cmp,
+                        *val_ch_cmp,
+                        train_mae,
+                        train_mse,
+                        val_mae,
+                        val_mse,
+                        *train_mae_ch,
+                        *train_mse_ch,
+                        *val_mae_ch,
+                        *val_mse_ch,
+                    ]
+                )
+                writer.writerow(row)
+                csv_f.flush()
+
+                epoch_metrics: dict[str, Any] = {
+                    "epoch": epoch,
+                    "active_loss": loss_spec.name,
+                    "train_loss": train_loss,
+                    "val_loss": val_loss,
+                    "train_mae": train_mae,
+                    "val_mae": val_mae,
+                    "train_mse": train_mse,
+                    "val_mse": val_mse,
+                    "lr": lr_now,
+                    "epoch_time_sec": epoch_time,
+                    "data_time_sec": data_time,
+                    "train_samples_per_sec": train_sps,
+                    "val_samples_per_sec": val_sps,
+                    "train_compare_loss": float(train_loss_compare),
+                    "val_compare_loss": float(val_loss_compare),
+                    "train_l1_loss": train_mae,
+                    "train_mse_loss": train_mse,
+                    "val_l1_loss": val_mae,
+                    "val_mse_loss": val_mse,
+                    "l1_lambda": l1_lambda,
+                    "l1_weight_norm": epoch_l1_norm,
+                    "l1_penalty": epoch_l1_penalty,
+                }
+                for i in range(OUT_CHANNELS):
+                    epoch_metrics[f"train_loss_ch{i}"] = train_ch[i]
+                    epoch_metrics[f"val_loss_ch{i}"] = val_ch[i]
+                    epoch_metrics[f"train_compare_loss_ch{i}"] = train_ch_cmp[i]
+                    epoch_metrics[f"val_compare_loss_ch{i}"] = val_ch_cmp[i]
+                    epoch_metrics[f"train_l1_loss_ch{i}"] = train_mae_ch[i]
+                    epoch_metrics[f"train_mse_loss_ch{i}"] = train_mse_ch[i]
+                    epoch_metrics[f"val_l1_loss_ch{i}"] = val_mae_ch[i]
+                    epoch_metrics[f"val_mse_loss_ch{i}"] = val_mse_ch[i]
+                jsonl_f.write(json.dumps(epoch_metrics) + "\n")
+                jsonl_f.flush()
+
+                epoch_ckpt = run_dir / f"{run_name}_E{epoch}.pth"
+                torch.save(model.state_dict(), epoch_ckpt)
+                tracked_val = row_compare_metric if best_metric_col == "val_compare_loss" else val_loss
+                if tracked_val < best_val:
+                    best_val = tracked_val
+                    best_epoch = epoch
+                    torch.save(model.state_dict(), best_path)
+                save_training_state(
+                    state_latest_path,
+                    model=model,
+                    optimizer=optimizer,
+                    scheduler=scheduler,
+                    scaler=scaler,
+                    epoch=epoch,
+                    best_val=best_val,
+                    best_epoch=best_epoch,
+                )
+
+                emit_progress(
+                    f"epoch={epoch}/{total_epochs} loss={loss_spec.name} "
+                    f"train_{loss_spec.name}={train_loss:.6e} val_{loss_spec.name}={val_loss:.6e} "
+                    f"train_mae={train_mae:.6e} val_mae={val_mae:.6e} "
+                    f"train_mse={train_mse:.6e} val_mse={val_mse:.6e} "
+                    f"lr={lr_now:.3e} train_sps={train_sps:.1f}",
+                    use_tqdm=use_tqdm,
+                )
+                log_epoch_losses(
+                    logger,
+                    epoch=epoch,
+                    total_epochs=total_epochs,
+                    loss_name=loss_spec.name,
+                    train_active=train_loss,
+                    val_active=val_loss,
+                    train_mae=train_mae,
+                    val_mae=val_mae,
+                    train_mse=train_mse,
+                    val_mse=val_mse,
+                    train_active_ch=train_ch,
+                    val_active_ch=val_ch,
+                    train_mae_ch=train_mae_ch,
+                    val_mae_ch=val_mae_ch,
+                    train_mse_ch=train_mse_ch,
+                    val_mse_ch=val_mse_ch,
+                    lr=lr_now,
+                    train_sps=train_sps,
+                )
+                emit_progress(
+                    f"Epoch {epoch}/{total_epochs} done | loss={loss_spec.name} "
+                    f"train={train_loss:.4e} val={val_loss:.4e} "
+                    f"mae={val_mae:.4e} mse={val_mse:.4e} lr={lr_now:.2e}",
+                    use_tqdm=use_tqdm,
+                )
+
+        final_path = run_dir / f"{run_name}_final.pth"
+        torch.save(model.state_dict(), final_path)
+        crash_state["phase"] = "completed"
+
+        end_ts = datetime.now(timezone.utc)
+        summary = {
+            "status": "completed",
+            "run_name": run_name,
+            "run_id": run_id,
+            "started_at_utc": start_ts.isoformat(),
+            "ended_at_utc": end_ts.isoformat(),
+            "duration_sec": (end_ts - start_ts).total_seconds(),
+            "best_val_loss": best_val,
+            "best_epoch": best_epoch,
+            "checkpoints": {
+                "best": str(best_path),
+                "final": str(final_path),
+                "epoch_pattern": str(run_dir / f"{run_name}_E{{epoch}}.pth"),
+            },
+            "artifacts": {
+                "train_log": str(run_dir / "train.log"),
+                "resolved_config": str(run_dir / "resolved_config.json"),
+                "run_metadata": str(run_dir / "run_metadata.json"),
+                "metrics_csv": str(metrics_csv),
+                "metrics_jsonl": str(metrics_jsonl),
+                "diagnostics": str(run_dir / "diagnostics"),
+            },
+        }
+        write_json(run_dir / "summary.json", summary)
+
+        metadata["status"] = "completed"
+        metadata["ended_at_utc"] = end_ts.isoformat()
+        metadata["duration_sec"] = (end_ts - start_ts).total_seconds()
+        metadata["best_val_loss"] = best_val
+        metadata["best_epoch"] = best_epoch
+        write_json(run_dir / "run_metadata.json", metadata)
+
+        logger.info("Run complete | run_name=%s run_id=%s best_val_loss=%.6e", run_name, run_id, best_val)
+        logger.info("Artifacts saved to: %s", run_dir)
+        emit_progress(
+            f"Run complete. run_name={run_name} run_id={run_id} best_val_loss={best_val:.6e}",
+            use_tqdm=(args.progress_mode == "tqdm"),
+        )
+        emit_progress(f"Artifacts saved to: {run_dir}", use_tqdm=(args.progress_mode == "tqdm"))
+
+    except Exception as exc:
+        end_ts = datetime.now(timezone.utc)
+        worker_pids = [p.pid for p in mp.active_children()]
+        diagnostic_hint = (
+            "DataLoader worker failed. Check worker_*_fault.log files in run directory; "
+            "if empty, rerun with --num-workers 0 to isolate worker-related failures."
+            if "DataLoader worker" in str(exc)
+            else ""
+        )
+        err = {
+            "status": "failed",
+            "run_name": run_name,
+            "run_id": run_id,
+            "started_at_utc": start_ts.isoformat(),
+            "ended_at_utc": end_ts.isoformat(),
+            "duration_sec": (end_ts - start_ts).total_seconds(),
+            "error_type": type(exc).__name__,
+            "error_message": str(exc),
+            "traceback": traceback.format_exc(),
+            "phase": crash_state["phase"],
+            "epoch": crash_state["epoch"],
+            "batch": crash_state["batch"],
+            "active_child_pids": worker_pids,
+            "fault_logs": {
+                "main": str(run_dir / "main_process_fault.log"),
+                "workers_glob": str(run_dir / "worker_*_fault.log"),
+            },
+            "diagnostic_hint": diagnostic_hint,
+        }
+        write_json(run_dir / "summary.json", err)
+        metadata["status"] = "failed"
+        metadata["ended_at_utc"] = end_ts.isoformat()
+        metadata["duration_sec"] = (end_ts - start_ts).total_seconds()
+        metadata["error_type"] = type(exc).__name__
+        metadata["error_message"] = str(exc)
+        write_json(run_dir / "run_metadata.json", metadata)
+        logger.exception("Training failed")
+        raise
+
+
+if __name__ == "__main__":
+    main()

@@ -1,0 +1,45 @@
+﻿# Runtime / artifact trees (keep locally; do not publish)
+/DATASETS/
+/MODELS/
+/INFERENCE/
+/PLOTS/
+/plots/
+/OUTPUT/
+/FIGURES/
+/LATEX/
+/MATLAB/
+/DIAGNOSTICS/
+/NOTEBOOKS/
+/models/
+
+/generate_dispersion_dataset_Han/OUTPUT
+
+# Presentations / local notes
+*.pptx
+*.xlsx
+one page summary.pdf
+FNO example.png
+
+# IDE / editor metadata
+.idea/
+.cursor/
+.vscode/
+
+# 2d-dispersion-py local demo / test figure dumps
+/2d-dispersion-py/plots/
+/2d-dispersion-py/png/
+/2d-dispersion-py/test_plots/
+
+# Binary / generated artifacts
+*.mp4
+*.mat
+*.pyc
+*.pt
+*.pth
+*.npy
+*.zip
+*.npz
+
+# Legacy one-off checkpoints
+epoch2_FNO_3in_4out_32x32x256.pth
+epoch6_FNO_3in_4out_32x32x256.pth

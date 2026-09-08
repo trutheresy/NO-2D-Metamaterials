@@ -1,0 +1,332 @@
+"""
+Design format conversion utilities.
+
+This module provides functions for converting between different
+design formats (linear, logarithmic, explicit).
+"""
+
+import numpy as np
+from scipy.interpolate import interp1d
+
+
+def convert_design(design, initial_format, target_format, E_min=2e9, E_max=200e9,
+                  rho_min=1e3, rho_max=8e3, poisson_min=0.0, poisson_max=0.5):
+    """
+    Convert design between different formats.
+    
+    Parameters
+    ----------
+    design : array_like
+        Design array (N_pix x N_pix x 3)
+    initial_format : str
+        Initial format ('linear', 'log', 'explicit')
+    target_format : str
+        Target format ('linear', 'log', 'explicit')
+    E_min, E_max : float, optional
+        Young's modulus bounds
+    rho_min, rho_max : float, optional
+        Density bounds
+    poisson_min, poisson_max : float, optional
+        Poisson's ratio bounds
+        
+    Returns
+    -------
+    converted_design : array_like
+        Converted design array
+    """
+    
+    if initial_format == target_format:
+        return design.copy()
+    
+    # Convert to explicit format first
+    if initial_format == 'linear':
+        explicit_design = np.stack([
+            E_min + (E_max - E_min) * design[:, :, 0],  # E
+            rho_min + (rho_max - rho_min) * design[:, :, 1],  # rho
+            poisson_min + (poisson_max - poisson_min) * design[:, :, 2]  # nu
+        ], axis=2)
+    elif initial_format == 'log':
+        explicit_design = np.stack([
+            np.exp(design[:, :, 0]),  # E
+            np.exp(design[:, :, 1]),  # rho
+            poisson_min + (poisson_max - poisson_min) * design[:, :, 2]  # nu
+        ], axis=2)
+    elif initial_format == 'explicit':
+        explicit_design = design.copy()
+    else:
+        raise ValueError(f"Unknown initial format: {initial_format}")
+    
+    # Convert from explicit to target format
+    if target_format == 'linear':
+        converted_design = np.stack([
+            (explicit_design[:, :, 0] - E_min) / (E_max - E_min),  # E
+            (explicit_design[:, :, 1] - rho_min) / (rho_max - rho_min),  # rho
+            (explicit_design[:, :, 2] - poisson_min) / (poisson_max - poisson_min)  # nu
+        ], axis=2)
+    elif target_format == 'log':
+        converted_design = np.stack([
+            np.log(explicit_design[:, :, 0]),  # E
+            np.log(explicit_design[:, :, 1]),  # rho
+            (explicit_design[:, :, 2] - poisson_min) / (poisson_max - poisson_min)  # nu
+        ], axis=2)
+    elif target_format == 'explicit':
+        converted_design = explicit_design
+    else:
+        raise ValueError(f"Unknown target format: {target_format}")
+    
+    return converted_design
+
+
+def design_to_explicit(design, design_format='linear', E_min=2e9, E_max=200e9,
+                      rho_min=1e3, rho_max=8e3, poisson_min=0.0, poisson_max=0.5):
+    """
+    Convert design to explicit material properties.
+    
+    Parameters
+    ----------
+    design : array_like
+        Design array (N_pix x N_pix x 3)
+    design_format : str, optional
+        Design format ('linear', 'log') (default: 'linear')
+    E_min, E_max : float, optional
+        Young's modulus bounds
+    rho_min, rho_max : float, optional
+        Density bounds
+    poisson_min, poisson_max : float, optional
+        Poisson's ratio bounds
+        
+    Returns
+    -------
+    explicit_properties : dict
+        Dictionary containing explicit material properties
+    """
+    
+    if design_format == 'linear':
+        E = E_min + (E_max - E_min) * design[:, :, 0]
+        rho = rho_min + (rho_max - rho_min) * design[:, :, 1]
+        nu = poisson_min + (poisson_max - poisson_min) * design[:, :, 2]
+    elif design_format == 'log':
+        E = np.exp(design[:, :, 0])
+        rho = np.exp(design[:, :, 1])
+        nu = poisson_min + (poisson_max - poisson_min) * design[:, :, 2]
+    else:
+        raise ValueError(f"Unknown design format: {design_format}")
+    
+    return {
+        'E': E,
+        'rho': rho,
+        'nu': nu
+    }
+
+
+def explicit_to_design(E, rho, nu, design_format='linear', E_min=2e9, E_max=200e9,
+                      rho_min=1e3, rho_max=8e3, poisson_min=0.0, poisson_max=0.5):
+    """
+    Convert explicit material properties to design format.
+    
+    Parameters
+    ----------
+    E : array_like
+        Young's modulus array
+    rho : array_like
+        Density array
+    nu : array_like
+        Poisson's ratio array
+    design_format : str, optional
+        Design format ('linear', 'log') (default: 'linear')
+    E_min, E_max : float, optional
+        Young's modulus bounds
+    rho_min, rho_max : float, optional
+        Density bounds
+    poisson_min, poisson_max : float, optional
+        Poisson's ratio bounds
+        
+    Returns
+    -------
+    design : array_like
+        Design array (N_pix x N_pix x 3)
+    """
+    
+    if design_format == 'linear':
+        design = np.stack([
+            (E - E_min) / (E_max - E_min),
+            (rho - rho_min) / (rho_max - rho_min),
+            (nu - poisson_min) / (poisson_max - poisson_min)
+        ], axis=2)
+    elif design_format == 'log':
+        design = np.stack([
+            np.log(E),
+            np.log(rho),
+            (nu - poisson_min) / (poisson_max - poisson_min)
+        ], axis=2)
+    else:
+        raise ValueError(f"Unknown design format: {design_format}")
+    
+    return design
+
+
+def validate_design_bounds(design, design_format='linear', E_min=2e9, E_max=200e9,
+                          rho_min=1e3, rho_max=8e3, poisson_min=0.0, poisson_max=0.5):
+    """
+    Validate that design values are within specified bounds.
+    
+    Parameters
+    ----------
+    design : array_like
+        Design array (N_pix x N_pix x 3)
+    design_format : str, optional
+        Design format ('linear', 'log') (default: 'linear')
+    E_min, E_max : float, optional
+        Young's modulus bounds
+    rho_min, rho_max : float, optional
+        Density bounds
+    poisson_min, poisson_max : float, optional
+        Poisson's ratio bounds
+        
+    Returns
+    -------
+    is_valid : bool
+        True if all values are within bounds
+    violations : dict
+        Dictionary containing information about violations
+    """
+    
+    violations = {
+        'E': {'min': [], 'max': []},
+        'rho': {'min': [], 'max': []},
+        'nu': {'min': [], 'max': []}
+    }
+    
+    # Convert to explicit format for validation
+    explicit_props = design_to_explicit(design, design_format, E_min, E_max,
+                                      rho_min, rho_max, poisson_min, poisson_max)
+    
+    # Check Young's modulus
+    E = explicit_props['E']
+    if np.any(E < E_min):
+        violations['E']['min'] = np.where(E < E_min)
+    if np.any(E > E_max):
+        violations['E']['max'] = np.where(E > E_max)
+    
+    # Check density
+    rho = explicit_props['rho']
+    if np.any(rho < rho_min):
+        violations['rho']['min'] = np.where(rho < rho_min)
+    if np.any(rho > rho_max):
+        violations['rho']['max'] = np.where(rho > rho_max)
+    
+    # Check Poisson's ratio
+    nu = explicit_props['nu']
+    if np.any(nu < poisson_min):
+        violations['nu']['min'] = np.where(nu < poisson_min)
+    if np.any(nu > poisson_max):
+        violations['nu']['max'] = np.where(nu > poisson_max)
+    
+    # Check if any violations occurred
+    is_valid = all(len(violations[prop][bound]) == 0 
+                  for prop in violations 
+                  for bound in violations[prop])
+    
+    return is_valid, violations
+
+
+def clip_design_to_bounds(design, design_format='linear', E_min=2e9, E_max=200e9,
+                         rho_min=1e3, rho_max=8e3, poisson_min=0.0, poisson_max=0.5):
+    """
+    Clip design values to specified bounds.
+    
+    Parameters
+    ----------
+    design : array_like
+        Design array (N_pix x N_pix x 3)
+    design_format : str, optional
+        Design format ('linear', 'log') (default: 'linear')
+    E_min, E_max : float, optional
+        Young's modulus bounds
+    rho_min, rho_max : float, optional
+        Density bounds
+    poisson_min, poisson_max : float, optional
+        Poisson's ratio bounds
+        
+    Returns
+    -------
+    clipped_design : array_like
+        Design array with values clipped to bounds
+    """
+    
+    # Convert to explicit format
+    explicit_props = design_to_explicit(design, design_format, E_min, E_max,
+                                      rho_min, rho_max, poisson_min, poisson_max)
+    
+    # Clip values
+    E_clipped = np.clip(explicit_props['E'], E_min, E_max)
+    rho_clipped = np.clip(explicit_props['rho'], rho_min, rho_max)
+    nu_clipped = np.clip(explicit_props['nu'], poisson_min, poisson_max)
+    
+    # Convert back to design format
+    clipped_design = explicit_to_design(E_clipped, rho_clipped, nu_clipped,
+                                      design_format, E_min, E_max,
+                                      rho_min, rho_max, poisson_min, poisson_max)
+    
+    return clipped_design
+
+
+def apply_steel_polymer_paradigm(design, const):
+    """
+    Apply steel-polymer paradigm to design.
+    
+    This is the exact translation of MATLAB's apply_steel_polymer_paradigm.m function.
+    
+    Note: Despite MATLAB's comment saying "design should be a N_pix matrix (with only one pane)",
+    the actual MATLAB code accesses design(:,:,prop_idx) for prop_idx=1:3, which requires
+    a 3-channel input. In practice, MATLAB always calls this with 3-channel designs from
+    get_design2() and convert_design().
+    
+    Parameters
+    ----------
+    design : array_like
+        Design array (N_pix x N_pix x 3) - 3-channel input expected
+    const : dict
+        Constants structure containing material bounds (E_min, E_max, rho_min, rho_max, 
+        poisson_min, poisson_max)
+        
+    Returns
+    -------
+    design_out : array_like
+        Design array (N_pix x N_pix x 3) with steel-polymer paradigm applied to each channel
+    """
+    design_in_polymer = 0
+    design_in_steel = 1
+    
+    E_polymer = 100e6
+    E_steel = 200e9
+    rho_polymer = 1200
+    rho_steel = 8e3
+    nu_polymer = 0.45
+    nu_steel = 0.3
+    
+    # Convert material properties to design space
+    design_out_polymer_E = (E_polymer - const['E_min']) / (const['E_max'] - const['E_min'])
+    design_out_polymer_rho = (rho_polymer - const['rho_min']) / (const['rho_max'] - const['rho_min'])
+    design_out_polymer_nu = (nu_polymer - const['poisson_min']) / (const['poisson_max'] - const['poisson_min'])
+    
+    design_out_steel_E = (E_steel - const['E_min']) / (const['E_max'] - const['E_min'])
+    design_out_steel_rho = (rho_steel - const['rho_min']) / (const['rho_max'] - const['rho_min'])
+    design_out_steel_nu = (nu_steel - const['poisson_min']) / (const['poisson_max'] - const['poisson_min'])
+    
+    design_vals = np.array([
+        [design_out_polymer_E, design_out_steel_E],
+        [design_out_polymer_rho, design_out_steel_rho],
+        [design_out_polymer_nu, design_out_steel_nu]
+    ])
+    
+    design_out = design.copy()
+    for prop_idx in range(3):
+        dvs = design_vals[prop_idx, :]
+        # Use linear interpolation (MATLAB interp1 with 'linear')
+        interp_func = interp1d([design_in_polymer, design_in_steel], dvs, 
+                              kind='linear', fill_value='extrapolate')
+        design_out[:, :, prop_idx] = interp_func(design[:, :, prop_idx])
+    
+    return design_out
+
